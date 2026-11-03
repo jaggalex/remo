@@ -62,7 +62,7 @@ revision=$1
 [[ $revision =~ ^[0-9a-f]{40}$ ]]
 directory="/srv/remo/releases/$revision"
 staging=""
-cleanup() { [[ -n $staging ]] && rm -rf "$staging"; }
+cleanup() { if [[ -n $staging ]]; then rm -rf "$staging"; fi; }
 trap cleanup EXIT
 if [[ ! -d "$directory" ]]; then
   # Extract beside the final directory and rename only after a successful unpack.
