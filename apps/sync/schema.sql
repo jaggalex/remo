@@ -45,9 +45,9 @@ create table if not exists widgets (
   fill_color text,
   card_theme text,
   rotation double precision not null default 0,
-  -- Modelled extras the source API does not expose: sticker glyph/caption/reactions,
-  -- legend rows. Kept as jsonb so the read path stays complete without a column per
-  -- idea (see packages/model/src/decorate.ts).
+  -- Modelled extras the read path keeps without a column per idea: a sticker or lane
+  -- caption, a shape kind, connector endpoints and card fields (see
+  -- apps/sync/project.mjs).
   props jsonb,
   updated_at timestamptz not null default now(),
   primary key (board_id, id)

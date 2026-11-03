@@ -163,17 +163,15 @@ async search(q, { limit = 50, type, boardIds = null } = {}) {
     // Ranking by match position rather than trigram similarity: the server runs in
     // the C collation, where pg_trgm scores non-ASCII text as 0. The filter itself
     // still benefits from the trigram index.
-    // The filter also looks into modelled extras, so a sticker's caption
-    // ("Hot!") or a legend's title is findable. Only title/content have trigram
-    // indexes; at this scale the extra OR costs nothing measurable.
+    // The filter also looks into a sticker or lane caption. Only title/content have
+    // trigram indexes; at this scale the extra OR costs nothing measurable.
     `select w.board_id, w.id, w.type, w.title, w.content, w.props, w.updated_at,
             left(coalesce(nullif(w.title, ''), w.content, w.props ->> 'label'), 140) as snippet,
             position(lower($1) in lower(coalesce(w.title, ''))) as title_position
        from widgets w
       where (w.title ilike '%' || $1 || '%'
              or w.content ilike '%' || $1 || '%'
-             or w.props ->> 'label' ilike '%' || $1 || '%'
-             or w.props ->> 'legendTitle' ilike '%' || $1 || '%')
+             or w.props ->> 'label' ilike '%' || $1 || '%')
         and ($2::text is null or w.type = $2)
         and ($4::text[] is null or w.board_id = any($4::text[]))
       order by (lower(coalesce(w.title, '')) = lower($1)) desc,
