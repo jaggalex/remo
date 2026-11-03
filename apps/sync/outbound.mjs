@@ -99,9 +99,11 @@ export function safeFetchWith(requestImpl, rawUrl, options = {}) {
           ...(payload ? { "content-length": String(payload.length) } : {}),
         };
         let settled = false;
+        let deadline = null;
         const finish = (fn, value) => {
           if (settled) return;
           settled = true;
+          if (deadline) clearTimeout(deadline);
           signal?.removeEventListener?.("abort", onAbort);
           fn(value);
         };
@@ -154,12 +156,38 @@ export function safeFetchWith(requestImpl, rawUrl, options = {}) {
                 json: async () => parseJson(text),
               });
             });
+            // A peer can close after the headers without ever ending the body. The
+            // socket timeout does not fire once the socket is gone, so without these
+            // the promise stays pending and the agent/webhook loop never ticks again.
+            response.on("aborted", () =>
+              finish(reject, new OutboundError("RESPONSE_ABORTED", "the provider aborted the answer")),
+            );
+            response.on("error", (error) => finish(reject, error));
+            response.on("close", () => {
+              if (!response.complete) {
+                finish(
+                  reject,
+                  new OutboundError("RESPONSE_ABORTED", "the provider closed before the answer finished"),
+                );
+              }
+            });
           },
         );
+        // The hard deadline is independent of the socket: a destroyed socket emits no
+        // timeout, but the caller must still get an answer.
+        deadline = setTimeout(() => {
+          finish(reject, new OutboundError("TIMEOUT", "the provider did not finish in time"));
+          request.destroy();
+        }, timeoutMs + 1_000);
         request.on("timeout", () =>
           request.destroy(new OutboundError("TIMEOUT", "the provider did not answer in time")),
         );
         request.on("error", (error) => finish(reject, error));
+        request.on("close", () => {
+          if (!settled) {
+            finish(reject, new OutboundError("RESPONSE_ABORTED", "the connection closed before an answer"));
+          }
+        });
         if (signal) {
           if (signal.aborted) {
             request.destroy(new OutboundError("ABORTED", "the request was aborted"));
