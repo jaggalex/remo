@@ -15,12 +15,15 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const APPLY = process.argv.includes("--yes");
 const FORCE = process.argv.includes("--force");
 
-/** Names a template gives a board; anything else means a human named it. */
+/**
+ * Names a template gives a board; anything else means a human named it.
+ * Keep in sync with `TEMPLATE_LABELS` in `packages/model/src/template.ts`.
+ */
 const TEMPLATE_TITLES = new Set([
-  "Kanban Framework",
-  "User Story Map",
-  "Product Roadmap",
-  "Roadmap (pre-filled)",
+  "Story map",
+  "Roadmap",
+  "Roadmap example",
+  "Kanban board",
 ]);
 
 const TEST_PREFIXES = [

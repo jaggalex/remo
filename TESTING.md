@@ -476,11 +476,11 @@ note. A failure is as valuable as a pass: write down what you saw, not what you 
 
 | # | Who | Do this | Expected | Result |
 |---|---|---|---|---|
-| 1 | Alice | Open the app URL with `?user=Alice&room=<room>` and pick **Kanban Framework** from the tab bar | The board shows a kanban with Todo / Doing / Done and two swimlanes; counters read `Todo 5`, `Team A 3`, `Team B 2` | |
+| 1 | Alice | Open the app URL with `?user=Alice&room=<room>` and create a board from the **Kanban board** template | The board shows a kanban with Backlog / In progress / Done and two swimlanes; counters read `Backlog 3`, `In progress 2`, `Done 1` | |
 | 2 | Alice | Click the board name in the header, type a name, press Enter, then click **Share** | The name sticks; the button says "Copied". The copied link contains `?room=` | |
 | 3 | Bob | Open the copied link with `?user=Bob` added | The same board, same name, same counters. The header shows two avatars, `in room: 2` | |
-| 4 | Bob | Double-click a card in Todo and type a sentence | Text appears on the card; Alice sees it appear **as Bob types**, not after he finishes | |
-| 5 | Alice | Drag that card from Todo to Done | The card moves, `Todo 4 / Done 1`, Bob sees the same within a second | |
+| 4 | Bob | Double-click a card in Backlog and type a sentence | Text appears on the card; Alice sees it appear **as Bob types**, not after he finishes | |
+| 5 | Alice | Drag that card from Backlog to Done | The card moves, `Backlog 2 / Done 2`, Bob sees the same within a second | |
 | 6 | Bob | Immediately press ⌘Z | Only Bob's own step is undone; Alice's card move stays. Press ⌘Z again: Bob's earlier step is undone next | |
 | 7 | Alice | Click **Sticky note** on the tool rail twice, click the first note (a blue dot appears on its right edge), drag that dot onto the second note. Then do the same from a card anchor to a note | A line joins the two notes, and a card can be an endpoint too; move the card between columns and the line follows its cell | |
 | 8 | Alice | Drag a connected note somewhere else, then click the line itself and press Delete | The line follows the note. Clicking the line selects it (the badge says `Connector`); Delete removes only the line. Deleting a note removes its line too | |
@@ -569,9 +569,9 @@ And one deliberate difference, by design:
 
 - Break the network mid-typing (turn Wi-Fi off, type a sentence, turn it on): the text must
   survive and reach the other machine. The status indicator goes `disconnected` → `connected`.
-- Move a whole band: drag a frame in the **User Story Map** template — its stickies must come
+- Move a whole band: drag a frame in the **Story map** template — its stickies must come
   along, and one ⌘Z must put them all back.
-- Add a second template with the tab bar (e.g. **Product Roadmap**): it must land **beside** the
+- Add a second template (e.g. **Roadmap**): it must land **beside** the
   existing content, not on top of it, and nothing already on the board may change.
 - Start a second tab with the same `?user=` value: it must count as one person, not two.
 - Put the room under load while watching `/metrics`: open and close tabs, and confirm

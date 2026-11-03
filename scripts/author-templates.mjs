@@ -9,12 +9,25 @@
  * The app loads `/templates.json`; `scripts/sync-templates.mjs` copies this generated
  * file into `apps/web/public`.
  */
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const OUT = join(ROOT, "spec", "templates.json");
+
+/**
+ * Document colours come from the design system, not from a third copy of the palette.
+ * `colorLevels.test.ts` already keeps the model's values equal to these tokens.
+ */
+const TOKENS = JSON.parse(
+  readFileSync(join(ROOT, "packages", "ui", "src", "tokens", "tokens.json"), "utf8"),
+);
+const token = (name) => {
+  const found = TOKENS.color.tokens.find((entry) => entry.name === name);
+  if (!found) throw new Error(`unknown design token: ${name}`);
+  return found.value;
+};
 
 let serial = 0;
 let z = 0;
@@ -36,7 +49,7 @@ function widget(type, box, extra = {}) {
 }
 
 const frame = (title, x, y, width, height) =>
-  widget("frame", { x, y, width, height }, { title, fillColor: "#ffffff" });
+  widget("frame", { x, y, width, height }, { title, fillColor: token("neutral-0") });
 
 const text = (content, x, y, width, height, parentId = null, fontSize = 15) =>
   widget(
@@ -49,7 +62,7 @@ const note = (content, x, y, width, height, parentId, fillColor) =>
   widget("sticky_note", { x, y, width, height, parentId }, { content, fillColor });
 
 const card = (title, x, y, width, height, parentId) =>
-  widget("card", { x, y, width, height, parentId }, { title, fillColor: "#ffffff" });
+  widget("card", { x, y, width, height, parentId }, { title, fillColor: token("neutral-0") });
 
 function template(widgets) {
   const types = {};
@@ -68,13 +81,13 @@ const storyMap = (() => {
     ["Stories", ["As a…", "I want…", "So that…"]],
     ["Release", ["Now", "Next", "Later"]],
   ];
-  const fills = ["#efece8", "#ffe07a", "#ffcd9e", "#ffc6d9", "#b9ecac"];
+  const fills = ["neutral-100", "yellow-100", "orange-100", "pink-100", "green-100"].map(token);
   columns.forEach(([title, prompts], column) => {
     const x = (column - 2) * 300;
     const lane = frame(title, x, 0, 260, 560);
     widgets.push(lane);
     prompts.forEach((prompt, row) => {
-      widgets.push(note(prompt, x, -120 + row * 180, 210, 150, lane.id, fills[column]));
+      widgets.push(note(prompt, x, -180 + row * 180, 210, 150, lane.id, fills[column]));
     });
   });
   return template(widgets);
@@ -117,7 +130,7 @@ const kanban = (() => {
   const widgets = [
     boardFrame,
     notesFrame,
-    text("Kanban board", 0, -330, 800, 60, boardFrame.id, 40),
+    text("Kanban board", 0, -310, 800, 60, boardFrame.id, 40),
   ];
   const board = widget("kanban", { x: 0, y: 0, width: 1200, height: 480, parentId: boardFrame.id });
   widgets.push(board);
