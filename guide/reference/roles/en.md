@@ -25,6 +25,12 @@
 
 (*) An editor can share only if the organisation policy allows it.
 
+A **guest** works on a board within the granted role, but never has `board.share`,
+`board.manage`, `board.transfer` or `board.delete`, and cannot be a co-owner.
+
+**Copying a board and importing a backup** need `board.manage`. Only an owner or co-owner
+can also grant access to a whole team or organisation.
+
 **Co-owner is a management role.** Appointing, promoting, demoting or removing a co-owner
 requires `board.manage`. `board.share` is not enough, even when a person grants the role to
 themselves.

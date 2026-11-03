@@ -623,7 +623,7 @@ export function App() {
         canExport={canExport}
         canBackup={canBackup}
         canImport={canImport}
-        canDuplicate={canShare}
+        canDuplicate={canManage}
         canDelete={Boolean(access?.capabilities.includes("board.delete"))}
         canFacilitate={canFacilitate}
         canAskAgents={canAskAgents}

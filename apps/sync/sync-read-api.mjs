@@ -7,7 +7,7 @@
  * rule until somebody claims it.
  */
 import { accessForBoard, linkUnlockToken } from "./iam-api.mjs";
-import { callerFromRequest, hasScope } from "./integrations.mjs";
+import { callerFromRequest, callerReachesOrg, hasScope } from "./integrations.mjs";
 
 function reply(response, status, body) {
   response.writeHead(status, { "Content-Type": "application/json" });
@@ -25,6 +25,10 @@ export async function readBoard({ store, request, response, url, boardId }) {
       }
       if (caller?.kind === "integration" && !hasScope(caller, "board.read")) {
         reply(response, 403, { error: "SCOPE_REQUIRED", scope: "board.read" });
+        return;
+      }
+      if (!callerReachesOrg(caller, iam.org_id)) {
+        reply(response, 404, { error: "RESOURCE_NOT_AVAILABLE", boardId });
         return;
       }
       const resolved = await accessForBoard({

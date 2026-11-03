@@ -42,3 +42,27 @@ export function selectionIds(input) {
   if (!Array.isArray(input)) return [];
   return input.filter((id) => typeof id === "string").slice(0, 1000);
 }
+
+/**
+ * What an organisation admin without a role on the board sees of a task or change set:
+ * that it exists and how it went. Input, result and operations are board content, and
+ * access to those is decided on the board (ADR-161).
+ */
+const OPERATOR_FIELDS = [
+  "id",
+  "org_id",
+  "board_id",
+  "agent_id",
+  "status",
+  "created_by",
+  "created_at",
+  "started_at",
+  "finished_at",
+];
+
+export function operatorView(row) {
+  if (!row) return row;
+  return Object.fromEntries(
+    OPERATOR_FIELDS.filter((field) => row[field] !== undefined).map((field) => [field, row[field]]),
+  );
+}

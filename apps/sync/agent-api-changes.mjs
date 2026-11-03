@@ -5,7 +5,7 @@ import { agentLimitsFromEnv } from "./agent-context.mjs";
 import { budgetMissing, normalizeBudget } from "./agents.mjs";
 import { estimateChangeSet } from "./change-set.mjs";
 import { fail, json, readBody } from "./iam-api.mjs";
-import { originOf } from "./agent-api-shared.mjs";
+import { operatorView, originOf } from "./agent-api-shared.mjs";
 
 export async function handleChangeSets(ctx) {
   const { request, response, parts, method, store, log, me, audit, isOrgAdmin, boardAndAccess, preflight, onTaskQueued } = ctx;
@@ -181,18 +181,21 @@ export async function handleChangeSets(ctx) {
       fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
       return true;
     }
-    const allowed =
-      changeSet.created_by === me.id ||
-      changeSet.owner_id === me.id ||
-      (await isOrgAdmin(changeSet.org_id));
-    if (!allowed) {
+    const { access: boardAccess } = await boardAndAccess(changeSet.board_id);
+    const onBoard = Boolean(boardAccess?.allowed);
+    const mine = changeSet.created_by === me.id || changeSet.owner_id === me.id;
+    if (!(onBoard && mine) && !(await isOrgAdmin(changeSet.org_id))) {
       fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
       return true;
     }
     const task = await store.getAgentTaskByChangeSet(changeSet.id);
 
     if (method === "GET" && parts.length === 2) {
-      json(response, 200, { changeSet, task });
+      json(
+        response,
+        200,
+        onBoard ? { changeSet, task } : { changeSet: operatorView(changeSet), task: operatorView(task) },
+      );
       return true;
     }
 

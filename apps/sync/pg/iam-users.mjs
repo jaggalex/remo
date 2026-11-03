@@ -233,33 +233,22 @@ async restoreOrgMember(orgId, userId) {
 },
 
 async setOrgAdmin({ orgId, userId, role, grantedBy }) {
-  const client = await this.pool.connect();
-  try {
-    await client.query("begin");
-    await client.query(
-      `insert into admin_roles (org_id, user_id, role, granted_by)
-       values ($1, $2, $3, $4)
-       on conflict (org_id, user_id, role) do nothing`,
-      [orgId, userId, role, grantedBy],
-    );
-    await client.query(
-      `insert into org_memberships (org_id, user_id, relation, state)
-       values ($1, $2, 'member', 'active')
-       on conflict (org_id, user_id) do update set state = 'active'`,
-      [orgId, userId],
-    );
-    await client.query("commit");
-  } catch (error) {
-    await client.query("rollback").catch(() => {});
-    throw error;
-  } finally {
-    client.release();
-  }
+  await this.pool.query(
+    `insert into admin_roles (org_id, user_id, role, granted_by)
+     values ($1, $2, $3, $4)
+     on conflict (org_id, user_id, role) do nothing`,
+    [orgId, userId, role, grantedBy],
+  );
 },
 
 async hasOrgRole(orgId, userId, role) {
+  // A role without a seat is not a role: suspension and removal must end it (ADR-161).
   const { rows } = await this.pool.query(
-    `select 1 from admin_roles where org_id = $1 and user_id = $2 and role = $3`,
+    `select 1
+       from admin_roles a
+       join org_memberships m on m.org_id = a.org_id and m.user_id = a.user_id
+      where a.org_id = $1 and a.user_id = $2 and a.role = $3
+        and m.state = 'active' and m.relation = 'member'`,
     [orgId, userId, role],
   );
   return rows.length > 0;
@@ -379,6 +368,16 @@ async acceptInvitation({ tokenHash, userId, email }) {
       await client.query("rollback");
       return { mismatch: true };
     }
+    // Both branches below set the seat to active, so an invitation would otherwise undo
+    // a suspension that only an administrator may lift (ADR-161).
+    const seat = await client.query(
+      `select state from org_memberships where org_id = $1 and user_id = $2 for update`,
+      [invitation.org_id, userId],
+    );
+    if (seat.rows[0]?.state === "suspended") {
+      await client.query("rollback");
+      return { suspended: true };
+    }
 
     if (invitation.subject_kind === "member") {
       await client.query(
@@ -455,7 +454,6 @@ async suspendOrgMember(orgId, userId) {
       where org_id = $1 and user_id = $2`,
     [orgId, userId],
   );
-  await this.revokeUserSessions(userId);
 },
 
 async removeOrgMember(orgId, userId) {
@@ -466,6 +464,10 @@ async removeOrgMember(orgId, userId) {
       `delete from org_memberships where org_id = $1 and user_id = $2`,
       [orgId, userId],
     );
+    await client.query(`delete from admin_roles where org_id = $1 and user_id = $2`, [
+      orgId,
+      userId,
+    ]);
     await client.query(
       `delete from team_memberships tm
         using teams t

@@ -7,6 +7,9 @@ import { accessForBoard, fail, json, readBody } from "./iam-http.mjs";
 export async function handleAdminRoutes(ctx) {
   const { request, response, url, store, method, parts, audit, requireUser, hasOrgRole, onAclChanged, onUserSuspended } = ctx;
 
+  /** Administration reaches this organisation's people, never an arbitrary account. */
+  const notMember = () => fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
+
   if (parts[0] === "orgs" && parts[2] === "admin-roles" && parts[1] && method === "PUT") {
     const me = requireUser();
     if (!me) return true;
@@ -17,6 +20,10 @@ export async function handleAdminRoutes(ctx) {
     const role = parts[4];
     if (!["org_admin", "user_admin", "security_admin"].includes(role)) {
       return fail(response, 422, "BAD_ROLE", "unknown role"), true;
+    }
+    const seat = await store.getOrgMembership(orgId, parts[3]);
+    if (seat?.state !== "active" || seat.relation !== "member") {
+      return fail(response, 422, "TARGET_NOT_MEMBER", "the person must be an active member"), true;
     }
     await store.setOrgAdmin({ orgId, userId: parts[3], role, grantedBy: me.id });
     await audit({ actorId: me.id, orgId, action: "admin.grant", subject: `${parts[3]}:${role}` });
@@ -48,6 +55,7 @@ export async function handleAdminRoutes(ctx) {
     if (!(await hasOrgRole(orgId, me.id, ["org_admin", "user_admin"]))) {
       return fail(response, 403, "FORBIDDEN", "only an administrator can suspend members"), true;
     }
+    if (!(await store.getOrgMembership(orgId, userId))) return notMember(), true;
     // Suspending the last admin would leave the organisation unmanageable.
     if (await store.hasOrgRole(orgId, userId, "org_admin")) {
       const admins = await store.countOrgAdmins(orgId);
@@ -85,6 +93,7 @@ export async function handleAdminRoutes(ctx) {
     if (!(await hasOrgRole(orgId, me.id, ["org_admin", "user_admin"]))) {
       return fail(response, 403, "FORBIDDEN", "only an administrator can remove members"), true;
     }
+    if (!(await store.getOrgMembership(orgId, userId))) return notMember(), true;
     const owned = await store.listBoardsOwnedBy(orgId, userId);
     if (owned.length) {
       json(response, 409, {
@@ -93,6 +102,9 @@ export async function handleAdminRoutes(ctx) {
         boards: owned,
       });
       return true;
+    }
+    if ((await store.hasOrgRole(orgId, userId, "org_admin")) && (await store.countOrgAdmins(orgId)) <= 1) {
+      return fail(response, 409, "LAST_ADMIN", "the last admin cannot be removed"), true;
     }
     await store.removeOrgMember(orgId, userId);
     await audit({ actorId: me.id, orgId, action: "member.remove", subject: userId });

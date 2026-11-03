@@ -27,7 +27,7 @@ Input: a board, a colleague without access. Action: **Share** → invite with th
 
 - A public link is view-only; export through it is forbidden.
 - The **Editor** role can share the board only if the organisation policy allows it.
-- A guest does not inherit organisation access: the guest receives personal access to the board.
+- A guest cannot manage access and does not inherit organisation access: the guest receives personal access to the board.
 
 ## Practical instructions
 

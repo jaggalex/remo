@@ -78,6 +78,9 @@ export async function handleInvitations(ctx) {
     if (result.mismatch) {
       return fail(response, 422, "EMAIL_MISMATCH", "sign in with the invited email"), true;
     }
+    if (result.suspended) {
+      return fail(response, 403, "ORG_SUSPENDED", "your access to this organisation is suspended"), true;
+    }
     await audit({
       actorId: me.id,
       orgId: result.invitation.org_id,
