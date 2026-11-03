@@ -101,6 +101,32 @@ describe("outbound requests", () => {
     }
   });
 
+  it("rejects when the peer closes after headers without finishing the body", async () => {
+    // The socket timeout does not fire after the peer is gone; without a close
+    // listener the promise stayed pending and the agent/webhook loop never ticked.
+    const request = (_config, onResponse) => {
+      const req = new EventEmitter();
+      req.write = () => true;
+      req.end = () => {
+        const response = new EventEmitter();
+        response.statusCode = 200;
+        response.complete = false;
+        onResponse(response);
+        queueMicrotask(() => {
+          response.emit("data", Buffer.from('{"ok":'));
+          response.emit("close");
+        });
+      };
+      req.destroy = (error) => {
+        if (error) req.emit("error", error);
+      };
+      return req;
+    };
+    await expect(safeFetchWith(request, "https://1.1.1.1/v1", {})).rejects.toMatchObject({
+      code: "RESPONSE_ABORTED",
+    });
+  });
+
   it("refuses a redirect instead of following it", async () => {
     expect(() => assertNotRedirect(302)).toThrow(
       expect.objectContaining({ code: "REDIRECT_REFUSED" }),
