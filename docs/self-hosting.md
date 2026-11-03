@@ -56,10 +56,11 @@ bash deploy/release.sh
 ```
 
 The local file is ignored by Git and Docker. Keep database credentials and the KEK
-in the server's `/srv/remo/shared/production.env`. The release script sources the
-local file as Bash, so use an operator-controlled file. To select another private
-file, set `REMO_DEPLOY_ENV_FILE` to its path. If the default file is absent, you
-can supply the three variables through the environment, for example in CI.
+in the server's `/srv/remo/shared/production.env`. The script reads the local file as
+data: plain `KEY=VALUE` lines, comments allowed, no shell. It must be owned by you,
+mode `600`, and not a symlink. To select another private file, set
+`REMO_DEPLOY_ENV_FILE` to its path. If the default file is absent, you can supply the
+three variables through the environment, for example in CI.
 
 The script runs the full gate, keeps revisions and images for rollback, and checks
 the health endpoints after the switch.
