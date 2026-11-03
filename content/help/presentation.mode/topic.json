@@ -1,0 +1,24 @@
+{
+  "id": "presentation.mode",
+  "type": "how-to",
+  "title": {
+    "ru": "Провести презентацию по фреймам",
+    "en": "Present the board by frames"
+  },
+  "summary": {
+    "ru": "Порядок фреймов, ведущий и ведомые, возврат к ведущему и завершение.",
+    "en": "Frame order, presenter and followers, return to the presenter and stop."
+  },
+  "related": [
+    "facilitation.follow",
+    "boards.create"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:6900f133e574b9068f40407e6831beaaccb83ac0e2b9e2462ffd7460473ec0c0"
+    }
+  }
+}

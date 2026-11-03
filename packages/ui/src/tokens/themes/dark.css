@@ -1,0 +1,50 @@
+/* REMO theme “dark” — generated from tokens.json by scripts/build-tokens.mjs. Do not edit. */
+[data-theme="dark"] {
+  --bg-canvas: var(--neutral-900);
+  --bg-app: var(--neutral-950);
+  --bg-panel: var(--neutral-850);
+  --bg-raised: var(--neutral-800);
+  --bg-hover: var(--neutral-800);
+  --bg-active: var(--neutral-700);
+  --bg-overlay: var(--alpha-black-56);
+  --bg-inverse: var(--neutral-50);
+  --text-primary: var(--neutral-50);
+  --text-secondary: var(--neutral-200);
+  --text-muted: var(--neutral-300);
+  --text-inverse: var(--neutral-950);
+  --text-accent: var(--accent-300);
+  --text-danger: var(--danger-300);
+  --text-agent: var(--violet-300);
+  --border-subtle: var(--neutral-800);
+  --border-strong: var(--neutral-400);
+  --border-focus: var(--accent-300);
+  --accent: var(--accent-300);
+  --accent-hover: var(--accent-100);
+  --accent-soft: var(--alpha-accent-light-18);
+  --text-on-accent: var(--neutral-950);
+  --danger: var(--danger-300);
+  --danger-hover: var(--danger-100);
+  --danger-soft: var(--alpha-danger-light-18);
+  --agent-soft: var(--alpha-violet-18);
+  --text-on-danger: var(--neutral-950);
+  --state-success: var(--success-300);
+  --success-soft: var(--alpha-success-light-18);
+  --state-warning: var(--warning-300);
+  --warning-soft: var(--alpha-warning-light-18);
+  --state-info: var(--neutral-300);
+  --selection-fill: var(--alpha-accent-light-8);
+  --selection-stroke: var(--accent-300);
+  --presence-1: var(--orange-300);
+  --presence-2: var(--violet-300);
+  --presence-3: var(--blue-300);
+  --presence-4: var(--pink-300);
+  --presence-5: var(--green-300);
+  --presence-6: var(--ochre-300);
+  --text-on-presence: var(--neutral-950);
+  --shadow-pop: var(--elev-pop-dark);
+  --shadow-bar: var(--elev-bar-dark);
+  --shadow-sticker: var(--elev-sticker-dark);
+  --shadow-sticker-hover: var(--elev-sticker-hover-dark);
+  --shadow-hover: var(--elev-hover-dark);
+}
+[data-theme="dark"] { color-scheme: dark; }

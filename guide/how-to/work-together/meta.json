@@ -1,0 +1,26 @@
+{
+  "id": "how-to/work-together",
+  "type": "how-to",
+  "status": "available",
+  "order": 15,
+  "title": {
+    "ru": "Работать вместе на одной доске",
+    "en": "Work together on one board"
+  },
+  "summary": {
+    "ru": "Позвать коллегу, включить follow, проверить, что изменения видны, и понять поведение без связи.",
+    "en": "Invite a colleague, start following, check that changes are visible, and understand offline behaviour."
+  },
+  "related": [
+    "capabilities/collaboration",
+    "concepts/presence",
+    "how-to/share",
+    "concepts/sync"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:fec0d8514bd56c2441a033d7301bf20c1e1e0ae0309b69759157527db8c0249c"
+    }
+  }
+}

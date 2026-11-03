@@ -1,0 +1,25 @@
+{
+  "id": "capabilities/presentation",
+  "type": "explanation",
+  "status": "available",
+  "order": 33,
+  "title": {
+    "ru": "Презентация",
+    "en": "Presentation"
+  },
+  "summary": {
+    "ru": "Показ фреймов по порядку: ведущий, ведомые и поздний зритель.",
+    "en": "Show frames in order: presenter, followers and a late viewer."
+  },
+  "related": [
+    "capabilities/frames-kanban",
+    "how-to/present",
+    "capabilities/collaboration"
+  ],
+  "updated": "2026-10-29",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:d9c8b377a8ec949605a12e64239cfafd3ad40319ccbe2ae8da1ef9c0c82b5aaf"
+    }
+  }
+}

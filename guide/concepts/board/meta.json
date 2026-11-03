@@ -1,0 +1,26 @@
+{
+  "id": "concepts/board",
+  "type": "explanation",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Доска и объекты: слои, координаты, выделение",
+    "en": "Board and objects: layers, coordinates, selection"
+  },
+  "summary": {
+    "ru": "Из чего состоит доска, как объекты располагаются и почему одни перемещаются свободно, а другие живут в ячейке.",
+    "en": "What a board is made of, how objects are placed, and why some move freely while others live in a cell."
+  },
+  "related": [
+    "capabilities/canvas",
+    "concepts/sync",
+    "start/quickstart",
+    "concepts/access"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:c257cb904e035630173e41af4d0d7ed799ea37da01066c96ff4625b04fe91948"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+/* REMO semantic roles that do not depend on the theme — generated from tokens.json by scripts/build-tokens.mjs. Do not edit. */
+:root {
+  --sticker-neutral: var(--neutral-100);
+  --sticker-yellow: var(--yellow-100);
+  --sticker-green: var(--green-100);
+  --sticker-blue: var(--blue-100);
+  --sticker-pink: var(--pink-100);
+  --sticker-violet: var(--violet-100);
+  --sticker-orange: var(--orange-100);
+  --sticker-chip: var(--alpha-white-72);
+  --sticker-sheen: var(--alpha-white-55);
+  --sticker-shade: var(--alpha-umber-7);
+  --sticker-ink: var(--neutral-900);
+  --type-display: 600 24px/32px var(--font-sans);
+  --type-title: 600 18px/26px var(--font-sans);
+  --type-subtitle: 500 15px/22px var(--font-sans);
+  --type-body: 400 14px/20px var(--font-sans);
+  --type-label: 500 13px/18px var(--font-sans);
+  --type-caption: 400 12px/16px var(--font-sans);
+  --type-kbd: 500 11px/16px var(--font-mono);
+}

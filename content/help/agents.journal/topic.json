@@ -1,0 +1,24 @@
+{
+  "id": "agents.journal",
+  "type": "reference",
+  "title": {
+    "ru": "Журнал вызовов модели",
+    "en": "Model call journal"
+  },
+  "summary": {
+    "ru": "Что записано о каждом вызове, как проверить цепочку и что значит разрыв.",
+    "en": "What is recorded about each call, how to verify the chain, and what a break means."
+  },
+  "related": [
+    "agents.task",
+    "agents.budget"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:39f44810ff005689337414fe8693a38491d81622552b9ed9febac509d5cfd9e4"
+    }
+  }
+}

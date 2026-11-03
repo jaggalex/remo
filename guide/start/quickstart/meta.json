@@ -1,0 +1,27 @@
+{
+  "id": "start/quickstart",
+  "type": "tutorial",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Быстрый старт: доска за десять минут",
+    "en": "Quick start: a board in ten minutes"
+  },
+  "summary": {
+    "ru": "От пустой доски до общего результата: объекты, связи, доступ и сохранение — с проверкой на каждом шаге.",
+    "en": "From an empty board to a shared result: objects, connectors, access and saving, with a check at each step."
+  },
+  "related": [
+    "start/first-scenario",
+    "concepts/board",
+    "concepts/sync",
+    "capabilities/canvas",
+    "how-to/share"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:0d4c24f6ab780db7ccf3523763505588e2e6564bbfe9479af263d9d17ca09c28"
+    }
+  }
+}

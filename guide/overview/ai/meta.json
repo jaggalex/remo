@@ -1,0 +1,26 @@
+{
+  "id": "overview/ai",
+  "type": "how-to",
+  "status": "available",
+  "order": 15,
+  "title": {
+    "ru": "Документация для AI-агента",
+    "en": "Documentation for an AI agent"
+  },
+  "summary": {
+    "ru": "Ссылка на публичную документацию remo, которую можно скопировать и передать LLM или AI-агенту.",
+    "en": "A public remo documentation link you can copy and hand to an LLM or AI agent."
+  },
+  "related": [
+    "overview/index",
+    "overview/map",
+    "reference/api",
+    "capabilities/agents"
+  ],
+  "updated": "2026-11-03",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:09665c58e0ba7f7269993797e3ea76ca96b66800c2f3cbc554f194168d7408a9"
+    }
+  }
+}

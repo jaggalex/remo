@@ -1,0 +1,26 @@
+{
+  "id": "concepts/frames",
+  "type": "explanation",
+  "status": "available",
+  "order": 25,
+  "title": {
+    "ru": "Фреймы и канбан: контейнер против сетки",
+    "en": "Frames and kanban: container versus grid"
+  },
+  "summary": {
+    "ru": "Две разные модели размещения: объект внутри фрейма и карточка внутри ячейки.",
+    "en": "Two different placement models: an object inside a frame and a card inside a cell."
+  },
+  "related": [
+    "capabilities/frames-kanban",
+    "concepts/board",
+    "start/first-scenario",
+    "capabilities/canvas"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:14620bd621cae93d949c927a240094ab262aa249c9fa41b80619f7b0801b0794"
+    }
+  }
+}

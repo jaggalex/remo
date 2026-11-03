@@ -1,0 +1,24 @@
+{
+  "id": "export.scope",
+  "type": "reference",
+  "title": {
+    "ru": "Что попадёт в экспорт",
+    "en": "What an export includes"
+  },
+  "summary": {
+    "ru": "Скоуп экспорта: выделение, фрейм или вся доска. Диалог показывает число объектов и не выбирает всю доску молча.",
+    "en": "Export scope: selection, frame or the whole board. The dialog shows the object count and never picks the whole board silently."
+  },
+  "related": [
+    "export.formats",
+    "export.backup"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:8ebc22937890470d743a94c4ccf5cc2958e2c9757f97761bcfc48b932b1b7c76"
+    }
+  }
+}

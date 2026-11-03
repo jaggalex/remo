@@ -1,0 +1,36 @@
+{
+  "name": "@remo/ui",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "REMO design system: tokens, components, icons.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css",
+    "./tokens.json": "./src/tokens/tokens.json"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "tokens": "node scripts/build-tokens.mjs",
+    "tokens:check": "node scripts/build-tokens.mjs --check",
+    "contrast": "node scripts/contrast.mjs",
+    "lint:css": "stylelint \"src/**/*.css\"",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "stylelint": "^16.10.0",
+    "typescript": "^5.6.3"
+  },
+  "author": "Alexander Kostylev",
+  "license": "AGPL-3.0-only"
+}

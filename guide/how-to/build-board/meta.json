@@ -1,0 +1,26 @@
+{
+  "id": "how-to/build-board",
+  "type": "how-to",
+  "status": "available",
+  "order": 5,
+  "title": {
+    "ru": "Собрать доску: шаблон, структура, связи",
+    "en": "Build a board: template, structure, connectors"
+  },
+  "summary": {
+    "ru": "От пустой доски до структуры, которую видно с первого взгляда: шаблон, фреймы, стикеры, связи.",
+    "en": "From an empty board to a structure you can read at a glance: a template, frames, sticky notes, connectors."
+  },
+  "related": [
+    "capabilities/canvas",
+    "capabilities/frames-kanban",
+    "capabilities/connectors",
+    "start/first-scenario"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:f06ad0f527a03c5027915d74f074d14df442aa6a5aaa2e6b3f43caae7288676f"
+    }
+  }
+}

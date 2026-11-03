@@ -1,0 +1,25 @@
+{
+  "id": "concepts/board-chrome",
+  "type": "explanation",
+  "status": "available",
+  "order": 11,
+  "title": {
+    "ru": "Экран доски: шапка, меню, рельс, низ",
+    "en": "The board screen: header, menus, rail, bottom"
+  },
+  "summary": {
+    "ru": "Где создать объект, где свойства и презентация, где тема и язык, где голосование — карта экрана доски.",
+    "en": "Where to create an object, where properties and presentation live, where the theme and language are, where voting is: a map of the board screen."
+  },
+  "related": [
+    "concepts/colors",
+    "start/quickstart",
+    "capabilities/canvas"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:338acbfd7f02e9f82ee38bb02785c94fc10d6162f758db45d35b6b51c35745f3"
+    }
+  }
+}

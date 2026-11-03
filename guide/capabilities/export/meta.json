@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/export",
+  "type": "explanation",
+  "status": "available",
+  "order": 40,
+  "title": {
+    "ru": "Экспорт и бэкап",
+    "en": "Export and backup"
+  },
+  "summary": {
+    "ru": "Вынести видимый результат файлом или сохранить доску целиком, чтобы восстановить её позже.",
+    "en": "Take a visible result as a file, or save the whole board so it can be restored later."
+  },
+  "related": [
+    "how-to/export-backup",
+    "reference/errors",
+    "concepts/sync",
+    "capabilities/canvas"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:a91bdbe656f12c6dc62a83391261176740d7b923d4030526c3acc905244cbcfe"
+    }
+  }
+}

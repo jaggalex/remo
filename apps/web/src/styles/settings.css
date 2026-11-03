@@ -1,0 +1,151 @@
+/* ---------------------------------------------------------- settings --- */
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: grid;
+  place-items: center;
+  background: var(--bg-overlay);
+  padding: 24px;
+}
+
+.settings-panel {
+  width: min(560px, 100%);
+  max-height: min(82vh, 820px);
+  overflow: auto;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+  font-family: var(--font-sans);
+}
+
+.settings-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-panel h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.settings-panel h3 {
+  margin: 18px 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.settings-close {
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.settings-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.setting {
+  display: grid;
+  grid-template-columns: 1fr 92px;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 5px 0;
+}
+
+.setting-label {
+  font-size: 13px;
+}
+
+.setting input[type="number"],
+.setting input[type="text"],
+.setting select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.setting small {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.setting-check {
+  grid-template-columns: 1fr 24px;
+}
+
+.setting-check input {
+  justify-self: end;
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.setting-row .setting {
+  grid-template-columns: 1fr 56px;
+}
+
+.settings-json {
+  width: 100%;
+  min-height: 140px;
+  padding: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.settings-error {
+  color: var(--text-danger);
+  font-size: 12px;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.settings-actions button,
+.settings-footer button {
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-footer .share-button {
+  border-color: transparent;
+  color: var(--text-on-accent);
+}

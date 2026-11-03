@@ -1,0 +1,26 @@
+{
+  "id": "support/troubleshooting",
+  "type": "how-to",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Устранение неполадок",
+    "en": "Troubleshooting"
+  },
+  "summary": {
+    "ru": "Симптом → причина → что проверить: вход, сокет, сохранение, экспорт, вебхук, агенты.",
+    "en": "Symptom → cause → what to check: sign-in, socket, saving, export, webhook, agents."
+  },
+  "related": [
+    "admin/observability",
+    "concepts/sync",
+    "capabilities/events",
+    "support/known-issues"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:5bf9e7aacf277a42d158338f14d0f21dda1fb0b916345f8353aa33722f86cc0a"
+    }
+  }
+}

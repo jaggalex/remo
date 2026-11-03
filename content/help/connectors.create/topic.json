@@ -1,0 +1,24 @@
+{
+  "id": "connectors.create",
+  "type": "how-to",
+  "title": {
+    "ru": "Создать связь между объектами",
+    "en": "Create a connector between objects"
+  },
+  "summary": {
+    "ru": "Соедините два стикера, фигуры или другие объекты линией со стрелкой.",
+    "en": "Join two sticky notes, shapes or other objects with a line and an arrow."
+  },
+  "related": [
+    "connectors.waypoints",
+    "connectors.keyboard"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:3100026eddabd09a7e0de5896afd14005dd6bdb8cd055028d5c99f8e51cf597d"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "apps.hello",
+  "type": "how-to",
+  "title": {
+    "ru": "Приложения на доске",
+    "en": "Apps on a board"
+  },
+  "summary": {
+    "ru": "Что такое приложения, как открыть панель, что делает «Приветствие» и почему чужой код здесь не выполняется.",
+    "en": "What apps are, how to open the panel, what “Hello” does, and why foreign code never runs here."
+  },
+  "related": [
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:806c1457517d82e934c9cb07d7fc7fd09d562b73acf0de803500245b87c58863"
+    }
+  }
+}

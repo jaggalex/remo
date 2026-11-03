@@ -1,0 +1,26 @@
+{
+  "id": "support/disclaimer",
+  "type": "reference",
+  "status": "available",
+  "order": 25,
+  "title": {
+    "ru": "Отказ от ответственности",
+    "en": "Disclaimer"
+  },
+  "summary": {
+    "ru": "Открытый проект без гарантий: версия может содержать ошибки, данные нужно беречь самостоятельно.",
+    "en": "An open project without warranties: a version may contain bugs, and you keep your own backups."
+  },
+  "related": [
+    "support/about",
+    "support/known-issues",
+    "support/troubleshooting",
+    "capabilities/export"
+  ],
+  "updated": "2026-11-03",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:c5daae6a3e17c959c9fe87d6ae8a01830c3ac18c2da519f04d44bc8ac36acd85"
+    }
+  }
+}

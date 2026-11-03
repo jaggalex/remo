@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/canvas",
+  "type": "explanation",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Холст и объекты",
+    "en": "Canvas and objects"
+  },
+  "summary": {
+    "ru": "Собрать визуальный материал: стикеры, фигуры, текст, фреймы — и понять, когда холста достаточно.",
+    "en": "Assemble visual material — sticky notes, shapes, text, frames — and know when the canvas is enough."
+  },
+  "related": [
+    "concepts/board",
+    "start/first-scenario",
+    "how-to/export-backup",
+    "capabilities/export"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:99fc4df753cdc56848c653a611e1d426d194dfcf077ddc8d4c2d8676ffc22240"
+    }
+  }
+}

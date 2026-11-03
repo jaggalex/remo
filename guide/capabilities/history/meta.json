@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/history",
+  "type": "explanation",
+  "status": "available",
+  "order": 45,
+  "title": {
+    "ru": "История, корзина и копия",
+    "en": "History, trash and copies"
+  },
+  "summary": {
+    "ru": "Отменить правку, убрать доску в корзину и вернуть её, сделать копию для эксперимента.",
+    "en": "Undo a change, move a board to the trash and restore it, make a copy for an experiment."
+  },
+  "related": [
+    "concepts/board",
+    "capabilities/export",
+    "how-to/export-backup",
+    "concepts/access"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:875347a0cfa1cd9d5d03b872ab8f16f80c67a52efd5a187a3ac94962be101614"
+    }
+  }
+}

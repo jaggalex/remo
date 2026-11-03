@@ -1,0 +1,11 @@
+{
+  "ignoreFiles": ["src/tokens/**/*.css"],
+  "rules": {
+    "color-no-hex": true,
+    "color-named": "never",
+    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla", "hwb", "lab", "lch", "oklab", "oklch", "color", "color-mix"],
+    "declaration-property-value-allowed-list": {
+      "/^(color|background-color|border-color|border-top-color|border-right-color|border-bottom-color|border-left-color|outline-color|fill|stroke|caret-color|text-decoration-color)$/": ["/^var\\(--[a-z0-9-]+\\)$/", "transparent", "currentColor", "none", "inherit"]
+    }
+  }
+}

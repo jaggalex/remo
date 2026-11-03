@@ -1,0 +1,26 @@
+{
+  "id": "how-to/share",
+  "type": "how-to",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Открыть доступ к доске и поделиться ссылкой",
+    "en": "Grant access to a board and share a link"
+  },
+  "summary": {
+    "ru": "Выдать роль человеку или команде, включить ссылку с паролем и сроком, отозвать доступ.",
+    "en": "Grant a role to a person or team, enable a link with a password and expiry, and revoke access."
+  },
+  "related": [
+    "concepts/access",
+    "reference/roles",
+    "capabilities/access",
+    "how-to/export-backup"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:db0d3bd4663485427ea8570142144d0ce4e45e25ddc4a04b4bed9a582fb5bb92"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/frames-kanban",
+  "type": "explanation",
+  "status": "available",
+  "order": 25,
+  "title": {
+    "ru": "Фреймы и канбан",
+    "en": "Frames and kanban"
+  },
+  "summary": {
+    "ru": "Структурировать доску: фрейм как контейнер и канбан как сетка колонок и дорожек.",
+    "en": "Structure a board: a frame as a container and a kanban as a grid of columns and swimlanes."
+  },
+  "related": [
+    "concepts/board",
+    "capabilities/canvas",
+    "capabilities/collaboration",
+    "start/first-scenario"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:623b3181412153e1abd6822d7afbb677c345bbf8cb71eb5ed1943bf7da6cafe5"
+    }
+  }
+}

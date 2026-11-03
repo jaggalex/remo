@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/dist
+docs-site
+**/.data
+.env
+.env.*
+**/*.local
+backups
+test-results
+playwright-report
+e2e-report
+*.pdf

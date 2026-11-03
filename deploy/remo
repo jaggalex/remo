@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Server entry point. Install as /srv/remo/remo; never source the environment as shell.
+set -Eeuo pipefail
+umask 077
+ROOT=${REMO_ROOT:-/srv/remo}
+export REMO_PRODUCTION_ENV="$ROOT/shared/production.env"
+mkdir -p "$ROOT/backups"
+exec 9>"$ROOT/.operation.lock"
+flock -n 9 || { echo 'Another remo operation is running.' >&2; exit 1; }
+
+use_release() {
+  local revision=$1
+  [[ $revision =~ ^[0-9a-f]{40}$ ]] || { echo 'Expected a full Git commit.' >&2; exit 1; }
+  RELEASE="$ROOT/releases/$revision"
+  [[ -f "$RELEASE/deploy/compose.production.yml" ]] || exit 1
+  export REMO_RELEASE=$revision
+}
+compose() {
+  docker compose --env-file "$REMO_PRODUCTION_ENV" -f "$RELEASE/deploy/compose.production.yml" "$@"
+}
+current() {
+  [[ -f "$ROOT/current" ]] || { echo 'No active release.' >&2; exit 1; }
+  use_release "$(cat "$ROOT/current")"
+}
+backup() {
+  local file="$ROOT/backups/$(date -u +%Y%m%dT%H%M%SZ)-$REMO_RELEASE.dump"
+  compose run --rm -T --no-deps db-tools pg_dump -Fc < /dev/null > "$file.partial"
+  compose run --rm -T --no-deps db-tools pg_restore --list < "$file.partial" > /dev/null
+  mv "$file.partial" "$file"
+  echo "Backup: $file"
+}
+smoke() {
+  compose exec -T web wget -q -O /dev/null http://127.0.0.1:8080/api/health < /dev/null
+  compose exec -T web wget -q -O /dev/null http://127.0.0.1:8081/guide/ru/overview/index.html < /dev/null
+}
+
+case ${1:-status} in
+  deploy)
+    use_release "${2:?Usage: remo deploy COMMIT}"
+    # The shared server belongs to infrastructure; app releases only use a client.
+    compose build sync web
+    compose pull db-tools
+    compose run --rm -T --no-deps db-tools psql -v ON_ERROR_STOP=1 -Atc 'select 1' < /dev/null > /dev/null
+    if [[ -f "$ROOT/current" ]]; then
+      old=$(cat "$ROOT/current")
+      compose stop web sync
+      trap 'echo "Update failed. Writers may be stopped; dump and previous release are retained. Use remo status/logs and explicit rollback." >&2' ERR
+      backup
+      printf '%s\n' "$old" > "$ROOT/previous"
+    fi
+    compose up -d --no-deps --wait --wait-timeout 180 sync
+    compose up -d --no-deps --wait --wait-timeout 120 web
+    smoke
+    printf '%s\n' "$REMO_RELEASE" > "$ROOT/current.next"
+    mv "$ROOT/current.next" "$ROOT/current"
+    # Keep the installed controller in sync with the release that just passed health.
+    install -m 700 "$RELEASE/deploy/remo" "$ROOT/remo.next"
+    mv "$ROOT/remo.next" "$ROOT/remo"
+    trap - ERR
+    echo "Active release: $REMO_RELEASE"
+    ;;
+  rollback)
+    [[ ${2:-} == --schema-compatible ]] || {
+      echo 'Check schema compatibility first. Usage: remo rollback --schema-compatible' >&2; exit 1;
+    }
+    current
+    backup
+    use_release "$(cat "$ROOT/previous")"
+    # Reuse existing images; never rebuild an old release or restore data implicitly.
+    compose up -d --no-build --pull never --wait --wait-timeout 180 sync web
+    smoke
+    printf '%s\n' "$REMO_RELEASE" > "$ROOT/current"
+    ;;
+  backup) current; backup ;;
+  status) current; compose ps ;;
+  logs) current; compose logs --tail=100 sync web ;;
+  *) echo 'Usage: remo {deploy COMMIT|rollback --schema-compatible|backup|status|logs}' >&2; exit 1 ;;
+esac

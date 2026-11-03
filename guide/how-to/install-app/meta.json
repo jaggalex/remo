@@ -1,0 +1,26 @@
+{
+  "id": "how-to/install-app",
+  "type": "how-to",
+  "status": "available",
+  "order": 40,
+  "title": {
+    "ru": "Установить приложение и выключить его",
+    "en": "Install an app and turn it off"
+  },
+  "summary": {
+    "ru": "Поставить приложение в организацию, открыть панель, проверить действие и убрать поверхность.",
+    "en": "Install an app in the organisation, open the panel, check the action and remove the surface."
+  },
+  "related": [
+    "capabilities/apps",
+    "concepts/extensions",
+    "reference/api",
+    "capabilities/events"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:c7b7b00ff8d9d22dae9b496f9927a0c4b3ef3db0ac88cd23a52ab354b6f8176d"
+    }
+  }
+}

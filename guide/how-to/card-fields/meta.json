@@ -1,0 +1,25 @@
+{
+  "id": "how-to/card-fields",
+  "type": "how-to",
+  "status": "available",
+  "order": 6,
+  "title": {
+    "ru": "Заполнить поля карточки",
+    "en": "Fill in card fields"
+  },
+  "summary": {
+    "ru": "Статус, исполнитель и диапазон дат: что хранит карточка и как это изменить.",
+    "en": "Status, assignee and a date range: what a card stores and how to change it."
+  },
+  "related": [
+    "how-to/build-board",
+    "capabilities/frames-kanban",
+    "capabilities/access"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:bf804de6188b07e71b15552ea041d7498f4072762f32573c129a8bf6a7577f5b"
+    }
+  }
+}

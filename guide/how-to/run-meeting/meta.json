@@ -1,0 +1,26 @@
+{
+  "id": "how-to/run-meeting",
+  "type": "how-to",
+  "status": "available",
+  "order": 35,
+  "title": {
+    "ru": "Провести встречу: таймер, голосование, сбор людей",
+    "en": "Run a meeting: timer, voting, gathering people"
+  },
+  "summary": {
+    "ru": "Таймбокс обсуждения, голосование по вариантам и приглашение всей команды на участок доски.",
+    "en": "A discussion timebox, voting on options and an invitation for the whole team to one part of the board."
+  },
+  "related": [
+    "capabilities/facilitation",
+    "capabilities/collaboration",
+    "reference/roles",
+    "concepts/presence"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:7e156ae7635cdf36f1531e9cf78fbe7a3395907ddbe5fa76c6916f55d304293a"
+    }
+  }
+}

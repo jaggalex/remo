@@ -1,0 +1,665 @@
+/* The line above the board: one counter, one clock, one way into the panel.
+   It is centred in the space the zoom controls leave, not in the whole canvas: the plate
+   and the HUD then never touch, whatever the inspector does to the canvas width
+   (§10.4, Н3). Content starts at the left edge so even a long name cannot grow over the
+   zoom controls. */
+.vote-board-bar {
+  position: absolute;
+  /* Same slot rule as the hint: centred between the zoom controls and the right edge.
+     The design system caps a button label at 240 px; this line is one sentence and needs
+     the room, so the cap is replaced by the free zone itself. */
+  left: var(--hud-reserve);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  width: fit-content;
+  max-width: none;
+  margin-inline: auto;
+  z-index: var(--z-bar);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  height: auto;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.vote-board-bar .rm-btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: visible;
+}
+
+.vote-board-bar strong {
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+
+.vote-board-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.vote-board-bar.ended .vote-board-dot {
+  background: var(--text-muted);
+}
+
+.vote-board-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vote-board-lead {
+  color: var(--text-muted);
+}
+
+.vote-board-go {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: var(--space-1);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--border-subtle);
+  color: var(--text-accent);
+  font: var(--type-label);
+}
+
+/* Narrower boards: the mode words go first, then the leader's name — the panel still
+   states both. The line keeps what it is for: that voting runs, the clock and the way in. */
+@media (max-width: 1280px) {
+  .vote-board-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .vote-board-lead {
+    display: none;
+  }
+}
+
+/* The counter on the object: five states, one shape, and the camera does not move.
+   The position comes from `vote/chipPlacement.ts` (bottom-right inside the object), so
+   nothing here may re-centre it with a transform (ADR-119.3). */
+.vote-chip {
+  position: absolute;
+  z-index: var(--z-canvas-overlay);
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-default);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-bar);
+  white-space: nowrap;
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+
+/* My own vote: the plate says "ваш" in words, so the number is never read as personal. */
+.vote-chip.mine {
+  background: var(--accent-soft);
+  color: var(--text-accent);
+}
+
+/* `limit` (my budget is spent) and `none`/`others` carry no colour of their own: the
+   mockup keeps the number primary and marks the state with the disabled "+" and its
+   reason, never with a colour that needs a legend. The classes stay as state hooks. */
+
+/* Ended: the count stays on the object until the results are published. */
+.vote-chip.ended {
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+}
+
+.vote-chip-count {
+  min-width: var(--space-4);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.vote-chip-caption {
+  font: var(--type-caption);
+  color: inherit;
+}
+
+.vote-chip .vote-chip-button {
+  width: var(--control-compact);
+  height: var(--control-compact);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.vote-chip .vote-chip-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.vote-chip .vote-chip-button:disabled {
+  color: var(--text-muted);
+}
+
+/* Touch: the target grows to 44 px and the chip with it (макет Vote-Board), while the
+   pill keeps its compact shape — it is still one line by content, not a panel. */
+@media (pointer: coarse) {
+  .vote-chip {
+    height: var(--space-11);
+  }
+
+  .vote-chip .vote-chip-button {
+    width: var(--space-11);
+    height: var(--space-11);
+  }
+}
+
+.vote-timer-note {
+  margin: 0;
+}
+
+/* Follow: avatars, pill, invitation and the followers dialog (ADR-076). */
+button.peer {
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.peer:disabled {
+  cursor: default;
+}
+
+.peer.following {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.follow-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+.follow-pill {
+  position: fixed;
+  top: calc(var(--topbar-height) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-bar);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.follow-pill.paused {
+  border-color: var(--state-warning);
+}
+
+.follow-invite {
+  position: fixed;
+  top: calc(var(--topbar-height) + 60px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-bar);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.follow-invite-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.follow-dialog {
+  width: min(420px, 100%);
+}
+
+.follow-count {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.follow-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.follow-names li {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.follow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.follow-auto {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.follow-auto .muted {
+  font-size: 11.5px;
+}
+
+.comments-panel {
+  position: fixed;
+  top: 76px;
+  right: 12px;
+  bottom: 12px;
+  z-index: var(--z-bar);
+  width: min(380px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+}
+
+.comments-panel header,
+.comments-actions,
+.comments-thread-head,
+.comment-meta,
+.comment-reply {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comments-panel header,
+.comments-thread-head {
+  justify-content: space-between;
+}
+
+.comments-actions {
+  flex-wrap: wrap;
+}
+
+.comments-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.comments-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comments-list button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.comments-list button:hover,
+.comments-list button.active {
+  background: var(--bg-hover);
+  border-color: var(--line);
+}
+
+.comments-thread {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-message {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 7px 8px;
+  background: var(--bg-app);
+}
+
+.comment-meta {
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.comment-message p {
+  margin: 5px 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.comment-reply textarea {
+  flex: 1;
+  min-height: 44px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  background: var(--bg-app);
+}
+
+.comments-panel button:not(.comments-list button),
+.comments-thread button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 8px;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.reactions-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-canvas-overlay);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.reaction-burst {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 42px;
+  animation: reaction-rise 1.6s ease-out forwards;
+}
+
+@keyframes reaction-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -160%) scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reaction-burst {
+    animation: none;
+  }
+}
+
+.comment-pins {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-canvas-overlay);
+  pointer-events: none;
+}
+
+.comment-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  pointer-events: auto;
+  border: 1px solid var(--accent);
+  border-radius: 999px 999px 999px 4px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-bar);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.comment-pin:hover,
+.comment-pin.active {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+.comment-pin.unread {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.comment-pin-count {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.comments-offline {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.card-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.export-comments {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .topbar-mark img {
+  filter: none;
+}
+
+[data-theme="dark"] .help-brand img {
+  filter: brightness(0) invert(1);
+}
+
+.theme-toggle-button {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theme-toggle-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.agent-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.org-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.org-create {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.org-create input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.org-teams {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.org-team-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.org-team-list li {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 12px;
+}
+
+.comment-placement {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-canvas-overlay);
+  cursor: crosshair;
+}
+
+.comment-placement-hint {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-bar);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.comment-placement-target {
+  position: absolute;
+  transform: translate(12px, 12px);
+  padding: 3px 7px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.comment-placement-cross {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.comment-composer {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.comment-composer textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+}

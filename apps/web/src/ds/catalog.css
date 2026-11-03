@@ -1,0 +1,49 @@
+/* Layout of the /__ds catalogue only. Tokens only — no literal colours. */
+html, body, #root { height: auto; min-height: 100%; }
+body { margin: 0; background: var(--bg-app); color: var(--text-primary); font: var(--type-body); }
+.ds-catalog { min-height: 100vh; }
+.ds-bar { position: sticky; top: 0; z-index: var(--z-bar); display: flex; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-6); background: var(--bg-panel); border-bottom: 1px solid var(--border-subtle); }
+.ds-title { margin: 0; font: var(--type-title); }
+.ds-switches, .ds-screens { display: flex; gap: var(--space-2); align-items: center; }
+.ds-screens { margin-left: auto; gap: var(--space-4); }
+.ds-main { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-8); max-width: 1440px; }
+.ds-section { display: flex; flex-direction: column; gap: var(--space-4); }
+.ds-section-title { margin: 0; font: var(--type-subtitle); color: var(--text-secondary); }
+.ds-wrap { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); align-items: center; }
+.ds-top { align-items: flex-start; }
+.ds-roomy { gap: var(--space-10) var(--space-8); padding-top: var(--space-8); }
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4); }
+.ds-stack { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }
+.ds-row { display: flex; gap: var(--space-2); align-items: flex-end; }
+.ds-grow { flex: 1; }
+.ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.ds-label { font: var(--type-label); }
+.ds-note, .ds-na { font: var(--type-caption); color: var(--text-secondary); }
+.ds-na { color: var(--text-muted); }
+.ds-icon { display: inline-flex; align-items: center; gap: var(--space-2); width: 150px; color: var(--text-primary); }
+.ds-icon code { font: var(--type-caption); color: var(--text-secondary); }
+.ds-matrix-wrap { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-panel); }
+.ds-matrix { border-collapse: collapse; }
+.ds-matrix th, .ds-matrix td { padding: var(--space-3); border-bottom: 1px solid var(--border-subtle); text-align: left; vertical-align: middle; }
+.ds-matrix thead th { font: var(--type-caption); color: var(--text-secondary); white-space: nowrap; }
+.ds-matrix tbody th { font: var(--type-label); white-space: nowrap; }
+.ds-matrix td { min-width: 104px; }
+.ds-declared td { min-width: 0; white-space: normal; }
+.ds-declared { width: 100%; }
+.ds-matrix .rm-field { width: 136px; }
+.ds-canvas-demo { background: var(--bg-canvas); background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: var(--grid-step) var(--grid-step); border-radius: var(--radius-md); padding: var(--space-8); }
+.ds-canvas-demo figure { margin: 0; }
+.ds-canvas-demo figcaption { font: var(--type-caption); color: var(--text-secondary); }
+.ds-follow-demo { width: 320px; height: 160px; }
+
+/* Baseline screens: 1280 × 720 */
+.ds-screen { width: 1280px; height: 720px; display: flex; flex-direction: column; background: var(--bg-app); overflow: hidden; }
+.ds-screen-main { position: relative; flex: 1; display: flex; min-height: 0; }
+.ds-canvas { position: relative; flex: 1; overflow: hidden; background: var(--bg-canvas); background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: var(--grid-step) var(--grid-step); }
+.ds-abs { position: absolute; }
+.ds-scrim { position: absolute; inset: 0; background: var(--bg-overlay); display: flex; align-items: center; justify-content: center; gap: var(--space-6); }
+.ds-scrim .rm-dialog { max-height: 640px; }
+
+/* Dev-only connector performance harness. */
+.ds-perf { padding: var(--space-4); }
+.ds-perf-canvas { display: block; width: 760px; height: 620px; background: var(--bg-canvas); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }

@@ -1,0 +1,26 @@
+{
+  "id": "concepts/connectors",
+  "type": "explanation",
+  "status": "available",
+  "order": 15,
+  "title": {
+    "ru": "Связи: якоря, маршрут и перепривязка",
+    "en": "Connectors: anchors, routing and reattachment"
+  },
+  "summary": {
+    "ru": "Почему связь помнит объекты, а не координаты, и что происходит при перемещении концов.",
+    "en": "Why a connector remembers objects rather than coordinates, and what happens when an end moves."
+  },
+  "related": [
+    "capabilities/connectors",
+    "concepts/board",
+    "capabilities/canvas",
+    "reference/api"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:982c8f5ebcb383f218348aecc65b1515684267bbdffd5bc0f7a8702e914402e9"
+    }
+  }
+}

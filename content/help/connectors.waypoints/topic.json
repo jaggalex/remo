@@ -1,0 +1,24 @@
+{
+  "id": "connectors.waypoints",
+  "type": "how-to",
+  "title": {
+    "ru": "Добавить точку и изменить маршрут связи",
+    "en": "Add a point and change a connector's route"
+  },
+  "summary": {
+    "ru": "Поставьте жёсткую точку, согните линию, переключите прямую, угол и дугу.",
+    "en": "Place a rigid point, bend the line, switch between straight, elbow and curved."
+  },
+  "related": [
+    "connectors.create",
+    "connectors.keyboard"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:7530ea6ec44159eca619fe6f910cccf7b853a68769bd059a636a032510149434"
+    }
+  }
+}

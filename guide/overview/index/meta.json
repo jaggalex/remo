@@ -1,0 +1,26 @@
+{
+  "id": "overview/index",
+  "type": "overview",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Что такое remo",
+    "en": "What remo is"
+  },
+  "summary": {
+    "ru": "Локально-первый холст для небольшой команды: доски, объекты, доступ, экспорт и интеграции — в одном продукте.",
+    "en": "A local-first canvas for a small team: boards, objects, access, export and integrations in one product."
+  },
+  "related": [
+    "overview/map",
+    "start/quickstart",
+    "concepts/board",
+    "concepts/access"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:b79f9356b97c4391d84d2d7cf317d5817449448ee7c497d0ee8fcf76f8a4042d"
+    }
+  }
+}

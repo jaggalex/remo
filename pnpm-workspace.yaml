@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Which dependencies may run lifecycle scripts at install time (ADR-133).
+#
+# `allowBuilds` is pnpm 11's map form and replaces `onlyBuiltDependencies`: anything not
+# listed is disallowed and reported as an unreviewed build. The previous file also carried
+# `dangerouslyAllowAllBuilds: true`, which bypassed the map entirely, and an `allowBuilds`
+# entry that still contained pnpm's placeholder text — so the allow-list described nothing.
+allowBuilds:
+  esbuild: true
+  leveldown: false

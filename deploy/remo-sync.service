@@ -1,0 +1,32 @@
+[Unit]
+Description=remo sync and API
+Documentation=file:///srv/remo/docs/self-hosting.md
+After=network-online.target docker.service postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=remo
+Group=remo
+WorkingDirectory=/srv/remo
+EnvironmentFile=/srv/remo/.env
+Environment=NODE_ENV=production
+Environment=REMO_DATA_DIR=/var/lib/remo
+ExecStart=/usr/bin/node apps/sync/server.mjs
+
+Restart=on-failure
+RestartSec=2
+# The service flushes rooms on SIGTERM and exits within three seconds.
+TimeoutStopSec=15
+
+# The process reads code and writes nothing except its state directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=remo
+ReadWritePaths=/var/lib/remo
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

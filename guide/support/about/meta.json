@@ -1,0 +1,24 @@
+{
+  "id": "support/about",
+  "type": "reference",
+  "status": "available",
+  "order": 95,
+  "title": {
+    "ru": "О remo: версия и лицензия",
+    "en": "About remo: version and licence"
+  },
+  "summary": {
+    "ru": "Версия, автор, лицензия AGPL-3.0-only и исходный код.",
+    "en": "Version, author, AGPL-3.0-only licence and source code."
+  },
+  "related": [
+    "support/changelog",
+    "overview/index"
+  ],
+  "updated": "2026-10-29",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:08e8d5f03a8ec2c04db8f5790dd73c397dee1ffb7f17f63fdd35437f241af002"
+    }
+  }
+}

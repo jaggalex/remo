@@ -1,0 +1,26 @@
+{
+  "id": "support/migrations",
+  "type": "how-to",
+  "status": "available",
+  "order": 40,
+  "title": {
+    "ru": "Обновление и миграции",
+    "en": "Upgrades and migrations"
+  },
+  "summary": {
+    "ru": "Как обновляться без потери данных: бэкап, схема, переименования и проверка после старта.",
+    "en": "How to upgrade without losing data: backup, schema, renames and a check after start."
+  },
+  "related": [
+    "admin/backup-restore",
+    "support/changelog",
+    "admin/deploy",
+    "support/troubleshooting"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:614b8a4dd9fe7e910f079c99b41b4f0a609287842fd49d19c7e72179fa90d3c4"
+    }
+  }
+}

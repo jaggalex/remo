@@ -1,0 +1,28 @@
+/*
+ * The product stylesheet: one entry, many files (ADR-134).
+ *
+ * One reason to change per file, so the 800-line ratchet applies to CSS the same way it
+ * applies to TypeScript. The order below is the cascade — a later file wins at equal
+ * specificity, exactly as the single file did. Never reorder these imports.
+ */
+
+@import "./styles/base.css";
+@import "./styles/topbar.css";
+@import "./styles/workspace.css";
+@import "./styles/inspector.css";
+@import "./styles/menus.css";
+@import "./styles/boards-panel.css";
+@import "./styles/responsive.css";
+@import "./styles/object-bars.css";
+@import "./styles/colour-window.css";
+@import "./styles/connector-bar.css";
+@import "./styles/settings.css";
+@import "./styles/info-card.css";
+@import "./styles/accounts.css";
+@import "./styles/share.css";
+@import "./styles/organisation.css";
+@import "./styles/agents.css";
+@import "./styles/provider-keys.css";
+@import "./styles/journal.css";
+@import "./styles/voting.css";
+@import "./styles/vote-chips.css";

@@ -1,0 +1,24 @@
+{
+  "id": "board.colours",
+  "type": "reference",
+  "title": {
+    "ru": "Палитра",
+    "en": "Palette"
+  },
+  "summary": {
+    "ru": "Одна палитра на рельс и панель объекта: семь тонов, белый, чёрный и прозрачный, клавиши 1–7.",
+    "en": "One palette for the rail and the object bar: seven tones, white, black and transparent, keys 1–7."
+  },
+  "related": [
+    "connectors.create",
+    "cards.fields"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:9e835f78f25527ef62018223f6bb7b31886e1fedad9987fac37727874be112b7"
+    }
+  }
+}

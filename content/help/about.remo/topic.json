@@ -1,0 +1,24 @@
+{
+  "id": "about.remo",
+  "type": "reference",
+  "title": {
+    "ru": "О remo: версия и лицензия",
+    "en": "About remo: version and licence"
+  },
+  "summary": {
+    "ru": "Версия 0.1.0, автор, лицензия AGPL-3.0-only и ссылка на исходный код.",
+    "en": "Version 0.1.0, author, AGPL-3.0-only licence and the source link."
+  },
+  "related": [
+    "boards.create",
+    "export.backup"
+  ],
+  "verifiedAgainst": "2026-10-29",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:3eed3295898b3cd1fead4664ed214c0b30825e0dde8b637ba71524e9a778e0b2"
+    }
+  }
+}

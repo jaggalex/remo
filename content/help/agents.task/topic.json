@@ -1,0 +1,25 @@
+{
+  "id": "agents.task",
+  "type": "how-to",
+  "title": {
+    "ru": "Попросить агента изменить доску",
+    "en": "Ask an agent to change the board"
+  },
+  "summary": {
+    "ru": "Четыре сценария — план с превью, диаграмма сразу на доске, карточки пакетом и упорядочивание колонками; что уходит в модель и что делать без ключа.",
+    "en": "Four scenarios — a plan with a preview, a diagram straight onto the board, cards as a package and tidying into columns; what goes to the model and what happens without a key."
+  },
+  "related": [
+    "agents.budget",
+    "agents.journal",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:788a13d46f57c89999a71c7dca1bef6dfab2d703da3710f17201e80447b31c87"
+    }
+  }
+}

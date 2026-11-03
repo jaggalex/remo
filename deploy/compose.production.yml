@@ -1,0 +1,69 @@
+name: remo
+services:
+  db-tools:
+    image: postgres:16-alpine
+    profiles: [tools]
+    environment:
+      PGHOST: ${REMO_DB_HOST:-shared-postgres}
+      PGPORT: "5432"
+      PGUSER: remo
+      PGDATABASE: remo
+      PGPASSWORD: ${REMO_DB_PASSWORD:?Set REMO_DB_PASSWORD}
+    networks: [database]
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+  sync:
+    image: remo-sync:${REMO_RELEASE:?Set REMO_RELEASE}
+    build: {context: .., dockerfile: deploy/Dockerfile, target: sync}
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    env_file: ${REMO_PRODUCTION_ENV:?Set REMO_PRODUCTION_ENV}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
+      PORT: "1234"
+      REMO_DATA_DIR: /var/lib/remo
+      REMO_AI_ANCHOR_DIR: /var/lib/remo/ai-anchors
+    volumes: [state:/var/lib/remo]
+    networks: [backend, database]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:1234/health').then(async r=>{if(!r.ok || !(await r.json()).ok) process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+      start_period: 15s
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    logging: *logging
+
+  web:
+    image: remo-web:${REMO_RELEASE:?Set REMO_RELEASE}
+    build: {context: .., dockerfile: deploy/Dockerfile, target: web}
+    restart: unless-stopped
+    networks:
+      backend:
+      edge:
+        aliases: [remo-web]
+    depends_on:
+      sync: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+networks:
+  backend:
+  edge:
+    external: true
+    name: ${REMO_EDGE_NETWORK:?Set REMO_EDGE_NETWORK}
+  database:
+    external: true
+    name: ${REMO_DB_NETWORK:?Set REMO_DB_NETWORK}
+volumes:
+  state:

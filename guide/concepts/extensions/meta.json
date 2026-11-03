@@ -1,0 +1,27 @@
+{
+  "id": "concepts/extensions",
+  "type": "explanation",
+  "status": "available",
+  "order": 40,
+  "title": {
+    "ru": "Расширения: события, токены, приложения",
+    "en": "Extensions: events, tokens, apps"
+  },
+  "summary": {
+    "ru": "Как продукт расширяется без чужого кода: что такое событие, зачем токен и что рисует приложение.",
+    "en": "How the product extends without foreign code: what an event is, what a token is for and what an app draws."
+  },
+  "related": [
+    "capabilities/events",
+    "capabilities/tokens",
+    "capabilities/apps",
+    "concepts/glossary",
+    "reference/events"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e4737cced254ce43ef3eb7d12a09361d537d5020faff3a4bb3823f69c1040d7a"
+    }
+  }
+}

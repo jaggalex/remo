@@ -1,0 +1,24 @@
+{
+  "id": "sync.status",
+  "type": "reference",
+  "title": {
+    "ru": "Статус сохранения и офлайн",
+    "en": "Save status and offline"
+  },
+  "summary": {
+    "ru": "Сохранено, сохраняется или офлайн: что означает индикатор в топбаре и что происходит с правками без связи.",
+    "en": "Saved, saving or offline: what the topbar indicator means and what happens to edits without a connection."
+  },
+  "related": [
+    "connectors.create",
+    "connectors.waypoints"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:ccb023eb58f262d424d13ad4d7f9cd8f4e6e3d4a93f9a8347b621392a764427f"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+/* --------------------------------------------------------------- responsive */
+
+/*
+ * Below the 1440 target the header keeps every control and gives up air instead of
+ * labels: a smaller gap, then the compact control height, then the path.
+ */
+@media (max-width: 1400px) {
+  .topbar-right {
+    gap: var(--space-1);
+  }
+  .topbar-path {
+    max-width: 160px;
+  }
+}
+
+@media (max-width: 1160px) {
+  .topbar .rm-btn {
+    --control-h: var(--control-compact);
+  }
+  .topbar-right {
+    gap: 2px;
+  }
+}
+
+@media (max-width: 1080px) {
+  /* The path is the first thing to give way when the header runs out of room. */
+  .topbar-path {
+    display: none;
+  }
+  .history,
+  .divider {
+    display: none;
+  }
+  .board-title,
+  .board-title-button {
+    max-width: 170px;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --inspector-width: 0px;
+  }
+  .inspector {
+    display: none;
+  }
+  /* The inspector is gone, so the board is wider: the hint keeps clear of the zoom bar
+     with the same reserve rather than a second rule. */
+}

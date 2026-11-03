@@ -1,0 +1,333 @@
+/* ------------------------------------------------------- colour window --- */
+
+.cw {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: min(52vh, 470px);
+  overflow-y: auto;
+  /* The vertical scrollbar must not eat the grid width: without this the fixed
+     7 × 34 columns overflow sideways and clip the named column (T1 review). */
+  overflow-x: hidden;
+}
+
+/* A narrow window (small screen, zoomed UI) shrinks the squares instead of scrolling. */
+.cw-body,
+.cw-grid-stack,
+.cw-section {
+  min-width: 0;
+}
+
+.cw-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cw-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-height: 18px;
+}
+
+.cw-label {
+  font: var(--type-label);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.cw-value {
+  margin-left: auto;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The named values are a column to the left of the grid, never a row of pills: a word
+   beside a swatch would be wider than the column and would truncate (ADR-140). */
+.cw-body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.cw-extras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: 2px;
+  flex: none;
+}
+
+.cw-grid-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.cw-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 34px);
+  gap: var(--space-1);
+  padding: 2px;
+}
+
+.cw-grid .rm-tooltip-wrap,
+.cw-extras .rm-tooltip-wrap {
+  display: grid;
+  place-items: center;
+}
+
+/* One square for a grid entry and a named value: same side, radius and hairline. */
+.cw-swatch {
+  appearance: none;
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  cursor: pointer;
+  position: relative;
+  flex: none;
+}
+
+/* The base rule only cleared the UA background; the pattern still comes from
+   `.checkerboard` in base.css, so one token pair owns it for every surface. */
+.cw-swatch.checkerboard {
+  background-color: var(--bg-panel);
+}
+
+.cw-swatch:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.cw-swatch.is-auto {
+  background-color: var(--bg-panel);
+  background-image: linear-gradient(135deg, var(--bg-panel) 50%, var(--text-primary) 50%);
+}
+
+/* "None" is the absence of a border or a line: the checkerboard is crossed out. */
+.cw-swatch.is-none::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    to top right,
+    transparent 46%,
+    var(--border-strong) 46%,
+    var(--border-strong) 54%,
+    transparent 54%
+  );
+}
+
+.cw-swatch.is-selected,
+.cw-swatch[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cw-keys {
+  display: grid;
+  grid-template-columns: repeat(7, 34px);
+  gap: var(--space-1);
+  padding: 0 2px;
+}
+
+.cw-keys span {
+  font: var(--type-caption);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.cw-rule {
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.cw-hint {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.cw-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.cw-row .rm-segmented {
+  flex: 1;
+  min-width: 0;
+}
+
+.cw-row .rm-segment {
+  flex: 1;
+  justify-content: center;
+  padding: 0 var(--space-1);
+}
+
+.cw-ink-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  flex: none;
+}
+
+.cw-ink-chip.is-auto {
+  background: linear-gradient(135deg, var(--bg-panel) 50%, var(--text-primary) 50%);
+}
+
+.cw-presets {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.cw-presets .rm-btn {
+  height: auto;
+  padding: 0;
+  min-width: 0;
+}
+
+.cw-preset {
+  border-radius: var(--radius-sm);
+}
+
+.cw-preset.is-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.cw-aa-chip {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  border-style: solid;
+  border-radius: var(--radius-sm);
+  font: 600 12px/1 var(--font-sans);
+}
+
+.sb-auto {
+  min-width: 28px;
+  padding: 0 6px;
+  height: 26px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sb-size {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sb-font {
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.sb-mark {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 13px;
+}
+
+.sb-mark.sb-bold {
+  font-weight: 700;
+}
+.sb-mark.sb-italic {
+  font-style: italic;
+}
+.sb-mark.sb-underline {
+  text-decoration: underline;
+}
+.sb-mark.sb-strike {
+  text-decoration: line-through;
+}
+
+.sb-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.sb-align-glyph {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* The nine cells are a diagram: three rows of three, the current one highlighted. */
+.sb-align-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sb-align-row {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.sticky-bar .sb-align-cell {
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.sb-align-cell span {
+  width: 12px;
+  height: 2px;
+  background: var(--border-strong);
+}
+
+.sticky-bar .sb-align-cell.is-selected span {
+  background: var(--accent);
+  box-shadow: 0 -3px 0 var(--accent);
+}
+
+/* Four directions to the note that will be created, one undo step (ADR-027). */
+.sb-links {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.sticky-bar .sb-links .rm-btn {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  font-size: 15px;
+}
+
+/* "More" is the end of the bar: delete lives inside, after a separator (ADR-120). */
+.sb-more {
+  position: relative;
+  display: inline-flex;
+}
+
+.sb-more .rm-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: var(--z-popover);
+}

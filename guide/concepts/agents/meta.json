@@ -1,0 +1,26 @@
+{
+  "id": "concepts/agents",
+  "type": "explanation",
+  "status": "available",
+  "order": 55,
+  "title": {
+    "ru": "Агенты: принципал, полномочия, бюджет",
+    "en": "Agents: principal, authority, budget"
+  },
+  "summary": {
+    "ru": "От чьего имени действует агент, что он может и почему задача без бюджета не создаётся.",
+    "en": "On whose behalf an agent acts, what it may do, and why a task without a budget is not created."
+  },
+  "related": [
+    "capabilities/agents",
+    "concepts/access",
+    "concepts/extensions",
+    "reference/api"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:d211fdb9837c639af295f11524719d649aeb69a5fc109fa339d77db9f324cb3f"
+    }
+  }
+}

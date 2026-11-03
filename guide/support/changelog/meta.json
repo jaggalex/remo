@@ -1,0 +1,26 @@
+{
+  "id": "support/changelog",
+  "type": "reference",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "История изменений",
+    "en": "Changelog"
+  },
+  "summary": {
+    "ru": "Версии схемы и что появилось в каждой: от событий до планов агента и палитры.",
+    "en": "Schema versions and what each introduced: from events to agent plans and the palette."
+  },
+  "related": [
+    "support/migrations",
+    "reference/events",
+    "capabilities/apps",
+    "admin/deploy"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:be4dcf6014c80cad775a59911c147e9823909d577537afc223a615f84f020e40"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "comments.thread",
+  "type": "how-to",
+  "title": {
+    "ru": "Обсудить объект в комментариях",
+    "en": "Discuss an object in comments"
+  },
+  "summary": {
+    "ru": "Тред у объекта или точки: ответы, решение и повторное открытие.",
+    "en": "A thread on an object or point: replies, resolve and reopen."
+  },
+  "related": [
+    "tags.links",
+    "presentation.mode"
+  ],
+  "verifiedAgainst": "2026-10-28",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:bc4ec30b5595fc442694e3b07f4488ab1741ccb45e9c65f910576e4c170cbd8e"
+    }
+  }
+}

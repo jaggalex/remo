@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/facilitation",
+  "type": "explanation",
+  "status": "available",
+  "order": 65,
+  "title": {
+    "ru": "Фасилитация",
+    "en": "Facilitation"
+  },
+  "summary": {
+    "ru": "Вести встречу: общий таймер, голосование с квотой и приглашение всей команды.",
+    "en": "Run a meeting: a shared timer, voting with a quota, and an invitation to the whole team."
+  },
+  "related": [
+    "capabilities/collaboration",
+    "concepts/access",
+    "reference/roles",
+    "how-to/share"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:0a2df6a7755c2cccad06f173f97b9218162880aa53b8234feb0423566e09445b"
+    }
+  }
+}

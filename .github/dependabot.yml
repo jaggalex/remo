@@ -1,0 +1,42 @@
+version: 2
+
+# Dependency updates are a review queue, not a surprise (ADR-133).
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Patch and minor updates can travel together; a major toolchain upgrade is a
+      # migration with its own PR, not a line in a weekly bundle.
+      dev-tooling:
+        dependency-type: development
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # React 19 is a product decision (packages are pinned to 18), not an update.
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+      # These majors change the build or the transport; upgrade them deliberately.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vite
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vitest
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: y-websocket
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]

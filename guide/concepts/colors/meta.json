@@ -1,0 +1,25 @@
+{
+  "id": "concepts/colors",
+  "type": "explanation",
+  "status": "available",
+  "order": 12,
+  "title": {
+    "ru": "Палитра: тона, белый, чёрный, прозрачный",
+    "en": "Colour palette: tones, white, black, transparent"
+  },
+  "summary": {
+    "ru": "Семь тонов по три уровня, именованные цвета и «Свой цвет»: где менять цвет и что делают клавиши 1–7.",
+    "en": "Seven tones at three levels, named colours and Custom colour: where to change a colour and what keys 1–7 do."
+  },
+  "related": [
+    "concepts/board-chrome",
+    "capabilities/canvas",
+    "how-to/build-board"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:a40622d1783347246065be03f3bf7131b57a8643ca5a8768784654b007cc85cb"
+    }
+  }
+}

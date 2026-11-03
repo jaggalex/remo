@@ -1,0 +1,26 @@
+{
+  "id": "concepts/sync",
+  "type": "explanation",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "Сохранение, синхронизация, офлайн",
+    "en": "Saving, synchronisation, offline"
+  },
+  "summary": {
+    "ru": "Когда изменение становится видимым другим, что значит saved и что происходит при потере связи.",
+    "en": "When a change becomes visible to others, what saved means, and what happens when the connection drops."
+  },
+  "related": [
+    "capabilities/sync",
+    "reference/errors",
+    "start/quickstart",
+    "concepts/board"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e6a801368fd8bcf59d8e1a7c073633d54de7808c91f39c14a72872b9e8079e28"
+    }
+  }
+}

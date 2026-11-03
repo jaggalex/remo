@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/apps",
+  "type": "explanation",
+  "status": "available",
+  "order": 70,
+  "title": {
+    "ru": "Приложения",
+    "en": "Apps"
+  },
+  "summary": {
+    "ru": "Декларативная панель на доске: приложение описывает схему, продукт рисует её своими компонентами.",
+    "en": "A declarative panel on the board: an app describes a schema, the product draws it with its own components."
+  },
+  "related": [
+    "concepts/extensions",
+    "how-to/install-app",
+    "capabilities/events",
+    "concepts/glossary"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:d11419509c969310896a09b2c847f2a26dc2133122c450b3a149e5a59ebe9cef"
+    }
+  }
+}

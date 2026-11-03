@@ -1,0 +1,320 @@
+/* ------------------------------------------------------------------ inspector */
+
+/*
+ * The panel is a board overview, not part of the canvas: it can be folded away,
+ * and the canvas takes the space back. `--inspector-width` is what centres the
+ * empty-board hint and the floating bars, so it goes to zero with the panel.
+ */
+.app.no-inspector {
+  --inspector-width: 0px;
+}
+
+.app.no-inspector .inspector {
+  display: none;
+}
+
+.inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.inspector-close {
+  border: 0;
+  background: transparent;
+  border-radius: 7px;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.inspector-close:hover {
+  background: var(--bg-hover);
+  color: var(--ink);
+}
+
+.inspector-intro {
+  margin: 0 0 4px;
+}
+
+.inspector-tech {
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.inspector-tech summary {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.inspector-tech summary:hover {
+  color: var(--ink);
+}
+
+.layer-row {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.layer-row button {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--bg-panel);
+  border-radius: 8px;
+  padding: 5px 0;
+  font-size: 13px;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.layer-row button:hover {
+  background: var(--bg-hover);
+}
+
+.layer-row button.locked {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.inspector-danger-note {
+  margin: 16px 0 4px;
+}
+
+.inspector {
+  width: 264px;
+  margin: 12px 12px 12px 0;
+  padding: 16px 18px 36px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-bar);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.inspector h2 {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--faint);
+  margin: 0 0 8px;
+}
+
+.inspector h2 + p {
+  margin-top: 0;
+}
+
+.inspector h2:not(:first-child) {
+  margin-top: 26px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.history-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.history-row b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.danger-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: -2px 0 10px;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--faint);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.danger-link:hover {
+  color: var(--danger);
+}
+
+.counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.counts li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.counts li:last-child {
+  border-bottom: 0;
+}
+
+.counts b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scope {
+  margin-top: 26px;
+}
+
+.scope summary {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--faint);
+  cursor: pointer;
+  list-style: none;
+}
+
+.scope summary::-webkit-details-marker {
+  display: none;
+}
+
+.scope summary::before {
+  content: "▸ ";
+}
+
+.scope[open] summary::before {
+  content: "▾ ";
+}
+
+.checklist {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.checklist li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+.checklist li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--state-success);
+  font-weight: 700;
+}
+
+.checklist li.done {
+  color: var(--text-secondary);
+}
+
+.kanban-state {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 11px 12px;
+  margin-bottom: 8px;
+  background: var(--bg-app);
+  font-size: 12px;
+}
+
+.kanban-state-head {
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.chip {
+  background: var(--bg-hover);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.kanban-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.kanban-actions button,
+.selection-actions button {
+  border: 1px solid var(--line);
+  background: var(--bg-panel);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.kanban-actions button:hover,
+.selection-actions button:hover:not(:disabled) {
+  background: var(--bg-app);
+  border-color: var(--line-strong);
+}
+
+.selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selection-actions button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 100ms ease;
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+  outline: 2px solid var(--accent-soft);
+}

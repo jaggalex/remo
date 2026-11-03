@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180" width="640" height="180" role="img" aria-label="Connector reattaches when an object moves">
+  <rect class="plate" x="0" y="0" width="640" height="180" rx="10" fill="#fbfbf9"/>
+  <rect x="1" y="1" width="638" height="178" rx="10" fill="none" stroke="#8a8a8a" stroke-opacity="0.35"/>
+  <g fill="none" stroke="#7d7d7d" stroke-width="2">
+    <rect x="60" y="50" width="120" height="70" rx="8"/>
+    <rect x="440" y="50" width="120" height="70" rx="8"/>
+    <path d="M180 85 H 300 V 60 H 440" stroke-dasharray="6 5"/>
+    <path d="M180 85 H 440"/>
+  </g>
+  <g fill="#7d7d7d" font-family="system-ui, sans-serif" font-size="14">
+    <text x="100" y="90">A</text>
+    <text x="485" y="90">B</text>
+    <text x="300" y="45" text-anchor="middle">was</text>
+    <text x="300" y="112" text-anchor="middle">now</text>
+  </g>
+  <circle cx="300" cy="85" r="5" fill="#7d7d7d"/>
+  <text x="320" y="150" fill="#7d7d7d" font-family="system-ui, sans-serif" font-size="13">waypoint keeps its position; the line reroutes around it</text>
+</svg>

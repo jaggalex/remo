@@ -1,0 +1,25 @@
+{
+  "id": "how-to/present",
+  "type": "how-to",
+  "status": "available",
+  "order": 8,
+  "title": {
+    "ru": "Провести презентацию по фреймам",
+    "en": "Present the board by frames"
+  },
+  "summary": {
+    "ru": "Порядок фреймов, ведущий и ведомые, возврат к ведущему и завершение.",
+    "en": "Frame order, presenter and followers, return to the presenter and stop."
+  },
+  "related": [
+    "how-to/run-meeting",
+    "how-to/build-board",
+    "capabilities/facilitation"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:dddb821ed49aca9b09266a0f8a37100667e83c99a7f3955ee9d4d65734110622"
+    }
+  }
+}

@@ -1,0 +1,187 @@
+import { Avatar, Input, Popover, Segmented } from "@remo/ui";
+import type { Presence } from "@remo/doc";
+import { useI18n, type Lang } from "../i18n";
+import { ABOUT } from "../about";
+import type { Theme } from "../useTheme";
+import { useMenuFocus } from "../useMenuFocus";
+
+/**
+ * The account avatar and the interface menu behind it (ADR-119, Ш3/Ш5).
+ *
+ * The name appears once — on the avatar, with the full name in its tooltip — and the
+ * menu answers "who am I here and how is my interface set up": role source, the name on
+ * the cursor, theme, language, the organisation and the way out. A link visitor has no
+ * account, so the same menu keeps theme and language and offers a sign-in instead.
+ */
+export function AccountMenu({
+  open,
+  onOpen,
+  name,
+  self,
+  color,
+  signedIn,
+  roleLine,
+  identityName,
+  onRenameSelf,
+  theme,
+  onTheme,
+  lang,
+  onLang,
+  orgName,
+  onOrg,
+  onSessions,
+  onSignIn,
+  onSignOut,
+}: {
+  open: boolean;
+  onOpen: (value: boolean) => void;
+  /** The display name for the tooltip and the face. */
+  name: string;
+  /** This person in the presence list, when the room shows people at all. */
+  self: Presence | undefined;
+  /** The cursor colour: the face and the pointer of one person must match. */
+  color: string;
+  signedIn: boolean;
+  roleLine: string | null;
+  identityName: string;
+  onRenameSelf: (value: string) => void;
+  theme: Theme;
+  onTheme: (value: Theme) => void;
+  lang: Lang;
+  onLang: (value: Lang) => void;
+  orgName: string | null;
+  onOrg: () => void;
+  onSessions: () => void;
+  onSignIn: () => void;
+  onSignOut: () => void;
+}) {
+  const { t } = useI18n();
+  const anchor = useMenuFocus(open, true, ".rm-popover input");
+
+  return (
+    <span className="topbar-anchor topbar-account" ref={anchor}>
+      <button
+        type="button"
+        className={signedIn ? "account-button peer self" : "account-button"}
+        aria-label={signedIn ? `${t("account.menu")}: ${name}` : t("account.menu")}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        title={signedIn ? t("board.peerYou", { name }) : identityName}
+        onClick={() => onOpen(!open)}
+      >
+        <Avatar
+          name={signedIn ? name : identityName}
+          background={self?.color ?? color}
+          ring={signedIn}
+        />
+      </button>
+      {open && (
+        <Popover label={t("account.menu")} width={304} onClose={() => onOpen(false)}>
+          {signedIn ? (
+            <div className="account-who">
+              <strong>{name}</strong>
+              {roleLine && <span className="account-role">{roleLine}</span>}
+            </div>
+          ) : (
+            <p className="account-role">{t("auth.loginHint")}</p>
+          )}
+
+          {/* A signed-in cursor is named by the account; only a guest names this browser. */}
+          {!signedIn && (
+            <Input
+              label={t("account.cursorName")}
+              value={identityName}
+              maxLength={80}
+              onChange={(event) => onRenameSelf(event.currentTarget.value)}
+            />
+          )}
+
+          <div className="account-field">
+            <span className="account-field-label">{t("theme.label")}</span>
+            <Segmented
+              label={t("theme.label")}
+              value={theme}
+              onChange={(value) => onTheme(value as Theme)}
+              options={[
+                { value: "system", label: t("theme.system") },
+                { value: "light", label: t("theme.light") },
+                { value: "dark", label: t("theme.dark") },
+              ]}
+            />
+          </div>
+
+          <div className="account-field">
+            <span className="account-field-label">{t("board.language")}</span>
+            <Segmented
+              label={t("board.language")}
+              value={lang}
+              onChange={(value) => onLang(value as Lang)}
+              options={[
+                { value: "ru", label: t("lang.ru") },
+                { value: "en", label: t("lang.en") },
+              ]}
+            />
+          </div>
+
+          <span className="account-sep" role="separator" />
+          {signedIn ? (
+            <>
+              <button
+                type="button"
+                className="rm-menu-item account-item"
+                onClick={() => {
+                  onOpen(false);
+                  onSessions();
+                }}
+              >
+                {t("account.sessions")}
+              </button>
+              <button
+                type="button"
+                className="rm-menu-item account-item"
+                onClick={() => {
+                  onOpen(false);
+                  onOrg();
+                }}
+              >
+                {orgName ? t("account.org") : t("org.title")}
+              </button>
+              <button
+                type="button"
+                className="rm-menu-item account-item"
+                onClick={() => {
+                  onOpen(false);
+                  onSignOut();
+                }}
+              >
+                {t("org.signOut")}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="rm-menu-item account-item"
+              onClick={() => {
+                onOpen(false);
+                onSignIn();
+              }}
+            >
+              {t("auth.login")}
+            </button>
+          )}
+
+          <div className="account-about">
+            <a
+              href={`https://docs.remo.letii.ru/guide/${lang}/overview/index.html`}
+              target="_blank"
+              rel="noopener"
+            >
+              {t("account.docs")}
+            </a>
+            <span className="muted">{`${ABOUT.name} ${ABOUT.version}`}</span>
+          </div>
+        </Popover>
+      )}
+    </span>
+  );
+}

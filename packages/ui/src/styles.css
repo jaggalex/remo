@@ -1,0 +1,9 @@
+/* Entry stylesheet of @remo/ui: fonts, tokens (generated), then components.
+   Import once at the app root: `import "@remo/ui/styles.css"`. */
+@import "./fonts.css";
+@import "./tokens/primitive.css";
+@import "./tokens/semantic.css";
+@import "./tokens/themes/light.css";
+@import "./tokens/themes/dark.css";
+@import "./tokens/component.css";
+@import "./components/components.css";

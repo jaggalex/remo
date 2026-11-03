@@ -1,0 +1,31 @@
+/* REMO component tokens and density — generated from tokens.json by scripts/build-tokens.mjs. Do not edit. */
+:root {
+  --control-compact: 28px;
+  --control-default: 32px;
+  --control-padding-x: var(--space-3);
+  --dialog-padding: var(--space-5);
+  --panel-gutter: var(--space-4);
+  --topbar-height: 52px;
+  --toolbar-width: 48px;
+  --inspector-width: 276px;
+  --dialog-sm: 420px;
+  --dialog-md: 560px;
+  --dialog-lg: 720px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --label-max: 240px;
+  --handle: 8px;
+  --handle-hit: 12px;
+  --pin: 24px;
+  --grid-step: 20px;
+  --control-h: var(--control-default);
+}
+[data-density="compact"] {
+  --control-h: var(--control-compact);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+  }
+}

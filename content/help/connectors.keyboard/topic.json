@@ -1,0 +1,24 @@
+{
+  "id": "connectors.keyboard",
+  "type": "reference",
+  "title": {
+    "ru": "Управление связью с клавиатуры",
+    "en": "Connector keyboard reference"
+  },
+  "summary": {
+    "ru": "Обход точек, перемещение и удаление без мыши.",
+    "en": "Walk points, move and delete them without a mouse."
+  },
+  "related": [
+    "connectors.create",
+    "connectors.waypoints"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:5b86153a14def46b0f71bc17d7439064455186da55b925f5e79253372c9504ec"
+    }
+  }
+}

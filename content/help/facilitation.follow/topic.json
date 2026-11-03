@@ -1,0 +1,24 @@
+{
+  "id": "facilitation.follow",
+  "type": "how-to",
+  "title": {
+    "ru": "Следовать за участником",
+    "en": "Follow a participant"
+  },
+  "summary": {
+    "ru": "Зеркальный вид и масштаб, публичный счётчик, остановка с двух сторон и приглашение «позвать всех».",
+    "en": "A mirrored view and zoom, a public counter, stopping from either side, and a bring-everyone invitation."
+  },
+  "related": [
+    "facilitation.timer",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:48f83726a2096c510631d6cb8bd3d77850fd490c088824b9f6fe9a1c855297e9"
+    }
+  }
+}

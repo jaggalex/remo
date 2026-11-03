@@ -1,0 +1,25 @@
+{
+  "id": "access.link",
+  "type": "how-to",
+  "title": {
+    "ru": "Включить и выключить ссылку для всех",
+    "en": "Turn the public link on and off"
+  },
+  "summary": {
+    "ru": "Одна ссылка на доску: кто угодно с ней может читать; выключение закрывает доступ для всех.",
+    "en": "One link per board: anyone with it can read; turning it off closes access for everyone."
+  },
+  "related": [
+    "access.share",
+    "access.roles",
+    "access.lifecycle"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:1f4be1de351483babf9fae9d75cfa428c211d7536c87d286a2adc177b20d52e4"
+    }
+  }
+}

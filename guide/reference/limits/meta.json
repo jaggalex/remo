@@ -1,0 +1,26 @@
+{
+  "id": "reference/limits",
+  "type": "reference",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Лимиты и значения по умолчанию",
+    "en": "Limits and defaults"
+  },
+  "summary": {
+    "ru": "Все числа продукта в одном месте: очереди, бюджеты, квоты, сроки и пределы, которые меняют результат.",
+    "en": "Every number in one place: queues, budgets, quotas, expiries and the limits that change an outcome."
+  },
+  "related": [
+    "reference/roles",
+    "reference/formats",
+    "concepts/sync",
+    "capabilities/agents"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:1079eea4276c1b56c0a89c8ea7638966cc1c3e87aaf8bd1c0dacae9fefda4d6b"
+    }
+  }
+}

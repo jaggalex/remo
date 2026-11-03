@@ -1,0 +1,26 @@
+{
+  "id": "concepts/presence",
+  "type": "explanation",
+  "status": "available",
+  "order": 35,
+  "title": {
+    "ru": "Присутствие и follow",
+    "en": "Presence and follow"
+  },
+  "summary": {
+    "ru": "Кто находится на доске, что видят другие и как устроено следование за участником.",
+    "en": "Who is on the board, what others see, and how following a participant works."
+  },
+  "related": [
+    "capabilities/collaboration",
+    "concepts/sync",
+    "capabilities/access",
+    "capabilities/facilitation"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:66691e2c4afedb5c27f9349bbc02656c13d5cf39b67c6321607879e900f42e19"
+    }
+  }
+}

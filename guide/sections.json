@@ -1,0 +1,66 @@
+[
+  {
+    "id": "overview",
+    "order": 10,
+    "title": {
+      "ru": "Обзор продукта",
+      "en": "Product overview"
+    }
+  },
+  {
+    "id": "start",
+    "order": 20,
+    "title": {
+      "ru": "Начало работы",
+      "en": "Getting started"
+    }
+  },
+  {
+    "id": "concepts",
+    "order": 30,
+    "title": {
+      "ru": "Модель продукта",
+      "en": "Product model"
+    }
+  },
+  {
+    "id": "capabilities",
+    "order": 40,
+    "title": {
+      "ru": "Возможности",
+      "en": "Capabilities"
+    }
+  },
+  {
+    "id": "how-to",
+    "order": 50,
+    "title": {
+      "ru": "Решение задач",
+      "en": "How-to"
+    }
+  },
+  {
+    "id": "reference",
+    "order": 60,
+    "title": {
+      "ru": "Справочник",
+      "en": "Reference"
+    }
+  },
+  {
+    "id": "admin",
+    "order": 70,
+    "title": {
+      "ru": "Администрирование",
+      "en": "Administration"
+    }
+  },
+  {
+    "id": "support",
+    "order": 80,
+    "title": {
+      "ru": "Поддержка и изменения",
+      "en": "Support and changes"
+    }
+  }
+]

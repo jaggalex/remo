@@ -1,0 +1,26 @@
+{
+  "id": "admin/deploy",
+  "type": "how-to",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Развернуть remo на сервере",
+    "en": "Deploy remo on a server"
+  },
+  "summary": {
+    "ru": "Один сервер, один процесс: пакеты, база, окружение, сборка, systemd, nginx и проверка.",
+    "en": "One server, one process: packages, database, environment, build, systemd, nginx and a check."
+  },
+  "related": [
+    "admin/security",
+    "admin/observability",
+    "admin/backup-restore",
+    "support/migrations"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:9a7de1e6b9602fae18b8a77e30f4f7d3d56b5a555bd1961471537d630063e7bb"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 150" width="640" height="150" role="img" aria-label="Event flow: command, outbox, webhook, consumer">
+  <rect class="plate" x="0" y="0" width="640" height="150" rx="10" fill="#fbfbf9"/>
+  <g fill="none" stroke="#7d7d7d" stroke-width="2">
+    <rect x="20" y="45" width="130" height="60" rx="8"/>
+    <rect x="190" y="45" width="130" height="60" rx="8"/>
+    <rect x="360" y="45" width="120" height="60" rx="8"/>
+    <rect x="520" y="45" width="100" height="60" rx="8"/>
+    <path d="M150 75 H 186" marker-end="url(#a)"/>
+    <path d="M320 75 H 356" marker-end="url(#a)"/>
+    <path d="M480 75 H 516" marker-end="url(#a)"/>
+  </g>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7d7d7d"/>
+    </marker>
+  </defs>
+  <g fill="#4a4a4a" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">
+    <text x="85" y="78">command</text>
+    <text x="255" y="78">event_outbox</text>
+    <text x="420" y="78">webhook</text>
+    <text x="570" y="78">consumer</text>
+  </g>
+  <g fill="#7d7d7d" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">
+    <text x="320" y="130">one transaction</text>
+    <text x="320" y="18">at-least-once, dedupe by event id</text>
+  </g>
+</svg>

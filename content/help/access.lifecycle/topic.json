@@ -1,0 +1,24 @@
+{
+  "id": "access.lifecycle",
+  "type": "how-to",
+  "title": {
+    "ru": "Убрать доску в корзину, восстановить и скопировать",
+    "en": "Move a board to the trash, restore and copy it"
+  },
+  "summary": {
+    "ru": "Корзина закрывает доску для всех; восстановление не включает ссылку; копия начинает с выключенной ссылкой.",
+    "en": "The trash closes a board for everyone; restore does not turn the link on; a copy starts with the link off."
+  },
+  "related": [
+    "access.link",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e3ae10e9954185075566565e147d25e6dab4371d56385e74d6e09e9518f1b387"
+    }
+  }
+}

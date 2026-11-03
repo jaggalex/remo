@@ -1,0 +1,27 @@
+{
+  "id": "start/first-scenario",
+  "type": "tutorial",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Первый законченный сценарий: план спринта",
+    "en": "First complete scenario: a sprint plan"
+  },
+  "summary": {
+    "ru": "Соберите доску планирования: фреймы, канбан, связи, доступ команде и бэкап — за один проход.",
+    "en": "Build a planning board: frames, kanban, connectors, team access and a backup in one pass."
+  },
+  "related": [
+    "start/quickstart",
+    "capabilities/canvas",
+    "how-to/share",
+    "how-to/export-backup",
+    "concepts/access"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e3b91be6fd1f7d6b53f7b760b43a7966d56b841dc4df68ca8c10d1333d2662b7"
+    }
+  }
+}

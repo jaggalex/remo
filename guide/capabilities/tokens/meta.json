@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/tokens",
+  "type": "explanation",
+  "status": "available",
+  "order": 60,
+  "title": {
+    "ru": "Токены интеграций",
+    "en": "Integration tokens"
+  },
+  "summary": {
+    "ru": "Действовать без браузерной сессии: доступ владельца, сужённый scope, с обязательным сроком и отзывом.",
+    "en": "Act without a browser session: the owner's access, narrowed by scopes, with a mandatory expiry and revocation."
+  },
+  "related": [
+    "concepts/access",
+    "concepts/extensions",
+    "how-to/connect-integration",
+    "reference/api"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:488f49672086e31b7f50a61e1a14f9e0aa6b74e4d6da5a871e3133785c896747"
+    }
+  }
+}

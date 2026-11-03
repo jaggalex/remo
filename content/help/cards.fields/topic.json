@@ -1,0 +1,24 @@
+{
+  "id": "cards.fields",
+  "type": "how-to",
+  "title": {
+    "ru": "Заполнить поля карточки",
+    "en": "Fill in card fields"
+  },
+  "summary": {
+    "ru": "Статус, исполнитель и диапазон дат: что хранит карточка и как это изменить.",
+    "en": "Status, assignee and a date range: what a card stores and how to change it."
+  },
+  "related": [
+    "boards.create",
+    "access.share"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:7cfd7600eec85dfcce896f59443a3fa35ebfe0ed2d07da799d11cd3cb8e42ab1"
+    }
+  }
+}

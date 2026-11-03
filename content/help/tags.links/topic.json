@@ -1,0 +1,24 @@
+{
+  "id": "tags.links",
+  "type": "how-to",
+  "title": {
+    "ru": "Пометить объекты тегами и связать ссылкой",
+    "en": "Tag objects and link them"
+  },
+  "summary": {
+    "ru": "Теги-словарь доски и ссылка на объект: внешний адрес или другой объект.",
+    "en": "A board tag vocabulary and a link on an object: an external address or another object."
+  },
+  "related": [
+    "cards.fields",
+    "boards.create"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:c9eabba0babf6d199be4cb6f97a59c07b790f6fad6e759d7f3198eaa8d925778"
+    }
+  }
+}

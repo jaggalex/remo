@@ -1,0 +1,26 @@
+{
+  "id": "concepts/access",
+  "type": "explanation",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Доступ: организация, команда, доска, роль",
+    "en": "Access: organisation, team, board, role"
+  },
+  "summary": {
+    "ru": "Почему права выдаются на доску, откуда берётся роль и что происходит при отзыве доступа.",
+    "en": "Why permissions are granted on a board, where a role comes from, and what happens when access is revoked."
+  },
+  "related": [
+    "capabilities/access",
+    "reference/roles",
+    "how-to/share",
+    "concepts/board"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:2f47755fd3816c4759989c2fff7a9212af02c63b33c980f6d2f82ad1182fdcb7"
+    }
+  }
+}

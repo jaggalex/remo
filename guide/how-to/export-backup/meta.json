@@ -1,0 +1,26 @@
+{
+  "id": "how-to/export-backup",
+  "type": "how-to",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Вынести результат и восстановить доску из бэкапа",
+    "en": "Export a result and restore a board from a backup"
+  },
+  "summary": {
+    "ru": "PNG или PDF по скоупу, полный JSON-бэкап, импорт с заменой доски — с проверкой результата.",
+    "en": "PNG or PDF by scope, a full JSON backup, import with board replacement — with a result check."
+  },
+  "related": [
+    "capabilities/export",
+    "reference/errors",
+    "concepts/sync",
+    "how-to/share"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:81b9c518940b85d54ed66b15c10f0b671163195121b84d3c16be09b6ec7722f6"
+    }
+  }
+}

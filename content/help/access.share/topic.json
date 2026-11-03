@@ -1,0 +1,25 @@
+{
+  "id": "access.share",
+  "type": "how-to",
+  "title": {
+    "ru": "Пригласить участника и выдать доступ",
+    "en": "Invite a member and grant access"
+  },
+  "summary": {
+    "ru": "Добавьте человека на доску и выберите роль: читатель, комментатор, редактор или со-владелец.",
+    "en": "Add a person to a board and choose a role: viewer, commenter, editor or co-owner."
+  },
+  "related": [
+    "access.roles",
+    "access.link",
+    "access.lifecycle"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:23b2f3f13f9e47553699638286d27712e591f1d7c91fe5d00057c6fdb134fcc9"
+    }
+  }
+}

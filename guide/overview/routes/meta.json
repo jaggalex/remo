@@ -1,0 +1,27 @@
+{
+  "id": "overview/routes",
+  "type": "overview",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "Как читать эту документацию",
+    "en": "How to read this documentation"
+  },
+  "summary": {
+    "ru": "Четыре маршрута чтения: понять продукт, сделать задачу, найти точный факт, подключить интеграцию.",
+    "en": "Four reading paths: understand the product, do a task, look up a fact, connect an integration."
+  },
+  "related": [
+    "overview/index",
+    "overview/map",
+    "start/quickstart",
+    "concepts/board",
+    "reference/roles"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:6fd2a8d12c0a37056e2d5809262b7160c923a3afdbaeb28670bab3c6915ed4e6"
+    }
+  }
+}

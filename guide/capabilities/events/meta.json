@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/events",
+  "type": "explanation",
+  "status": "available",
+  "order": 50,
+  "title": {
+    "ru": "События и вебхук",
+    "en": "Events and webhook"
+  },
+  "summary": {
+    "ru": "Сервер сообщает интеграции об изменениях доски: подписанный запрос, повторы, очередь недоставленного.",
+    "en": "The server tells an integration about board changes: a signed request, retries, a queue for what failed."
+  },
+  "related": [
+    "concepts/extensions",
+    "reference/events",
+    "how-to/connect-integration",
+    "capabilities/tokens"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:ee3f579bb90a7913c9800e0fd7241d50af88415481b172aa58a2c86cb1deed9c"
+    }
+  }
+}

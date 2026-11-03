@@ -1,0 +1,567 @@
+{
+  "concepts/access": {
+    "adr": [
+      61,
+      62,
+      69
+    ],
+    "code": [
+      "apps/sync/iam.mjs",
+      "apps/sync/iam-http.mjs"
+    ],
+    "tests": [
+      "apps/sync/iam.test.mjs",
+      "apps/sync/link-access.test.mjs"
+    ]
+  },
+  "concepts/sync": {
+    "adr": [
+      84,
+      87,
+      16
+    ],
+    "code": [
+      "apps/sync/sync-save-ack.mjs",
+      "apps/sync/sync-connections.mjs"
+    ],
+    "tests": [
+      "apps/sync/save-ack.test.mjs"
+    ]
+  },
+  "concepts/board": {
+    "adr": [
+      16,
+      39,
+      40,
+      138,
+      141,
+      145
+    ],
+    "code": [
+      "packages/doc/src",
+      "packages/model/src/kinds.ts"
+    ],
+    "tests": [
+      "packages/model/src/kinds.test.ts",
+      "packages/doc/src/widgets.test.ts"
+    ]
+  },
+  "reference/roles": {
+    "adr": [
+      61,
+      63,
+      107,
+      109
+    ],
+    "code": [
+      "apps/sync/iam.mjs",
+      "apps/sync/iam-api-boards.mjs"
+    ],
+    "tests": [
+      "apps/sync/iam.test.mjs",
+      "apps/sync/iam-api.test.mjs"
+    ]
+  },
+  "reference/errors": {
+    "adr": [
+      92,
+      109
+    ],
+    "code": [
+      "apps/sync/iam-http.mjs",
+      "apps/sync/commands.mjs"
+    ],
+    "tests": [
+      "apps/sync/iam-api.test.mjs"
+    ]
+  },
+  "concepts/extensions": {
+    "adr": [
+      94,
+      95,
+      96,
+      98
+    ],
+    "code": [
+      "apps/sync/first-party-apps.mjs",
+      "apps/sync/webhooks.mjs"
+    ],
+    "tests": [
+      "apps/sync/apps.test.mjs",
+      "apps/sync/webhooks.test.mjs"
+    ]
+  },
+  "capabilities/events": {
+    "adr": [
+      94,
+      95
+    ],
+    "code": [
+      "apps/sync/sync-events.mjs",
+      "apps/sync/pg/events.mjs"
+    ],
+    "tests": [
+      "apps/sync/events.test.mjs"
+    ]
+  },
+  "reference/events": {
+    "adr": [
+      94,
+      95
+    ],
+    "code": [
+      "apps/sync/webhooks.mjs",
+      "apps/sync/sync-events.mjs"
+    ],
+    "tests": [
+      "apps/sync/events.test.mjs"
+    ]
+  },
+  "capabilities/tokens": {
+    "adr": [
+      96
+    ],
+    "code": [
+      "apps/sync/integrations.mjs",
+      "apps/sync/integration-api.mjs"
+    ],
+    "tests": [
+      "apps/sync/integration-tokens.test.mjs"
+    ]
+  },
+  "reference/api": {
+    "adr": [
+      92,
+      95,
+      96,
+      98
+    ],
+    "code": [
+      "apps/sync/commands-api.mjs",
+      "apps/sync/app-api.mjs"
+    ],
+    "tests": [
+      "apps/sync/commands-api.test.mjs",
+      "apps/sync/app-api.test.mjs"
+    ]
+  },
+  "capabilities/apps": {
+    "adr": [
+      98
+    ],
+    "code": [
+      "apps/sync/first-party-apps.mjs",
+      "apps/sync/app-api.mjs"
+    ],
+    "tests": [
+      "apps/sync/app-api.test.mjs"
+    ]
+  },
+  "capabilities/connectors": {
+    "adr": [
+      77,
+      80,
+      137,
+      138
+    ],
+    "code": [
+      "apps/sync/commands.mjs",
+      "packages/canvas/src/connectors.ts",
+      "apps/web/src/canvasGeometry.ts"
+    ],
+    "tests": [
+      "apps/sync/commands.test.mjs",
+      "e2e/connectors.spec.ts"
+    ]
+  },
+  "capabilities/frames-kanban": {
+    "adr": [
+      16,
+      39,
+      110,
+      141
+    ],
+    "code": [
+      "packages/model/src/kanban.ts",
+      "apps/web/src/gestureDoubleClick.ts",
+      "packages/model/src/kinds.ts",
+      "packages/doc/src/cards.ts",
+      "apps/web/src/cardFilter.ts"
+    ],
+    "tests": [
+      "packages/model/src/kanban.test.ts",
+      "packages/model/src/kinds.test.ts",
+      "e2e/gestures.spec.ts",
+      "apps/web/src/cardFilter.test.ts"
+    ]
+  },
+  "capabilities/collaboration": {
+    "adr": [
+      62
+    ],
+    "code": [
+      "apps/web/src/follow.ts",
+      "apps/sync/sync-connections.mjs"
+    ],
+    "tests": [
+      "apps/sync/connect.test.mjs"
+    ]
+  },
+  "capabilities/history": {
+    "adr": [
+      16,
+      73
+    ],
+    "code": [
+      "packages/doc/src",
+      "apps/web/src/BoardsPanel.tsx"
+    ],
+    "tests": [
+      "apps/sync/store.test.mjs"
+    ]
+  },
+  "capabilities/agents": {
+    "adr": [
+      65,
+      66,
+      67,
+      68,
+      142,
+      143,
+      144
+    ],
+    "code": [
+      "apps/sync/agent-runner.mjs",
+      "apps/sync/agents.mjs",
+      "apps/sync/agent-plan.mjs",
+      "apps/sync/agent-tidy.mjs"
+    ],
+    "tests": [
+      "apps/sync/agent-runner.test.mjs",
+      "apps/sync/agent-plan-api.test.mjs",
+      "apps/sync/agent-tidy-api.test.mjs"
+    ]
+  },
+  "capabilities/facilitation": {
+    "adr": [
+      74,
+      75,
+      76,
+      146
+    ],
+    "code": [
+      "apps/sync/vote-api.mjs",
+      "packages/model/src/timer.ts",
+      "apps/web/src/vote/voteModel.ts"
+    ],
+    "tests": [
+      "apps/sync/vote-api.test.mjs",
+      "apps/web/src/vote/voteModelPublish.test.ts",
+      "e2e/facilitation.spec.ts"
+    ]
+  },
+  "capabilities/cards": {
+    "adr": [
+      102,
+      103,
+      106
+    ],
+    "code": [
+      "packages/doc/src/cards.ts",
+      "packages/doc/src/tags.ts",
+      "packages/doc/src/links.ts"
+    ],
+    "tests": [
+      "packages/doc/src/board.test.ts",
+      "packages/doc/src/tags.test.ts",
+      "packages/doc/src/links.test.ts"
+    ]
+  },
+  "capabilities/presentation": {
+    "adr": [
+      108
+    ],
+    "code": [
+      "packages/doc/src/presentation.ts",
+      "apps/web/src/usePresentation.ts"
+    ],
+    "tests": [
+      "packages/doc/src/presentation.test.ts",
+      "e2e/presentation.spec.ts"
+    ]
+  },
+  "how-to/comment": {
+    "adr": [
+      104,
+      105
+    ],
+    "code": [
+      "apps/sync/comments-api.mjs",
+      "apps/web/src/CommentsPanel.tsx"
+    ],
+    "tests": [
+      "apps/sync/iam-api.test.mjs",
+      "e2e/comments.spec.ts"
+    ]
+  },
+  "how-to/lock": {
+    "adr": [
+      107
+    ],
+    "code": [
+      "packages/model/src/lock.ts",
+      "packages/doc/src/layers.ts"
+    ],
+    "tests": [
+      "packages/model/src/lock.test.ts",
+      "e2e/lock.spec.ts"
+    ]
+  },
+  "how-to/card-fields": {
+    "adr": [
+      106
+    ],
+    "code": [
+      "packages/doc/src/cards.ts",
+      "apps/web/src/BoardObjectPanels.tsx"
+    ],
+    "tests": [
+      "packages/doc/src/board.test.ts",
+      "e2e/cards.spec.ts"
+    ]
+  },
+  "how-to/tags-links": {
+    "adr": [
+      102,
+      103
+    ],
+    "code": [
+      "packages/doc/src/tags.ts",
+      "packages/doc/src/links.ts"
+    ],
+    "tests": [
+      "packages/doc/src/tags.test.ts",
+      "packages/doc/src/links.test.ts",
+      "e2e/tags-links.spec.ts"
+    ]
+  },
+  "reference/formats": {
+    "adr": [
+      71,
+      85,
+      101,
+      102,
+      104
+    ],
+    "code": [
+      "apps/sync/backup.mjs",
+      "apps/web/src/backupFormat.ts"
+    ],
+    "tests": [
+      "apps/sync/backup.test.mjs",
+      "apps/sync/backup-web.test.mjs"
+    ]
+  },
+  "admin/security": {
+    "adr": [
+      62,
+      69,
+      107,
+      109
+    ],
+    "code": [
+      "apps/sync/readonly.mjs",
+      "apps/sync/outbound.mjs",
+      "apps/sync/http-boundary.mjs"
+    ],
+    "tests": [
+      "apps/sync/readonly.test.mjs",
+      "apps/sync/outbound.test.mjs"
+    ]
+  },
+  "concepts/colors": {
+    "adr": [
+      127,
+      129,
+      139,
+      140,
+      147
+    ],
+    "code": [
+      "packages/model/src/colorLevels.ts",
+      "packages/model/src/namedColors.ts",
+      "apps/web/src/object-panel/ColorWindow.tsx",
+      "apps/web/src/object-panel/colorWindowData.ts",
+      "apps/web/src/useBoardCommands.ts",
+      "apps/web/src/object-panel/ColourWindows.tsx",
+      "apps/web/src/object-panel/StickyPanel.tsx",
+      "apps/web/src/ConnectorBar.tsx",
+      "apps/web/src/ArrangeBar.tsx"
+    ],
+    "tests": [
+      "packages/model/src/colorLevels.test.ts",
+      "packages/model/src/namedColors.test.ts",
+      "apps/web/src/object-panel/palette.test.ts",
+      "apps/web/src/object-panel/colorWindowData.test.ts",
+      "e2e/object-panel.spec.ts"
+    ]
+  },
+  "concepts/board-chrome": {
+    "adr": [
+      119,
+      120,
+      121,
+      123,
+      139
+    ],
+    "code": [
+      "apps/web/src/BoardTopbar.tsx",
+      "apps/web/src/topbar/BoardTitleMenu.tsx",
+      "apps/web/src/topbar/FacilitationMenu.tsx",
+      "apps/web/src/topbar/MoreMenu.tsx",
+      "apps/web/src/topbar/AccountMenu.tsx",
+      "apps/web/src/ToolRail.tsx",
+      "apps/web/src/CanvasHud.tsx",
+      "apps/web/src/SelectionBadge.tsx",
+      "apps/web/src/CanvasHint.tsx",
+      "apps/web/src/VoteLayer.tsx",
+      "apps/web/src/PresentationLayer.tsx"
+    ],
+    "tests": [
+      "e2e/tools.spec.ts",
+      "e2e/boards.spec.ts",
+      "e2e/a11y.spec.ts"
+    ]
+  },
+  "how-to/tidy-selection": {
+    "adr": [
+      142,
+      143,
+      144
+    ],
+    "code": [
+      "apps/web/src/TidyDialog.tsx",
+      "apps/web/src/useTidyCommand.ts",
+      "packages/agent-plan/src/tidy.mjs",
+      "apps/sync/agent-tidy.mjs",
+      "apps/sync/selection-source.mjs"
+    ],
+    "tests": [
+      "e2e/tidy.spec.ts",
+      "packages/agent-plan/src/tidy.test.mjs",
+      "apps/sync/agent-tidy.test.mjs",
+      "apps/sync/selection-source.test.mjs",
+      "packages/doc/src/agentPlan.test.ts"
+    ]
+  },
+  "how-to/agent-plan": {
+    "adr": [
+      142,
+      144
+    ],
+    "code": [
+      "apps/web/src/AgentDialog.tsx",
+      "apps/web/src/AgentPlanDialog.tsx",
+      "apps/web/src/AgentSelectionSource.tsx",
+      "apps/web/src/AgentFileField.tsx",
+      "apps/web/src/useApplyAgentPlan.ts",
+      "apps/sync/agent-brief.mjs",
+      "apps/sync/agent-plan.mjs",
+      "apps/web/src/TidyPlanMap.tsx"
+    ],
+    "tests": [
+      "e2e/agents.spec.ts",
+      "apps/sync/agent-brief.test.mjs",
+      "apps/sync/agent-plan-api.test.mjs",
+      "packages/doc/src/agentPlan.test.ts"
+    ]
+  },
+  "how-to/delegate-agent": {
+    "adr": [
+      142,
+      143
+    ],
+    "code": [
+      "apps/web/src/AgentDialog.tsx",
+      "apps/sync/agent-runner.mjs"
+    ],
+    "tests": [
+      "e2e/agents.spec.ts",
+      "apps/sync/agent-runner.test.mjs"
+    ]
+  },
+  "concepts/connectors": {
+    "code": [
+      "packages/model/src/kinds.ts",
+      "packages/doc/src/connectors.ts",
+      "apps/web/src/ConnectorBar.tsx"
+    ],
+    "tests": [
+      "packages/doc/src/connectors.test.ts",
+      "packages/model/src/kinds.test.ts",
+      "e2e/connectors.spec.ts"
+    ],
+    "adr": [
+      7,
+      29,
+      41,
+      77,
+      113
+    ]
+  },
+  "concepts/frames": {
+    "code": [
+      "packages/model/src/kinds.ts",
+      "packages/model/src/kanban.ts",
+      "apps/web/src/gestureDoubleClick.ts"
+    ],
+    "tests": [
+      "packages/model/src/kanban.test.ts",
+      "packages/model/src/kinds.test.ts",
+      "e2e/gestures.spec.ts"
+    ],
+    "adr": [
+      16,
+      39,
+      110,
+      141
+    ]
+  },
+  "concepts/agents": {
+    "code": [
+      "apps/sync/agents.mjs",
+      "apps/sync/agent-runner.mjs",
+      "apps/sync/agent-plan.mjs"
+    ],
+    "tests": [
+      "apps/sync/agents.test.mjs",
+      "apps/sync/agent-runner.test.mjs"
+    ],
+    "adr": [
+      65,
+      66,
+      67,
+      68,
+      142
+    ]
+  },
+  "reference/limits": {
+    "code": [
+      "packages/agent-plan/src/limits.mjs",
+      "packages/agent-plan/src/plan.mjs",
+      "apps/web/src/AgentPlanWarnings.tsx",
+      "apps/web/src/agentPlanText.ts",
+      "apps/sync/task-file.mjs"
+    ],
+    "tests": [
+      "packages/agent-plan/src/validate.test.mjs",
+      "apps/web/src/agentPlanText.test.ts",
+      "apps/sync/task-file.test.mjs"
+    ],
+    "adr": [
+      142,
+      143,
+      144
+    ]
+  }
+}

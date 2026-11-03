@@ -1,0 +1,28 @@
+{
+  "name": "@remo/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@remo/canvas": "workspace:*",
+    "@remo/model": "workspace:*",
+    "@remo/ui": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@remo/doc": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  },
+  "license": "AGPL-3.0-only",
+  "author": "Alexander Kostylev"
+}

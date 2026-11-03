@@ -1,0 +1,26 @@
+{
+  "id": "admin/backup-restore",
+  "type": "how-to",
+  "status": "available",
+  "order": 40,
+  "title": {
+    "ru": "Бэкап и восстановление",
+    "en": "Backup and restore"
+  },
+  "summary": {
+    "ru": "Что резервировать, как проверить копию и как восстановиться, не потеряв ключи.",
+    "en": "What to back up, how to verify a copy, and how to restore without losing keys."
+  },
+  "related": [
+    "admin/deploy",
+    "admin/security",
+    "capabilities/export",
+    "support/migrations"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:75a8905f9a7fc0f105a9123243f7302385083a2a35da0592e04ce7b8cbfd1d6c"
+    }
+  }
+}

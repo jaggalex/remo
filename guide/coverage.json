@@ -1,0 +1,341 @@
+{
+  "capabilities": [
+    {
+      "id": "canvas",
+      "title": {
+        "ru": "Холст и объекты",
+        "en": "Canvas and objects"
+      },
+      "capability": "capabilities/canvas",
+      "concept": "concepts/board",
+      "example": "start/first-scenario"
+    },
+    {
+      "id": "access",
+      "title": {
+        "ru": "Доступ и роли",
+        "en": "Access and roles"
+      },
+      "capability": "capabilities/access",
+      "concept": "concepts/access",
+      "howto": [
+        "how-to/share"
+      ],
+      "reference": [
+        "reference/roles"
+      ],
+      "limits": "reference/roles",
+      "example": "start/first-scenario"
+    },
+    {
+      "id": "link",
+      "title": {
+        "ru": "Публичная ссылка",
+        "en": "Public link"
+      },
+      "capability": "capabilities/access",
+      "concept": "concepts/access",
+      "howto": [
+        "how-to/share"
+      ],
+      "example": "how-to/share"
+    },
+    {
+      "id": "sync",
+      "title": {
+        "ru": "Сохранение и офлайн",
+        "en": "Saving and offline"
+      },
+      "capability": "capabilities/sync",
+      "concept": "concepts/sync",
+      "reference": [
+        "reference/errors"
+      ],
+      "example": "start/quickstart"
+    },
+    {
+      "id": "export",
+      "title": {
+        "ru": "Экспорт и бэкап",
+        "en": "Export and backup"
+      },
+      "capability": "capabilities/export",
+      "concept": "concepts/sync",
+      "howto": [
+        "how-to/export-backup"
+      ],
+      "reference": [
+        "reference/errors"
+      ],
+      "example": "how-to/export-backup"
+    },
+    {
+      "id": "events",
+      "title": {
+        "ru": "События и вебхук",
+        "en": "Events and webhook"
+      },
+      "capability": "capabilities/events",
+      "concept": "concepts/extensions",
+      "howto": [
+        "how-to/connect-integration"
+      ],
+      "reference": [
+        "reference/events"
+      ],
+      "limits": "reference/events",
+      "example": "how-to/connect-integration"
+    },
+    {
+      "id": "tokens",
+      "title": {
+        "ru": "Токены интеграций",
+        "en": "Integration tokens"
+      },
+      "capability": "capabilities/tokens",
+      "concept": "concepts/extensions",
+      "howto": [
+        "how-to/connect-integration"
+      ],
+      "reference": [
+        "reference/api"
+      ],
+      "limits": "reference/api",
+      "example": "how-to/connect-integration"
+    },
+    {
+      "id": "apps",
+      "title": {
+        "ru": "Приложения",
+        "en": "Apps"
+      },
+      "capability": "capabilities/apps",
+      "concept": "concepts/extensions",
+      "howto": [
+        "how-to/install-app"
+      ],
+      "reference": [
+        "reference/api"
+      ],
+      "limits": "capabilities/apps",
+      "example": "how-to/install-app"
+    },
+    {
+      "id": "connectors",
+      "title": {
+        "ru": "Связи",
+        "en": "Connectors"
+      },
+      "capability": "capabilities/connectors",
+      "concept": "concepts/board",
+      "howto": [
+        "start/first-scenario"
+      ],
+      "reference": [
+        "reference/api"
+      ],
+      "limits": "capabilities/connectors",
+      "example": "start/first-scenario"
+    },
+    {
+      "id": "frames-kanban",
+      "title": {
+        "ru": "Фреймы и канбан",
+        "en": "Frames and kanban"
+      },
+      "capability": "capabilities/frames-kanban",
+      "concept": "concepts/board",
+      "example": "start/first-scenario"
+    },
+    {
+      "id": "collaboration",
+      "title": {
+        "ru": "Совместная работа",
+        "en": "Collaboration"
+      },
+      "capability": "capabilities/collaboration",
+      "concept": "concepts/sync",
+      "howto": [
+        "start/quickstart"
+      ],
+      "limits": "capabilities/collaboration",
+      "example": "start/quickstart"
+    },
+    {
+      "id": "history",
+      "title": {
+        "ru": "История и корзина",
+        "en": "History and trash"
+      },
+      "capability": "capabilities/history",
+      "concept": "concepts/board",
+      "howto": [
+        "how-to/export-backup"
+      ],
+      "limits": "capabilities/history",
+      "example": "how-to/export-backup"
+    },
+    {
+      "id": "agents",
+      "title": {
+        "ru": "Агенты",
+        "en": "Agents"
+      },
+      "capability": "capabilities/agents",
+      "concept": "concepts/agents",
+      "reference": [
+        "reference/api"
+      ],
+      "limits": "capabilities/agents",
+      "example": "how-to/agent-plan",
+      "howto": [
+        "how-to/delegate-agent",
+        "how-to/agent-plan",
+        "how-to/tidy-selection"
+      ]
+    },
+    {
+      "id": "facilitation",
+      "title": {
+        "ru": "Фасилитация",
+        "en": "Facilitation"
+      },
+      "capability": "capabilities/facilitation",
+      "concept": "concepts/access",
+      "reference": [
+        "reference/roles"
+      ],
+      "limits": "capabilities/facilitation",
+      "example": "how-to/share"
+    },
+    {
+      "id": "board-create",
+      "title": {
+        "ru": "Создать доску",
+        "en": "Create a board"
+      },
+      "capability": "how-to/create-board",
+      "concept": "concepts/board",
+      "howto": [
+        "how-to/create-board"
+      ],
+      "example": "how-to/create-board"
+    },
+    {
+      "id": "cards",
+      "title": {
+        "ru": "Карточка, теги и ссылки",
+        "en": "Cards, tags and links"
+      },
+      "capability": "capabilities/cards",
+      "concept": "concepts/board",
+      "howto": [
+        "how-to/card-fields",
+        "how-to/tags-links"
+      ],
+      "reference": [
+        "reference/limits"
+      ],
+      "example": "how-to/card-fields"
+    },
+    {
+      "id": "presentation",
+      "title": {
+        "ru": "Презентация",
+        "en": "Presentation"
+      },
+      "capability": "capabilities/presentation",
+      "concept": "concepts/frames",
+      "howto": [
+        "how-to/present"
+      ],
+      "example": "how-to/present"
+    },
+    {
+      "id": "comments",
+      "title": {
+        "ru": "Комментарии",
+        "en": "Comments"
+      },
+      "capability": "capabilities/collaboration",
+      "concept": "concepts/board",
+      "howto": [
+        "how-to/comment"
+      ],
+      "reference": [
+        "reference/errors"
+      ],
+      "example": "how-to/comment"
+    },
+    {
+      "id": "reactions",
+      "title": {
+        "ru": "Живые реакции",
+        "en": "Live reactions"
+      },
+      "capability": "capabilities/collaboration",
+      "concept": "concepts/presence",
+      "howto": [
+        "how-to/comment"
+      ],
+      "example": "how-to/comment"
+    },
+    {
+      "id": "author-lock",
+      "title": {
+        "ru": "Авторский замок",
+        "en": "Author lock"
+      },
+      "capability": "capabilities/collaboration",
+      "concept": "concepts/board",
+      "howto": [
+        "how-to/lock"
+      ],
+      "reference": [
+        "reference/roles"
+      ],
+      "example": "how-to/lock"
+    },
+    {
+      "id": "board-chrome",
+      "title": {
+        "ru": "Экран доски",
+        "en": "The board screen"
+      },
+      "capability": "capabilities/canvas",
+      "concept": "concepts/board-chrome",
+      "howto": [
+        "start/quickstart"
+      ],
+      "example": "start/quickstart"
+    },
+    {
+      "id": "colours",
+      "title": {
+        "ru": "Палитра и цвета",
+        "en": "Palette and colours"
+      },
+      "capability": "capabilities/canvas",
+      "concept": "concepts/colors",
+      "howto": [
+        "how-to/build-board"
+      ],
+      "limits": "concepts/colors",
+      "example": "concepts/colors"
+    },
+    {
+      "id": "tidy",
+      "title": {
+        "ru": "Упорядочить выделение",
+        "en": "Tidy up a selection"
+      },
+      "capability": "capabilities/agents",
+      "concept": "concepts/frames",
+      "howto": [
+        "how-to/tidy-selection"
+      ],
+      "limits": "capabilities/agents",
+      "example": "start/first-scenario"
+    }
+  ]
+}

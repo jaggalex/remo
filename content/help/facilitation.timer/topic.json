@@ -1,0 +1,24 @@
+{
+  "id": "facilitation.timer",
+  "type": "how-to",
+  "title": {
+    "ru": "Общий таймер",
+    "en": "Shared timer"
+  },
+  "summary": {
+    "ru": "Один отсчёт на всю доску: запуск, пауза, +1 минута и «время вышло» — одинаково у всех.",
+    "en": "One countdown for the whole board: start, pause, +1 minute and time is up, the same for everyone."
+  },
+  "related": [
+    "access.roles",
+    "sync.status"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:bac18706b4cc05d33056ed87777920ddca995b282268020d580da14b2d7f7970"
+    }
+  }
+}

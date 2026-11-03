@@ -1,0 +1,25 @@
+{
+  "id": "how-to/create-board",
+  "type": "how-to",
+  "status": "available",
+  "order": 4,
+  "title": {
+    "ru": "Создать доску",
+    "en": "Create a board"
+  },
+  "summary": {
+    "ru": "Новая доска в команде: название, шаблон и сразу открытое рабочее место.",
+    "en": "A new board in a team: name, template and an open workspace."
+  },
+  "related": [
+    "start/quickstart",
+    "how-to/build-board",
+    "capabilities/access"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:940200e34b1d41de3465a613b10be488c1791500cbb140ce83ed566aa728dc32"
+    }
+  }
+}

@@ -1,0 +1,581 @@
+/* ------------------------------------------------------------------ top bar */
+
+/*
+ * The board header: 52 px, one row, flat against the canvas (ADR-119).
+ *
+ * Left is identity — mark, "All boards", the path and the board's name; the centre is
+ * empty; right is the session, in the order the mockup fixes. It is the same surface as
+ * the design system's `TopBar`, without the DS component's fixed slots (ADR-124: the app
+ * owns layout, @remo/ui owns controls).
+ */
+.topbar {
+  position: relative;
+  z-index: var(--z-bar);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--topbar-height);
+  padding: 0 var(--space-3);
+  box-sizing: border-box;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.topbar-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inverse);
+}
+
+.topbar-mark img {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(1);
+}
+
+.topbar-path {
+  min-width: 0;
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-left: var(--space-1);
+  font: var(--type-label);
+  color: var(--text-muted);
+}
+
+.board-title {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+  height: var(--control-default);
+  font: inherit;
+  font: var(--type-subtitle);
+  min-width: 120px;
+  max-width: 220px;
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.board-title:hover {
+  background: var(--bg-hover);
+}
+
+.board-title:focus {
+  border-color: var(--border-strong);
+  background: var(--bg-panel);
+  outline: none;
+}
+
+.board-title-button {
+  max-width: 260px;
+  font-weight: 600;
+}
+
+.board-title-button .rm-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-spacer {
+  flex: 1 1 auto;
+  min-width: var(--space-2);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  min-width: 0;
+}
+
+.topbar-sync {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+}
+
+.save-state {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.topbar-presence {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Every top-bar menu hangs under its own trigger; the app owns the position. */
+.topbar-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.topbar-anchor > .rm-menu,
+.topbar-anchor > .rm-popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: var(--z-popover);
+}
+
+.topbar-anchor-start > .rm-menu,
+.topbar-anchor-start > .rm-popover {
+  right: auto;
+  left: 0;
+}
+
+.topbar-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.facilitation-trigger.is-live {
+  background: var(--accent-soft);
+  color: var(--text-accent);
+}
+
+.menu-reactions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-1) var(--space-2);
+}
+
+.menu-reaction {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menu-reaction:hover,
+.menu-reaction:focus-visible {
+  background: var(--bg-hover);
+}
+
+.topbar-hint {
+  margin: 0;
+}
+
+.topbar-template-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.topbar-template {
+  justify-content: flex-start;
+}
+
+.topbar-account .account-button {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  width: var(--space-8);
+  height: var(--space-8);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+}
+
+.account-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-who strong {
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+
+.account-role {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.account-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.account-field-label {
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.account-sep {
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.account-item {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.help-link.icon-link {
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-compact);
+  height: var(--control-compact);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.help-link.icon-link:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.divider {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+  margin: 0 3px;
+}
+
+/* Add-to-board tools: a quiet segmented group, like a small toolbar. */
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-hover);
+  border-radius: 10px;
+}
+
+.tools button {
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.tools button:first-child {
+  font-size: 12.5px;
+  padding: 0 10px;
+}
+
+.tools button:hover {
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-hover);
+}
+
+.history {
+  display: flex;
+  gap: 2px;
+}
+
+.history button {
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.history button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.history button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.ghost-button {
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease;
+}
+
+.ghost-button:hover {
+  background: var(--bg-hover);
+}
+
+.ghost-button.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.share-button {
+  border: 0;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-radius: 9px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 112px;
+  box-shadow: var(--shadow-bar);
+  transition: background 120ms ease;
+}
+
+.share-button:hover {
+  background: var(--accent-strong);
+}
+
+/* Presence: overlapping avatars, like the source product. */
+.presence {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 4px;
+}
+
+.presence .peer {
+  display: inline-flex;
+  margin-left: -6px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+}
+
+.presence .peer:first-of-type {
+  margin-left: 0;
+}
+
+/*
+ * Creation rail (ADR-119): the only place a new object starts.
+ *
+ * Two floating panels — tools, then history — 12 px off the canvas edge, like the
+ * mockup. The rail overlays the canvas instead of taking a strip of it: a bordered
+ * column of icons on the edge read as part of the frame, not as a control surface.
+ */
+.tool-rail {
+  position: absolute;
+  /* The panel layer: above the canvas and the social layer (`--z-canvas-overlay`), so a
+     floating panel is never painted under an object's counter or a comment pin. */
+  z-index: var(--z-bar);
+  left: var(--space-3);
+  top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: var(--toolbar-width);
+  /* No `overflow`: the flyout is a child and must be able to leave the panel. The two
+     panels take 482 px, which fits every height the brief names (700–900). */
+}
+
+.tool-rail-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-bar);
+}
+
+/* The design-system IconButton paints hover, active, focus and disabled; the rail only
+   gives it the 40 px square the mockup uses. */
+.tool-rail .tool-rail-button {
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-sm);
+}
+
+/* Hairline between the groups the mockup separates: selection │ creation │ discussion. */
+.tool-rail-panel .rm-sep {
+  width: var(--space-9);
+  margin: var(--space-1) 0;
+  background: var(--border-subtle);
+}
+
+.tool-rail-item {
+  position: relative;
+  display: flex;
+}
+
+/*
+ * The corner marker of a tool with variants (Р2): a 6 px wedge in the bottom-right of
+ * the 40 px button. It owns a 20 px hit area in the corner and never covers the glyph,
+ * so clicking the icon still creates at once.
+ */
+.tool-rail-caret {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--space-5);
+  height: var(--space-5);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.tool-rail-caret::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-bottom: 5px solid var(--text-muted);
+}
+
+.tool-rail-caret:hover:not(:disabled)::before {
+  border-bottom-color: var(--text-primary);
+}
+
+.tool-rail-caret:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.tool-rail-caret.open::before {
+  border-bottom-color: var(--text-accent);
+}
+
+.tool-rail-caret:disabled {
+  cursor: not-allowed;
+}
+
+.tool-rail-caret:disabled::before {
+  border-bottom-color: var(--text-muted);
+  opacity: 0.4;
+}
+
+/* The flyout is a DS Popover; the rail only says where it opens (ADR-124, журнал №2). */
+.tool-rail-item > .rm-popover {
+  position: absolute;
+  left: calc(100% + var(--space-3));
+  top: calc(-1 * var(--space-1));
+  z-index: var(--z-popover);
+}
+
+/* The rail's flyout is the window's fill grid: named swatches in a column, then seven
+   tonal columns × the 100/300 rows (ADR-127, ADR-140). The popover is as wide as the
+   colour window, so both draw the same 34 px square. */
+.tool-flyout-palette {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.tool-flyout-extras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: 2px;
+}
+
+.tool-flyout-swatches {
+  display: grid;
+  grid-template-columns: repeat(7, 34px);
+  gap: var(--space-1);
+  padding: 2px;
+}
+
+.tool-flyout-note {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+/* The colour a click on the tool itself uses, marked the way the mockup marks it. */
+.tool-swatch.is-default {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tool-flyout-shapes {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* A DS Button with a silhouette instead of a label; the sample is the shape itself. */
+.tool-shape {
+  width: var(--space-10);
+  height: var(--space-10);
+  padding: 0;
+  border-color: var(--border-subtle);
+}
+
+.tool-shape .rm-btn-label {
+  display: grid;
+  place-items: center;
+}
+
+.tool-shape-rect {
+  width: 20px;
+  height: 14px;
+  border: 1.75px solid var(--text-primary);
+  border-radius: 2px;
+}
+
+.tool-shape-ellipse {
+  width: 20px;
+  height: 14px;
+  border: 1.75px solid var(--text-primary);
+  border-radius: var(--radius-pill);
+}
+
+.tool-shape-diamond {
+  width: 14px;
+  height: 14px;
+  border: 1.75px solid var(--text-primary);
+  transform: rotate(45deg);
+}

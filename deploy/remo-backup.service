@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up the remo database on shared PostgreSQL
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+ExecStart=/srv/remo/remo backup
+UMask=0077

@@ -1,0 +1,56 @@
+name: Bug report
+description: Something behaves differently from the documentation.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not report a security vulnerability here. Use SECURITY.md instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The observed result, in plain words.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: A link to the guide or ADR that defines the behaviour is ideal.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 0.1.0 or a commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: deploy
+    attributes:
+      label: Deployment
+      options:
+        - Self-hosted with Docker Compose
+        - Self-hosted without Docker
+        - Local development
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshot
+      description: Remove secrets, tokens, emails and board content first.
+    validations:
+      required: false

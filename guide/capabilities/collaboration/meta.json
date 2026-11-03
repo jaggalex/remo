@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/collaboration",
+  "type": "explanation",
+  "status": "available",
+  "order": 35,
+  "title": {
+    "ru": "Совместная работа",
+    "en": "Collaboration"
+  },
+  "summary": {
+    "ru": "Работать на одной доске одновременно: курсоры, присутствие, follow и «Позвать всех к себе».",
+    "en": "Work on one board at the same time: cursors, presence, follow and \"Bring everyone to me\"."
+  },
+  "related": [
+    "concepts/sync",
+    "capabilities/access",
+    "capabilities/facilitation",
+    "start/quickstart"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:7ea29d735d80c77783b1cf223109837de9cd5dc2c53683fdbfa99864175b4842"
+    }
+  }
+}

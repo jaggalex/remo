@@ -1,0 +1,747 @@
+/* --------------------------------------------------------------- agents --- */
+
+:root {
+  /* Geometry of the plan miniature, not a design-system size: one knob for both
+     the SVG and its empty placeholder. */
+  --agent-plan-map-height: 168px;
+}
+
+.agent-dialog {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 18px 20px 20px;
+  border-radius: 16px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-enable {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+
+.agent-enable label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.agent-enable p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.agent-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agent-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.agent-field input,
+.agent-field select,
+.agent-field textarea {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 12.5px;
+  background: var(--bg-panel);
+  color: var(--ink);
+}
+
+.agent-field textarea {
+  resize: vertical;
+  min-height: 62px;
+}
+
+.agent-budget {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 8px;
+}
+
+.agent-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.agent-actions .muted {
+  font-size: 11.5px;
+}
+
+.agent-notice {
+  margin: 0;
+  font-size: 12px;
+}
+
+.agent-history {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.agent-history > strong {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.agent-history ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-history li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.agent-history li:last-child {
+  border-bottom: 0;
+}
+
+.agent-history li > div:first-child {
+  grid-column: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.agent-history li > div:nth-child(2) {
+  grid-column: 1;
+  font-size: 11.5px;
+}
+
+.agent-history li > button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.agent-status {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.agent-status.applied {
+  background: var(--success-soft);
+  color: var(--state-success);
+}
+
+.agent-status.failed {
+  background: var(--danger-soft);
+  color: var(--text-danger);
+}
+
+.agent-status.running,
+.agent-status.awaiting_approval {
+  background: var(--accent-soft);
+  color: var(--text-accent);
+}
+
+.agent-status.cancelled {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.agent-task-intent {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------- brief file and plan --- */
+
+.agent-file-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agent-file-section > strong {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------- selection --- */
+
+.agent-source {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+}
+
+.agent-source > strong {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.agent-source p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.agent-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.agent-field-hint {
+  font-size: 11.5px;
+}
+
+/* ------------------------------------------------------------- tidy --- */
+
+.tidy-strategy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tidy-map-ghost {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  opacity: 0.55;
+}
+
+.tidy-map-legend {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.tidy-map-legend-before::before,
+.tidy-map-legend-after::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  margin-right: 4px;
+  border-top: 1.5px dashed var(--muted);
+  vertical-align: middle;
+}
+
+.tidy-map-legend-after::before {
+  border-top-style: solid;
+  border-top-color: var(--accent);
+}
+
+.agent-file {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-file-input {
+  display: none;
+}
+
+.agent-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.agent-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.agent-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.agent-file-limits {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.agent-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-plan-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.agent-plan-summary p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.agent-plan-file {
+  margin: 0;
+  font-size: 12px;
+}
+
+.agent-plan-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.agent-plan-section > strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------- plan miniature --- */
+
+.agent-plan-map {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.agent-plan-map-svg {
+  display: block;
+  width: 100%;
+  height: var(--agent-plan-map-height);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+}
+
+.agent-plan-map-caption {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* non-scaling-stroke keeps a hairline readable when the plan spans a kilometre. */
+.agent-plan-map-frame-box {
+  fill: var(--bg-panel);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.agent-plan-map-sticky {
+  fill: var(--sticker-yellow);
+  stroke: var(--sticker-shade);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.agent-plan-map-text {
+  fill: var(--text-secondary);
+}
+
+.agent-plan-map-shape {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.agent-plan-map-other {
+  fill: var(--bg-hover);
+  stroke: var(--border-subtle);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.agent-plan-map-line {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  opacity: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+
+.agent-plan-map-empty {
+  display: grid;
+  place-items: center;
+  min-height: var(--agent-plan-map-height);
+  padding: var(--space-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* ---------------------------------------------------- plan objects --- */
+
+.agent-plan-confirm {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.agent-plan-objects-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agent-plan-objects-head > strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.agent-plan-object-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.agent-plan-object-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.agent-plan-object-group-head {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.agent-plan-objects {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.agent-plan-objects li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.agent-plan-objects li:last-child {
+  border-bottom: 0;
+}
+
+.agent-plan-object-type {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.agent-plan-object-at {
+  flex: none;
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+
+.agent-plan-object-kind {
+  flex: none;
+  color: var(--faint);
+  font-size: 11px;
+}
+
+.agent-plan-object-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-plan-object-more {
+  margin: 0;
+  font-size: 11px;
+}
+
+/* ---------------------------------------------------- plan warnings --- */
+
+.agent-plan-warning-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+.agent-plan-warning-list li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.agent-plan-warning-list li.is-critical {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.agent-plan-warning-code {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font: var(--type-kbd);
+  white-space: nowrap;
+}
+
+.agent-plan-warning-text {
+  min-width: 0;
+  color: var(--ink);
+}
+
+.agent-plan-blocked {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--text-danger);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.agent-plan-phase,
+.agent-plan-undo-hint {
+  align-self: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.agent-plan-ok {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.org-agents {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.org-agents-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.org-agents-head p {
+  max-width: 430px;
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+
+.org-agents-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.org-agent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.org-agent {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.org-agent-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.org-agent-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+}
+
+.org-agent-name .muted {
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-badge.agent {
+  margin-left: 6px;
+  background: var(--agent-soft);
+  color: var(--text-agent);
+}
+
+.org-agent-tokens {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.org-agent-tokens-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+
+.org-token-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.org-token-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.org-token-list li > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.org-skills p {
+  margin: 0;
+  font-size: 11.5px;
+}
+
+.org-skills ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.org-skills li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+@media (max-width: 560px) {
+  .agent-budget {
+    grid-template-columns: 1fr;
+  }
+
+  .org-agents-head {
+    flex-direction: column;
+  }
+}

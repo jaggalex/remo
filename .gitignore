@@ -1,0 +1,22 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+.claude
+
+# sync service room data
+apps/sync/.data
+
+# database dumps
+backups
+
+# built documentation portal (pnpm guide:build)
+docs-site/
+
+# Playwright (ADR-090)
+e2e-report/
+test-results/
+playwright-report/

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>remo</title>
+    <link rel="icon" href="/remo-logo.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <script>
+      (() => {
+        try {
+          const stored = localStorage.getItem("remo.theme") || "system";
+          const dark = stored === "dark" || (stored === "system" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch {}
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "id": "export.formats",
+  "type": "reference",
+  "title": {
+    "ru": "PNG и PDF",
+    "en": "PNG and PDF"
+  },
+  "summary": {
+    "ru": "Картинка для чата и одна страница PDF: что выбрать и кому доступен экспорт.",
+    "en": "A picture for a chat and a one-page PDF: which to choose and who may export."
+  },
+  "related": [
+    "export.scope",
+    "export.backup"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:b983528ff9787115432fc4520ef1d33e66dd9a59fdc3e8086b0a714f674723cd"
+    }
+  }
+}

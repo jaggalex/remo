@@ -1,0 +1,394 @@
+/* ------------------------------------------------------- organisation --- */
+
+.org-dialog {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 18px 20px 20px;
+  border-radius: 16px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.org-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.org-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.org-head p {
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+
+.org-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.org-switch select {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  background: var(--bg-panel);
+}
+
+.org-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+}
+
+.org-tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.org-tabs button.active {
+  background: var(--bg-panel);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow-hover);
+}
+
+.org-invite {
+  display: flex;
+  gap: 8px;
+}
+
+.org-invite input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.org-pending h3 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.org-pending ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.org-pending li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 12.5px;
+}
+
+.org-pending-email {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.org-person {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.org-person-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+}
+
+.org-avatar {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.org-person-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+}
+
+.org-person-name .muted {
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.org-badge {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+}
+
+.org-badge.admin {
+  background: var(--accent-soft);
+  color: var(--text-accent);
+}
+
+.org-badge.guest {
+  background: var(--warning-soft);
+  color: var(--state-warning);
+}
+
+.org-badge.suspended {
+  background: var(--danger-soft);
+  color: var(--text-danger);
+}
+
+.org-badge.you {
+  margin-left: 6px;
+  background: var(--success-soft);
+  color: var(--state-success);
+}
+
+.org-person-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.org-role-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.org-role-editor label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.org-confirm,
+.org-blocked {
+  padding: 9px 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.org-blocked {
+  background: var(--warning-soft);
+}
+
+.org-confirm p,
+.org-blocked p {
+  margin: 0 0 6px;
+}
+
+.org-confirm > div {
+  display: flex;
+  gap: 6px;
+}
+
+.org-blocked ul {
+  margin: 0 0 6px;
+  padding-left: 18px;
+}
+
+.org-note {
+  margin: 0;
+  font-size: 11.5px;
+}
+
+.org-audit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.org-audit li {
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.org-audit li:last-child {
+  border-bottom: 0;
+}
+
+.org-audit-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.org-audit-meta {
+  margin-top: 1px;
+  font-size: 11.5px;
+}
+
+.org-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.link-button.danger {
+  color: var(--text-danger);
+}
+
+.primary-button.danger {
+  background: var(--danger);
+}
+
+.primary-button.danger:hover {
+  background: var(--danger-hover);
+}
+
+/* A person, not a uuid, in the sharing dialog. */
+.share-list li {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.share-subject {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+.share-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-source {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.share-email {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+}
+.share-role-select {
+  max-width: 140px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 5px 7px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+}
+.share-effective {
+  margin: 0;
+}
+
+.share-transfer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.share-transfer p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.share-transfer-confirm p {
+  margin: 0 0 6px;
+}
+
+.share-transfer-confirm > div {
+  display: flex;
+  gap: 6px;
+}
+
+.share-subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .org-person-main {
+    flex-wrap: wrap;
+  }
+
+  .org-person-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "how-to/tags-links",
+  "type": "how-to",
+  "status": "available",
+  "order": 7,
+  "title": {
+    "ru": "Пометить объекты тегами и связать ссылкой",
+    "en": "Tag objects and link them"
+  },
+  "summary": {
+    "ru": "Теги-словарь доски и ссылка на объект: внешний адрес или другой объект.",
+    "en": "A board tag vocabulary and a link on an object: an external address or another object."
+  },
+  "related": [
+    "how-to/card-fields",
+    "how-to/build-board",
+    "capabilities/canvas"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:0942164452b38b0512d758271111c75253c6e1274a95aa0fb0bc2f42330644a2"
+    }
+  }
+}

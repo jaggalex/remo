@@ -1,0 +1,112 @@
+:root {
+  color-scheme: light;
+  /* Legacy names from before @remo/ui, kept as aliases for one release (ТЗ §9). */
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --faint: var(--text-muted);
+  --line: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --accent-strong: var(--accent-hover);
+  --surface: var(--bg-panel);
+  --canvas: var(--bg-canvas);
+  --radius: var(--radius-md);
+  /*
+   * What the bottom-centre plate must leave free on the left for the zoom controls.
+   * A layout constant of this screen, not a design-system size: the HUD is 208 px wide
+   * (`Вписать − 40 % +`) and sits 16 px from the edge, so 240 px keeps the hint and the
+   * voting line clear of it at every width the brief names.
+   */
+  --hud-reserve: 240px;
+  font-family: var(--font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+ * A transparent value is painted as a checkerboard, never as an empty square (ADR-140):
+ * an empty square reads as White, which is now a named value of its own. Two theme
+ * tokens alternate, so the pattern follows light and dark instead of assuming a colour.
+ */
+.checkerboard {
+  background-color: var(--bg-panel);
+  background-image: conic-gradient(
+    var(--bg-active) 25%,
+    transparent 0 50%,
+    var(--bg-active) 0 75%,
+    transparent 0
+  );
+  background-size: 8px 8px;
+}
+
+/* Native controls follow the one accent, like every painted control does. */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+progress {
+  accent-color: var(--accent);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  /* A trackpad gesture must never scroll or bounce the page behind the board. */
+  overscroll-behavior: none;
+}
+
+body {
+  color: var(--ink);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Native buttons take their colour from the surface they sit on. */
+button {
+  color: inherit;
+}
+
+/* `@remo/ui` paints its variants inside `@layer remo.components`, and an unlayered rule
+   beats a layer whatever its specificity — the reset above was repainting primary and
+   danger labels with ink and dropping them to 3.5:1 on the accent (found by the vote
+   results a11y check, ADR-126). Restore the variant colour; disabled, loading and pressed
+   buttons paint their own surface and keep the design system's colour. */
+button.rm-btn-primary:not(:disabled, .is-loading, [aria-pressed="true"]) {
+  color: var(--text-on-accent);
+}
+
+button.rm-btn-danger:not(:disabled, .is-loading, [aria-pressed="true"]) {
+  color: var(--text-on-danger);
+}
+
+/* Same reason: a destructive menu item keeps the design system's danger colour. */
+button.rm-menu-item.is-danger {
+  color: var(--text-danger);
+}
+
+/* And the same cascade gap for the two states a rail button lives in: a pressed tool
+   keeps the accent of `is-selected`, a disabled one keeps the muted colour of `:disabled`
+   (order matters: disabled wins for a control that is both). */
+button.rm-btn.is-selected,
+button.rm-btn[aria-pressed="true"] {
+  color: var(--text-accent);
+}
+
+button.rm-btn:disabled {
+  color: var(--text-muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--canvas);
+}

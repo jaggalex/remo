@@ -1,0 +1,9 @@
+# Add to the existing Caddy configuration, validate, then reload it.
+# The Caddy container and remo web must share REMO_EDGE_NETWORK.
+boards.example.com {
+    reverse_proxy remo-web:8080
+}
+
+docs.boards.example.com {
+    reverse_proxy remo-web:8081
+}

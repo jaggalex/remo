@@ -1,0 +1,110 @@
+/* ------------------------------------------------------ connector bar --- */
+
+/* A DS popover renders the card; the app places it under its trigger (ADR-124 §9.2). */
+.sb-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+/*
+ * The clamp wrapper (ADR-129): no box of its own, so the window keeps the position its
+ * CSS gives it inside the anchor. `useWindowClamp` moves the window with `translate`,
+ * which composes with the centred alignment popover's own `transform`.
+ */
+.panel-window {
+  display: contents;
+}
+
+.connector-bar .rm-popover,
+.arrange-bar .rm-popover,
+.sticky-bar .rm-popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: var(--z-popover);
+}
+
+/* The alignment popover points at its button, not at the bar's left edge. */
+.sticky-bar .sb-anchor-center .rm-popover {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* A menu opened from a bar button hangs under that button (the type breakdown, More). */
+.sticky-bar .panel-window .rm-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: var(--z-popover);
+}
+
+.sb-help {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sb-help:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* A preset chip is the line it produces: colour, width, dash and the end arrow (ADR-120). */
+.sb-line-chip {
+  display: block;
+  overflow: visible;
+}
+
+/* The two arrow ends and the swap are diagrams: stroke, not fill. */
+.sb-end-glyph {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* A dash sample inside the dash segmented control. */
+.sb-dash {
+  display: inline-block;
+  width: 28px;
+  border-top: 2px solid currentColor;
+}
+
+.sb-dash.dashed {
+  border-top-style: dashed;
+}
+
+.sb-dash.dotted {
+  border-top-style: dotted;
+}
+
+/* Width control: a sample of the stroke, named, so it is findable. */
+.sb-width-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+}
+
+.sb-width-glyph i {
+  display: block;
+  width: 18px;
+  border-radius: 2px;
+  background: var(--text-primary);
+}
+
+.sb-width-sample {
+  display: block;
+  width: 24px;
+  border-radius: 2px;
+  background: var(--text-primary);
+}
+
+/* ------------------------------------------------------- shared palette --- */

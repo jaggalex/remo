@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/connectors",
+  "type": "explanation",
+  "status": "available",
+  "order": 15,
+  "title": {
+    "ru": "Связи",
+    "en": "Connectors"
+  },
+  "summary": {
+    "ru": "Показать зависимость между объектами: якоря, маршрут, стрелки и точки перегиба.",
+    "en": "Show a dependency between objects: anchors, routing, arrows and waypoints."
+  },
+  "related": [
+    "concepts/board",
+    "capabilities/canvas",
+    "how-to/export-backup",
+    "reference/api"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:467d9b79fe8c1df620d5dc76cf40d9a8ad6f43be05824f871312b5b12b75f735"
+    }
+  }
+}
