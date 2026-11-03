@@ -21,12 +21,23 @@ export function isRateLimited(key, { limit = LIMIT, now = Date.now() } = {}) {
 }
 
 /** Count one failure and return the new count. */
-export function recordFailure(key, { now = Date.now(), windowMs = WINDOW_MS } = {}) {
+export function recordFailure(
+  key,
+  { now = Date.now(), windowMs = WINDOW_MS, maxKeys = MAX_KEYS } = {},
+) {
   const bucket = buckets.get(key);
   const next = bucket && bucket.resetAt > now ? bucket : { count: 0, resetAt: now + windowMs };
   next.count += 1;
   buckets.set(key, next);
-  if (buckets.size > MAX_KEYS) sweep(now);
+  if (buckets.size > maxKeys) {
+    sweep(now);
+    // If every bucket is still live, forget the oldest insertion. Losing one
+    // allowance is cheaper than an unbounded map a caller can grow with unique keys.
+    while (buckets.size > maxKeys) {
+      const oldest = buckets.keys().next().value;
+      buckets.delete(oldest);
+    }
+  }
   return next.count;
 }
 
@@ -40,6 +51,11 @@ export function sweep(now = Date.now()) {
   for (const [key, bucket] of buckets) {
     if (bucket.resetAt <= now) buckets.delete(key);
   }
+}
+
+/** Test hook: how many keys the limiter is holding. */
+export function trackedFailures() {
+  return buckets.size;
 }
 
 /** Test hook: forget every bucket. */

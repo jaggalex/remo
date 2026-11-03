@@ -5,6 +5,7 @@ import {
   recordFailure,
   resetFailures,
   sweep,
+  trackedFailures,
 } from "./attempts.mjs";
 
 beforeEach(() => resetFailures());
@@ -42,6 +43,14 @@ describe("the failure limiter", () => {
     }
     expect(isRateLimited(key, { now: start + 999 })).toBe(true);
     expect(isRateLimited(key, { now: start + 1_000 })).toBe(false);
+  });
+
+  it("stays bounded even when every bucket is live", () => {
+    // A caller can create a new key per request; the map must not grow with it.
+    for (const key of ["a", "b", "c", "d"]) {
+      recordFailure(key, { now: 1_000, windowMs: 60_000, maxKeys: 3 });
+    }
+    expect(trackedFailures()).toBe(3);
   });
 
   it("drops expired buckets instead of growing forever", () => {

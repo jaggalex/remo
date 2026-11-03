@@ -14,9 +14,10 @@ describe("the client address", () => {
     expect(clientIp(request({ "x-forwarded-for": "203.0.113.7" }))).toBe("10.0.0.5");
   });
 
-  it("reads the first forwarded address behind a trusted proxy", () => {
+  it("reads the address the trusted proxy appended", () => {
     vi.stubEnv("REMO_TRUST_PROXY", "1");
-    expect(clientIp(request({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }))).toBe("203.0.113.7");
+    // A caller can send the left part; the proxy appends what it actually saw.
+    expect(clientIp(request({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }))).toBe("10.0.0.1");
   });
 
   it("falls back to X-Real-IP, then the peer, when the chain is unusable", () => {
