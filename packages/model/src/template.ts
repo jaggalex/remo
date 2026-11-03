@@ -37,6 +37,13 @@ export const TEMPLATE_KEYS = [
 
 export type TemplateKey = (typeof TEMPLATE_KEYS)[number];
 
+/**
+ * The default board title a template seeds, in English (ADR-158).
+ *
+ * This is document content, not UI chrome: a shared board keeps one title whatever
+ * language a reader uses. The English menu labels derive from it, the Russian ones
+ * live in `newBoard.template.*`.
+ */
 export const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   "user-story-map-basic": "Story map",
   "product-roadmap-basic": "Roadmap",

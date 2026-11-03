@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
 import { TEMPLATE_KEYS, type TemplateKey } from "@remo/model";
 import { api, ApiError, type OrgSummary } from "./api";
-import { useI18n, type TranslationKey } from "./i18n";
+import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
+import { TEMPLATE_LABEL_KEY } from "./templateLabels";
 
-/** A template choice is the four captured templates plus an empty board. */
+/** A template choice is one of the four authored templates plus an empty board. */
 type Choice = "empty" | TemplateKey;
-
-const TEMPLATE_KEY: Record<TemplateKey, TranslationKey> = {
-  "user-story-map-basic": "newBoard.template.storyMap",
-  "product-roadmap-basic": "newBoard.template.roadmap",
-  "product-roadmap-basic-prefilled": "newBoard.template.roadmapPrefilled",
-  "kanban-framework": "newBoard.template.kanban",
-};
 
 /**
  * Create a board from the board list.
@@ -168,7 +162,7 @@ export function NewBoardDialog({
             <option value="empty">{t("newBoard.template.empty")}</option>
             {TEMPLATE_KEYS.map((key) => (
               <option key={key} value={key}>
-                {t(TEMPLATE_KEY[key])}
+                {t(TEMPLATE_LABEL_KEY[key])}
               </option>
             ))}
           </select>
