@@ -11,6 +11,8 @@ const PROJECTION_DEBOUNCE_MS = 1500;
 const LOG_FLUSH_MS = 800;
 const COMPACT_AFTER_UPDATES = 200;
 const WRITE_TIMEOUT_MS = 10_000;
+/** One insert stays far below the 65 535 parameters Postgres accepts (ADR-160). */
+const MAX_LOG_BATCH = 1000;
 
 export const roomMethods = {
 /**
@@ -143,7 +145,13 @@ attachRoom(docName, ydoc) {
    * refresh after opening a room therefore rewrites it wholesale, which makes
    * "the database matches the document" true again. Subsequent refreshes diff.
    */
-  room.projection = projectBoard(ydoc);
+  try {
+    room.projection = projectBoard(ydoc);
+  } catch (error) {
+    // The mirror must not decide whether a board opens: the log still holds the document
+    // and the first refresh below rewrites the mirror anyway (ADR-160).
+    this.log.error(`[sync] projection read failed for ${docName}:`, error.message);
+  }
   room.fullRefresh = true;
 
   const onUpdate = (update, origin) => {
@@ -159,7 +167,7 @@ attachRoom(docName, ydoc) {
 
   const onDestroy = () => {
     // `writeState` itself checks that this document still owns the room.
-    void this.writeState(docName, ydoc);
+    this.runInBackground(docName, "teardown", () => this.writeState(docName, ydoc));
   };
 
   room.handlers = { update: onUpdate, destroy: onDestroy };
@@ -176,11 +184,19 @@ isCurrentRoom(room) {
   return !room.retired && this.rooms.get(room.docName) === room;
 },
 
+/** Nothing awaits a timer or a `destroy` event, so its rejection would end the process. */
+runInBackground(docName, what, work) {
+  work().catch((error) => {
+    this.metrics?.inc("remo_store_write_errors_total");
+    this.log.error(`[sync] ${what} failed for ${docName}:`, error.message);
+  });
+},
+
 scheduleLogFlush(room) {
   if (room.logTimer) return;
   room.logTimer = setTimeout(() => {
     room.logTimer = null;
-    void this.flushLog(room);
+    this.runInBackground(room.docName, "log flush", () => this.flushLog(room));
   }, LOG_FLUSH_MS);
 },
 
@@ -188,7 +204,7 @@ scheduleProjection(room) {
   if (room.projectionTimer) return;
   room.projectionTimer = setTimeout(() => {
     room.projectionTimer = null;
-    void this.refreshProjection(room);
+    this.runInBackground(room.docName, "projection", () => this.refreshProjection(room));
   }, PROJECTION_DEBOUNCE_MS);
 },
 
@@ -201,7 +217,7 @@ async flushLog(room) {
   }
   if (!room.pendingUpdates.length) return;
   room.logWriting = true;
-  const batch = room.pendingUpdates.splice(0, room.pendingUpdates.length);
+  const batch = room.pendingUpdates.splice(0, MAX_LOG_BATCH);
   try {
     const values = [];
     const params = [];
@@ -227,11 +243,17 @@ async flushLog(room) {
 
   this.metrics?.inc("remo_store_writes_total", undefined, batch.length);
 
-  const { rows } = await this.pool.query(
-    "select count(*)::int as pending from board_updates where board_id = $1",
-    [room.docName],
-  );
-  if (rows[0].pending >= COMPACT_AFTER_UPDATES) await this.compact(room);
+  try {
+    const { rows } = await this.pool.query(
+      "select count(*)::int as pending from board_updates where board_id = $1",
+      [room.docName],
+    );
+    if (rows[0].pending >= COMPACT_AFTER_UPDATES) await this.compact(room);
+  } catch (error) {
+    // The batch is already durable, so the acknowledgement below is still true. The next
+    // flush counts again.
+    this.log.error(`[sync] compaction check failed for ${room.docName}:`, error.message);
+  }
 
   if (room.pendingUpdates.length > 0) {
     // Updates arrived during the insert; keep them for the next batch instead of
@@ -404,8 +426,9 @@ async refreshProjection(room) {
  * document instead of failing on `widgets_pkey` or on a partially rewritten table.
  */
 async fullProjection(room, next) {
-  const client = await this.pool.connect();
+  let client;
   try {
+    client = await this.pool.connect();
     await client.query("begin");
 
     await client.query(
@@ -561,8 +584,9 @@ async compact(room) {
   // A room that already lost the map is a retired document: its watermark would cover
   // updates that belong to the replacement room and delete them (ADR-128, ADR-148).
   if (!this.isCurrentRoom(room)) return;
-  const client = await this.pool.connect();
+  let client;
   try {
+    client = await this.pool.connect();
     const { rows } = await client.query(
       "select coalesce(max(id), 0)::bigint as watermark from board_updates where board_id = $1",
       [room.docName],
@@ -590,10 +614,10 @@ async compact(room) {
       `[sync] compacted ${room.docName} (${state.length} bytes, log through #${watermark})`,
     );
   } catch (error) {
-    await client.query("rollback").catch(() => {});
+    await client?.query("rollback").catch(() => {});
     this.log.error(`[sync] compaction failed for ${room.docName}:`, error.message);
   } finally {
-    client.release();
+    client?.release();
   }
 },
 

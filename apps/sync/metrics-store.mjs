@@ -43,6 +43,10 @@ export class MetricsStore {
       max: 2,
       connectionTimeoutMillis: 3000,
     });
+    // A metrics outage must not affect a board, and an unheard pool error would (ADR-160).
+    this.pool.on("error", (error) => {
+      this.log.error("[metrics] idle database connection lost:", error.message);
+    });
     await this.pool.query(METRICS_SCHEMA);
     this.log.log("[metrics] separate database ready");
   }

@@ -32,6 +32,21 @@ function sticky(id, x = 0) {
 const silent = { log() {}, error() {} };
 
 suite("room lifecycle", () => {
+  it("survives the server ending an idle connection", async () => {
+    const lost = new Promise((resolve) => store.pool.once("error", resolve));
+    const idle = await store.pool.connect();
+    const killer = await store.pool.connect();
+    const pid = idle.processID;
+    idle.release();
+    await killer.query("select pg_terminate_backend($1)", [pid]);
+    killer.release();
+
+    // The real termination reaches the listener `connect()` installed, not only this one.
+    await lost;
+    expect(store.pool.listenerCount("error")).toBeGreaterThan(0);
+    await expect(store.pool.query("select 1")).resolves.toBeDefined();
+  });
+
   afterAll(async () => {
     if (!store) return;
     // The database is thrown away with the run (ADR-131); only the rows this suite
