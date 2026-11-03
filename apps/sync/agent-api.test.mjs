@@ -219,6 +219,28 @@ suite("agent API", () => {
     expect(replay.body.error).toBe("IDEMPOTENCY_KEY_IN_USE");
   });
 
+  it("revokes an agent token when the owner loses the seat", async () => {
+    const { owner, orgId, userId, agent } = await setup("seat-token");
+    const created = await owner("POST", `/agents/${agent.id}/tokens`, {
+      label: "seat",
+      expiresInDays: 7,
+    });
+    expect(created.status).toBe(201);
+    const anonymous = client();
+    const call = () =>
+      anonymous("GET", "/agent/me", undefined, {
+        Authorization: `Bearer ${created.body.secret}`,
+      });
+    expect((await call()).status).toBe(200);
+
+    await store.suspendOrgMember(orgId, userId);
+    expect((await call()).status).toBe(401);
+
+    // Restoring the seat does not resurrect a credential that outlived it.
+    expect(await store.restoreOrgMember(orgId, userId)).toBe(true);
+    expect((await call()).status).toBe(401);
+  });
+
   it("queues a diagram task, runs it, and stamps the objects", async () => {
     const { owner, orgId, boardId, agent } = await setup("run");
     await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
