@@ -23,6 +23,29 @@ test("the shared timer counts down, pauses and resumes", async ({ page }) => {
   await expect(page.locator(".timer-face")).toContainText("Set by");
 });
 
+test("the board timer repaints while nothing else changes", async ({ page }) => {
+  await freshBoard(page, "timer-paint");
+  await openFacilitation(page);
+  await page.getByRole("menuitem", { name: /Timer/ }).click();
+  await page.getByRole("button", { name: "5 min", exact: true }).click();
+
+  // The header already re-renders once a second; the canvas has its own painter.
+  // Without a clock dependency the board card stays at the value it had at the last
+  // gesture, which is exactly what the screenshot showed.
+  const before = await page.evaluate(
+    () =>
+      (window as unknown as { __remo: { perf: () => { board: number } } }).__remo.perf()
+        .board,
+  );
+  await page.waitForTimeout(2_200);
+  const after = await page.evaluate(
+    () =>
+      (window as unknown as { __remo: { perf: () => { board: number } } }).__remo.perf()
+        .board,
+  );
+  expect(after).toBeGreaterThan(before);
+});
+
 test("the server caps votes and publishes the tally", async ({ page }) => {
   const account = await freshBoard(page, "vote");
   const objectId = await addSticky(page);
