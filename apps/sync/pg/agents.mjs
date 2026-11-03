@@ -265,11 +265,12 @@ async createAgentTask({
   return rows[0];
 },
 
-async findAgentTaskByIdempotency(orgId, key) {
+async findAgentTaskByIdempotency(boardId, createdBy, key) {
   const { rows } = await this.pool.query(
     `select id, agent_id, board_id, status, intent, skill_slug, created_at
-       from agent_tasks where org_id = $1 and idempotency_key = $2`,
-    [orgId, key],
+       from agent_tasks
+      where board_id = $1 and created_by = $2 and idempotency_key = $3`,
+    [boardId, createdBy, key],
   );
   return rows[0] ?? null;
 },
