@@ -12,6 +12,8 @@ WorkingDirectory=/srv/remo
 EnvironmentFile=/srv/remo/.env
 Environment=NODE_ENV=production
 Environment=REMO_DATA_DIR=/var/lib/remo
+# nginx-remo.conf is the only route to this process; trust its X-Forwarded-For.
+Environment=REMO_TRUST_PROXY=1
 ExecStart=/usr/bin/node apps/sync/server.mjs
 
 Restart=on-failure

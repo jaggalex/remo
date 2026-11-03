@@ -248,6 +248,15 @@ export async function verifyPassword(password, stored) {
   }
 }
 
+/**
+ * A valid hash no account owns.
+ *
+ * Sign-in verifies this when the email is unknown, so a failed attempt costs the same
+ * scrypt work either way and the answer does not reveal whether the address exists.
+ */
+export const DUMMY_PASSWORD_HASH =
+  "scrypt$32768$8$1$HfPvthQz64S2xHMngx6IwQ==$FmdfX33anfx5M4NC1AZ6Xrrq3Jsp44hJ02fXrcG8kiPZ8fdvC9MdPs53U9c8jMB0K+/cBB3LfqVtn1HUkHDZTA==";
+
 /** Shortest password we accept. Length beats punctuation rules at this size. */
 export const MIN_PASSWORD = 10;
 
