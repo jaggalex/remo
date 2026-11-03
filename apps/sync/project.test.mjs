@@ -104,22 +104,25 @@ describe("board projection", () => {
           y: 0,
           width: 177,
           height: 177,
-          emoji: "🔥",
           label: "Hot!",
-          reactions: 2,
         },
-        { id: "p1", type: "unsupported", parentId: null, x: 0, y: 0, width: 284, height: 534, decorative: true },
+        {
+          id: "sh1",
+          type: "shape",
+          parentId: null,
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100,
+          shapeKind: "diamond",
+        },
         { id: "c1", type: "card", parentId: "k1", x: 0, y: 0, width: 422, height: 79 },
       ],
     });
 
     const { widgets } = projectBoard(doc);
-    expect(widgets.find((row) => row.id === "s1").props).toEqual({
-      emoji: "🔥",
-      label: "Hot!",
-      reactions: 2,
-    });
-    expect(widgets.find((row) => row.id === "p1").props).toEqual({ decorative: true });
+    expect(widgets.find((row) => row.id === "s1").props).toEqual({ label: "Hot!" });
+    expect(widgets.find((row) => row.id === "sh1").props).toEqual({ shapeKind: "diamond" });
     // A plain card has nothing modelled about it, so the column stays null.
     expect(widgets.find((row) => row.id === "c1").props).toBeNull();
   });

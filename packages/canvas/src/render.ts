@@ -620,7 +620,8 @@ export function drawWidget(
       break;
     }
     case "stamp": {
-      // A sticker: tinted plate, the glyph, an optional caption and a reaction badge.
+      // A sticker: a tinted plate with an optional caption. It has no glyph or
+      // reaction count — those came from the captured templates and are gone.
       const size = Math.min(widget.width, widget.height);
       const tint = widget.style?.fillColor ?? "#ffdd33";
       const radius = size * 0.22;
@@ -632,13 +633,6 @@ export function drawWidget(
       ctx.fill();
       ctx.stroke();
 
-      if (widget.emoji) {
-        ctx.font = `${size * 0.46}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(widget.emoji, widget.x, widget.y - size * 0.06);
-      }
-
       if (widget.label) {
         ctx.fillStyle = palette.textSecondary;
         ctx.font = `600 ${size * 0.115}px ${theme.fontFamily}`;
@@ -647,61 +641,9 @@ export function drawWidget(
         const caption = fitOneLine(ctx, widget.label, widget.width - 10);
         ctx.fillText(caption, widget.x, top + widget.height * 0.78);
       }
-
-      if (widget.reactions) {
-        const badge = `+${widget.reactions}`;
-        ctx.font = `600 ${size * 0.12}px ${theme.fontFamily}`;
-        const badgeWidth = ctx.measureText(badge).width + size * 0.12;
-        const badgeHeight = size * 0.19;
-        const bx = left + widget.width - badgeWidth * 0.72;
-        const by = top + widget.height - badgeHeight * 0.72;
-        ctx.fillStyle = tint;
-        roundRect(ctx, bx, by, badgeWidth, badgeHeight, badgeHeight / 2);
-        ctx.fill();
-        ctx.fillStyle = palette.textPrimary;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(badge, bx + badgeWidth / 2, by + badgeHeight / 2 + 1 / zoom);
-      }
       break;
     }
     case "unsupported": {
-      if (widget.legendTitle) {
-        // Dot-voting key: a card with a title and colour swatch rows.
-        ctx.fillStyle = palette.panel;
-        ctx.strokeStyle = palette.borderSubtle;
-        ctx.lineWidth = 1 / zoom;
-        roundRect(ctx, left, top, widget.width, widget.height, 8);
-        ctx.fill();
-        ctx.stroke();
-
-        const pad = Math.min(widget.width * 0.06, 14);
-        ctx.fillStyle = palette.textPrimary;
-        ctx.font = `600 ${12}px ${theme.fontFamily}`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        ctx.fillText(widget.legendTitle, left + pad, top + pad);
-
-        const entries = widget.entries ?? [];
-        entries.forEach((entry, index) => {
-          const y = top + pad + 22 + index * 26;
-          ctx.fillStyle = entry.color;
-          ctx.beginPath();
-          ctx.arc(left + pad + 6, y + 6, 6, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = palette.textSecondary;
-          ctx.font = `600 ${11.5}px ${theme.fontFamily}`;
-          ctx.fillText(entry.label, left + pad + 20, y);
-          if (entry.hint) {
-            ctx.fillStyle = palette.textMuted;
-            ctx.font = `${11}px ${theme.fontFamily}`;
-            ctx.fillText(entry.hint, left + pad + 20, y + 13);
-          }
-        });
-        break;
-      }
-
       if (widget.label) {
         // A vertical plate naming a roadmap horizon.
         ctx.save();
@@ -720,17 +662,6 @@ export function drawWidget(
         ctx.textBaseline = "middle";
         ctx.fillText(widget.label, 0, 0);
         ctx.restore();
-        break;
-      }
-
-      if (widget.decorative) {
-        // An imported panel with no content of its own: quiet, not alarming.
-        ctx.fillStyle = withAlpha(palette.hover, 0.7);
-        ctx.strokeStyle = palette.borderSubtle;
-        ctx.lineWidth = 1 / zoom;
-        roundRect(ctx, left, top, widget.width, widget.height, 8);
-        ctx.fill();
-        ctx.stroke();
         break;
       }
 
