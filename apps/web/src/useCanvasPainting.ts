@@ -354,6 +354,9 @@ export function useCanvasPainting({
     draggedCardId,
     preview,
     clock,
+    // The painter is memoized by theme, settings, grid, group names and viewport;
+    // invalidating on the painter is what repaints a theme or language change.
+    paintBoard,
   ]);
 
   // Overlay layer: cursors, marquee, drag ghost. Deliberately does not touch the board.
@@ -373,6 +376,8 @@ export function useCanvasPainting({
     camera,
     viewport,
     preview,
+    // Covers hoverAnchor, focusedWaypoint and the theme, which the overlay paints.
+    paintOverlay,
   ]);
 
   useEffect(() => {

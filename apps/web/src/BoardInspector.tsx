@@ -291,6 +291,7 @@ export function BoardInspector(props: BoardInspectorProps) {
           <button
             type="button"
             className="danger-link"
+            disabled={writeBlocked}
             onClick={() => setConfirmReplace(true)}
             title={t("board.replaceTitle")}
           >
@@ -333,10 +334,10 @@ export function BoardInspector(props: BoardInspectorProps) {
                 ))}
               </div>
               <div className="kanban-actions">
-                <button type="button" onClick={() => addColumn(board, id)}>
+                <button type="button" disabled={writeBlocked} onClick={() => addColumn(board, id)}>
                   {t("inspector.addColumn")}
                 </button>
-                <button type="button" onClick={() => addSwimlane(board, id)}>
+                <button type="button" disabled={writeBlocked} onClick={() => addSwimlane(board, id)}>
                   {t("inspector.addSwimlane")}
                 </button>
               </div>

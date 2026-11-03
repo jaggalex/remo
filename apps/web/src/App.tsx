@@ -107,7 +107,7 @@ export function App() {
     notify: showNotice,
     t,
   });
-  const readOnly = Boolean(access?.allowed && !access.capabilities.includes("board.edit"));
+  const readOnly = !(access?.allowed === true && access.capabilities.includes("board.edit"));
   const {
     connection,
     status,

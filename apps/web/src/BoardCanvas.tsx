@@ -767,7 +767,7 @@ export function BoardCanvas({
           if (id) onEdit(id);
         }}
       />
-      {selectedKanbanId && selectedKanban && (
+      {!readOnly && selectedKanbanId && selectedKanban && (
         <div className="kanban-bar">
           <button type="button" onClick={() => onAddColumn(selectedKanbanId)}>
             {t("inspector.addColumn")}

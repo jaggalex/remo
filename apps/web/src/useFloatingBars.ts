@@ -49,8 +49,8 @@ export function useFloatingBars({
 
   /** The arrange bar's target: two or more selected objects. */
   const arrangeBar = useMemo<ArrangeBarTarget | null>(
-    () => floating.arrangeBarTarget({ selectedIds, frame, resolve }),
-    [frame, selectedIds, resolve],
+    () => (readOnly ? null : floating.arrangeBarTarget({ selectedIds, frame, resolve })),
+    [frame, readOnly, selectedIds, resolve],
   );
 
   /** Where the connector bar goes: just above the selected line's box. */
