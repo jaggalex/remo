@@ -36,7 +36,7 @@ afterEach(async () => {
   server = null;
 });
 
-async function listen(bound) {
+async function listen(bound, options = {}) {
   setPersistence({
     bindState: (docName) => {
       bound.push(docName);
@@ -47,10 +47,10 @@ async function listen(bound) {
   server = createServer();
   ({ wss } = attachWebSocket({
     server,
-    store: { getIamBoard: async () => null },
+    store: options.store ?? { getIamBoard: async () => null },
     metrics: { inc() {} },
     sessionFromRequest: async () => null,
-    accessForBoard: async () => ({ access: { allowed: true } }),
+    accessForBoard: options.accessForBoard ?? (async () => ({ access: { allowed: true } })),
     linkUnlockToken: () => null,
     connections: {
       authBySocket: new WeakMap(),
@@ -63,9 +63,11 @@ async function listen(bound) {
   return server.address().port;
 }
 
-function connect(port, room) {
+function connect(port, room, headers = {}) {
   return new Promise((resolve, reject) => {
-    const socket = new WebSocket(`ws://127.0.0.1:${port}/${encodeURIComponent(room)}`);
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/${encodeURIComponent(room)}`, {
+      headers,
+    });
     socket.on("open", () => resolve(socket));
     socket.on("error", reject);
   });
@@ -100,4 +102,34 @@ it("keeps an ASCII board id untouched", async () => {
   }));
 
   expect(bound).toEqual([room]);
+});
+
+it("refuses an upgrade from another origin", async () => {
+  // A socket opened by a hostile page would otherwise ride the session cookie; the
+  // browser cannot forge Origin, so the handshake is the place to stop it (ADR-062).
+  const bound = [];
+  const port = await listen(bound);
+
+  await expect(
+    connect(port, "test-foreign-origin", { Origin: "https://evil.example" }),
+  ).rejects.toThrow(/403/);
+  expect(bound).toEqual([]);
+});
+
+it("checks access even when a board has no organisation", async () => {
+  // The HTTP route keys on `owner_id`; the socket used to require `org_id` too, so a
+  // board without one skipped the check and every room was open.
+  const bound = [];
+  let asked = false;
+  const port = await listen(bound, {
+    store: { getIamBoard: async () => ({ owner_id: "user-1", org_id: null }) },
+    accessForBoard: async () => {
+      asked = true;
+      return { access: { allowed: false, reason: "AUTH_REQUIRED" } };
+    },
+  });
+
+  await expect(connect(port, "test-no-org")).rejects.toThrow(/401/);
+  expect(asked).toBe(true);
+  expect(bound).toEqual([]);
 });

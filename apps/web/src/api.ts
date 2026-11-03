@@ -6,7 +6,10 @@
  * JavaScript to hold (ADR-062).
  */
 
+import { ApiError, call } from "./apiCall";
 import type { VoteSession } from "./vote/voteTypes";
+
+export { ApiError, call } from "./apiCall";
 
 export type {
   VoteBreakdown,
@@ -16,18 +19,6 @@ export type {
   VoteBreakdownVoter,
   VoteSession,
 } from "./vote/voteTypes";
-
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    message: string,
-    /** The server's payload, so a refusal can carry the list it is about (409). */
-    readonly details: Record<string, unknown> = {},
-  ) {
-    super(message);
-  }
-}
 
 export interface SessionUser {
   id: string;
@@ -276,34 +267,9 @@ export interface AuditEvent {
   reason: string | null;
 }
 
-export async function call<T>(
-  path: string,
-  init: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
-): Promise<T> {
-  const response = await fetch(`/api${path}`, {
-    method: init.method ?? "GET",
-    credentials: "same-origin",
-    headers: {
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...(init.headers ?? {}),
-    },
-    body: init.body ? JSON.stringify(init.body) : undefined,
-  });
-  const text = await response.text();
-  const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      String(payload.error ?? "REQUEST_FAILED"),
-      String(payload.message ?? "request failed"),
-      payload,
-    );
-  }
-  return payload as T;
-}
-
 export const api = {
-  me: () => call<{ user: SessionUser; orgs: OrgSummary[] }>("/auth/me"),
+  me: () =>
+    call<{ user: SessionUser; orgs: OrgSummary[]; csrfToken?: string | null }>("/auth/me"),
   register: (body: { email: string; password: string; name: string }) =>
     call<{ user: SessionUser; org: { id: string }; team: { id: string } }>("/auth/register", {
       method: "POST",

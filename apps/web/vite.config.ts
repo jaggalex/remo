@@ -27,7 +27,10 @@ export default defineConfig({
       // teammate on another machine only needs this one port to reach everything.
       "/api": {
         target: syncTarget,
-        changeOrigin: true,
+        // Keep the browser's `Host`: the CSRF origin check compares it with `Origin`,
+        // and rewriting it to the upstream port would make every mutation look foreign
+        // (ADR-062).
+        changeOrigin: false,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/sync": {
