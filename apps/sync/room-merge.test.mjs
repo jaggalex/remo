@@ -203,7 +203,8 @@ suite("legacy room ids", () => {
   it("merges agent tasks and change sets that share an idempotency key", async () => {
     // The idempotency index is (board_id, created_by, idempotency_key). A bare move of
     // two rows with the same key would raise 23505 and roll back the whole batch, so the
-    // repair drops the source duplicate first.
+    // repair re-keys the source and keeps both records: deleting a set would orphan the
+    // task's input.changeSetId and the runner would fail with CHANGE_SET_MISSING.
     const board = `${ROOM}-agent-${Date.now()}`;
     const encoded = encodeURIComponent(board);
     await store.pool.query("insert into boards (id, title) values ($1, '')", [board]);
@@ -237,10 +238,12 @@ suite("legacy room ids", () => {
       );
       await store.pool.query(
         `insert into agent_tasks
-           (org_id, board_id, agent_id, intent, created_by, idempotency_key, change_set_id)
-         values ($1, $2, $3, 'intent', $4, 'same-key',
-                 (select id from agent_change_sets
-                   where board_id = $2 and idempotency_key = 'same-key'))`,
+           (org_id, board_id, agent_id, intent, created_by, idempotency_key,
+            change_set_id, input)
+         select $1, $2, $3, 'intent', $4, 'same-key', s.id,
+                jsonb_build_object('changeSetId', s.id)
+           from agent_change_sets s
+          where s.board_id = $2 and s.idempotency_key = 'same-key'`,
         [orgId, boardId, agentId, owner],
       );
     }
@@ -250,17 +253,28 @@ suite("legacy room ids", () => {
     expect(merged).toContainEqual({ from: encoded, to: board });
 
     const { rows: tasks } = await store.pool.query(
-      "select board_id, change_set_id from agent_tasks where org_id = $1",
+      `select board_id, idempotency_key, change_set_id, input->>'changeSetId' as input_set
+         from agent_tasks where org_id = $1 order by idempotency_key`,
       [orgId],
     );
-    expect(tasks).toHaveLength(1);
-    expect(tasks[0].board_id).toBe(board);
-    expect(tasks[0].change_set_id).not.toBeNull();
+    expect(tasks).toHaveLength(2);
+    expect(tasks.every((task) => task.board_id === board)).toBe(true);
+    expect(new Set(tasks.map((task) => task.idempotency_key)).size).toBe(2);
+
     const { rows: sets } = await store.pool.query(
-      "select board_id from agent_change_sets where org_id = $1",
+      "select id, board_id, idempotency_key from agent_change_sets where org_id = $1",
       [orgId],
     );
-    expect(sets).toEqual([{ board_id: board }]);
+    expect(sets).toHaveLength(2);
+    expect(sets.every((set) => set.board_id === board)).toBe(true);
+    expect(new Set(sets.map((set) => set.idempotency_key)).size).toBe(2);
+
+    // Both tasks still point at a live change set, through the FK and through the
+    // input the runner actually reads.
+    const setIds = new Set(sets.map((set) => set.id));
+    expect(
+      tasks.every((task) => setIds.has(task.change_set_id) && setIds.has(task.input_set)),
+    ).toBe(true);
 
     await store.pool.query("delete from boards where id = $1", [board]);
     await store.pool.query("delete from orgs where id = $1", [orgId]);
