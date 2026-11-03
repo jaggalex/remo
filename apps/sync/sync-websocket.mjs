@@ -16,6 +16,9 @@ import { originAllowed } from "./csrf.mjs";
 
 const { getYDoc, setupWSConnection } = websocketUtils;
 
+/** A room id is a board slug; anything longer is not a board this service created. */
+const MAX_ROOM_ID = 200;
+
 /** ws gives Buffers or typed arrays depending on framing; normalise to bytes. */
 function bytesOf(data) {
   if (data instanceof Uint8Array) return data;
@@ -131,11 +134,26 @@ export function attachWebSocket({
       // A malformed URL or percent sequence is the client's error: answer 400, keep the
       // process alive.
       docName = roomFromRequestUrl(request.url);
+      if (docName.length > MAX_ROOM_ID) {
+        socket.write("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+        socket.destroy();
+        metrics.inc("remo_ws_rejected_total");
+        return;
+      }
       if (store.getIamBoard) {
         const iam = await store.getIamBoard(docName);
+        // An unknown room would be created by bindState on first load. Refusing it here
+        // keeps an anonymous socket from growing the database with arbitrary ids; 404
+        // also avoids disclosing which ids exist (ADR-062/ADR-064).
+        if (!iam) {
+          socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+          socket.destroy();
+          metrics.inc("remo_ws_rejected_total");
+          return;
+        }
         // The HTTP route decides access from `owner_id`; requiring `org_id` here let a
         // board without an organisation skip the check entirely.
-        if (iam?.owner_id) {
+        if (iam.owner_id) {
           session = await sessionFromRequest(request, store);
           const resolved = await accessForBoard({
             store,
