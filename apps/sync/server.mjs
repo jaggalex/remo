@@ -32,6 +32,7 @@ import { createConnections } from "./sync-connections.mjs";
 import { createSaveAcks } from "./sync-save-ack.mjs";
 import { createExportRoutes } from "./sync-export.mjs";
 import { attachWebSocket } from "./sync-websocket.mjs";
+import { FATAL_FLUSH_MS, guardPersistence, installProcessGuards } from "./failure-boundary.mjs";
 import { encodeCommentsChanged } from "./comment-signal.mjs";
 import { encodeVotesChanged } from "./vote-signal.mjs";
 import { appendSetCookie, cookies, failRequest } from "./http-boundary.mjs";
@@ -75,6 +76,11 @@ metrics.describe("remo_ws_rejected_total", "WebSocket upgrades refused by access
 metrics.describe(
   "remo_ws_readonly_write_attempt",
   "Frames a read-only connection tried to write",
+);
+metrics.describe("remo_ws_protocol_errors_total", "WebSocket frames the protocol refused");
+metrics.describe(
+  "remo_background_failures_total",
+  "Failures no caller handled; any non-zero rate is a bug (ADR-160)",
 );
 metrics.describe("remo_ws_connections_active", "WebSocket connections open right now", "gauge");
 metrics.describe("remo_rooms_active", "Yjs rooms held in memory", "gauge");
@@ -192,10 +198,7 @@ if (metricsUrl && process.env.REMO_METRICS !== "off") {
   }
 }
 
-setPersistence({
-  bindState: (docName, ydoc) => store.bindState(docName, ydoc),
-  writeState: (docName, ydoc) => store.writeState(docName, ydoc),
-});
+setPersistence(guardPersistence(store, { metrics }));
 
 /** Constant-time comparison for the one shared secret the service accepts. */
 function safeEqual(given, expected) {
@@ -445,7 +448,10 @@ server.listen(PORT, () => {
   events.start();
 });
 
-const shutdown = async (signal) => {
+let shuttingDown = false;
+const shutdown = async (signal, exitCode = 0) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
   console.log(`[sync] ${signal} received, flushing rooms`);
   agents.stop();
   events.stop();
@@ -455,9 +461,18 @@ const shutdown = async (signal) => {
   } catch (error) {
     console.error("[sync] flush on shutdown failed:", error.message);
   }
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(0), 3000).unref();
+  server.close(() => process.exit(exitCode));
+  setTimeout(() => process.exit(exitCode), 3000).unref();
 };
+
+installProcessGuards({
+  metrics,
+  onFatal() {
+    // The flush below may be what is broken, so its deadline starts before it does.
+    setTimeout(() => process.exit(1), FATAL_FLUSH_MS).unref();
+    void shutdown("uncaughtException", 1);
+  },
+});
 
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));

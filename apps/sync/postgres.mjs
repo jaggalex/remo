@@ -62,6 +62,11 @@ export class PostgresStore {
       max: this.poolSize,
       connectionTimeoutMillis: 5000,
     });
+    // An idle client that loses its server emits here; with no listener a Postgres
+    // restart ended the process. The pool has already discarded the client (ADR-160).
+    this.pool.on("error", (error) => {
+      this.log.error("[sync] idle database connection lost:", error.message);
+    });
     this.pg = pg.default ?? pg;
     await this.migrate();
   }
