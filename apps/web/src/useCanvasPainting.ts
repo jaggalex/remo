@@ -46,6 +46,7 @@ export function useCanvasPainting({
   editingId,
   focusedWaypoint,
   kanbanStates,
+  clock,
   t,
 }: {
   boardRef: React.RefObject<HTMLCanvasElement | null>;
@@ -66,6 +67,8 @@ export function useCanvasPainting({
   editingId: string | null;
   focusedWaypoint: { connectorId: string; waypointId: string } | null;
   kanbanStates: Record<string, KanbanState>;
+  /** Changes once a second while the shared timer runs; the timer card paints from it. */
+  clock: number;
   t: (key: TranslationKey) => string;
 }) {
   const {
@@ -330,6 +333,7 @@ export function useCanvasPainting({
         dragGhostIds,
         draggedCardId,
         preview,
+        clock,
       };
       const changed = Object.keys(now).filter((key) => boardDeps.current[key] !== now[key]);
       boardDeps.current = now;
@@ -349,6 +353,7 @@ export function useCanvasPainting({
     dragGhostIds,
     draggedCardId,
     preview,
+    clock,
   ]);
 
   // Overlay layer: cursors, marquee, drag ghost. Deliberately does not touch the board.

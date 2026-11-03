@@ -704,6 +704,7 @@ export function App() {
           voteBusy={vote.busy}
           voteOffset={vote.offset}
           voteTimerEndsAt={voteTimerEndsAt}
+          timerLeft={timerLeft}
           onVote={cast}
           onWithdrawVote={withdraw}
           onOpenVote={() => setVoteOpen(true)}
