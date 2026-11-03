@@ -39,6 +39,44 @@ export function pathSegments(url) {
     .map((segment) => decodeURIComponent(segment));
 }
 
+/**
+ * The request's cookies, decoded exactly once.
+ *
+ * A malformed percent sequence in a cookie is bad input, not a crashed process:
+ * ignoring that cookie makes the request anonymous instead of throwing a URIError.
+ */
+export function cookies(request) {
+  const header = request.headers.cookie ?? "";
+  const out = {};
+  for (const part of header.split(";")) {
+    const index = part.indexOf("=");
+    if (index < 0) continue;
+    const name = part.slice(0, index).trim();
+    if (!name) continue;
+    try {
+      out[name] = decodeURIComponent(part.slice(index + 1).trim());
+    } catch {
+      continue;
+    }
+  }
+  return out;
+}
+
+/**
+ * Add a `Set-Cookie` without dropping one already queued.
+ *
+ * A request may carry a CSRF cookie and a handler-set session or visitor cookie; using
+ * `setHeader` twice would silently keep only the last, and the browser would lose the
+ * pair the CSRF check depends on.
+ */
+export function appendSetCookie(response, cookie) {
+  if (!cookie) return;
+  const existing = response.getHeader("Set-Cookie");
+  const list = Array.isArray(existing) ? existing : existing ? [existing] : [];
+  list.push(cookie);
+  response.setHeader("Set-Cookie", list);
+}
+
 /** Answer an HTTP failure without ever throwing out of the handler. */
 export function failRequest(response, error, log = console) {
   const badInput = isBadInput(error);

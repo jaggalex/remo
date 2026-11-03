@@ -21,6 +21,7 @@ import {
   readBody,
   sessionCookie,
 } from "./iam-http.mjs";
+import { csrfToken } from "./csrf.mjs";
 
 const THEMES = new Set(["system", "light", "dark"]);
 const LANGS = new Set(["ru", "en"]);
@@ -138,7 +139,9 @@ export async function handleAuthRoutes(ctx) {
       ...org,
       capabilities: orgCapabilitiesFor(org),
     }));
-    json(response, 200, { user, orgs });
+    // The app reads the cookie directly; the field is the documented place a client
+    // looks (spec/IAM-v1.md §6) and keeps the double-submit pair discoverable.
+    json(response, 200, { user, orgs, csrfToken: csrfToken(request) });
     return true;
   }
 

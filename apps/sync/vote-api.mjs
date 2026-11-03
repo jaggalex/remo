@@ -12,6 +12,7 @@
  */
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { readJsonBody } from "./http-body.mjs";
+import { appendSetCookie } from "./http-boundary.mjs";
 
 const VISITOR_COOKIE = "remo_visitor";
 const MAX_OBJECTS = 500;
@@ -350,7 +351,7 @@ export async function handleVotes({
       fail(response, status, code, error.message);
       return true;
     }
-    if (identity.cookie) response.setHeader("Set-Cookie", identity.cookie);
+    if (identity.cookie) appendSetCookie(response, identity.cookie);
     nudge(session.board_id);
     const fresh = await store.getVoteSession(sessionId);
     json(response, 200, { session: await dto(fresh, context, identity.subject) });

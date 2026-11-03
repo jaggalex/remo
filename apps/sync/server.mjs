@@ -34,7 +34,9 @@ import { createExportRoutes } from "./sync-export.mjs";
 import { attachWebSocket } from "./sync-websocket.mjs";
 import { encodeCommentsChanged } from "./comment-signal.mjs";
 import { encodeVotesChanged } from "./vote-signal.mjs";
-import { failRequest } from "./http-boundary.mjs";
+import { appendSetCookie, cookies, failRequest } from "./http-boundary.mjs";
+import { CSRF_COOKIE, csrfCookie, csrfProblem } from "./csrf.mjs";
+import { newToken } from "./iam.mjs";
 import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
 
@@ -225,7 +227,7 @@ const corsHeaders =
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
         "Access-Control-Allow-Headers":
-          "Content-Type, If-Match, Idempotency-Key, Authorization",
+          "Content-Type, If-Match, Idempotency-Key, Authorization, X-CSRF-Token",
       }
     : {
         // Sessions travel in a cookie, so a named origin is required for credentials.
@@ -233,7 +235,7 @@ const corsHeaders =
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
         "Access-Control-Allow-Headers":
-          "Content-Type, If-Match, Idempotency-Key, Authorization",
+          "Content-Type, If-Match, Idempotency-Key, Authorization, X-CSRF-Token",
       };
 
 async function handleRequest(request, response) {
@@ -250,6 +252,26 @@ async function handleRequest(request, response) {
     return;
   }
   for (const [name, value] of Object.entries(corsHeaders)) response.setHeader(name, value);
+
+  // Every browser gets a CSRF cookie before it mutates anything; `/auth/me` hands the
+  // same value to the app so it can echo it back in `X-CSRF-Token` (ADR-062).
+  if (!cookies(request)[CSRF_COOKIE]) {
+    appendSetCookie(
+      response,
+      csrfCookie(newToken(), process.env.NODE_ENV === "production"),
+    );
+  }
+  const csrf = csrfProblem(request);
+  if (csrf) {
+    response.writeHead(403, { "Content-Type": "application/json" });
+    response.end(
+      JSON.stringify({
+        error: csrf,
+        message: "this request did not come from the app",
+      }),
+    );
+    return;
+  }
 
   /**
    * Everything an operator asks first: is it up, where is the data, how much of it,

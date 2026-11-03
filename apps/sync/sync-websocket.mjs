@@ -12,6 +12,7 @@ import { guardReadOnly } from "./readonly.mjs";
 import { decodeSaveAck, isSyncStep1, SAVE_ACK_MESSAGE } from "./save-ack.mjs";
 import { Y, encoding, websocketUtils } from "./y.mjs";
 import { failUpgrade, roomFromRequestUrl } from "./http-boundary.mjs";
+import { originAllowed } from "./csrf.mjs";
 
 const { getYDoc, setupWSConnection } = websocketUtils;
 
@@ -116,13 +117,25 @@ export function attachWebSocket({
     let docName = "";
 
     try {
+      // A browser handshake carries `Origin`; a socket opened by another site would
+      // otherwise ride the session cookie, which `SameSite` does not stop for a
+      // same-site sibling such as the docs host (ADR-062).
+      if (!originAllowed(request)) {
+        socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+        socket.destroy();
+        metrics.inc("remo_ws_rejected_total");
+        return;
+      }
+
       // y-websocket takes the room from the request path; the same name decides access.
       // A malformed URL or percent sequence is the client's error: answer 400, keep the
       // process alive.
       docName = roomFromRequestUrl(request.url);
       if (store.getIamBoard) {
         const iam = await store.getIamBoard(docName);
-        if (iam?.owner_id && iam.org_id) {
+        // The HTTP route decides access from `owner_id`; requiring `org_id` here let a
+        // board without an organisation skip the check entirely.
+        if (iam?.owner_id) {
           session = await sessionFromRequest(request, store);
           const resolved = await accessForBoard({
             store,

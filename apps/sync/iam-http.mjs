@@ -18,6 +18,7 @@ import {
   verifyPassword,
 } from "./iam.mjs";
 import { emitMetric } from "./metrics-events.mjs";
+import { appendSetCookie, cookies } from "./http-boundary.mjs";
 
 const SESSION_COOKIE = "remo_session";
 export const SESSION_DAYS = 30;
@@ -30,7 +31,11 @@ export const linkAttempts = new Map();
 /* ---------------------------------------------------------------- helpers -- */
 
 export function json(response, status, body, headers = {}) {
-  response.writeHead(status, { "Content-Type": "application/json", ...headers });
+  const { "Set-Cookie": cookie, ...rest } = headers;
+  // Append, so a handler's session cookie and the CSRF cookie queued for this request
+  // both reach the browser.
+  appendSetCookie(response, cookie);
+  response.writeHead(status, { "Content-Type": "application/json", ...rest });
   response.end(JSON.stringify(body));
 }
 
@@ -52,25 +57,6 @@ export async function readBody(request) {
   } catch {
     return null;
   }
-}
-
-function cookies(request) {
-  const header = request.headers.cookie ?? "";
-  const out = {};
-  for (const part of header.split(";")) {
-    const index = part.indexOf("=");
-    if (index < 0) continue;
-    const name = part.slice(0, index).trim();
-    if (!name) continue;
-    // A malformed percent sequence in a cookie is bad input, not a crashed process.
-    // Ignoring that cookie makes the request anonymous instead of throwing a URIError.
-    try {
-      out[name] = decodeURIComponent(part.slice(index + 1).trim());
-    } catch {
-      continue;
-    }
-  }
-  return out;
 }
 
 export function sessionCookie(token, secure) {

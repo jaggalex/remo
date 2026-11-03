@@ -1,4 +1,4 @@
-import { ApiError } from "./api";
+import { call } from "./api";
 
 /**
  * Comments API (ADR-104/105).
@@ -47,25 +47,6 @@ export interface CommentThread {
   updatedAt: string;
   unread: number;
   comments: CommentMessage[];
-}
-
-async function call<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
-  const response = await fetch(`/api${path}`, {
-    method: init.method ?? "GET",
-    credentials: "same-origin",
-    headers: { ...(init.body ? { "Content-Type": "application/json" } : {}) },
-    body: init.body ? JSON.stringify(init.body) : undefined,
-  });
-  const text = await response.text();
-  const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      String(payload.error ?? "REQUEST_FAILED"),
-      String(payload.message ?? "request failed"),
-    );
-  }
-  return payload as T;
 }
 
 const board = (id: string) => `/boards/${encodeURIComponent(id)}/comments`;
