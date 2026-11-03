@@ -68,14 +68,14 @@ async loadRoom(docName, provided = null) {
     }
 
     const ydoc = provided ?? new Y.Doc();
-    await this.readBoardState(docName, ydoc);
+    await this.loadRoomState(docName, ydoc);
     this.attachRoom(docName, ydoc);
     return ydoc;
   });
 },
 
 /** Read the snapshot and the log as one consistent state into a fresh document. */
-async readBoardState(docName, ydoc) {
+async loadRoomState(docName, ydoc) {
   const client = await this.pool.connect();
   try {
     // Snapshot and log must be read as one consistent state. A teardown of the previous
