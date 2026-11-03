@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { PostgresStore } from "./postgres.mjs";
+import { SCHEMA_VERSION } from "./schema-version.mjs";
 
 /**
  * A fresh database is part of the acceptance (ADR-089).
@@ -58,9 +60,55 @@ describe("schema migrations", () => {
 });
 
 describe("schema version", () => {
-  it("matches the version declared in schema.sql", async () => {
-    const { SCHEMA_VERSION } = await import("./schema-version.mjs");
+  it("matches the version declared in schema.sql", () => {
     const declared = /insert into schema_meta \(id, version\) values \(1, (\d+)\)/i.exec(sql);
     expect(declared?.[1]).toBe(String(SCHEMA_VERSION));
+  });
+
+  it("scopes the idempotency indexes to the board", () => {
+    expect(sql).toContain("agent_tasks_board_idempotency_idx");
+    expect(sql).toContain("agent_change_sets_board_idempotency_idx");
+    expect(sql).toContain("drop index if exists agent_tasks_idempotency_idx");
+    expect(sql).toContain("drop index if exists agent_change_sets_idempotency_idx");
+  });
+});
+
+/** A client that answers the migration gate without touching a database. */
+function migrationClient(version) {
+  const queries = [];
+  return {
+    queries,
+    async query(text) {
+      const statement = String(text);
+      queries.push(statement);
+      if (statement.startsWith("select version from schema_meta")) {
+        return { rows: [{ version }] };
+      }
+      return { rows: [] };
+    },
+    release() {},
+  };
+}
+
+async function migrateAt(version) {
+  const client = migrationClient(version);
+  const store = Object.create(PostgresStore.prototype);
+  store.pool = { connect: async () => client };
+  store.log = { log() {}, error() {} };
+  await store.migrate();
+  return client.queries;
+}
+
+describe("schema migration gate", () => {
+  it("applies schema.sql to a database older than the current version", async () => {
+    // The v13 bug: changing an index in schema.sql without bumping the version made
+    // migrate() skip the file, leaving the old index in place.
+    const queries = await migrateAt(SCHEMA_VERSION - 1);
+    expect(queries.some((text) => text.includes("create table if not exists boards"))).toBe(true);
+  });
+
+  it("skips schema.sql when the database is current", async () => {
+    const queries = await migrateAt(SCHEMA_VERSION);
+    expect(queries.some((text) => text.includes("create table if not exists boards"))).toBe(false);
   });
 });

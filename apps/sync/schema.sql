@@ -846,5 +846,5 @@ create table if not exists schema_meta (
   updated_at timestamptz not null default now()
 );
 
-insert into schema_meta (id, version) values (1, 13)
+insert into schema_meta (id, version) values (1, 14)
 on conflict (id) do update set version = excluded.version, updated_at = now();
