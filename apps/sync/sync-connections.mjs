@@ -7,6 +7,21 @@
  * place is deliberate: the client reconnects, gets a fresh handshake and therefore the
  * right mode. A socket that kept its old mode would be the bug this file prevents.
  */
+/** How long a revoked socket may take to answer the close frame before it is cut. */
+const REVOKE_GRACE_MS = 1_000;
+
+/**
+ * Close a socket that lost access, then terminate it if it does not finish the
+ * handshake. `ws.close` leaves the message listener alive while the socket is CLOSING,
+ * so a client that ignores the close frame can keep writing for the close timeout.
+ */
+export function revokeSocket(socket, code, reason) {
+  if (socket.readyState !== 1) return;
+  socket.close(code, reason);
+  const timer = setTimeout(() => socket.terminate(), REVOKE_GRACE_MS);
+  timer.unref?.();
+}
+
 export function createConnections({ store, accessForBoard, log = console, sweepMs = 30_000 }) {
   /** boardId → Set<{ socket, userId, sessionHash, unlockToken, role, capabilities }> */
   const liveConnections = new Map();
@@ -54,11 +69,11 @@ export function createConnections({ store, accessForBoard, log = console, sweepM
         // A trashed board keeps the same role but loses every write capability, so a
         // role-only check would leave an open editor socket alive (ADR-073).
         if (!allowed || role !== record.role || !sameCapabilities) {
-          record.socket.close(4403, "access changed");
+          revokeSocket(record.socket, 4403, "access changed");
         }
       } catch (error) {
         log.error(`[sync] access refresh failed for ${boardId}:`, error.message);
-        record.socket.close(1011, "access check failed");
+        revokeSocket(record.socket, 1011, "access check failed");
       }
     }
   }
@@ -84,7 +99,7 @@ export function createConnections({ store, accessForBoard, log = console, sweepM
   function closeUserConnections(userId) {
     for (const records of liveConnections.values()) {
       for (const record of [...records]) {
-        if (record.userId === userId) record.socket.close(4403, "access revoked");
+        if (record.userId === userId) revokeSocket(record.socket, 4403, "access revoked");
       }
     }
   }
@@ -99,7 +114,7 @@ export function createConnections({ store, accessForBoard, log = console, sweepM
         for (const record of [...records]) {
           if (!record.sessionHash) continue;
           const session = await store.findSession(record.sessionHash).catch(() => null);
-          if (!session) record.socket.close(4401, "session ended");
+          if (!session) revokeSocket(record.socket, 4401, "session ended");
         }
         await refreshBoardAccess(boardId);
       }
