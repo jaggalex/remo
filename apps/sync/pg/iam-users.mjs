@@ -454,6 +454,17 @@ async suspendOrgMember(orgId, userId) {
       where org_id = $1 and user_id = $2`,
     [orgId, userId],
   );
+  // A token is a portable credential; it must not outlive the owner's seat. Revoke it
+  // now so a later restore does not bring the old token back (AG-07).
+  await this.pool.query(
+    `update agent_tokens t
+        set revoked_at = now()
+       from agents a
+      where t.agent_id = a.id
+        and a.org_id = $1 and a.owner_id = $2
+        and t.revoked_at is null`,
+    [orgId, userId],
+  );
 },
 
 async removeOrgMember(orgId, userId) {
@@ -472,6 +483,16 @@ async removeOrgMember(orgId, userId) {
       `delete from team_memberships tm
         using teams t
         where tm.team_id = t.id and t.org_id = $1 and tm.user_id = $2`,
+      [orgId, userId],
+    );
+    // The seat is gone; so is every token that acted for it (AG-07).
+    await client.query(
+      `update agent_tokens t
+          set revoked_at = now()
+         from agents a
+        where t.agent_id = a.id
+          and a.org_id = $1 and a.owner_id = $2
+          and t.revoked_at is null`,
       [orgId, userId],
     );
     await client.query("commit");
