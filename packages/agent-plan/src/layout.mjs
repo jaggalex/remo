@@ -24,32 +24,30 @@ export function planBounds(objects) {
 }
 
 /**
- * Geometry of the user story map, measured from `spec/templates.json`
- * (`user-story-map-basic`), not invented (ADR-142).
+ * Geometry of remo's story map (ADR-142, ADR-158).
  *
- * The reference board is six wide lane frames holding eight sticker columns: a note is
- * 161.2 × 184.7 at a 181.6 horizontal and 194.7 vertical pitch, the label band is
- * 364.1 wide, a one-row lane is 225.9 tall (two rows are 451.8), and lanes are 32 apart.
- * The clone's story map generalises the counts, not the measurements.
+ * A note is 180 × 170 at a 200 horizontal and 210 vertical pitch; the label band is
+ * 320 wide; a one-row lane is 220 tall; lanes are 32 apart. These are our own layout
+ * values, not a capture of another product.
  */
 export const USER_STORY_MAP = Object.freeze({
-  pitchX: 181.6,
-  pitchY: 194.7,
-  stickyWidth: 161.2,
-  stickyHeight: 184.7,
-  labelBand: 364.1,
-  laneRowHeight: 225.9,
+  pitchX: 200,
+  pitchY: 210,
+  stickyWidth: 180,
+  stickyHeight: 170,
+  labelBand: 320,
+  laneRowHeight: 220,
   laneGap: 32,
-  headerHeight: 120,
-  titleWidth: 617.1,
-  titleHeight: 73.1,
+  headerHeight: 130,
+  titleWidth: 640,
+  titleHeight: 80,
   titleGap: 100,
-  titleFontSize: 64,
-  columnFontSize: 32,
+  titleFontSize: 56,
+  columnFontSize: 30,
   columnHeaderHeight: 80,
-  labelWidth: 208,
-  labelLineHeight: 36.6,
-  labelPad: 36.2,
+  labelWidth: 220,
+  labelLineHeight: 34,
+  labelPad: 32,
 });
 
 const TEMPLATE = "user-story-map";

@@ -46,8 +46,8 @@ export interface KanbanState {
   headerHeight: number;
 }
 
-export const DEFAULT_COLUMN_WIDTH = 574.6;
-export const DEFAULT_HEADER_HEIGHT = 110;
+export const DEFAULT_COLUMN_WIDTH = 320;
+export const DEFAULT_HEADER_HEIGHT = 96;
 
 export function emptyKanbanState(overrides: Partial<KanbanState> = {}): KanbanState {
   return {
@@ -60,11 +60,11 @@ export function emptyKanbanState(overrides: Partial<KanbanState> = {}): KanbanSt
   };
 }
 
-/** Accents observed on the captured boards. */
-export const TODO_ACCENT = "#1a1a1a";
-export const DOING_ACCENT = "#ffdd33";
-export const DONE_ACCENT = "#8fd14f";
-export const NEUTRAL_ACCENT = "#9ca3af";
+/** Accents from remo's own tonal palette (ADR-127). */
+export const TODO_ACCENT = "#595959";
+export const DOING_ACCENT = "#f2b94a";
+export const DONE_ACCENT = "#85d965";
+export const NEUTRAL_ACCENT = "#bfb9b1";
 
 /* ------------------------------------------- fractional order keys ---------- */
 

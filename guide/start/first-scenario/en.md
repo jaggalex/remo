@@ -10,7 +10,7 @@ A planning board you can show to the team and restore from a file: a kanban with
 
 ## Steps
 
-1. Add a kanban template: open **More ▾ → Templates…** and choose **Kanban Framework**. Result: a kanban with columns and swimlanes appears. There is no separate "kanban" button — the kanban arrives as a template.
+1. Add a kanban template: open **More ▾ → Templates…** and choose **Kanban board**. Result: a kanban with columns and swimlanes appears. There is no separate "kanban" button — the kanban arrives as a template.
 2. Double-click a cell in the first column — a card appears. Double-click the card and type a title. Result: a card with text. The template's first cells already contain blank cards: double-clicking such a card opens it for editing. A sticky note dragged into the kanban does not become a card — it stays a sticky note above the grid.
 3. Add two sticky notes with **Sticky note** on the rail (key `N`), select one of them and drag from its edge to the other. Result: a connector between the sticky notes. A kanban card can be a connector endpoint too: the line follows its cell.
 4. Press **Share**, enter a colleague's address, choose the **Editor** role and press **Add**. If no account exists for that address yet, remo shows an invitation link — pass it on. Result: the colleague sees the board and can change it.

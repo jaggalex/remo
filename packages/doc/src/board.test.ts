@@ -458,16 +458,16 @@ describe("a frame adopts and releases what is dropped in it (ADR-110)", () => {
 describe("board title", () => {
   it("follows the template until a human names the board", () => {
     const doc = new BoardDocument();
-    const storyMap = { id: "t", title: "User Story Map", widgets: [] };
-    const roadmap = { id: "t", title: "Product Roadmap", widgets: [] };
+    const storyMap = { id: "t", title: "Story map", widgets: [] };
+    const roadmap = { id: "t", title: "Roadmap", widgets: [] };
 
-    loadBoard(doc, { id: "t", title: "Kanban Framework", widgets: [] }, {});
-    expect(doc.snapshot().title).toBe("Kanban Framework");
+    loadBoard(doc, { id: "t", title: "Kanban board", widgets: [] }, {});
+    expect(doc.snapshot().title).toBe("Kanban board");
 
     // A title that is itself a template name is not a chosen name, so switching
     // templates renames the board instead of describing the previous content.
     loadBoard(doc, storyMap, {});
-    expect(doc.snapshot().title).toBe("User Story Map");
+    expect(doc.snapshot().title).toBe("Story map");
 
     doc.setTitle("Sprint 12");
     loadBoard(doc, roadmap, {});

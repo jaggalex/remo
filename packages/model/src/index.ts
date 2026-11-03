@@ -10,7 +10,6 @@ export * from "./namedColors";
 export * from "./template";
 export * from "./kanban";
 export * from "./reconstruct";
-export * from "./decorate";
 export * from "./timer";
 export * from "./tags";
 export * from "./lock";

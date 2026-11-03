@@ -9,7 +9,7 @@ import {
 } from "./index.mjs";
 
 /**
- * The story map is laid out from the measured template, not from taste (ADR-142).
+ * The story map is laid out from remo's own geometry, not from taste (ADR-142, ADR-158).
  * These tests pin the constants that came from `spec/templates.json` and the
  * generalisation for an arbitrary number of columns and swimlanes.
  */
@@ -105,7 +105,7 @@ describe("the user story map keeps the template's geometry (ADR-142)", () => {
 
   it("builds one frame per swimlane plus a header", () => {
     const plan = buildStructurePlan("user-story-map", {
-      title: "User Storymap Basic",
+      title: "Team story map",
       columns: columns(8, 5),
       swimlanes: [
         { title: "User persona" },
@@ -206,7 +206,7 @@ describe("the user story map keeps the template's geometry (ADR-142)", () => {
 
   it("passes the shared validator the client applies", () => {
     const plan = buildStructurePlan("user-story-map", {
-      title: "User Storymap Basic",
+      title: "Team story map",
       columns: columns(8, 6),
       swimlanes: [
         { title: "User persona" },

@@ -1,14 +1,9 @@
 /**
- * Reconstructed kanban state for the captured templates.
+ * Kanban state for the authored templates (ADR-158).
  *
- * ⚠️ Provenance. The source product does **not** expose columns, swimlanes or card
- * placement through its API (ADR-006), so unlike the widget geometry in
- * `spec/templates.json` this is *not* captured data. It was reconstructed from what
- * is observable — column headers, swimlane names, and the per-column / per-swimlane
- * counts visible in the UI, recorded in ADR-016 — with card
- * placement distributed deterministically where even the counts were unavailable.
- *
- * Replace it as soon as the clone authors its own boards.
+ * The templates carry only widget boxes; columns, swimlanes and card placement are
+ * remo's own starting recipes. They are deterministic so a template looks the same on
+ * every machine and a test can pin the matrix.
  */
 
 import {
@@ -34,35 +29,42 @@ interface KanbanRecipe {
 }
 
 const RECIPES: Record<string, KanbanRecipe> = {
-  // Verified on the live board: Todo 5, Doing 0, Done 0; Team A 3, Team B 2.
   "kanban-framework": {
     columns: [
-      { title: "Todo", accent: TODO_ACCENT },
-      { title: "Doing", accent: DOING_ACCENT },
+      { title: "Backlog", accent: TODO_ACCENT },
+      { title: "In progress", accent: DOING_ACCENT },
       { title: "Done", accent: DONE_ACCENT },
     ],
-    swimlanes: ["Team A", "Team B"],
-    cells: [3, 0, 0, 2, 0, 0],
+    swimlanes: ["Product", "Platform"],
+    cells: [2, 1, 0, 1, 1, 1],
   },
-  // Roadmap lanes are numbered periods with teammate swimlanes; per-cell counts were
-  // not observable, so cards spread evenly.
   "product-roadmap-basic": {
-    columns: Array.from({ length: 8 }, (_, i) => ({ title: String(i + 1), accent: NEUTRAL_ACCENT })),
-    swimlanes: Array.from({ length: 6 }, (_, i) => `Teammate ${i + 1}`),
+    columns: [
+      { title: "Now", accent: TODO_ACCENT },
+      { title: "Next", accent: DOING_ACCENT },
+      { title: "Later", accent: NEUTRAL_ACCENT },
+      { title: "Not now", accent: DONE_ACCENT },
+    ],
+    swimlanes: ["Product", "Design", "Delivery"],
   },
   "product-roadmap-basic-prefilled": {
-    columns: Array.from({ length: 8 }, (_, i) => ({ title: String(i + 1), accent: NEUTRAL_ACCENT })),
-    swimlanes: Array.from({ length: 6 }, (_, i) => `Teammate ${i + 1}`),
+    columns: [
+      { title: "Now", accent: TODO_ACCENT },
+      { title: "Next", accent: DOING_ACCENT },
+      { title: "Later", accent: NEUTRAL_ACCENT },
+      { title: "Not now", accent: DONE_ACCENT },
+    ],
+    swimlanes: ["Product", "Design", "Delivery"],
   },
 };
 
 const FALLBACK: KanbanRecipe = {
   columns: [
-    { title: "Todo", accent: TODO_ACCENT },
-    { title: "Doing", accent: DOING_ACCENT },
+    { title: "Backlog", accent: TODO_ACCENT },
+    { title: "In progress", accent: DOING_ACCENT },
     { title: "Done", accent: DONE_ACCENT },
   ],
-  swimlanes: ["Team A"],
+  swimlanes: ["Product"],
 };
 
 /**

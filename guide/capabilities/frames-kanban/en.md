@@ -13,7 +13,7 @@ A **frame** is a container. An object inside a frame moves with it and does not 
 
 **Frame size** changes with the corner handles. The contents are neither scaled nor moved: the frame grows or shrinks while objects keep their size and position. After a resize, membership is re-evaluated by the centre: an object whose centre is now outside leaves the frame, and an object whose centre is inside joins it — the smallest suitable frame wins. A frame is at least 160 × 120: below that its title and an object inside do not fit. The size and the new membership are undone with one ⌘Z.
 
-A **kanban** arrives as the **Kanban Framework** template from **More ▾ → Templates…**: the columns and swimlanes are already there. A card is created by a double click on a cell; a double click on a card opens it for editing. A card belongs to a cell: its position sets the order in the column, not the coordinates on the canvas.
+A **kanban** arrives as the **Kanban board** template from **More ▾ → Templates…**: the columns and swimlanes are already there. A card is created by a double click on a cell; a double click on a card opens it for editing. A card belongs to a cell: its position sets the order in the column, not the coordinates on the canvas.
 
 ## Card fields
 
@@ -24,7 +24,7 @@ moving a card between columns does not rewrite the status. A column WIP limit sh
 
 ## Example
 
-Input: an empty board. Action: add the **Kanban Framework** template, create a card in the first column, set its status and assignee, drag it to the second. Result: the card has changed its column, and its status, assignee and text have stayed.
+Input: an empty board. Action: add the **Kanban board** template, create a card in the first column, set its status and assignee, drag it to the second. Result: the card has changed its column, and its status, assignee and text have stayed.
 
 ## Limitations
 

@@ -6613,3 +6613,42 @@ that accept an `llms.txt`. A content change regenerates both files in `pnpm guid
 cannot perform an action. They are English-only, and the public origin is the documentation
 domain. A future API/MCP discovery file would be a separate contract, not a second copy of
 this one.
+
+## ADR-158: Templates are authored for remo, not captured
+
+**Status:** accepted (2026-11-03). Amends ADR-005 (template system), ADR-006 (kanban
+geometry) and ADR-012 (named palette) for the starting templates only.
+
+**Context.** The first templates were normalized from captures of another product: their
+geometry, titles and example text came from that product's gallery, and `decorate.ts`
+reconstructed sticker labels and a dot-voting legend from what was visible. The public
+edition removed the captures and screenshots, but the shipped `templates.json` still
+carried the derived layout and verbatim copy, and the kanban recipes still described the
+captured matrices.
+
+**Decision.**
+
+- **Templates are authored, not captured.** `scripts/author-templates.mjs` writes
+  `spec/templates.json` from remo's own layouts, names and prompts. `pnpm templates`
+  regenerates the file and copies it to `apps/web/public`.
+- **Own names and copy.** The four starting points are **Story map**, **Roadmap**,
+  **Roadmap example** and **Kanban board**; the English labels live in `TEMPLATE_LABELS`,
+  the Russian ones in `newBoard.template.*`. Internal keys stay unchanged so existing
+  `?template=` links and stored board titles keep working.
+- **Own matrices.** `reconstruct.ts` carries remo's columns, swimlanes and card placement:
+  Backlog / In progress / Done for the kanban, Now / Next / Later / Not now for the
+  roadmap, with own accents from the tonal palette.
+- **No modelled decoration.** The capture-derived sticker labels and dot-voting legend are
+  removed with `decorate.ts`; a template contains only objects a person can see and edit.
+- **The agent story-map layout is ours.** The constants in
+  `packages/agent-plan/src/layout.mjs` are remo's geometry, not measurements copied from
+  a template.
+
+**Consequences.** A new board starts from a small, readable example that belongs to the
+project. Existing boards keep their content and titles; only newly seeded or newly added
+templates use the authored layouts. Tests and visual baselines follow the new geometry.
+The internal keys are deliberately stable, so no URL or document migration is needed.
+
+**Limits.** The change does not rewrite objects already on a board; a board created from
+an older template keeps them. The old research archive remains private. The template
+editor is still a code-level authoring script, not a product screen.
