@@ -164,6 +164,61 @@ suite("agent API", () => {
     ).toBe(401);
   });
 
+  it("does not replay another agent's change set through a shared key", async () => {
+    const { owner, orgId, boardId, agent } = await setup("idem-agent");
+    await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
+    const other = await owner("POST", `/orgs/${orgId}/agents`, { name: "Other" });
+    expect(other.status).toBe(201);
+
+    const ydoc = await store.roomDocument(boardId);
+    const noteId = "shared-note";
+    ydoc.getMap("widgets").set(noteId, {
+      id: noteId,
+      type: "sticky_note",
+      parentId: null,
+      x: 0,
+      y: 0,
+      width: 160,
+      height: 180,
+    });
+    const text = new Y.Text();
+    text.insert(0, "shared note");
+    ydoc.getMap("texts").set(noteId, text);
+    const operations = [
+      {
+        op: "create_cards",
+        selectionIds: [noteId],
+        target: { kind: "standalone" },
+        mode: "copy",
+      },
+    ];
+
+    const first = await owner(
+      "POST",
+      `/boards/${boardId}/agent-change-sets`,
+      { agentId: agent.id, intent: "Одна и та же задача", operations, preview: true, budget: { maxActions: 10 } },
+      { "Idempotency-Key": "shared-key" },
+    );
+    expect(first.status).toBe(201);
+
+    const token = await owner("POST", `/agents/${other.body.agent.id}/tokens`, {
+      label: "other",
+      expiresInDays: 7,
+    });
+    const anonymous = client();
+    const replay = await anonymous(
+      "POST",
+      "/agent/change-sets",
+      { boardId, intent: "Одна и та же задача", operations, preview: true, budget: { maxActions: 10 } },
+      {
+        Authorization: `Bearer ${token.body.secret}`,
+        "Idempotency-Key": "shared-key",
+      },
+    );
+    expect(replay.status).toBe(409);
+    expect(replay.body.error).toBe("IDEMPOTENCY_KEY_IN_USE");
+  });
+
   it("queues a diagram task, runs it, and stamps the objects", async () => {
     const { owner, orgId, boardId, agent } = await setup("run");
     await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
