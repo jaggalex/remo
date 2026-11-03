@@ -10,8 +10,8 @@ import {
 
 /**
  * The story map is laid out from remo's own geometry, not from taste (ADR-142, ADR-158).
- * These tests pin the constants that came from `spec/templates.json` and the
- * generalisation for an arbitrary number of columns and swimlanes.
+ * These tests pin the constants a generated plan uses — they are our layout for an
+ * arbitrary number of columns and swimlanes, independent of the authored template.
  */
 
 function columns(count, stories) {
