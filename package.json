@@ -68,7 +68,7 @@
     "markdown-it": "^15.0.3",
     "pg": "^8.13.1",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^4.1.11"
   },
   "license": "AGPL-3.0-only",
   "author": "Alexander Kostylev",
