@@ -106,13 +106,6 @@ export interface TextDeltaOp {
  * The parent-relative form used by the source board is normalized on import
  * (see spec/templates.json and ADR-001).
  */
-/** One row of a legend: a colour swatch plus what it means. */
-export interface LegendEntry {
-  color: string;
-  label: string;
-  hint?: string;
-}
-
 export interface Widget extends Rect {
   id: string;
   type: WidgetType;
@@ -160,24 +153,8 @@ export interface Widget extends Rect {
    */
   runs?: TextRun[];
 
-  /**
-   * Sticker ("interactive sticker") content.
-   *
-   * The source API exposes geometry only — no glyph, label or reaction count — so
-   * these are modelled by the clone, exactly like the kanban matrix (ADR-006).
-   */
-  emoji?: string;
   /** Short caption under a sticker, or the title of a vertical lane label. */
   label?: string;
-  /** Reactions on a sticker; the source shows them as a `+n` badge. */
-  reactions?: number;
-
-  /** Legend content: the dot-voting key that ships with the story map template. */
-  legendTitle?: string;
-  entries?: LegendEntry[];
-
-  /** Decoration that carries no content of its own. */
-  decorative?: boolean;
 
   /** Shape kind, for `type: "shape"`. */
   shapeKind?: ShapeKind;

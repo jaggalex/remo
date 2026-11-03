@@ -23,17 +23,13 @@ export function widgetText(doc, id, widget) {
 }
 
 /**
- * Modelled extras worth keeping in the read path: sticker glyph, caption, reaction
- * count, legend rows. Absent keys are dropped so the column stays small.
+ * Modelled extras worth keeping in the read path: a sticker or lane caption, a shape
+ * kind, connector endpoints and card fields. Absent keys are dropped so the column
+ * stays small.
  */
 export function projectProps(widget) {
   const props = {};
-  if (typeof widget.emoji === "string") props.emoji = widget.emoji;
   if (typeof widget.label === "string") props.label = widget.label;
-  if (typeof widget.reactions === "number") props.reactions = widget.reactions;
-  if (typeof widget.legendTitle === "string") props.legendTitle = widget.legendTitle;
-  if (Array.isArray(widget.entries)) props.entries = widget.entries;
-  if (widget.decorative === true) props.decorative = true;
   if (widget.shapeKind) props.shapeKind = widget.shapeKind;
   // Connector endpoints: which two objects a line joins.
   if (widget.start?.item) props.startItem = widget.start.item;
