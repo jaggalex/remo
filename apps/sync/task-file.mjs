@@ -148,16 +148,26 @@ export function csvToText(text) {
   if (body.length === 0) {
     return headers.map((header, index) => `${header}: ${rows[0][index].trim()}`).join(" | ");
   }
-  return body
-    .map((cells) =>
-      headers
-        .map((header, index) => {
-          const value = (cells[index] ?? "").trim().slice(0, TASK_INPUT_LIMITS.cell);
-          return `${header}: ${value}`;
-        })
-        .join(" | "),
-    )
-    .join("\n");
+  // Every row repeats every header, so a small file can expand by its columns times its
+  // rows: 64 KB reached gigabytes and a heap failure no handler can catch (ADR-160). Only
+  // the first `chars` survive `prepareTaskFile`, so nothing past them is built.
+  const lines = [];
+  // Exactly the length of the joined text: stopping early on an estimate would drop rows
+  // from a file that fits, and without the `truncated` mark.
+  let length = -1;
+  for (const cells of body) {
+    const parts = [];
+    length += 1;
+    for (let index = 0; index < headers.length && length <= TASK_INPUT_LIMITS.chars; index += 1) {
+      const value = (cells[index] ?? "").trim().slice(0, TASK_INPUT_LIMITS.cell);
+      const part = `${headers[index]}: ${value}`;
+      length += part.length + (index > 0 ? 3 : 0);
+      parts.push(part);
+    }
+    lines.push(parts.join(" | "));
+    if (length > TASK_INPUT_LIMITS.chars) break;
+  }
+  return lines.join("\n");
 }
 
 export function prepareTaskText(value) {

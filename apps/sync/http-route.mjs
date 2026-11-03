@@ -23,6 +23,17 @@ const ROUTE_FAMILIES = new Set([
   "webhooks",
 ]);
 
+/** The second segments `/auth` serves. Anything else is a caller's string, not a route. */
+const AUTH_ROUTES = new Set([
+  "login",
+  "logout",
+  "me",
+  "password",
+  "preferences",
+  "register",
+  "sessions",
+]);
+
 export function routeLabel(pathname) {
   const parts = String(pathname).split("/").filter(Boolean);
   if (!parts.length) return "/";
@@ -33,6 +44,9 @@ export function routeLabel(pathname) {
   if (family === "boards") return parts.length === 1 ? "/boards" : "/boards/:id";
   // `/auth/...` has a small fixed second segment; keep it so sign-in and sign-up are
   // distinguishable.
-  if (family === "auth") return second ? `/auth/${second}` : "/auth";
+  if (family === "auth") {
+    if (!second) return "/auth";
+    return AUTH_ROUTES.has(second) ? `/auth/${second}` : "/auth/other";
+  }
   return `/${family}`;
 }

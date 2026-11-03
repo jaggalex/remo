@@ -45,9 +45,26 @@ function boardDoc({ widgets = [], columns = [], swimlanes = [], cards = {}, text
   return doc;
 }
 
-const { projectBoard, diffRows } = await import("./project.mjs");
+const { projectBoard, projectKanban, diffRows } = await import("./project.mjs");
 
 describe("board projection", () => {
+  it("skips kanban values it cannot read instead of throwing", () => {
+    const doc = new Yjs.Doc();
+    const kanbans = doc.getMap("kanbans");
+    kanbans.set("number", 1);
+    kanbans.set("text", "plain");
+    const kanban = new Yjs.Map();
+    kanbans.set("mixed", kanban);
+    const columns = new Yjs.Array();
+    columns.push(["not a map", 7]);
+    kanban.set("columns", columns);
+    const cards = new Yjs.Map();
+    cards.set("card", "not a map");
+    kanban.set("cards", cards);
+
+    expect(projectKanban(doc)).toEqual({ columns: [], swimlanes: [], cards: [] });
+  });
+
   it("flattens widgets with their style colours", () => {
     const doc = boardDoc({
       widgets: [
