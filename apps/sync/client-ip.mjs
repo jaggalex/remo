@@ -13,14 +13,22 @@ function proxyTrusted() {
   return /^(1|true|yes)$/i.test(String(process.env.REMO_TRUST_PROXY ?? ""));
 }
 
-/** The first address in `X-Forwarded-For`, or the socket peer. */
+/**
+ * The address the trusted proxy added, or the socket peer.
+ *
+ * The rightmost `X-Forwarded-For` entry is the one the proxy saw: nginx appends
+ * `$remote_addr`, and a client-supplied prefix stays to its left. Reading the first
+ * entry would let a caller choose its own rate-limit bucket.
+ */
 export function clientIp(request) {
   const peer = request.socket?.remoteAddress ?? "";
   if (!proxyTrusted()) return peer || "unknown";
 
-  const forwarded = String(request.headers["x-forwarded-for"] ?? "")
-    .split(",")[0]
-    .trim();
+  const chain = String(request.headers["x-forwarded-for"] ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const forwarded = chain.at(-1) ?? "";
   if (isIP(forwarded)) return forwarded;
 
   const real = String(request.headers["x-real-ip"] ?? "").trim();
