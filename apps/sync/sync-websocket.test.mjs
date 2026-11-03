@@ -10,8 +10,9 @@
  * No database is needed: what is under test is which name reaches `bindState`.
  */
 import { createServer } from "node:http";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { WebSocket } from "ws";
+import { guardPersistence } from "./failure-boundary.mjs";
 import { attachWebSocket } from "./sync-websocket.mjs";
 import { websocketUtils } from "./y.mjs";
 
@@ -164,4 +165,108 @@ it("checks access even when a board has no organisation", async () => {
   await expect(connect(port, "test-no-org")).rejects.toThrow(/401/);
   expect(asked).toBe(true);
   expect(bound).toEqual([]);
+});
+
+/** A frame ws refuses: reserved bits set on a masked, empty frame. */
+const INVALID_FRAME = Buffer.from([0xff, 0x80, 0, 0, 0, 0]);
+
+function closed(socket) {
+  return new Promise((resolve) => {
+    if (socket.readyState === WebSocket.CLOSED) resolve();
+    socket.on("close", resolve);
+    socket.on("error", () => {});
+  });
+}
+
+async function expectStillServing(port) {
+  const next = await connect(port, "test-still-serving");
+  await new Promise((resolve) => {
+    next.on("close", resolve);
+    next.close();
+  });
+}
+
+it("drops only the socket that sent an invalid frame", async () => {
+  const port = await listen([]);
+  const socket = await connect(port, "test-bad-frame");
+  socket._socket.write(INVALID_FRAME);
+  await closed(socket);
+  await expectStillServing(port);
+});
+
+it("refuses a frame above the limit from its header, before reading it", async () => {
+  const port = await listen([]);
+  const socket = await connect(port, "test-big-frame");
+  // A binary frame announcing 17 MiB; ws must refuse it without waiting for the bytes.
+  const header = Buffer.alloc(14);
+  header[0] = 0x82;
+  header[1] = 0x80 | 127;
+  header.writeBigUInt64BE(BigInt(17 * 1024 * 1024), 2);
+  socket._socket.write(header);
+  const code = await new Promise((resolve) => {
+    socket.on("error", () => {});
+    socket.on("close", resolve);
+  });
+  expect(code).toBe(1009);
+  await expectStillServing(port);
+});
+
+it("survives frames that decode to nothing", async () => {
+  const port = await listen([]);
+  // y-websocket logs each frame it cannot decode, and that is the expected path here.
+  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+  cleanups.push(async () => logged.mockRestore());
+  const socket = await connect(port, "test-junk-frame");
+  for (const frame of [[], [0x80], [0, 0x80], [0, 1, 0xff], [1, 0xff], [10, 0xff], [99]]) {
+    socket.send(Buffer.from(frame));
+  }
+  await new Promise((resolve) => {
+    socket.on("close", resolve);
+    socket.close();
+  });
+  await expectStillServing(port);
+});
+
+it("survives a connection reset during the access check", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const port = await listen([], {
+    store: {
+      getIamBoard: async (id) => {
+        await gate;
+        return { id, owner_id: null };
+      },
+    },
+  });
+  let serverSocket;
+  server.prependListener("upgrade", (_request, socket) => {
+    serverSocket = socket;
+  });
+
+  const client = new WebSocket(`ws://127.0.0.1:${port}/test-reset`);
+  client.on("error", () => {});
+  await vi.waitFor(() => expect(serverSocket).toBeDefined());
+
+  // The real ECONNRESET depends on timing; the event it produces does not. Node removed
+  // its own listener before `upgrade`, so without one here this emit throws.
+  expect(() => serverSocket.emit("error", new Error("read ECONNRESET"))).not.toThrow();
+  serverSocket.destroy();
+  release();
+  await closed(client);
+});
+
+it("closes a socket that joins a room which failed to load", async () => {
+  const port = await listen([]);
+  setPersistence({
+    bindState: guardPersistence(
+      { bindState: async () => { throw new Error("database down"); } },
+      { metrics: { inc() {} }, log: { error() {} } },
+    ).bindState,
+    writeState: async () => {},
+  });
+  const socket = await connect(port, "test-unbound");
+  const code = await new Promise((resolve) => socket.on("close", resolve));
+  expect(code).toBe(1011);
 });

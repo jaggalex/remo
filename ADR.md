@@ -6680,3 +6680,52 @@ fields are ignored; the objects themselves remain, so no board is lost.
 
 **Limits.** The old private archive is not a supported import source. A future import
 would need a migration, not a renderer branch.
+
+## ADR-160: A client or a failed background write does not end the sync process
+
+**Status:** accepted (2026-11-03). Extends ADR-109.
+
+**Context.** ADR-109 made the HTTP and upgrade handlers answer instead of throwing, but
+the process could still be ended from outside. `ws` emits `error` on a socket with an
+invalid frame, and neither this service nor y-websocket listened, so one frame from a
+public-link visitor was an uncaught exception. A reset during the asynchronous access
+check hit the same gap on the raw socket. y-websocket calls `bindState` and `writeState`
+without handling a rejection, so a Postgres outage or a document whose `kanbans` entry is
+not a map became an unhandled rejection; the second one repeated on every open after the
+restart. An idle `pg` client that lost its server emits `error` on the pool, which had no
+listener. Every room shares the process, so each of these was an outage for all boards.
+A CSV of 64 KB could also expand to gigabytes of strings and end the process with a heap
+failure, which no handler can catch.
+
+**Decision.**
+
+- **Every socket has an `error` listener from the first line of the upgrade.** A protocol
+  error is counted in `remo_ws_protocol_errors_total`; `ws` then closes that socket.
+- **A frame is at most 16 MiB** (`maxPayload`). The default of 100 MiB is far above any
+  edit. A client beyond the limit is closed with 1009.
+- **Persistence called by y-websocket goes through one boundary**, `guardPersistence`.
+  A room that failed to load closes its sockets with 1011 and refuses newcomers, because
+  edits to an unbound document would never reach the log. The client's reconnect retries.
+- **The projection is a mirror and cannot block a room.** Values of an unexpected shape
+  are skipped, and a projection failure is logged while the room still opens.
+- **A failed database call on a background path is logged and retried by the next pass.**
+  Pools have an `error` listener. A log batch is at most 1000 updates, because a backlog
+  from an outage must stay below the Postgres parameter limit.
+- **Process guards are the last line, not the mechanism.** An unhandled rejection is
+  logged and counted in `remo_background_failures_total`, and the service keeps serving:
+  a rejected promise has not corrupted a call stack. An uncaught exception may have, so
+  the service flushes its rooms for at most five seconds and exits with status 1 for the
+  supervisor to restart it.
+- **CSV output stops growing at the extraction limit**, before the strings exist.
+- **`/auth/*` metric labels are a fixed list**, as ADR-109's boundary rule requires for
+  any caller-controlled value that reaches a long-lived structure.
+
+**Consequences.** A bad client loses its own socket and a database outage degrades saving
+without ending the process; `pending` updates stay in memory and are retried. A failure
+that used to be a visible restart is now a log line and a counter, so
+`remo_background_failures_total` needs an alert: any non-zero rate is a bug to fix.
+
+**Limits.** A backup larger than 16 MiB cannot be imported in one frame until the import
+is split. There is still no cap on sockets per address or board, and awareness frames are
+limited only by the frame size. A document of an unexpected shape no longer harms the
+server, but the browser's `snapshot()` still has to be hardened separately.

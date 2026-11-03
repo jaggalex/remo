@@ -93,6 +93,39 @@ describe("attached files", () => {
   });
 });
 
+describe("a file built to expand", () => {
+  it("reads columns times rows without building the whole product", () => {
+    // 64 KB of commas and short rows: about 15 GB of strings if built in full (ADR-160).
+    const content = `h${",".repeat(31_999)}\n${"a\n".repeat(10_600)}`;
+    const before = process.memoryUsage().heapUsed;
+    const text = csvToText(content);
+    expect(text.length).toBeLessThanOrEqual(TASK_INPUT_LIMITS.chars + 2 * TASK_INPUT_LIMITS.cell);
+    expect(process.memoryUsage().heapUsed - before).toBeLessThan(200 * 1024 * 1024);
+
+    const file = prepareTaskFile({ name: "wide.csv", content });
+    expect(file.truncated).toBe(true);
+    expect(file.content.endsWith("[truncated]")).toBe(true);
+  });
+
+  it("keeps a table that fits complete", () => {
+    expect(csvToText("a,b\n1,2\n3,4\n")).toBe("a: 1 | b: 2\na: 3 | b: 4");
+  });
+
+  it("keeps a table of exactly the limit, and marks one character more", () => {
+    // Whole rows of `a: ` plus 1000 cells and a newline, then one row that fills the rest.
+    const rowLength = "a: ".length + 1000 + 1;
+    const rows = Math.floor(TASK_INPUT_LIMITS.chars / rowLength);
+    const last = "x".repeat(TASK_INPUT_LIMITS.chars - rows * rowLength - "a: ".length);
+    const table = `a\n${`${"x".repeat(1000)}\n`.repeat(rows)}`;
+    const fits = `${table}${last}\n`;
+    expect(csvToText(fits)).toHaveLength(TASK_INPUT_LIMITS.chars);
+    expect(prepareTaskFile({ name: "fits.csv", content: fits }).truncated).toBe(false);
+
+    const over = `${table}${last}x\n`;
+    expect(prepareTaskFile({ name: "over.csv", content: over }).truncated).toBe(true);
+  });
+});
+
 describe("task inputs", () => {
   it("returns metadata that never carries the text", () => {
     const { inputs, meta } = prepareTaskInputs({

@@ -13,11 +13,19 @@ import { decodeSaveAck, isSyncStep1, SAVE_ACK_MESSAGE } from "./save-ack.mjs";
 import { Y, encoding, websocketUtils } from "./y.mjs";
 import { failUpgrade, roomFromRequestUrl } from "./http-boundary.mjs";
 import { originAllowed } from "./csrf.mjs";
+import { isUnboundRoom } from "./failure-boundary.mjs";
 
 const { getYDoc, setupWSConnection } = websocketUtils;
 
 /** A room id is a board slug; anything longer is not a board this service created. */
 const MAX_ROOM_ID = 200;
+
+/**
+ * The largest frame a client may send (ADR-160). ws buffers a frame in full before
+ * anyone sees it, and awareness is parsed synchronously, so its default of 100 MiB is a
+ * memory and event-loop problem rather than a limit.
+ */
+const MAX_FRAME_BYTES = 16 * 1024 * 1024;
 
 /** ws gives Buffers or typed arrays depending on framing; normalise to bytes. */
 function bytesOf(data) {
@@ -39,6 +47,7 @@ export function attachWebSocket({
   linkUnlockToken,
   connections,
   saveAcks,
+  log = console,
 }) {
   const {
     authBySocket,
@@ -47,9 +56,16 @@ export function attachWebSocket({
   } = connections;
   const { queueSaveAck, dropSocket } = saveAcks;
 
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_FRAME_BYTES });
 
   wss.on("connection", (socket, request) => {
+    // An invalid or oversized frame makes ws emit `error`, and neither this file nor
+    // y-websocket listened: one frame was an uncaught exception for every room (ADR-160).
+    // ws closes the socket itself; there is nothing to do but record it.
+    socket.on("error", (error) => {
+      metrics.inc("remo_ws_protocol_errors_total");
+      log.error?.("[sync] socket error:", error.message);
+    });
     metrics.inc("remo_ws_connections_total");
     socket.on("close", () => metrics.inc("remo_ws_disconnections_total"));
 
@@ -88,6 +104,9 @@ export function attachWebSocket({
     if (auth?.boardId) {
       const docName = auth.boardId;
       const roomDoc = getYDoc(docName);
+      // The document is only replaced after its last socket closes, so a socket can
+      // still join a room that failed to load; its edits would never be saved.
+      if (isUnboundRoom(roomDoc)) socket.close(1011, "room unavailable");
       socket.on("message", (message) => {
         const bytes = bytesOf(message);
         if (!bytes) return;
@@ -115,6 +134,11 @@ export function attachWebSocket({
   });
 
   server.on("upgrade", async (request, socket, head) => {
+    // Node removes its own socket listener before this event and ws adds one only in
+    // `handleUpgrade`, so a reset during the awaits below had none (ADR-160).
+    const ignoreReset = () => {};
+    socket.on("error", ignoreReset);
+
     let session = null;
     let upgradeAccess = null;
     let docName = "";
@@ -178,15 +202,22 @@ export function attachWebSocket({
       return;
     }
 
-    wss.handleUpgrade(request, socket, head, (websocket) => {
-      authBySocket.set(websocket, {
-        boardId: docName,
-        access: upgradeAccess,
-        session,
-        unlockToken: linkUnlockToken(request),
+    socket.removeListener("error", ignoreReset);
+    try {
+      wss.handleUpgrade(request, socket, head, (websocket) => {
+        authBySocket.set(websocket, {
+          boardId: docName,
+          access: upgradeAccess,
+          session,
+          unlockToken: linkUnlockToken(request),
+        });
+        wss.emit("connection", websocket, request);
       });
-      wss.emit("connection", websocket, request);
-    });
+    } catch (error) {
+      // The handshake may already be answered, so an HTTP status is no longer possible.
+      log.error?.("[sync] connection setup failed:", error.message);
+      socket.destroy();
+    }
   });
 
   return { wss };

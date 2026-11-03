@@ -89,16 +89,29 @@ export function createConnections({ store, accessForBoard, log = console, sweepM
     }
   }
 
-  const sweep = setInterval(async () => {
-    for (const [boardId, records] of [...liveConnections]) {
-      for (const record of [...records]) {
-        if (!record.sessionHash) continue;
-        const session = await store.findSession(record.sessionHash).catch(() => null);
-        if (!session) record.socket.close(4401, "session ended");
+  let sweeping = false;
+  async function sweepOnce() {
+    // A slow database must not stack passes on top of each other.
+    if (sweeping) return;
+    sweeping = true;
+    try {
+      for (const [boardId, records] of [...liveConnections]) {
+        for (const record of [...records]) {
+          if (!record.sessionHash) continue;
+          const session = await store.findSession(record.sessionHash).catch(() => null);
+          if (!session) record.socket.close(4401, "session ended");
+        }
+        await refreshBoardAccess(boardId);
       }
-      await refreshBoardAccess(boardId);
+    } catch (error) {
+      // `setInterval` ignores the promise, so this would be an unhandled rejection.
+      log.error("[sync] connection sweep failed:", error.message);
+    } finally {
+      sweeping = false;
     }
-  }, sweepMs);
+  }
+
+  const sweep = setInterval(() => void sweepOnce(), sweepMs);
   sweep.unref();
 
   function stopSweep() {
@@ -106,6 +119,7 @@ export function createConnections({ store, accessForBoard, log = console, sweepM
   }
 
   return {
+    sweepOnce,
     authBySocket,
     registerConnection,
     unregisterConnection,

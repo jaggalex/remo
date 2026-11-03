@@ -9,6 +9,7 @@ import { Y } from "./y.mjs";
 
 const num = (value) => (typeof value === "number" && Number.isFinite(value) ? value : null);
 const str = (value) => (typeof value === "string" ? value : null);
+const isMap = (value) => value instanceof Y.Map;
 
 /**
  * Text lives in its own `Y.Text` per widget (it merges and streams better than a
@@ -78,12 +79,15 @@ export function projectKanban(doc) {
   const cards = [];
 
   doc.getMap("kanbans").forEach((kanban, kanbanId) => {
+    // An editor can write any value here; the mirror skips what it cannot read rather
+    // than stop the room from opening (ADR-160).
+    if (!(kanban instanceof Y.Map)) return;
     const columnArray = kanban.get("columns");
     const swimlaneArray = kanban.get("swimlanes");
     const cardMap = kanban.get("cards");
 
     if (columnArray instanceof Y.Array) {
-      columnArray.toArray().forEach((column, index) => {
+      columnArray.toArray().filter(isMap).forEach((column, index) => {
         columns.push({
           kanbanId,
           id: String(column.get("id")),
@@ -97,7 +101,7 @@ export function projectKanban(doc) {
     }
 
     if (swimlaneArray instanceof Y.Array) {
-      swimlaneArray.toArray().forEach((lane, index) => {
+      swimlaneArray.toArray().filter(isMap).forEach((lane, index) => {
         swimlanes.push({
           kanbanId,
           id: String(lane.get("id")),
@@ -109,6 +113,7 @@ export function projectKanban(doc) {
 
     if (cardMap instanceof Y.Map) {
       cardMap.forEach((placement, cardId) => {
+        if (!isMap(placement)) return;
         cards.push({
           kanbanId,
           cardId,

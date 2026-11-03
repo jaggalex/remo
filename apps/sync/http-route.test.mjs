@@ -14,6 +14,15 @@ describe("the HTTP route label", () => {
     expect(routeLabel("/agent/change-sets/abc")).toBe("/agent");
   });
 
+  it("does not make a series of a caller's string under /auth", () => {
+    expect(routeLabel("/auth/random-1")).toBe("/auth/other");
+    expect(routeLabel("/auth/random-2")).toBe("/auth/other");
+    expect(routeLabel(`/auth/${"x".repeat(10_000)}`)).toBe("/auth/other");
+    for (const route of ["register", "logout", "me", "sessions", "preferences", "password"]) {
+      expect(routeLabel(`/auth/${route}`)).toBe(`/auth/${route}`);
+    }
+  });
+
   it("collapses every unknown path into one bucket", () => {
     // The path is caller-controlled; a series per path would grow the registry.
     expect(routeLabel("/random-1")).toBe("other");
