@@ -4,7 +4,7 @@
 import { fail, json, readBody } from "./iam-api.mjs";
 import { hashToken, newToken } from "./iam.mjs";
 import { aiEntryRefusal } from "./agents.mjs";
-import { MAX_TOKENS_PER_AGENT, integer } from "./agent-api-shared.mjs";
+import { MAX_TOKENS_PER_AGENT, integer, operatorView } from "./agent-api-shared.mjs";
 import { relayoutTidyTask } from "./agent-tidy-runner.mjs";
 import { readSelectionInput } from "./selection-source.mjs";
 
@@ -526,16 +526,15 @@ export async function handleBoardRoutes(ctx) {
       return true;
     }
 
-    const allowed =
-      task.created_by === me.id ||
-      task.owner_id === me.id ||
-      (await isOrgAdmin(task.org_id));
-    if (!allowed) {
+    const { access: boardAccess } = await boardAndAccess(task.board_id);
+    const onBoard = Boolean(boardAccess?.allowed);
+    const mine = task.created_by === me.id || task.owner_id === me.id;
+    if (!(onBoard && mine) && !(await isOrgAdmin(task.org_id))) {
       fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
       return true;
     }
     if (method === "GET") {
-      json(response, 200, { task });
+      json(response, 200, { task: onBoard ? task : operatorView(task) });
       return true;
     }
     if (method === "POST" && parts[2] === "cancel") {

@@ -88,6 +88,8 @@ export function orgCapabilitiesFor(membership) {
     : [];
 }
 
+const GUEST_WITHHELD = new Set(["board.share", "board.manage", "board.transfer", "board.delete"]);
+
 /** Capabilities of a role, with the organisation's sharing policy applied. */
 export function capabilitiesFor(role, { canShare = true } = {}) {
   if (!role) return [];
@@ -168,6 +170,12 @@ export function effective({ board, viewer, grants = [], policy = {}, link = null
   if (!role) return deny(viewer?.userId ? "FORBIDDEN" : "AUTH_REQUIRED");
 
   let capabilities = capabilitiesFor(role, { canShare: policy.canShare !== false });
+
+  // A guest works on a board but does not decide who gets in or what happens to it,
+  // whatever role a grant names (spec/IAM-v1.md §3, ADR-161).
+  if (viewer?.org?.relation === "guest") {
+    capabilities = capabilities.filter((capability) => !GUEST_WITHHELD.has(capability));
+  }
 
   // A public link is a read grant, never a data-egress grant (ADR-069/071). The
   // restriction is about *how* the person got in: a signed-in viewer who also holds a

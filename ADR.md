@@ -6729,3 +6729,58 @@ that used to be a visible restart is now a log line and a counter, so
 is split. There is still no cap on sockets per address or board, and awareness frames are
 limited only by the frame size. A document of an unexpected shape no longer harms the
 server, but the browser's `snapshot()` still has to be hardened separately.
+
+## ADR-161: An organisation role needs a seat, and a guest never decides who gets in
+
+**Status:** accepted (2026-11-03). Amends ADR-061, ADR-071 and ADR-109.
+
+**Context.** A review found rights that outlived or exceeded their reason. `hasOrgRole`
+read `admin_roles` without the seat, so a suspended or removed admin stayed an admin and
+could restore themselves. Admin routes accepted any user id, so an account could suspend
+a stranger from its own workspace and end all their sessions. An invitation reactivated a
+suspended seat. Human task and change-set routes read board content without a current
+board decision, which the bearer API already had. An editor or a guest editor could open a
+board to the whole organisation, copy it into a board they own, or erase and forge every
+comment through the backup grant. `spec/IAM-v1.md` already said a guest does not change
+sharing, but the code did not enforce it.
+
+**Decision.**
+
+- **An organisation role counts only with an active member seat.** Removing a member
+  removes their roles, and the last admin cannot be removed.
+- **Admin routes act on members of that organisation only.** A role can be given only to
+  an active member; it no longer creates a seat.
+- **Suspension is scoped to the organisation.** It closes that organisation's boards and
+  the person's sockets, but no longer revokes sessions, because a session is not owned by
+  one organisation. This supersedes the "session ends" behaviour tested until now.
+- **An invitation cannot lift a suspension.** Only `restore` can. A suspended seat refuses
+  the invitation with `ORG_SUSPENDED` and leaves it pending.
+- **A guest has no `board.share`, `board.manage`, `board.transfer` or `board.delete`,**
+  whatever role a grant names, and cannot be granted `coowner`.
+- **`org` is a management subject, like `team`.** Creating or removing it needs
+  `board.manage`. ADR-109's rule that `board.share` suffices now covers user grants only.
+- **Copying a board and importing a backup need `board.manage`.** Taking a backup still
+  needs `board.backup`. ADR-071's separation of those two grants stands; import is now a
+  management action because it replaces the discussion, including who said what.
+- **Task and change-set routes take the same board decision as everything else.** A
+  creator who lost the board gets 404. An organisation admin without a board role sees
+  status metadata only and may cancel, because stopping spend is their job and reading the
+  board is not.
+- **An integration token works only on boards of its organisation.** Before, a member
+  could mint one in their personal workspace and use it elsewhere, where no admin could
+  see or revoke it.
+- **The list of an organisation's apps needs an active seat.**
+- **The link password limit reserves the attempt before `scrypt`**, as login does.
+
+**Consequences.** Editors lose import and copy, and guests lose sharing; the interface
+hides them. Existing `org` grants and guest `coowner` grants stay in the database: the
+first still applies until a manager removes it, and the second acts without its management
+capabilities. A suspended person stays signed in, sees their other organisations, and
+gets `ORG_SUSPENDED` here.
+
+**Limits.** The email binding of an invitation (ADR-109) does not stop the holder of a
+leaked link from registering the invited address, because remo verifies no email and sends
+no mail. For an address without an account, the link is effectively a bearer secret, as
+the sharing guide must say. Closing this needs email verification, a separate decision.
+Agents and their tokens still outlive the owner's seat (AG-07), and a legacy unclaimed
+board can still be claimed without a token.

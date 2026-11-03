@@ -99,11 +99,11 @@ export async function handleComments(ctx) {
   /** Comments are not document state, so peers learn about a change on the socket. */
   const announce = () => void onCommentsChanged?.(boardId);
 
-  // Restoring the discussion is part of replacing the board, so it needs the stronger
-  // backup grant, not merely the right to comment (ADR-071, ADR-104 amendment).
+  // Restoring replaces everyone's words and who said them, which deleting one comment
+  // already reserves for a manager; taking a backup does not imply it (ADR-161).
   if (method === "POST" && parts[3] === "restore" && parts.length === 4) {
-    if (!access.capabilities.includes("board.backup")) {
-      return fail(response, 403, "BACKUP_REQUIRED", "restoring a board needs the backup grant"), true;
+    if (!access.capabilities.includes("board.manage")) {
+      return fail(response, 403, "MANAGE_REQUIRED", "restoring a board needs the owner or a co-owner"), true;
     }
     const body = await readBody(request);
     if (!Array.isArray(body?.threads)) {

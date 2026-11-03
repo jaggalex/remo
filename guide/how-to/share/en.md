@@ -7,6 +7,8 @@ A colleague needs access to the board, someone outside the team needs to view it
 - Permission to share the board (`board.share`): the owner and co-owner always have it, an editor has it unless the organisation policy forbids it (allowed by default).
 - Only an owner or co-owner can appoint a **Co-owner**: it is a management role, and `board.share` alone is not enough.
 - Only the owner or co-owner can manage the public link: an editor does not see that block in the dialog.
+- A guest does not manage access, whatever their role. Only the owner or co-owner can grant access to a whole organisation or team.
+- Keep an invitation link private: remo does not verify email, so if the addressee has no account yet, anyone who gets the link and registers that address can accept it.
 - The colleague's address. A role applies to members of the organisation. If no account exists for that address, remo shows an invitation link; if the account exists and the person is already an organisation member, access starts immediately. Otherwise membership comes first.
 
 ## Steps: a role for a person

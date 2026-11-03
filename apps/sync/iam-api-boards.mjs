@@ -2,13 +2,15 @@
  * Board routes: access, claim, sharing, the link, the password, trash, restore, copy.
  */
 import { hashPassword, hashToken, newToken, normalizeEmail, verifyPassword } from "./iam.mjs";
-import { clearFailures, isRateLimited, recordFailure } from "./attempts.mjs";
+import { clearFailures, reserveAttempt } from "./attempts.mjs";
+import { hashQueue } from "./hash-queue.mjs";
 import { emitMetric } from "./metrics-events.mjs";
 import {
   accessForBoard,
   boardIdFor,
   fail,
   json,
+  linkUnlockCookie,
   linkUnlockToken,
   publicLinkView,
   readBody,
@@ -161,9 +163,9 @@ export async function handleBoardRoutes(ctx) {
         if (!["user", "team", "org"].includes(subjectType)) {
           return fail(response, 422, "BAD_SUBJECT", "unknown subject type"), true;
         }
-        // ADR-061: a team's role is a management decision, not an editor action.
-        if (subjectType === "team" && !access.capabilities.includes("board.manage")) {
-          return fail(response, 403, "FORBIDDEN", "only the owner or a co-owner can change a team role"), true;
+        // ADR-061, ADR-161: a role for a whole team or organisation is a management decision.
+        if (subjectType !== "user" && !access.capabilities.includes("board.manage")) {
+          return fail(response, 403, "FORBIDDEN", "only the owner or a co-owner can change a team or organisation role"), true;
         }
         let subjectId = body?.subjectId ? String(body.subjectId) : null;
         if (!subjectId && subjectType === "user" && body?.email) {
@@ -189,6 +191,12 @@ export async function handleBoardRoutes(ctx) {
             "FORBIDDEN",
             "only the owner or a co-owner can grant or change a co-owner",
           ), true;
+        }
+        if (role === "coowner" && subjectType === "user") {
+          const seat = await store.getOrgMembership(board.org_id, subjectId);
+          if (seat?.relation === "guest") {
+            return fail(response, 422, "BAD_ROLE", "guests cannot be co-owners"), true;
+          }
         }
         const result = await store.putGrant({
           boardId,
@@ -232,8 +240,8 @@ export async function handleBoardRoutes(ctx) {
         if (!["user", "team", "org"].includes(subjectType)) {
           return fail(response, 422, "BAD_SUBJECT", "unknown subject type"), true;
         }
-        if (subjectType === "team" && !access.capabilities.includes("board.manage")) {
-          return fail(response, 403, "FORBIDDEN", "only the owner or a co-owner can change a team role"), true;
+        if (subjectType !== "user" && !access.capabilities.includes("board.manage")) {
+          return fail(response, 403, "FORBIDDEN", "only the owner or a co-owner can change a team or organisation role"), true;
         }
         const subjectId = parts[4];
         const existing = (await store.listGrants(boardId)).find(
@@ -284,15 +292,22 @@ export async function handleBoardRoutes(ctx) {
         // Behind the shipped proxies the socket peer is the proxy; `ip` is the client
         // address when the operator trusts forwarded headers (REMO_TRUST_PROXY).
         const key = `link:${ip ?? "unknown"}:${boardId}`;
-        const now = Date.now();
-        if (isRateLimited(key, { now })) {
+        // Reserved before scrypt: parallel guesses must not all read the same count.
+        if (!reserveAttempt(key)) {
           return fail(response, 429, "RATE_LIMITED", "too many attempts; try again later"), true;
         }
-        const ok = await verifyPassword(String(body.password ?? ""), link.password_hash);
-        if (!ok) {
-          recordFailure(key, { now });
-          return fail(response, 403, "WRONG_PASSWORD", "wrong password"), true;
+        let ok;
+        try {
+          ok = await hashQueue.withSlot(() =>
+            verifyPassword(String(body.password ?? ""), link.password_hash),
+          );
+        } catch (error) {
+          if (error?.code === "HASH_BUSY") {
+            return fail(response, 503, "SERVER_BUSY", "the server is busy; try again"), true;
+          }
+          throw error;
         }
+        if (!ok) return fail(response, 403, "WRONG_PASSWORD", "wrong password"), true;
         clearFailures(key);
         const token = newToken(24);
         await store.createLinkUnlock({
@@ -453,7 +468,7 @@ export async function handleBoardRoutes(ctx) {
     if (parts[2] === "duplicate" && method === "POST") {
       const me2 = requireUser();
       if (!me2) return true;
-      if (!access.allowed || !access.capabilities.includes("board.share")) {
+      if (!access.allowed || !access.capabilities.includes("board.manage")) {
         return fail(response, 403, "FORBIDDEN", "only the owner or a co-owner can copy this board"), true;
       }
       const title = `${board.title || "Untitled"} (copy)`;

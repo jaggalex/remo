@@ -87,6 +87,14 @@ export async function callerFromRequest(request, store) {
   };
 }
 
+/**
+ * A token belongs to one organisation. Acting as its owner elsewhere would give a member
+ * a credential that organisation's admins cannot see or revoke (ADR-161).
+ */
+export function callerReachesOrg(caller, orgId) {
+  return caller?.kind !== "integration" || caller.token.orgId === orgId;
+}
+
 /** A scope check for an integration; a person's access is already the full answer. */
 export function hasScope(caller, scope) {
   if (!caller) return false;

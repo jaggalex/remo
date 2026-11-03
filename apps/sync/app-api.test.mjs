@@ -135,6 +135,13 @@ suite("first-party apps", () => {
     expect(list.body.apps).toEqual([]);
   });
 
+  it("does not list another organisation's apps", async () => {
+    const { owner, orgId } = await setup("list-owner");
+    await install(owner, orgId);
+    const { owner: stranger } = await setup("list-stranger");
+    expect((await stranger("GET", `/orgs/${orgId}/apps`)).status).toBe(404);
+  });
+
   it("runs app.hello with the caller's own name, audited and observable", async () => {
     const { owner, orgId, boardId, userId } = await setup("invoke");
     await install(owner, orgId);

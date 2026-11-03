@@ -6,6 +6,7 @@ You need to show the result outside the product, keep a state before a big rebui
 
 - For an image or a PDF — the export permission (`board.export`). Every role has it, including **Просмотр** (viewer).
 - For a backup — the `board.backup` permission. An editor and above have it.
+- For an import — the `board.manage` permission. The owner and co-owner have it.
 - A public link grants neither.
 
 ## Steps: an image or a PDF

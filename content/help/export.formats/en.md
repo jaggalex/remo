@@ -12,6 +12,7 @@ You get a file with the chosen scope: a PNG for a chat or a document, or a one-p
 
 - **PNG and PDF** — the `board.export` grant. Viewers, commenters, editors and owners have it.
 - **Backup** — the `board.backup` grant. Editors, co-owners and owners have it.
+- **Backup import** — the `board.manage` grant. Co-owners and owners have it.
 - **A public-link visitor** gets neither a picture nor a backup: a link is a view grant, not a data-egress grant.
 
 ## Steps

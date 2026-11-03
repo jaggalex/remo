@@ -7,7 +7,7 @@
  * idempotency key and writes an audit row.
  */
 import { COMMANDS, CommandError, runCommand } from "./commands.mjs";
-import { callerFromRequest, hasScope } from "./integrations.mjs";
+import { callerFromRequest, callerReachesOrg, hasScope } from "./integrations.mjs";
 import { readJsonBody } from "./http-body.mjs";
 
 /** One command at a time per board: Yjs merges, but a stale check needs a queue. */
@@ -88,6 +88,10 @@ export async function handleCommands({
   }
   const access = context.resolved.access;
   const orgId = context.iam?.org_id ?? context.board?.orgId ?? null;
+  if (!callerReachesOrg(acting, orgId)) {
+    fail(response, 404, "RESOURCE_NOT_AVAILABLE", "board not found");
+    return true;
+  }
   const actor =
     acting?.kind === "integration"
       ? { type: "integration", id: acting.token.id, name: acting.token.label }

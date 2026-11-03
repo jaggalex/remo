@@ -79,9 +79,9 @@ export function useBoardAccess() {
   const canShare = Boolean(access?.capabilities.includes("board.share"));
   const canExport = Boolean(access?.capabilities.includes("board.export"));
   const canBackup = Boolean(access?.capabilities.includes("board.backup"));
-  // Import replaces the shared document, so it needs the same grant as editing and the
-  // stronger backup grant (ADR-071).
-  const canImport = Boolean(canBackup && access?.capabilities.includes("board.edit"));
+  // Import replaces the document and the discussion, so it is a management action; taking
+  // a backup is not (ADR-161).
+  const canImport = Boolean(access?.capabilities.includes("board.manage"));
   // AI is for an account that may edit. A public link is view-only: it has no account
   // behind the decision for an agent to act on behalf of (ADR-066, AG-12).
   const linkOnly = access?.sources?.length === 1 && access.sources[0] === "link";
