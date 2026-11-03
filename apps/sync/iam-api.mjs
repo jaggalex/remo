@@ -11,6 +11,7 @@
  * all use lives in `iam-http.mjs` and is re-exported here for existing callers.
  */
 import { pathSegments } from "./http-boundary.mjs";
+import { clientIp } from "./client-ip.mjs";
 import { fail, sessionFromRequest } from "./iam-http.mjs";
 import { iamContext } from "./iam-api-context.mjs";
 import { handleAuthRoutes } from "./iam-api-auth.mjs";
@@ -63,7 +64,7 @@ export async function handleIam({
   const secure = process.env.NODE_ENV === "production";
   const session = await sessionFromRequest(request, store);
   const user = session?.user ?? null;
-  const ip = request.socket?.remoteAddress ?? null;
+  const ip = clientIp(request);
 
   const method = request.method ?? "GET";
   // Each segment is percent-decoded once (ADR-148): a board id may be non-ASCII,
