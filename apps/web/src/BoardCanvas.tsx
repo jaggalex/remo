@@ -151,6 +151,8 @@ interface Props {
   voteOffset: number;
   /** The shared timer's deadline while it runs; a pinned session ends with it (ADR-117). */
   voteTimerEndsAt: string | null;
+  /** A once-a-second value while the timer runs: the canvas timer must repaint. */
+  timerLeft: number;
   onVote: (objectId: string) => void;
   onWithdrawVote: (objectId: string) => void;
   onOpenVote: () => void;
@@ -226,6 +228,7 @@ export function BoardCanvas({
   voteBusy,
   voteOffset,
   voteTimerEndsAt,
+  timerLeft,
   onVote,
   onWithdrawVote,
   onOpenVote,
@@ -353,6 +356,7 @@ export function BoardCanvas({
     editingId,
     focusedWaypoint,
     kanbanStates,
+    clock: timerLeft,
     t,
   });
 
