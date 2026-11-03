@@ -22,7 +22,7 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_DB_PASSWORD` | the same password, for the database tools container |
 | `REMO_KEK`, `REMO_KEK_ID` | encrypts provider keys and webhook secrets; back it up |
 | `REMO_METRICS_TOKEN` | protects `/metrics` |
-| `REMO_APP_ORIGIN`, `REMO_CORS_ORIGIN` | public origin of the app |
+| `REMO_APP_ORIGIN`, `REMO_CORS_ORIGIN` | public origin of the app; mutations from any other origin are refused |
 | `REMO_EDGE_NETWORK`, `REMO_DB_NETWORK` | Docker networks shared with the proxy and the database |
 
 `REMO_KEK` is not stored in PostgreSQL. Losing it makes saved provider keys unreadable.

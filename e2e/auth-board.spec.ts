@@ -137,3 +137,29 @@ test("signing out returns the board to its signed-out state", async ({ page }) =
     { timeout: 15_000 },
   );
 });
+
+test("a cookie mutation must come from this origin and echo the CSRF cookie", async ({
+  page,
+}) => {
+  const account = await register(page, "csrf");
+  await openBoard(page, account.boardId);
+  const origin = new URL(page.url()).origin;
+  const path = `/api/boards/${account.boardId}/duplicate`;
+
+  // What a hostile page would send: the session cookie rides along, the origin does not
+  // match, and the double-submit token is not readable from another origin (ADR-062).
+  const foreign = await page.request.post(path, {
+    headers: { Origin: "https://evil.example" },
+  });
+  expect(foreign.status()).toBe(403);
+
+  const missing = await page.request.post(path, { headers: { Origin: origin } });
+  expect(missing.status()).toBe(403);
+
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "remo_csrf");
+  expect(csrf?.value).toBeTruthy();
+  const accepted = await page.request.post(path, {
+    headers: { Origin: origin, "X-CSRF-Token": csrf?.value ?? "" },
+  });
+  expect(accepted.ok(), await accepted.text()).toBeTruthy();
+});
