@@ -276,12 +276,13 @@ export const roomMergeMethods = {
     ]);
 
     // Agent tasks and change sets carry a unique `(board_id, created_by,
-    // idempotency_key)` index, so a bare move can collide. Drop the source copy that
-    // already exists on the target, then move the rest. Change sets go first: deleting
-    // a duplicate sets `agent_tasks.change_set_id` to null, not a dangling reference.
+    // idempotency_key)` index, so a bare move can collide. Keep both records: a shared
+    // key is re-keyed on the source, not deleted. Deleting the set would orphan the
+    // task's `input.changeSetId` and the runner would fail with CHANGE_SET_MISSING.
     for (const table of ["agent_change_sets", "agent_tasks"]) {
       await client.query(
-        `delete from ${table} s
+        `update ${table} s
+            set idempotency_key = s.idempotency_key || ':merged:' || s.id::text
           where s.board_id = $1 and s.idempotency_key is not null
             and exists (
               select 1 from ${table} t
