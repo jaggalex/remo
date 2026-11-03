@@ -41,6 +41,10 @@ export async function handleAppRoutes(ctx) {
   if (!me) return true;
 
   if (parts.length === 3 && method === "GET") {
+    const seat = await store.getOrgMembership(orgId, me.id);
+    if (seat?.state !== "active") {
+      return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+    }
     const rows = await store.listOrgApps(orgId);
     const apps = rows
       .filter((row) => row.state === "enabled")

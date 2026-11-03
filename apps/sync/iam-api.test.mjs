@@ -400,7 +400,7 @@ suite("IAM API", () => {
     expect(after.body.threads[0].resolvedAt).toBeNull();
     expect(after.body.threads[0].comments).toHaveLength(2);
 
-    // Restore belongs to the backup grant: a viewer cannot replace the discussion.
+    // Restore belongs to a manager: a viewer cannot replace the discussion.
     const viewerRestore = await viewer("POST", `/boards/${boardId}/comments/restore`, {
       threads: [],
     });
@@ -746,7 +746,7 @@ suite("invitations and administration", () => {
     expect(userId).toBeTruthy();
   });
 
-  it("suspends a member: their session ends and their boards stop answering", async () => {
+  it("suspends a member: their boards stop answering and their session survives", async () => {
     const { owner, orgId } = await setup("susp-owner");
     const member = client();
     const memberReg = await member("POST", "/auth/register", {
@@ -776,9 +776,9 @@ suite("invitations and administration", () => {
 
     const suspended = await owner("POST", `/orgs/${orgId}/members/${memberReg.body.user.id}/suspend`);
     expect(suspended.status).toBe(200);
-    // The session is gone, so the next call is anonymous.
-    expect((await member("GET", "/auth/me")).status).toBe(401);
-    expect((await member("GET", `/boards/${board.body.board.id}`)).status).toBe(401);
+    // A session is not owned by one organisation; the board decision closes this one.
+    expect((await member("GET", "/auth/me")).status).toBe(200);
+    expect((await member("GET", `/boards/${board.body.board.id}`)).status).toBe(404);
   });
 
   it("refuses to remove a member who still owns boards", async () => {
@@ -907,23 +907,195 @@ suite("organisation screens", () => {
     expect(asAdmin.body.members.some((row) => row.email === guestEmail)).toBe(true);
   });
 
-  it("restores a suspended member without restoring their session", async () => {
+  it("restores a suspended member", async () => {
     const { owner, orgId } = await setup("restore-owner");
     const person = await addMember(owner, orgId, "restore-person");
 
     expect((await owner("POST", `/orgs/${orgId}/members/${person.id}/suspend`)).status).toBe(200);
-    expect((await person.person("GET", "/auth/me")).status).toBe(401);
-
     expect((await owner("POST", `/orgs/${orgId}/members/${person.id}/restore`)).status).toBe(200);
-    // The seat is back, but the old cookie was revoked by the suspension.
-    expect((await person.person("GET", "/auth/me")).status).toBe(401);
-    const again = await person.person("POST", "/auth/login", {
-      email: person.email,
-      password,
-    });
-    expect(again.status).toBe(200);
     const list = await owner("GET", `/orgs/${orgId}/members`);
     expect(list.body.members.find((row) => row.id === person.id).state).toBe("active");
+  });
+
+  it("ends the rights of a suspended admin, who cannot restore themselves", async () => {
+    const { owner, orgId } = await setup("sa-owner");
+    const admin = await addMember(owner, orgId, "sa-admin");
+    await owner("PUT", `/orgs/${orgId}/admin-roles/${admin.id}/org_admin`);
+
+    expect((await owner("POST", `/orgs/${orgId}/members/${admin.id}/suspend`)).status).toBe(200);
+
+    expect((await admin.person("POST", `/orgs/${orgId}/members/${admin.id}/restore`)).status).toBe(403);
+    expect((await admin.person("GET", `/orgs/${orgId}/audit`)).status).toBe(403);
+    expect((await admin.person("PUT", `/orgs/${orgId}/admin-roles/${admin.id}/org_admin`)).status).toBe(403);
+    const list = await owner("GET", `/orgs/${orgId}/members`);
+    expect(list.body.members.find((row) => row.id === admin.id).state).toBe("suspended");
+  });
+
+  it("removes a removed admin's roles, so returning does not bring them back", async () => {
+    const { owner, orgId } = await setup("ra-owner");
+    const admin = await addMember(owner, orgId, "ra-admin");
+    await owner("PUT", `/orgs/${orgId}/admin-roles/${admin.id}/org_admin`);
+
+    expect((await owner("DELETE", `/orgs/${orgId}/members/${admin.id}`)).status).toBe(200);
+    expect((await admin.person("GET", `/orgs/${orgId}/audit`)).status).toBe(403);
+
+    const invite = await owner("POST", `/orgs/${orgId}/invitations`, { email: admin.email });
+    await admin.person("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+    expect((await admin.person("GET", `/orgs/${orgId}/audit`)).status).toBe(403);
+  });
+
+  it("does not remove the last admin", async () => {
+    const { owner, orgId, userId } = await setup("la-owner");
+    const refused = await owner("DELETE", `/orgs/${orgId}/members/${userId}`);
+    expect(refused.status).toBe(409);
+    expect(refused.body.error).toBe("LAST_ADMIN");
+  });
+
+  it("does not let an admin act on an account outside the organisation", async () => {
+    const { owner: attacker, orgId } = await setup("st-attacker");
+    const { owner: victim, userId: victimId } = await setup("st-victim");
+
+    expect((await attacker("POST", `/orgs/${orgId}/members/${victimId}/suspend`)).status).toBe(404);
+    expect((await attacker("DELETE", `/orgs/${orgId}/members/${victimId}`)).status).toBe(404);
+    const role = await attacker("PUT", `/orgs/${orgId}/admin-roles/${victimId}/user_admin`);
+    expect(role.status).toBe(422);
+    expect(role.body.error).toBe("TARGET_NOT_MEMBER");
+
+    expect((await victim("GET", "/auth/me")).status).toBe(200);
+    const members = await attacker("GET", `/orgs/${orgId}/members`);
+    expect(members.body.members.map((row) => row.id)).not.toContain(victimId);
+  });
+
+  it("does not let an invitation lift a suspension", async () => {
+    const { owner, orgId } = await setup("si-owner");
+    const person = await addMember(owner, orgId, "si-person");
+    const board = await owner("POST", `/orgs/${orgId}/boards`, { title: "Invited" });
+    await owner("POST", `/orgs/${orgId}/members/${person.id}/suspend`);
+
+    const invite = await owner("POST", `/boards/${board.body.board.id}/invitations`, {
+      email: person.email,
+      role: "editor",
+    });
+    expect(invite.status).toBe(201);
+    const accepted = await person.person("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+
+    expect(accepted.status).toBe(403);
+    expect(accepted.body.error).toBe("ORG_SUSPENDED");
+    const list = await owner("GET", `/orgs/${orgId}/members`);
+    expect(list.body.members.find((row) => row.id === person.id).state).toBe("suspended");
+    expect((await person.person("GET", `/boards/${board.body.board.id}`)).status).toBe(404);
+  });
+
+  /** A board, its owner, a member editor and a guest editor. */
+  async function boardWithEditors(tag) {
+    const { owner, orgId } = await setup(`${tag}-owner`);
+    const editor = await addMember(owner, orgId, `${tag}-editor`);
+    const created = await owner("POST", `/orgs/${orgId}/boards`, { title: tag });
+    const boardId = created.body.board.id;
+    await owner("POST", `/boards/${boardId}/grants`, {
+      subjectType: "user",
+      subjectId: editor.id,
+      role: "editor",
+    });
+    const guest = client();
+    const guestEmail = email(`${tag}-guest`);
+    const registered = await guest("POST", "/auth/register", {
+      email: guestEmail,
+      password,
+      name: "Guest",
+    });
+    const invite = await owner("POST", `/boards/${boardId}/invitations`, {
+      email: guestEmail,
+      role: "editor",
+    });
+    await guest("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+    return { owner, orgId, boardId, editor: editor.person, guest, guestId: registered.body.user.id };
+  }
+
+  it("keeps a guest editor out of sharing, but not out of the board", async () => {
+    const { owner, boardId, guest, guestId } = await boardWithEditors("ge");
+
+    const access = await guest("GET", `/boards/${boardId}/access`);
+    expect(access.body.access.capabilities).toContain("board.edit");
+    expect(access.body.access.capabilities).not.toContain("board.share");
+    expect((await guest("GET", `/boards/${boardId}/grants`)).status).toBe(403);
+    expect(
+      (await guest("POST", `/boards/${boardId}/invitations`, { email: email("ge-friend"), role: "editor" })).status,
+    ).toBe(403);
+
+    const promoted = await owner("POST", `/boards/${boardId}/grants`, {
+      subjectType: "user",
+      subjectId: guestId,
+      role: "coowner",
+    });
+    expect(promoted.status).toBe(422);
+  });
+
+  it("does not give a guest management through a co-owner grant made earlier", async () => {
+    const { boardId, guest, guestId } = await boardWithEditors("gc");
+    await store.putGrant({ boardId, subjectType: "user", subjectId: guestId, role: "coowner", grantedBy: guestId });
+
+    const access = await guest("GET", `/boards/${boardId}/access`);
+    expect(access.body.access.capabilities).not.toContain("board.manage");
+    expect(access.body.access.capabilities).not.toContain("board.share");
+  });
+
+  it("reserves a whole organisation's access for a manager", async () => {
+    const { owner, orgId, boardId, editor } = await boardWithEditors("og");
+    const grant = { subjectType: "org", subjectId: orgId, role: "editor" };
+
+    expect((await editor("POST", `/boards/${boardId}/grants`, grant)).status).toBe(403);
+    expect((await owner("POST", `/boards/${boardId}/grants`, grant)).status).toBe(200);
+    expect((await editor("DELETE", `/boards/${boardId}/grants/org/${orgId}`)).status).toBe(403);
+  });
+
+  it("reserves copying a board and replacing its discussion for a manager", async () => {
+    const { owner, boardId, editor, guest } = await boardWithEditors("cp");
+
+    expect((await editor("POST", `/boards/${boardId}/duplicate`)).status).toBe(403);
+    expect((await guest("POST", `/boards/${boardId}/duplicate`)).status).toBe(403);
+    expect((await owner("POST", `/boards/${boardId}/duplicate`)).status).toBe(200);
+
+    expect((await editor("POST", `/boards/${boardId}/comments/restore`, { threads: [] })).status).toBe(403);
+    expect((await owner("POST", `/boards/${boardId}/comments/restore`, { threads: [] })).status).toBe(200);
+  });
+
+  it("opens a password link with the right password and limits parallel guesses", async () => {
+    const { owner, orgId } = await setup("pw-owner");
+    const created = await owner("POST", `/orgs/${orgId}/boards`, { title: "Protected" });
+    const boardId = created.body.board.id;
+    const enabled = await owner("PUT", `/boards/${boardId}/link`, {
+      enabled: true,
+      password: "open sesame",
+    });
+    expect(enabled.status).toBe(200);
+    const unlock = (body, headers = {}) =>
+      fetch(`${base}/boards/${boardId}/link/unlock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Forwarded-For": "", ...headers },
+        body: JSON.stringify(body),
+      });
+
+    expect((await unlock({ password: "wrong" })).status).toBe(403);
+
+    const opened = await unlock({ password: "open sesame" });
+    expect(opened.status).toBe(200);
+    const cookie = opened.headers.get("set-cookie").split(";")[0];
+    const access = await fetch(`${base}/boards/${boardId}/access`, { headers: { Cookie: cookie } });
+    expect((await access.json()).access.allowed).toBe(true);
+
+    // Thirty at once must not all reach scrypt on the same count.
+    const statuses = (await Promise.all(Array.from({ length: 30 }, () => unlock({ password: "wrong" })))).map(
+      (response) => response.status,
+    );
+    expect(statuses.filter((status) => status === 403)).toHaveLength(10);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(20);
   });
 
   it("keeps a guest out of ownership", async () => {

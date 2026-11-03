@@ -395,6 +395,84 @@ suite("agent API", () => {
     expect((await owner("DELETE", `/agent-schedules/${good.body.schedule.id}`)).status).toBe(200);
   });
 
+  it("closes a task and a change set when their author loses the board", async () => {
+    const { owner, orgId, boardId } = await setup("lost");
+    await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
+    const author = client();
+    const registered = await author("POST", "/auth/register", {
+      email: email("lost-author"),
+      password,
+      name: "Author",
+    });
+    const authorId = registered.body.user.id;
+    const invite = await owner("POST", `/orgs/${orgId}/invitations`, { email: email("lost-author") });
+    await author("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+    await owner("POST", `/boards/${boardId}/grants`, {
+      subjectType: "user",
+      subjectId: authorId,
+      role: "editor",
+    });
+    const agent = (await author("POST", `/orgs/${orgId}/agents`, { name: "Mine" })).body.agent;
+    const created = await author("POST", `/boards/${boardId}/agent-tasks`, {
+      agentId: agent.id,
+      intent: "секретный план",
+      budget: { maxActions: 5 },
+    });
+    const taskId = created.body.task.id;
+    const changeSet = await store.createChangeSet({
+      boardId,
+      orgId,
+      agentId: agent.id,
+      createdBy: authorId,
+      intent: "секретный план",
+      operations: [],
+      estimate: {},
+      budget: { maxActions: 5 },
+      origin: {},
+      idempotencyKey: null,
+    });
+    const changeSetId = (changeSet.changeSet ?? changeSet).id;
+
+    expect((await author("GET", `/agent-tasks/${taskId}`)).body.task.intent).toBe("секретный план");
+
+    await owner("DELETE", `/boards/${boardId}/grants/user/${authorId}`);
+
+    expect((await author("GET", `/agent-tasks/${taskId}`)).status).toBe(404);
+    expect((await author("POST", `/agent-tasks/${taskId}/cancel`)).status).toBe(404);
+    expect((await author("GET", `/change-sets/${changeSetId}`)).status).toBe(404);
+    expect((await author("POST", `/change-sets/${changeSetId}/cancel`)).status).toBe(404);
+  });
+
+  it("shows an organisation admin without a board role only that a task exists", async () => {
+    const { owner, orgId, boardId, agent, userId } = await setup("operator");
+    await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
+    const created = await owner("POST", `/boards/${boardId}/agent-tasks`, {
+      agentId: agent.id,
+      intent: "секретный план",
+      budget: { maxActions: 5 },
+    });
+    const taskId = created.body.task.id;
+    const admin = client();
+    const registered = await admin("POST", "/auth/register", {
+      email: email("operator-admin"),
+      password,
+      name: "Admin",
+    });
+    const invite = await owner("POST", `/orgs/${orgId}/invitations`, { email: email("operator-admin") });
+    await admin("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+    await store.setOrgAdmin({ orgId, userId: registered.body.user.id, role: "org_admin", grantedBy: userId });
+
+    const seen = await admin("GET", `/agent-tasks/${taskId}`);
+    expect(seen.status).toBe(200);
+    expect(seen.body.task.status).toBe("queued");
+    expect(JSON.stringify(seen.body)).not.toContain("секретный план");
+    expect((await admin("POST", `/agent-tasks/${taskId}/cancel`)).status).toBe(200);
+  });
+
   it("cancels a queued task without touching the board", async () => {
     const { owner, boardId, agent } = await setup("cancel");
     await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });

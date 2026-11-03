@@ -22,6 +22,6 @@ The person gets access to the board with the chosen role. The access list shows 
 
 ## If it did not work
 
-- **Share copies the link instead of opening the dialog.** The role cannot share: viewer, commenter, or an editor when policy forbids it.
+- **Share copies the link instead of opening the dialog.** The role cannot share: viewer, commenter, guest, or an editor when policy forbids it.
 - **A team role does not change.** Only an owner or co-owner can do that.
 - **The person cannot open the board.** Check that they signed in with the account you granted and that access was not revoked.

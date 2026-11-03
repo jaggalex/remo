@@ -219,6 +219,33 @@ suite("integration tokens", () => {
     });
   });
 
+  it("does not reach a board of another organisation, even one its owner can edit", async () => {
+    const { owner: colleague, orgId: otherOrg, boardId } = await setup("other-org");
+    const member = client();
+    const registered = await member("POST", "/auth/register", {
+      email: email("other-member"),
+      password,
+      name: "Member",
+    });
+    const invite = await colleague("POST", `/orgs/${otherOrg}/invitations`, {
+      email: registered.body.user.email,
+    });
+    await member("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+    await colleague("POST", `/boards/${boardId}/grants`, {
+      subjectType: "user",
+      subjectId: registered.body.user.id,
+      role: "editor",
+    });
+    // A token minted in the member's personal workspace, where they are an admin.
+    const created = await createToken(member, registered.body.org.id, ["board.read", "board.edit"]);
+    const secret = created.body.secret;
+
+    expect((await createNote(secret, boardId)).status).toBe(404);
+    expect((await withToken("GET", `/boards/${boardId}/objects`, secret)).status).toBe(404);
+  });
+
   it("refuses a command when the token does not carry board.edit", async () => {
     const { owner, orgId, boardId } = await setup("readonly");
     const created = await createToken(owner, orgId, ["board.read"]);
