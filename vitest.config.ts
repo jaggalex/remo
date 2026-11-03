@@ -37,6 +37,12 @@ export default defineConfig({
     // dropped afterwards, and never the developer's own database (ADR-131). The setup also
     // refuses to let a run go green with its database suites silently skipped.
     globalSetup: ["./apps/sync/test-db-setup.mjs"],
+    // The suites register and sign in many times from one loopback address; the
+    // production per-IP limits would make the harness rate-limit itself.
+    env: {
+      REMO_LOGIN_IP_LIMIT: "10000",
+      REMO_REGISTER_LIMIT: "10000",
+    },
     // Storage tests talk to a real database: schema creation, a few round trips and
     // a flush on teardown take longer than pure unit tests.
     testTimeout: 20000,
