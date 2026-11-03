@@ -199,4 +199,71 @@ suite("legacy room ids", () => {
 
     await store.pool.query("delete from boards where id = any($1::text[])", [[board, encoded]]);
   }, 20000);
+
+  it("merges agent tasks and change sets that share an idempotency key", async () => {
+    // The idempotency index is (board_id, created_by, idempotency_key). A bare move of
+    // two rows with the same key would raise 23505 and roll back the whole batch, so the
+    // repair drops the source duplicate first.
+    const board = `${ROOM}-agent-${Date.now()}`;
+    const encoded = encodeURIComponent(board);
+    await store.pool.query("insert into boards (id, title) values ($1, '')", [board]);
+    await seedRoom(encoded, "Agent copy");
+
+    const { rows: owners } = await store.pool.query(
+      `insert into users (email, password_hash, name)
+       values ($1, 'x', 'Agent Owner') on conflict (email) do update set name = excluded.name
+       returning id`,
+      [`merge-agent-${Date.now()}@example.com`],
+    );
+    const owner = owners[0].id;
+    const { rows: orgs } = await store.pool.query(
+      "insert into orgs (name, slug, created_by) values ('Merge', $1, $2) returning id",
+      [`merge-agent-${Date.now()}`, owner],
+    );
+    const orgId = orgs[0].id;
+    const { rows: agents } = await store.pool.query(
+      `insert into agents (org_id, owner_id, name, created_by)
+       values ($1, $2, 'Scout', $2) returning id`,
+      [orgId, owner],
+    );
+    const agentId = agents[0].id;
+
+    for (const boardId of [board, encoded]) {
+      await store.pool.query(
+        `insert into agent_change_sets
+           (org_id, board_id, agent_id, created_by, operations, idempotency_key)
+         values ($1, $2, $3, $4, '[]'::jsonb, 'same-key')`,
+        [orgId, boardId, agentId, owner],
+      );
+      await store.pool.query(
+        `insert into agent_tasks
+           (org_id, board_id, agent_id, intent, created_by, idempotency_key, change_set_id)
+         values ($1, $2, $3, 'intent', $4, 'same-key',
+                 (select id from agent_change_sets
+                   where board_id = $2 and idempotency_key = 'same-key'))`,
+        [orgId, boardId, agentId, owner],
+      );
+    }
+
+    const { merged, skipped } = await store.mergeLegacyRoomIds();
+    expect(skipped).toEqual([]);
+    expect(merged).toContainEqual({ from: encoded, to: board });
+
+    const { rows: tasks } = await store.pool.query(
+      "select board_id, change_set_id from agent_tasks where org_id = $1",
+      [orgId],
+    );
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].board_id).toBe(board);
+    expect(tasks[0].change_set_id).not.toBeNull();
+    const { rows: sets } = await store.pool.query(
+      "select board_id from agent_change_sets where org_id = $1",
+      [orgId],
+    );
+    expect(sets).toEqual([{ board_id: board }]);
+
+    await store.pool.query("delete from boards where id = $1", [board]);
+    await store.pool.query("delete from orgs where id = $1", [orgId]);
+    await store.pool.query("delete from users where id = $1", [owner]);
+  }, 20000);
 });
