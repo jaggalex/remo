@@ -3,6 +3,7 @@ import {
   clearFailures,
   isRateLimited,
   recordFailure,
+  reserveAttempt,
   resetFailures,
   sweep,
   trackedFailures,
@@ -33,6 +34,24 @@ describe("the failure limiter", () => {
     expect(isRateLimited(key)).toBe(true);
     clearFailures(key);
     expect(isRateLimited(key)).toBe(false);
+  });
+
+  it("reserves an attempt before the expensive work", () => {
+    const key = "login-ip:203.0.113.7";
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      expect(reserveAttempt(key, { limit: 3 })).toBe(true);
+    }
+    expect(reserveAttempt(key, { limit: 3 })).toBe(false);
+    clearFailures(key);
+    expect(reserveAttempt(key, { limit: 3 })).toBe(true);
+  });
+
+  it("counts parallel reservations in one synchronous step", () => {
+    // Two requests that both read a count of nine must not both reach scrypt.
+    const results = Array.from({ length: 12 }, () =>
+      reserveAttempt("login:203.0.113.7:person@example.com", { limit: 10 }),
+    );
+    expect(results.filter(Boolean)).toHaveLength(10);
   });
 
   it("reopens the window when it expires", () => {

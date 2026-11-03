@@ -13,7 +13,8 @@ import {
   passwordProblem,
   verifyPassword,
 } from "./iam.mjs";
-import { clearFailures, isRateLimited, recordFailure } from "./attempts.mjs";
+import { clearFailures, reserveAttempt } from "./attempts.mjs";
+import { hashQueue } from "./hash-queue.mjs";
 import {
   SESSION_DAYS,
   clearedSessionCookie,
@@ -47,15 +48,38 @@ export async function handleAuthRoutes(ctx) {
     if (!isEmail(email)) return fail(response, 422, "BAD_EMAIL", "enter a valid email"), true;
     const weak = passwordProblem(body.password);
     if (weak) return fail(response, 422, weak.code, weak.message), true;
+
+    // Registration is a second expensive hash and an account factory. Reserve one
+    // attempt per address before hashing, so a burst cannot queue scrypt work.
+    const registerIp = ctx.ip ?? "unknown";
+    if (
+      !reserveAttempt(`register:${registerIp}`, {
+        limit: Number(process.env.REMO_REGISTER_LIMIT ?? 20),
+        windowMs: 60 * 60_000,
+      })
+    ) {
+      return json(
+        response,
+        429,
+        { error: "RATE_LIMITED", message: "too many accounts from this address" },
+        { "Retry-After": "3600" },
+      ), true;
+    }
+
     if (await store.findUserByEmail(email)) {
       return fail(response, 409, "EMAIL_TAKEN", "this email already has an account"), true;
     }
 
-    const created = await store.createUser({
-      email,
-      passwordHash: await hashPassword(body.password),
-      name,
-    });
+    let passwordHash;
+    try {
+      passwordHash = await hashQueue.withSlot(() => hashPassword(body.password));
+    } catch (error) {
+      if (error?.code === "HASH_BUSY") {
+        return fail(response, 503, "SERVER_BUSY", "the server is busy; try again"), true;
+      }
+      throw error;
+    }
+    const created = await store.createUser({ email, passwordHash, name });
     const { org, team } = await store.createOrgWithOwner({
       name: `${name}'s workspace`,
       slug: orgSlugFor(name),
@@ -99,7 +123,26 @@ export async function handleAuthRoutes(ctx) {
     const email = normalizeEmail(body.email);
     const ip = ctx.ip ?? "unknown";
     const key = `login:${ip}:${email}`;
-    if (isRateLimited(key)) {
+    const ipKey = `login-ip:${ip}`;
+    // Reserve before the database lookup and scrypt: two parallel requests that both
+    // read a count of nine must not both reach the hash.
+    if (
+      !reserveAttempt(ipKey, {
+        limit: Number(process.env.REMO_LOGIN_IP_LIMIT ?? 100),
+      })
+    ) {
+      return json(
+        response,
+        429,
+        { error: "RATE_LIMITED", message: "too many attempts; try again later" },
+        { "Retry-After": "900" },
+      ), true;
+    }
+    if (
+      !reserveAttempt(key, {
+        limit: Number(process.env.REMO_LOGIN_LIMIT ?? 10),
+      })
+    ) {
       return json(
         response,
         429,
@@ -110,12 +153,22 @@ export async function handleAuthRoutes(ctx) {
     const found = await store.findUserByEmail(email);
     // Verify against a hash no account owns when the email is unknown: both failures
     // then cost the same scrypt work, so the answer does not reveal an account.
-    const ok = await verifyPassword(
-      String(body.password ?? ""),
-      found?.password_hash ?? DUMMY_PASSWORD_HASH,
-    );
+    let ok;
+    try {
+      ok = await hashQueue.withSlot(() =>
+        verifyPassword(
+          String(body.password ?? ""),
+          found?.password_hash ?? DUMMY_PASSWORD_HASH,
+        ),
+      );
+    } catch (error) {
+      if (error?.code === "HASH_BUSY") {
+        return fail(response, 503, "SERVER_BUSY", "the server is busy; try again"), true;
+      }
+      throw error;
+    }
     if (!ok || found?.state !== "active") {
-      recordFailure(key);
+      // The attempt is already reserved; a failure leaves it counted.
       return fail(response, 401, "INVALID_CREDENTIALS", "wrong email or password"), true;
     }
     clearFailures(key);

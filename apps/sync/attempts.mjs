@@ -20,6 +20,17 @@ export function isRateLimited(key, { limit = LIMIT, now = Date.now() } = {}) {
   return bucket.count >= limit;
 }
 
+function trim(now, maxKeys) {
+  if (buckets.size <= maxKeys) return;
+  sweep(now);
+  // If every bucket is still live, forget the oldest insertion. Losing one
+  // allowance is cheaper than an unbounded map a caller can grow with unique keys.
+  while (buckets.size > maxKeys) {
+    const oldest = buckets.keys().next().value;
+    buckets.delete(oldest);
+  }
+}
+
 /** Count one failure and return the new count. */
 export function recordFailure(
   key,
@@ -29,16 +40,28 @@ export function recordFailure(
   const next = bucket && bucket.resetAt > now ? bucket : { count: 0, resetAt: now + windowMs };
   next.count += 1;
   buckets.set(key, next);
-  if (buckets.size > maxKeys) {
-    sweep(now);
-    // If every bucket is still live, forget the oldest insertion. Losing one
-    // allowance is cheaper than an unbounded map a caller can grow with unique keys.
-    while (buckets.size > maxKeys) {
-      const oldest = buckets.keys().next().value;
-      buckets.delete(oldest);
-    }
-  }
+  trim(now, maxKeys);
   return next.count;
+}
+
+/**
+ * Reserve one attempt before the expensive work.
+ *
+ * Checking and counting in one synchronous step is what makes parallel requests obey
+ * the limit: two requests that both read a count of nine must not both reach `scrypt`.
+ * A success calls `clearFailures`; a failure leaves the reservation in place.
+ */
+export function reserveAttempt(
+  key,
+  { limit = LIMIT, now = Date.now(), windowMs = WINDOW_MS, maxKeys = MAX_KEYS } = {},
+) {
+  const bucket = buckets.get(key);
+  const next = bucket && bucket.resetAt > now ? bucket : { count: 0, resetAt: now + windowMs };
+  if (next.count >= limit) return false;
+  next.count += 1;
+  buckets.set(key, next);
+  trim(now, maxKeys);
+  return true;
 }
 
 /** A success clears the key: the next wrong password starts a fresh window. */
