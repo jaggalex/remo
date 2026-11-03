@@ -190,6 +190,23 @@ suite("IAM API", () => {
     expect(right.status).toBe(200);
   });
 
+  it("locks sign-in for one address and email after ten failures", async () => {
+    const address = email("lockout");
+    await client()("POST", "/auth/register", { email: address, password, name: "Lockout" });
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const wrong = await client()("POST", "/auth/login", {
+        email: address,
+        password: "not the password",
+      });
+      expect(wrong.status).toBe(401);
+    }
+    // The correct password does not get a free try while the bucket is full.
+    const limited = await client()("POST", "/auth/login", { email: address, password });
+    expect(limited.status).toBe(429);
+    expect(limited.body.error).toBe("RATE_LIMITED");
+  });
+
   it("rejects a short password", async () => {
     const res = await client()("POST", "/auth/register", {
       email: email("weak"),

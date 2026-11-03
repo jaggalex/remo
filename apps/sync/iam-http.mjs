@@ -24,9 +24,6 @@ const SESSION_COOKIE = "remo_session";
 export const SESSION_DAYS = 30;
 const BODY_LIMIT = 64 * 1024;
 
-/** Board-link password attempts: an in-memory limiter, reset on restart (ADR-069). */
-export const linkAttempts = new Map();
-
 
 /* ---------------------------------------------------------------- helpers -- */
 

@@ -27,6 +27,8 @@ services:
       PORT: "1234"
       REMO_DATA_DIR: /var/lib/remo
       REMO_AI_ANCHOR_DIR: /var/lib/remo/ai-anchors
+      # The shipped nginx is the only route to this container; trust its client IP.
+      REMO_TRUST_PROXY: "1"
     volumes: [state:/var/lib/remo]
     networks: [backend, database]
     healthcheck:

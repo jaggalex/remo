@@ -2,6 +2,7 @@
  * Sign-up, sign-in, sign-out, the current user and a password change.
  */
 import {
+  DUMMY_PASSWORD_HASH,
   capabilitiesFor,
   hashPassword,
   hashToken,
@@ -12,6 +13,7 @@ import {
   passwordProblem,
   verifyPassword,
 } from "./iam.mjs";
+import { clearFailures, isRateLimited, recordFailure } from "./attempts.mjs";
 import {
   SESSION_DAYS,
   clearedSessionCookie,
@@ -95,13 +97,28 @@ export async function handleAuthRoutes(ctx) {
     const body = await readBody(request);
     if (!body) return fail(response, 400, "BAD_JSON", "malformed request"), true;
     const email = normalizeEmail(body.email);
+    const ip = ctx.ip ?? "unknown";
+    const key = `login:${ip}:${email}`;
+    if (isRateLimited(key)) {
+      return json(
+        response,
+        429,
+        { error: "RATE_LIMITED", message: "too many attempts; try again later" },
+        { "Retry-After": "900" },
+      ), true;
+    }
     const found = await store.findUserByEmail(email);
-    // One message and a small delay for both failures: no account enumeration by timing.
-    const ok = found ? await verifyPassword(String(body.password ?? ""), found.password_hash) : false;
-    if (!ok || found.state !== "active") {
-      await new Promise((resolve) => setTimeout(resolve, 150));
+    // Verify against a hash no account owns when the email is unknown: both failures
+    // then cost the same scrypt work, so the answer does not reveal an account.
+    const ok = await verifyPassword(
+      String(body.password ?? ""),
+      found?.password_hash ?? DUMMY_PASSWORD_HASH,
+    );
+    if (!ok || found?.state !== "active") {
+      recordFailure(key);
       return fail(response, 401, "INVALID_CREDENTIALS", "wrong email or password"), true;
     }
+    clearFailures(key);
     const sessionToken = newToken();
     await store.createSession({
       userId: found.id,

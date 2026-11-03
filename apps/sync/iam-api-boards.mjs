@@ -2,20 +2,20 @@
  * Board routes: access, claim, sharing, the link, the password, trash, restore, copy.
  */
 import { hashPassword, hashToken, newToken, normalizeEmail, verifyPassword } from "./iam.mjs";
+import { clearFailures, isRateLimited, recordFailure } from "./attempts.mjs";
 import { emitMetric } from "./metrics-events.mjs";
 import {
   accessForBoard,
   boardIdFor,
   fail,
   json,
-  linkAttempts,
   linkUnlockToken,
   publicLinkView,
   readBody,
 } from "./iam-http.mjs";
 
 export async function handleBoardRoutes(ctx) {
-  const { request, response, url, store, method, parts, user, audit, requireUser, onAclChanged } = ctx;
+  const { request, response, url, store, method, parts, user, audit, ip, requireUser, onAclChanged } = ctx;
 
   if (parts[0] === "boards" && parts[1]) {
     const boardId = parts[1];
@@ -281,20 +281,19 @@ export async function handleBoardRoutes(ctx) {
         if (link.expires_at && new Date(link.expires_at).getTime() <= Date.now()) {
           return fail(response, 410, "LINK_EXPIRED", "this link has expired"), true;
         }
-        const key = `${request.socket.remoteAddress ?? "unknown"}:${boardId}`;
+        // Behind the shipped proxies the socket peer is the proxy; `ip` is the client
+        // address when the operator trusts forwarded headers (REMO_TRUST_PROXY).
+        const key = `link:${ip ?? "unknown"}:${boardId}`;
         const now = Date.now();
-        const bucket = linkAttempts.get(key);
-        if (bucket && bucket.resetAt > now && bucket.count >= 10) {
+        if (isRateLimited(key, { now })) {
           return fail(response, 429, "RATE_LIMITED", "too many attempts; try again later"), true;
         }
         const ok = await verifyPassword(String(body.password ?? ""), link.password_hash);
         if (!ok) {
-          const next = bucket && bucket.resetAt > now ? bucket : { count: 0, resetAt: now + 15 * 60_000 };
-          next.count += 1;
-          linkAttempts.set(key, next);
+          recordFailure(key, { now });
           return fail(response, 403, "WRONG_PASSWORD", "wrong password"), true;
         }
-        linkAttempts.delete(key);
+        clearFailures(key);
         const token = newToken(24);
         await store.createLinkUnlock({
           tokenHash: hashToken(token),
