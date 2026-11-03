@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 import { writeClipboard } from "./clipboard";
@@ -49,14 +49,26 @@ export function useBoardNavigation({
     [],
   );
 
-  // A `?select=` jump selects the matched widget and frames it.
+  // A `?select=` jump selects the matched widget and frames it once, then leaves the
+  // URL. Re-applying it on every document change would steal selection and camera from
+  // the person for the rest of the session.
+  const appliedSelect = useRef<string | null>(null);
   useEffect(() => {
-    const wanted = new URLSearchParams(window.location.search).get("select");
-    if (!wanted) return;
+    const params = new URLSearchParams(window.location.search);
+    const wanted = params.get("select");
+    if (!wanted || appliedSelect.current === wanted) return;
     const widget = widgets.find((candidate) => candidate.id === wanted);
     if (!widget) return;
+    appliedSelect.current = wanted;
     setSelectedIds([widget.id]);
     setCamera((current) => ({ ...current, x: widget.x, y: widget.y }));
+    params.delete("select");
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
+    );
   }, [setCamera, setSelectedIds, widgets]);
 
   /**
