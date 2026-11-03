@@ -21,10 +21,8 @@
 /** Tables whose `board_id` is copied before the duplicate row is deleted. */
 const SIMPLE = [
   "agent_actions",
-  "agent_change_sets",
   "agent_schedules",
   "agent_task_plans",
-  "agent_tasks",
   "ai_runs",
   "audit_events",
   "board_link_unlocks",
@@ -44,6 +42,8 @@ const SPECIAL = [
   "board_links",
   "command_runs",
   "event_outbox",
+  "agent_change_sets",
+  "agent_tasks",
 ];
 
 /** An empty Yjs state update is two bytes; anything longer carries content. */
@@ -274,6 +274,28 @@ export const roomMergeMethods = {
       sourceId,
       targetId,
     ]);
+
+    // Agent tasks and change sets carry a unique `(board_id, created_by,
+    // idempotency_key)` index, so a bare move can collide. Drop the source copy that
+    // already exists on the target, then move the rest. Change sets go first: deleting
+    // a duplicate sets `agent_tasks.change_set_id` to null, not a dangling reference.
+    for (const table of ["agent_change_sets", "agent_tasks"]) {
+      await client.query(
+        `delete from ${table} s
+          where s.board_id = $1 and s.idempotency_key is not null
+            and exists (
+              select 1 from ${table} t
+               where t.board_id = $2 and t.created_by = s.created_by
+                 and t.idempotency_key = s.idempotency_key
+            )`,
+        [sourceId, targetId],
+      );
+      await client.query(`update ${table} set board_id = $2 where board_id = $1`, [
+        sourceId,
+        targetId,
+      ]);
+    }
+
     for (const table of SIMPLE) {
       await client.query(`update ${table} set board_id = $2 where board_id = $1`, [
         sourceId,
