@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DUMMY_PASSWORD_HASH,
   capabilitiesFor,
   effective,
   hashPassword,
@@ -250,6 +251,14 @@ describe("passwords", () => {
     expect(stored.startsWith("scrypt$")).toBe(true);
     await expect(verifyPassword("correct horse battery", stored)).resolves.toBe(true);
     await expect(verifyPassword("correct horse batterY", stored)).resolves.toBe(false);
+  });
+
+  it("has a dummy hash with the same scrypt parameters as a real one", async () => {
+    // Sign-in verifies this when the email is unknown. Same parameters means the
+    // failure costs the same work, so timing cannot reveal an account (ADR-062).
+    const real = await hashPassword("correct horse battery");
+    expect(DUMMY_PASSWORD_HASH.split("$").slice(0, 4)).toEqual(real.split("$").slice(0, 4));
+    await expect(verifyPassword("anything", DUMMY_PASSWORD_HASH)).resolves.toBe(false);
   });
 
   it("stores a different hash for the same password (per-user salt)", async () => {
