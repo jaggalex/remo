@@ -6,6 +6,7 @@ dist
 .env.*
 !.env.example
 .claude
+/.config/remo/deploy.env
 
 # sync service room data
 apps/sync/.data

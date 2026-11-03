@@ -5,6 +5,7 @@ docs-site
 **/.data
 .env
 .env.*
+.config/remo/deploy.env
 **/*.local
 backups
 test-results

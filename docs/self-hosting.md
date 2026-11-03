@@ -23,7 +23,6 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_KEK`, `REMO_KEK_ID` | encrypts provider keys and webhook secrets; back it up |
 | `REMO_METRICS_TOKEN` | protects `/metrics` |
 | `REMO_APP_ORIGIN`, `REMO_CORS_ORIGIN` | public origin of the app |
-| `REMO_DOCS_ORIGIN` | public origin of the guide, used by the release health check |
 | `REMO_EDGE_NETWORK`, `REMO_DB_NETWORK` | Docker networks shared with the proxy and the database |
 
 `REMO_KEK` is not stored in PostgreSQL. Losing it makes saved provider keys unreadable.
@@ -46,18 +45,24 @@ Put the reverse proxy in front of `remo-web:8080` (app) and `remo-web:8081` (gui
 ## Releases
 
 `deploy/release.sh` verifies the tree, uploads the exact commit and switches the
-containers on the host. Set `REMO_DEPLOY_HOST`, `REMO_APP_ORIGIN` and
-`REMO_DOCS_ORIGIN` in your environment first.
+containers on the host. Create the local release configuration from the repository root.
 
 ```sh
-REMO_DEPLOY_HOST=deploy@your-host \
-REMO_APP_ORIGIN=https://boards.example.com \
-REMO_DOCS_ORIGIN=https://docs.example.com \
+mkdir -p .config/remo
+cp -n deploy/deploy.env.example .config/remo/deploy.env
+chmod 600 .config/remo/deploy.env
+# Edit the SSH destination and both HTTPS origins, then commit the release source.
 bash deploy/release.sh
 ```
 
-The script refuses to archive a tracked `.env`, runs the full gate, keeps revisions and
-images for rollback, and checks the health endpoints after the switch.
+The local file is ignored by Git and Docker. Keep database credentials and the KEK
+in the server's `/srv/remo/shared/production.env`. The release script sources the
+local file as Bash, so use an operator-controlled file. To select another private
+file, set `REMO_DEPLOY_ENV_FILE` to its path. If the default file is absent, you
+can supply the three variables through the environment, for example in CI.
+
+The script runs the full gate, keeps revisions and images for rollback, and checks
+the health endpoints after the switch.
 
 ## Backups and upgrades
 
