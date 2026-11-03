@@ -6652,3 +6652,31 @@ The internal keys are deliberately stable, so no URL or document migration is ne
 **Limits.** The change does not rewrite objects already on a board; a board created from
 an older template keeps them. The old research archive remains private. The template
 editor is still a code-level authoring script, not a product screen.
+
+## ADR-159: Pre-release boards keep no captured decoration
+
+**Status:** accepted (2026-11-03). Amends ADR-158 for the public pre-release.
+
+**Context.** ADR-158 removed the capture-derived decoration from the templates but kept
+the renderer for boards created by an earlier build: sticker glyphs, reaction counts,
+dot-voting legends and decorative panels. The public edition has no users and no boards
+in the wild; the old history is private. Keeping a renderer for objects nothing can
+create is dead code and a second model for content.
+
+**Decision.**
+
+- Remove `emoji`, `reactions`, `legendTitle`, `entries`, `decorative` and `LegendEntry`
+  from the model, the painter and the read projection.
+- A `stamp` is a tinted plate with an optional caption; an `unsupported` object keeps
+  its lane label and the dashed fallback.
+- No read migration: there are no pre-release boards to migrate.
+- ADR-158's "existing boards keep their content" remains true for boards created from
+  this release onward; it no longer promises compatibility with captures that predate
+  the public edition.
+
+**Consequences.** The model is smaller and the painter has no branch for content the
+product cannot create. If a pre-release database is ever imported, its decoration
+fields are ignored; the objects themselves remain, so no board is lost.
+
+**Limits.** The old private archive is not a supported import source. A future import
+would need a migration, not a renderer branch.
