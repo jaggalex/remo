@@ -106,7 +106,7 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 
 | Fact | Value |
 |---|---|
-| ADR | 158, latest ADR-158 |
+| ADR | 159, latest ADR-159 |
 | Schema version | 14 |
 | Browser scenarios | 101 in 26 files |
 | Help topics | 27 (RU + EN) |
