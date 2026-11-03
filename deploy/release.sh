@@ -61,9 +61,19 @@ set -Eeuo pipefail
 revision=$1
 [[ $revision =~ ^[0-9a-f]{40}$ ]]
 directory="/srv/remo/releases/$revision"
+staging=""
+cleanup() { [[ -n $staging ]] && rm -rf "$staging"; }
+trap cleanup EXIT
 if [[ ! -d "$directory" ]]; then
-  mkdir "$directory"
-  tar -xzf "/srv/remo/releases/$revision.tar.gz" -C "$directory"
+  # Extract beside the final directory and rename only after a successful unpack.
+  # Creating the final directory first made a failed retry look complete and deploy
+  # a partial tree.
+  staging="$directory.tmp.$$"
+  rm -rf "$staging"
+  mkdir "$staging"
+  tar -xzf "/srv/remo/releases/$revision.tar.gz" -C "$staging"
+  mv "$staging" "$directory"
+  staging=""
 fi
 rm -f "/srv/remo/releases/$revision.tar.gz"
 /srv/remo/remo deploy "$revision"
