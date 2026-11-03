@@ -118,6 +118,8 @@ async findAgentByToken(tokenHash) {
        from agent_tokens t
        join agents a on a.id = t.agent_id
        join users u on u.id = a.owner_id
+       join org_memberships m
+         on m.org_id = a.org_id and m.user_id = a.owner_id and m.state = 'active'
       where t.token_hash = $1 and t.revoked_at is null and t.expires_at > now()
         and a.state = 'active'`,
     [tokenHash],

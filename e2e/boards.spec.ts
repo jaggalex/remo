@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { addSticky, freshBoard, openBoard, openBoardMenu, register } from "./helpers";
+import { addSticky, enableLink, freshBoard, openBoard, openBoardMenu, register } from "./helpers";
 
 test("creates a board from the board list and opens the chosen template", async ({ page }) => {
   await freshBoard(page, "create");
@@ -185,4 +185,47 @@ test("a copy of a board takes its stored name", async ({ page }) => {
   expect(response.ok(), await response.text()).toBeTruthy();
   const body = (await response.json()) as { board: { title: string } };
   expect(body.board.title).toBe("Quarterly planning (copy)");
+});
+
+test("?select= applies once and does not steal the next selection", async ({ page }) => {
+  const account = await register(page, "select-once");
+  await openBoard(page, account.boardId);
+  const first = await addSticky(page);
+
+  await page.goto(`/?room=${account.boardId}&lang=en&select=${first}`);
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds))
+    .toEqual([first]);
+  await expect(page).not.toHaveURL(/select=/);
+
+  const second = await addSticky(page);
+  expect(second).not.toBe(first);
+  const selected = await page.evaluate(
+    () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+  );
+  expect(selected).toEqual([second]);
+});
+
+test("a public-link viewer cannot add kanban columns or replace the board", async ({
+  page,
+  browser,
+}) => {
+  const account = await freshBoard(page, "viewer-ui", { title: "Viewer board" });
+  await enableLink(page, account.boardId);
+
+  const context = await browser.newContext();
+  const viewer = await context.newPage();
+  try {
+    await viewer.goto(`/?room=${account.boardId}&lang=en`);
+    await expect(viewer.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+    // The inspector is open by default in a fresh context.
+    const inspector = viewer.locator(".inspector");
+    await expect(inspector).toBeVisible();
+    await expect(inspector.getByRole("button", { name: "+ column" })).toBeDisabled();
+    await expect(inspector.getByRole("button", { name: "+ swimlane" })).toBeDisabled();
+    await expect(inspector.getByRole("button", { name: "Replace board" })).toBeDisabled();
+  } finally {
+    await context.close();
+  }
 });
