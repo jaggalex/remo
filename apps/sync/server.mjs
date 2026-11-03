@@ -35,6 +35,7 @@ import { attachWebSocket } from "./sync-websocket.mjs";
 import { encodeCommentsChanged } from "./comment-signal.mjs";
 import { encodeVotesChanged } from "./vote-signal.mjs";
 import { appendSetCookie, cookies, failRequest } from "./http-boundary.mjs";
+import { routeLabel } from "./http-route.mjs";
 import { CSRF_COOKIE, csrfCookie, csrfProblem } from "./csrf.mjs";
 import { newToken } from "./iam.mjs";
 import { createAgentLoops } from "./sync-agents.mjs";
@@ -241,10 +242,10 @@ const corsHeaders =
 async function handleRequest(request, response) {
   const url = new URL(request.url, "http://localhost");
 
-  // One counter per route, not per URL: an id in the path would make a new series
-  // for every board and grow the registry without bound.
-  const route = url.pathname.replace(/^\/boards\/[^/]+/, "/boards/:id");
-  metrics.inc("remo_http_requests_total", { path: route });
+  // A fixed label per route family: a label per path would let an anonymous client
+  // grow the in-memory registry without bound (the protected /metrics endpoint does
+  // not stop the accumulation).
+  metrics.inc("remo_http_requests_total", { path: routeLabel(url.pathname) });
 
   if (request.method === "OPTIONS") {
     response.writeHead(204, corsHeaders);
