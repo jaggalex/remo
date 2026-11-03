@@ -69,10 +69,11 @@ async listBoardChangeSets(boardId, limit = 20) {
   return rows;
 },
 
-async findChangeSetByIdempotency(orgId, key) {
+async findChangeSetByIdempotency(boardId, createdBy, key) {
   const { rows } = await this.pool.query(
-    `select id from agent_change_sets where org_id = $1 and idempotency_key = $2`,
-    [orgId, key],
+    `select id from agent_change_sets
+      where board_id = $1 and created_by = $2 and idempotency_key = $3`,
+    [boardId, createdBy, key],
   );
   return rows[0] ?? null;
 },

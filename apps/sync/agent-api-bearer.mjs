@@ -135,7 +135,7 @@ export async function handleBearer(ctx) {
       }
       const key = String(request.headers["idempotency-key"] ?? "").trim().slice(0, 100);
       if (key) {
-        const existing = await store.findChangeSetByIdempotency(token.org_id, key);
+        const existing = await store.findChangeSetByIdempotency(boardId, token.owner_id, key);
         if (existing) {
           json(response, 200, {
             changeSet: await store.getChangeSet(existing.id),

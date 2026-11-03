@@ -29,7 +29,7 @@ import { roomMergeMethods } from "./pg/room-merge.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 export class PostgresStore {
-  /** Reported by /health so it is obvious which store is live. */
+  /** Named in logs and operator metrics; the public health probe says only `ok`. */
   kind = "postgres";
 
   constructor({ connectionString, poolSize = 8, log = console, metrics = null }) {

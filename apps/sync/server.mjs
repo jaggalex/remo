@@ -339,17 +339,11 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/health") {
+    // A probe needs one bit, not an inventory: the store version, board and room
+    // counts and a raw driver error are for the operator's metrics, not the internet.
     const storage = await store.health();
-    const body = {
-      ok: storage.ok,
-      store: store.kind,
-      connections: wss.clients.size,
-      rooms: store.roomCount ?? storage.rooms ?? docs.size,
-      uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
-      storage,
-    };
     response.writeHead(storage.ok ? 200 : 503, { "Content-Type": "application/json" });
-    response.end(JSON.stringify(body));
+    response.end(JSON.stringify({ ok: storage.ok }));
     return;
   }
 

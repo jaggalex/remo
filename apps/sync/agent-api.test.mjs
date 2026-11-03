@@ -234,6 +234,26 @@ suite("agent API", () => {
     expect(retry.body.task.id).toBe(first.body.task.id);
   });
 
+  it("scopes an idempotency key to the board, not the organisation", async () => {
+    const { owner, orgId, boardId, agent } = await setup("idem-scope");
+    await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
+    const other = await owner("POST", `/orgs/${orgId}/boards`, { title: "other board" });
+    const otherId = other.body.board.id;
+    await owner("PUT", `/boards/${otherId}/agents`, { enabled: true });
+
+    const body = { agentId: agent.id, intent: "Одна и та же задача", budget: { maxActions: 5 } };
+    const first = await owner("POST", `/boards/${boardId}/agent-tasks`, body, {
+      "Idempotency-Key": "same-key",
+    });
+    const second = await owner("POST", `/boards/${otherId}/agent-tasks`, body, {
+      "Idempotency-Key": "same-key",
+    });
+    // The same key on another board is a different request, not a replay of the first.
+    expect(second.status).toBe(202);
+    expect(second.body.replayed).toBeFalsy();
+    expect(second.body.task.id).not.toBe(first.body.task.id);
+  });
+
   it("refuses a task from somebody else's agent or a disabled board", async () => {
     const { owner, orgId, boardId, agent } = await setup("deny");
     await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
