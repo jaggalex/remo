@@ -521,8 +521,11 @@ create table if not exists ai_log_anchors (
 create index if not exists ai_log_anchors_org_idx on ai_log_anchors (org_id, seq desc);
 
 alter table agent_tasks add column if not exists idempotency_key text;
-create unique index if not exists agent_tasks_idempotency_idx
-  on agent_tasks (org_id, idempotency_key)
+-- A key identifies one request by one person on one board. Scoping it to the org let a
+-- retry on another board return the first board's task (AG-11).
+drop index if exists agent_tasks_idempotency_idx;
+create unique index if not exists agent_tasks_board_idempotency_idx
+  on agent_tasks (board_id, created_by, idempotency_key)
   where idempotency_key is not null;
 
 /* ---------------------------------------------------------- change sets -- */
@@ -555,8 +558,10 @@ create index if not exists agent_change_sets_board_idx
   on agent_change_sets (board_id, created_at desc);
 create index if not exists agent_change_sets_status_idx
   on agent_change_sets (status, created_at);
-create unique index if not exists agent_change_sets_idempotency_idx
-  on agent_change_sets (org_id, idempotency_key)
+-- Same rule as a task: one board and one creator own the key.
+drop index if exists agent_change_sets_idempotency_idx;
+create unique index if not exists agent_change_sets_board_idempotency_idx
+  on agent_change_sets (board_id, created_by, idempotency_key)
   where idempotency_key is not null;
 
 alter table agent_tasks add column if not exists change_set_id uuid

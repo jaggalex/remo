@@ -93,7 +93,7 @@ export async function handleChangeSets(ctx) {
       // retry is missing a field (AG-11).
       const key = String(request.headers["idempotency-key"] ?? "").trim().slice(0, 100);
       if (key) {
-        const existing = await store.findChangeSetByIdempotency(board.org_id, key);
+        const existing = await store.findChangeSetByIdempotency(boardId, me.id, key);
         if (existing) {
           const changeSet = await store.getChangeSet(existing.id);
           json(response, 200, {
@@ -128,7 +128,7 @@ export async function handleChangeSets(ctx) {
         });
       } catch (error) {
         if (key && error?.code === "23505") {
-          const existing = await store.findChangeSetByIdempotency(board.org_id, key);
+          const existing = await store.findChangeSetByIdempotency(boardId, me.id, key);
           if (existing) {
             json(response, 200, {
               changeSet: await store.getChangeSet(existing.id),

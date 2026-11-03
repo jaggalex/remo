@@ -126,7 +126,7 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
       .trim()
       .slice(0, 100);
     if (idempotencyKey) {
-      const existing = await store.findAgentTaskByIdempotency(ready.board.org_id, idempotencyKey);
+      const existing = await store.findAgentTaskByIdempotency(boardId, me.id, idempotencyKey);
       if (existing) {
         return { status: 200, task: await store.getAgentTask(existing.id), replayed: true };
       }
@@ -221,7 +221,8 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
     } catch (error) {
       if (idempotencyKey && error?.code === "23505") {
         const existing = await store.findAgentTaskByIdempotency(
-          ready.board.org_id,
+          boardId,
+          me.id,
           idempotencyKey,
         );
         if (existing) {
