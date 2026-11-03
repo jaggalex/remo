@@ -26,6 +26,21 @@ export async function handleBearer(ctx) {
         log.error?.("[agents] audit failed:", error.message);
       });
 
+    /** The owner's current access to a board, or null when it is gone. */
+    async function ownerBoardAccess(boardId) {
+      const board = await store.getIamBoard(boardId);
+      if (!board || board.owner_id == null || board.org_id !== token.org_id) return null;
+      const facts = await store.accessFacts(boardId, token.owner_id);
+      if (!facts) return null;
+      const access = effective({
+        board: facts.board,
+        viewer: facts.viewer,
+        grants: facts.grants,
+        policy: facts.policy,
+      });
+      return access.allowed ? { board, access } : null;
+    }
+
     if (parts[1] === "me" && parts.length === 2 && method === "GET") {
       json(response, 200, {
         agent: {
@@ -39,9 +54,18 @@ export async function handleBearer(ctx) {
       return true;
     }
     if (parts[1] === "tasks" && parts.length === 2 && method === "GET") {
-      json(response, 200, {
-        tasks: await store.listAgentTasksForAgent(token.agent_id, 20),
-      });
+      // A task belongs to a board. If the owner's access to that board is gone, the
+      // token must not keep reading the task history.
+      const tasks = await store.listAgentTasksForAgent(token.agent_id, 20);
+      const visible = [];
+      const access = new Map();
+      for (const task of tasks) {
+        if (!access.has(task.board_id)) {
+          access.set(task.board_id, await ownerBoardAccess(task.board_id));
+        }
+        if (access.get(task.board_id)) visible.push(task);
+      }
+      json(response, 200, { tasks: visible });
       return true;
     }
 
@@ -137,8 +161,15 @@ export async function handleBearer(ctx) {
       if (key) {
         const existing = await store.findChangeSetByIdempotency(boardId, token.owner_id, key);
         if (existing) {
+          const changeSet = await store.getChangeSet(existing.id);
+          // The key is per owner on the board, but a token belongs to one agent. A
+          // token must not read another agent's change set through a shared key.
+          if (changeSet?.agent_id !== token.agent_id) {
+            fail(response, 409, "IDEMPOTENCY_KEY_IN_USE", "this key belongs to another agent");
+            return true;
+          }
           json(response, 200, {
-            changeSet: await store.getChangeSet(existing.id),
+            changeSet,
             task: await store.getAgentTaskByChangeSet(existing.id),
             replayed: true,
           });
@@ -201,6 +232,12 @@ export async function handleBearer(ctx) {
     if (parts[1] === "change-sets" && parts[2]) {
       const changeSet = await store.getChangeSet(parts[2]);
       if (!changeSet || changeSet.agent_id !== token.agent_id) {
+        fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
+        return true;
+      }
+      // Reading or cancelling work on a board needs the owner's current access, not
+      // the access the token had when it was issued.
+      if (!(await ownerBoardAccess(changeSet.board_id))) {
         fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
         return true;
       }
