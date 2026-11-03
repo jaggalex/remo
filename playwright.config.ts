@@ -64,6 +64,9 @@ export default defineConfig({
         // A deterministic plan instead of a provider. `ai-fake.mjs` accepts it only
         // because this process also carries REMO_E2E_RUN_ID and is not production.
         REMO_AI_FAKE: "plan",
+        // The scenarios register a fresh account per test from one address.
+        REMO_LOGIN_IP_LIMIT: "10000",
+        REMO_REGISTER_LIMIT: "10000",
       },
     },
     {
