@@ -33,10 +33,10 @@ updates:
       - dependency-name: y-websocket
         update-types: ["version-update:semver-major"]
 
+  # One action per pull request: a grouped bump hides which action changed, and an
+  # action is code that runs with the repository token.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
-    groups:
-      github-actions:
-        patterns: ["*"]
+    open-pull-requests-limit: 5
