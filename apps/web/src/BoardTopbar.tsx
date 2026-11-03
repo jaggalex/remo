@@ -7,7 +7,8 @@ import type { FollowState } from "./follow";
 import { useI18n, type Lang } from "./i18n";
 import type { Identity } from "./identity";
 import type { Theme } from "./useTheme";
-import { TEMPLATE_KEYS, TEMPLATE_LABELS, type TemplateKey } from "@remo/model";
+import { TEMPLATE_KEYS, type TemplateKey } from "@remo/model";
+import { TEMPLATE_LABEL_KEY } from "./templateLabels";
 import { BoardTitleMenu, boardMenuItems } from "./topbar/BoardTitleMenu";
 import { FacilitationMenu } from "./topbar/FacilitationMenu";
 import { MoreMenu } from "./topbar/MoreMenu";
@@ -128,7 +129,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
     setRenaming(false);
   };
 
-  const templates = TEMPLATE_KEYS.map((key) => ({ key, label: TEMPLATE_LABELS[key] }));
+  const templates = TEMPLATE_KEYS.map((key) => ({ key, label: t(TEMPLATE_LABEL_KEY[key]) }));
 
   return (
     <>

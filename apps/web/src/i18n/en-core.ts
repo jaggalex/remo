@@ -4,6 +4,8 @@
  * Split by domain so the table stays readable; the keys are still one flat namespace and
  * `keyof typeof en` in i18n.tsx remains the single type (ADR-093).
  */
+import { TEMPLATE_LABELS } from "@remo/model";
+
 export const enCore = {
   "help.title": "Help",
   "help.back": "Back to the board",
@@ -593,10 +595,12 @@ export const enCore = {
   "newBoard.team": "Team",
   "newBoard.template": "Template",
   "newBoard.template.empty": "Empty board",
-  "newBoard.template.storyMap": "Story map",
-  "newBoard.template.roadmap": "Roadmap",
-  "newBoard.template.roadmapPrefilled": "Roadmap example",
-  "newBoard.template.kanban": "Kanban board",
+  // The English names are the stored default titles; deriving the menu labels from
+  // the same constant keeps one English source (ADR-158).
+  "newBoard.template.storyMap": TEMPLATE_LABELS["user-story-map-basic"],
+  "newBoard.template.roadmap": TEMPLATE_LABELS["product-roadmap-basic"],
+  "newBoard.template.roadmapPrefilled": TEMPLATE_LABELS["product-roadmap-basic-prefilled"],
+  "newBoard.template.kanban": TEMPLATE_LABELS["kanban-framework"],
   "newBoard.hint": "The board starts empty or from a template. You can add a template later.",
   "newBoard.create": "Create",
   "newBoard.creating": "Creating…",
