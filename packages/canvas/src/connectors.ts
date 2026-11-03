@@ -601,7 +601,7 @@ export interface ConnectorHandle {
 }
 
 /**
- * The blue dots Miro shows on a selected line.
+ * The blue dots shown on a selected line.
  *
  * Four shapes, two handles: an elbow's middle run can slide between its stubs, and a
  * curve's two control lengths can be pulled out or pushed in. A straight line has

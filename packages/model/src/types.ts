@@ -1,5 +1,5 @@
 /**
- * Domain model. Kept free of React and of Miro's API shape (see ADR-017).
+ * Domain model. Kept free of React and of another product's API shape (see ADR-017).
  */
 import { kindOf } from "./kinds";
 import type { Tag } from "./tags";

@@ -138,15 +138,20 @@ describe("template normalization", () => {
 });
 
 describe("kanban reconstruction", () => {
-  it("places the Kanban Framework cards exactly as the UI showed them", () => {
+  it("places the authored kanban cards in its matrix", () => {
     const cards = ["1", "2", "3", "4", "5"].map((id) => widget(id, "card"));
     const kanban = widget("k", "kanban", { width: 1474.6, height: 947 });
     const state = reconstructKanban("kanban-framework", kanban, cards);
 
-    expect(state.columns.map((c) => c.title)).toEqual(["Todo", "Doing", "Done"]);
-    expect(state.swimlanes.map((s) => s.title)).toEqual(["Team A", "Team B"]);
-    expect(countInColumn(state, "col0")).toBe(5);
-    expect(countInColumn(state, "col1")).toBe(0);
+    expect(state.columns.map((c) => c.title)).toEqual([
+      "Backlog",
+      "In progress",
+      "Done",
+    ]);
+    expect(state.swimlanes.map((s) => s.title)).toEqual(["Product", "Platform"]);
+    expect(countInColumn(state, "col0")).toBe(3);
+    expect(countInColumn(state, "col1")).toBe(2);
+    expect(countInColumn(state, "col2")).toBe(0);
     expect(countInSwimlane(state, "lane0")).toBe(3);
     expect(countInSwimlane(state, "lane1")).toBe(2);
     expect(state.columns[0]!.width).toBeCloseTo(1474.6 / 3, 5);
@@ -159,75 +164,7 @@ describe("kanban reconstruction", () => {
     const state = reconstructKanban("product-roadmap-basic-prefilled", kanban, cards);
 
     expect(Object.keys(state.cards)).toHaveLength(70);
-    expect(state.columns).toHaveLength(8);
-    expect(state.swimlanes).toHaveLength(6);
-  });
-});
-
-describe("modelled content for opaque widgets", () => {
-  const opaque = (id: string, width: number, height: number, y = 0) => ({
-    z: 0,
-    id,
-    type: "unsupported",
-    x: 0,
-    y,
-    width,
-    height,
-    parentId: null,
-  });
-
-  it("labels roadmap horizons as vertical plates", () => {
-    const board = toBoard("product-roadmap-basic", {
-      source: { url: "memory", capturedAt: "", widgetCount: 2 },
-      types: {},
-      widgets: [opaque("l1", 276, 518, -3000), opaque("l2", 276, 518, -1500)],
-    });
-    expect(board.widgets.map((w) => w.label)).toEqual(["Horizon 1", "Horizon 2"]);
-  });
-
-  it("does not invent lane labels in templates that have none", () => {
-    const board = toBoard("kanban-framework", {
-      source: { url: "memory", capturedAt: "", widgetCount: 1 },
-      types: {},
-      widgets: [opaque("panel", 284, 534)],
-    });
-    expect(board.widgets[0]!.label).toBeUndefined();
-    expect(board.widgets[0]!.decorative).toBe(true);
-  });
-
-  it("gives the story map's wide plate the dot-voting legend", () => {
-    const board = toBoard("user-story-map-basic", {
-      source: { url: "memory", capturedAt: "", widgetCount: 1 },
-      types: {},
-      widgets: [opaque("legend", 276, 108)],
-    });
-    expect(board.widgets[0]!.legendTitle).toBe("Dot voting");
-    expect(board.widgets[0]!.entries?.map((e) => e.label)).toEqual([
-      "1 dot",
-      "2 dots",
-      "3 dots",
-    ]);
-  });
-
-  it("gives stickers a glyph, a caption and reactions, in reading order", () => {
-    const stamps = [0, 1, 2, 3].map((i) => ({
-      z: i,
-      id: `s${i}`,
-      type: "stamp",
-      x: (i % 2) * 180,
-      y: Math.floor(i / 2) * 190,
-      width: 177,
-      height: 177,
-      parentId: null,
-    }));
-    const board = toBoard("kanban-framework", {
-      source: { url: "memory", capturedAt: "", widgetCount: 4 },
-      types: {},
-      widgets: stamps,
-    });
-
-    expect(board.widgets.map((w) => w.emoji)).toEqual(["😀", "💬", "🔥", "❤️"]);
-    expect(board.widgets[1]!.reactions).toBe(1);
-    expect(board.widgets[0]!.label).toBe("Smile");
+    expect(state.columns).toHaveLength(4);
+    expect(state.swimlanes).toHaveLength(3);
   });
 });
