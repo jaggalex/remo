@@ -14,18 +14,27 @@ for private_file in .env .config/remo/deploy.env; do
 done
 config=${REMO_DEPLOY_ENV_FILE:-$ROOT/.config/remo/deploy.env}
 [[ $config = /* ]] || config="$ROOT/$config"
+
+# The release configuration is data, not a program: `source` would let a file the
+# script merely reads run commands (and change the environment the gate below sees).
+# `deploy/config.sh` reads strict `KEY=VALUE` lines and checks ownership and mode.
+# shellcheck source=config.sh
+. "$ROOT/deploy/config.sh"
+
 if [[ -e $config || -n ${REMO_DEPLOY_ENV_FILE:-} ]]; then
-  [[ -f $config && -r $config ]] || { echo "Cannot read release configuration: $config" >&2; exit 1; }
   if git ls-files --error-unmatch -- "$config" >/dev/null 2>&1; then
     echo "Refusing to load tracked release configuration: $config" >&2; exit 1
   fi
-  # The operator owns this file and may use Bash assignments in it.
-  source "$config"
+  read_release_config "$config" || exit 1
 fi
 HOST=${REMO_DEPLOY_HOST:?Set REMO_DEPLOY_HOST (for example deploy@your-host)}
 APP_ORIGIN=${REMO_APP_ORIGIN:?Set REMO_APP_ORIGIN}
 DOCS_ORIGIN=${REMO_DOCS_ORIGIN:?Set REMO_DOCS_ORIGIN}
-[[ $HOST =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.@-]*$ ]] || { echo 'Invalid SSH destination.' >&2; exit 1; }
+# One optional `user@`, then a hostname or IPv4 address. A leading `-` (an ssh option)
+# and a second `@` are not destinations.
+[[ $HOST =~ ^([A-Za-z0-9_][A-Za-z0-9_.-]*@)?[A-Za-z0-9.-]+$ ]] || {
+  echo 'Invalid SSH destination (use user@host or host).' >&2; exit 1;
+}
 for origin in "$APP_ORIGIN" "$DOCS_ORIGIN"; do
   [[ $origin =~ ^https://[a-zA-Z0-9.-]+(:[0-9]+)?$ ]] || {
     echo 'Release origins must be HTTPS origins without paths or trailing slashes.' >&2; exit 1;
