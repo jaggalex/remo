@@ -27,7 +27,7 @@ async listBoards() {
 
 async listReadableBoards(userId) {
   const { rows } = await this.pool.query(
-    `select distinct b.id, b.title, b.updated_at, b.snapshot_through,
+    `select distinct b.id, b.org_id as "orgId", b.title, b.updated_at, b.snapshot_through,
             b.visibility, b.archived_at as "archivedAt",
             (b.owner_id = $1) as "canDelete",
             (b.owner_id = $1 or exists (
@@ -167,11 +167,13 @@ async search(q, { limit = 50, type, boardIds = null } = {}) {
     // The filter also looks into a sticker or lane caption and the object name
     // (ADR-165). Only title/content have trigram indexes; at this scale the extra OR
     // costs nothing measurable.
-    `select w.board_id, w.id, w.type, w.title, w.content, w.props, w.updated_at,
+    `select w.board_id, b.org_id as "orgId", w.id, w.type, w.title, w.content, w.props,
+            w.updated_at,
             left(coalesce(nullif(w.props ->> 'name', ''), nullif(w.title, ''), w.content,
                           w.props ->> 'label'), 140) as snippet,
             position(lower($1) in lower(coalesce(w.props ->> 'name', w.title, ''))) as title_position
        from widgets w
+       join boards b on b.id = w.board_id
       where (w.title ilike '%' || $1 || '%'
              or w.content ilike '%' || $1 || '%'
              or w.props ->> 'label' ilike '%' || $1 || '%'

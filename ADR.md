@@ -6923,3 +6923,41 @@ geometry. The panel gains an object picker but the storage stays a flat ordered 
 **Limits.** No name uniqueness, no name history and no rename of ids. A per-object
 "show name on canvas" mode is not added: a name is a label in the interface, not a second
 caption on the board.
+
+## ADR-166: The organisation is the workspace
+
+**Status:** accepted (2026-11-04). Resolves the UI question left open by ADR-064/IAM v1.
+
+**Context.** The interface used "workspace" and "organisation" for the same tenant. The
+English organisation screen labelled its tenant picker "Workspace", the Russian one
+"Пространство", while every permission, table and API said organisation. Worse, the
+picker lived inside an account dialog and only reloaded that dialog: choosing another
+organisation changed the people list and nothing else, so it looked like a broken
+workspace switch.
+
+**Decision.**
+
+- **There is no separate workspace entity.** remo has exactly one tenant above a team:
+  the organisation. "Workspace" is a descriptive word, never a UI noun.
+- **Organisation switching is board-directory navigation, not a permission.** The board
+  directory gets one explicit organisation selector: "All organisations" or one
+  organisation. It filters the board list and search results and becomes the default
+  for a new board. It is stored in the browser and never widens access: the board still
+  decides what a person may do.
+- **The organisation screen is about one organisation.** Its internal picker is removed;
+  it opens the organisation selected in the directory (or the board's organisation when
+  the directory shows all). Switching tenants happens in one place, the directory.
+- **The top bar keeps showing the organisation of the open board.** That is the only
+  organisation the canvas can honestly name; the directory filter does not rewrite it.
+- **The board API returns `orgId`.** The directory needs to group what it already may
+  list; this is a read field, not a new access rule.
+- **All user-visible strings say organisation.** "Workspace" remains only as ordinary
+  prose in documentation about the product category.
+
+**Consequences.** A person with several organisations sees one list of boards filtered
+by organisation, can start a board in the chosen one, and never mistakes the account
+dialog for a global context switch. No schema, permission or route changes.
+
+**Limits.** There is no organisation home page and no `?org=` route: the directory is
+the switcher. Being a guest in one organisation still shows only that organisation's
+boards and no people list.

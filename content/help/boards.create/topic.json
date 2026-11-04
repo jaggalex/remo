@@ -6,8 +6,8 @@
     "en": "Create a board"
   },
   "summary": {
-    "ru": "Новая доска в команде: название, шаблон и сразу открытое рабочее место.",
-    "en": "A new board in a team: name, template and an open workspace."
+    "ru": "Новая доска в команде: название, шаблон и сразу открытая доска.",
+    "en": "A new board in a team: name, template and an open board."
   },
   "related": [
     "access.share",
@@ -18,7 +18,7 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:dc7ec524a0af3e5716f855725db1f9d595697db9e29d687f3cbf7ebda56b36c0"
+      "sourceHash": "sha256:5e52cfe98f6ef5cfde686b2234d7f4b5522307feecd78e4f17c706540c1d17d9"
     }
   }
 }

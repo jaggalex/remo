@@ -79,6 +79,7 @@ export function App() {
     me,
     setMe,
     orgs,
+    refreshOrgs,
     access,
     refreshAccess,
     boardOrgId,
@@ -590,15 +591,15 @@ export function App() {
           setAgentOpen(false);
           setAccountOpen(true);
         }}
-        settingsOpen={settingsOpen}
-        settings={settings}
+        settingsOpen={settingsOpen} settings={settings}
         onChangeSettings={(next) => {
           setSettings(next);
           saveSettings(next);
         }}
         onCloseSettings={() => setSettingsOpen(false)}
-        boardsOpen={boardsOpen}
-        orgs={orgs}
+        boardsOpen={boardsOpen} orgs={orgs}
+        refreshOrgs={refreshOrgs}
+        boardOrgId={boardOrgId ?? null}
         onCloseBoards={() => setBoardsOpen(false)}
         onOpenBoard={openBoard}
         trashOpen={trashOpen}
@@ -614,8 +615,7 @@ export function App() {
         orgName={orgName}
         writeBlocked={writeBlocked}
         readOnly={readOnly}
-        boardsOpen={boardsOpen}
-        setBoardsOpen={setBoardsOpen}
+        boardsOpen={boardsOpen} setBoardsOpen={setBoardsOpen}
         canShare={canShare}
         copied={copied}
         copyShareLink={copyShareLink}

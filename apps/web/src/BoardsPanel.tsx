@@ -2,12 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { currentRoom, syncUrl } from "./identity";
 import { useI18n } from "./i18n";
 import { formatMoment } from "./format";
+import { Select } from "@remo/ui";
 import { api, type OrgSummary } from "./api";
 import { BoardDeleteDialog } from "./BoardDeleteDialog";
 import { NewBoardDialog } from "./NewBoardDialog";
 
 export interface BoardSummary {
   id: string;
+  /** The organisation that owns the board; null only for a legacy unclaimed room. */
+  orgId: string | null;
   title: string | null;
   updated_at: string;
   widgets: number;
@@ -21,6 +24,7 @@ export interface BoardSummary {
 
 export interface SearchHit {
   board_id: string;
+  orgId: string | null;
   id: string;
   type: string;
   title: string | null;
@@ -49,11 +53,19 @@ export function BoardsPanel({
   open,
   onClose,
   orgs,
+  activeOrgId,
+  fallbackOrgId,
+  onActiveOrg,
   onOpenBoard,
 }: {
   open: boolean;
   onClose: () => void;
   orgs: OrgSummary[];
+  /** The directory filter (ADR-166); null means every organisation. */
+  activeOrgId: string | null;
+  /** The open board's organisation, used when the filter shows every organisation. */
+  fallbackOrgId: string | null;
+  onActiveOrg: (orgId: string | null) => void;
   onOpenBoard: (boardId: string, widgetId?: string, template?: string, name?: string) => void;
 }) {
   const { t, count, lang } = useI18n();
@@ -122,8 +134,11 @@ export function BoardsPanel({
     return () => window.clearTimeout(timer);
   }, [open, query, active]);
 
-  const activeBoards = boards.filter((board) => !board.archivedAt);
-  const trashedBoards = boards.filter((board) => board.archivedAt);
+  const inOrg = (orgId: string | null) => !activeOrgId || orgId === activeOrgId;
+  const visibleBoards = boards.filter((board) => inOrg(board.orgId));
+  const visibleHits = activeOrgId ? hits.filter((hit) => inOrg(hit.orgId)) : hits;
+  const activeBoards = visibleBoards.filter((board) => !board.archivedAt);
+  const trashedBoards = visibleBoards.filter((board) => board.archivedAt);
   const titleMatches =
     query.trim().length < 2
       ? []
@@ -168,6 +183,24 @@ export function BoardsPanel({
         </div>
       </header>
 
+      {orgs.length > 1 && (
+        <div className="boards-org">
+          <Select
+            size="compact"
+            label={t("boards.org")}
+            value={activeOrgId ?? ""}
+            options={[
+              { value: "", label: t("boards.allOrgs") },
+              ...orgs.map((org) => ({ value: org.id, label: org.name })),
+            ]}
+            onChange={(event) => {
+              onActiveOrg(event.currentTarget.value || null);
+              setQuery("");
+            }}
+          />
+        </div>
+      )}
+
       <input
         ref={searchRef}
         className="boards-search"
@@ -203,9 +236,9 @@ export function BoardsPanel({
 
       {!signedOut && query.trim().length >= 2 && (
         <div className="boards-section">
-          <div className="boards-label">{count("matches", hits.length)}</div>
+          <div className="boards-label">{count("matches", visibleHits.length)}</div>
           <ul className="boards-list">
-            {hits.map((hit) => (
+            {visibleHits.map((hit) => (
               <li key={`${hit.board_id}:${hit.id}`}>
                 <button type="button" onClick={() => onOpenBoard(hit.board_id, hit.id)}>
                   <b>{hit.snippet || hit.title || hit.id}</b>
@@ -325,6 +358,7 @@ export function BoardsPanel({
       <NewBoardDialog
         open={creating}
         orgs={orgs}
+        defaultOrgId={activeOrgId ?? fallbackOrgId}
         onClose={() => setCreating(false)}
         onCreated={(boardId, template, title) => {
           setCreating(false);

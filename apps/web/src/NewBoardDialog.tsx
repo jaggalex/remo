@@ -18,11 +18,14 @@ type Choice = "empty" | TemplateKey;
 export function NewBoardDialog({
   open,
   orgs,
+  defaultOrgId = null,
   onClose,
   onCreated,
 }: {
   open: boolean;
   orgs: OrgSummary[];
+  /** The directory filter, so a new board starts in the organisation being viewed. */
+  defaultOrgId?: string | null;
   onClose: () => void;
   onCreated: (boardId: string, template: Choice, title: string) => void;
 }) {
@@ -44,8 +47,9 @@ export function NewBoardDialog({
     setError(null);
     setTeamId("");
     setTeams([]);
-    setOrgId(canCreate[0]?.id ?? "");
-  }, [open]);
+    const preferred = canCreate.find((org) => org.id === defaultOrgId) ?? canCreate[0];
+    setOrgId(preferred?.id ?? "");
+  }, [open, defaultOrgId]);
 
   // Teams are per organisation; reload them when the selection changes.
   useEffect(() => {

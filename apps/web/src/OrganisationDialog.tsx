@@ -7,7 +7,6 @@ import {
   type OrgInvitation,
   type OrgMember,
   type OrgRole,
-  type OrgSummary,
   type SessionUser,
 } from "./api";
 import { formatMoment, initials } from "./format";
@@ -32,17 +31,22 @@ import { ABOUT } from "./about";
 export function OrganisationDialog({
   open,
   me,
+  initialOrgId = null,
+  onOrgsChanged,
   onClose,
   onSignedOut,
 }: {
   open: boolean;
   me: SessionUser;
+  /** The organisation chosen in the directory (ADR-166); null means "pick one". */
+  initialOrgId?: string | null;
+  /** The directory list changed: a new organisation or a new name. */
+  onOrgsChanged?: () => void | Promise<void>;
   onClose: () => void;
   /** The session ended, so the app must drop its own copy of the user. */
   onSignedOut: () => void;
 }) {
   const { t, lang } = useI18n();
-  const [orgs, setOrgs] = useState<OrgSummary[]>([]);
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
   const [creatingOrg, setCreatingOrg] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
@@ -110,9 +114,10 @@ export function OrganisationDialog({
       .orgs()
       .then(({ orgs: next }) => {
         if (!alive) return;
-        setOrgs(next);
-        setOrgId((current) => {
-          if (current && next.some((candidate) => candidate.id === current)) return current;
+        setOrgId(() => {
+          if (initialOrgId && next.some((candidate) => candidate.id === initialOrgId)) {
+            return initialOrgId;
+          }
           const first =
             next.find((candidate) => candidate.relation === "member" && candidate.state === "active") ??
             next[0];
@@ -125,7 +130,7 @@ export function OrganisationDialog({
     return () => {
       alive = false;
     };
-  }, [open, lang, describe]);
+  }, [open, lang, initialOrgId, describe]);
 
   const load = useCallback(async (id: string) => {
     setLoading(true);
@@ -223,11 +228,7 @@ export function OrganisationDialog({
     try {
       const result = await api.renameOrg(orgId, orgNameDraft.trim());
       setOrg(result.org);
-      setOrgs((current) =>
-        current.map((candidate) =>
-          candidate.id === orgId ? { ...candidate, name: result.org.name } : candidate,
-        ),
-      );
+      await onOrgsChanged?.();
       setRenamingOrg(false);
     } catch (failure) {
       setError(describe(failure));
@@ -350,8 +351,7 @@ export function OrganisationDialog({
     setError(null);
     try {
       const created = await api.createOrg(newOrgName.trim());
-      const next = await api.orgs();
-      setOrgs(next.orgs);
+      await onOrgsChanged?.();
       setOrgId(created.org.id);
       setCreatingOrg(false);
       setNewOrgName("");
@@ -446,19 +446,6 @@ export function OrganisationDialog({
               {t("org.createOrg")}
             </button>
           </form>
-        )}
-
-        {orgs.length > 1 && (
-          <label className="org-switch">
-            <span className="muted">{t("org.choose")}</span>
-            <select value={orgId ?? ""} onChange={(event) => setOrgId(event.target.value)}>
-              {orgs.map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.name}
-                </option>
-              ))}
-            </select>
-          </label>
         )}
 
         {!isGuest && (
