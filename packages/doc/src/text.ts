@@ -281,13 +281,17 @@ export function setWidgetDelta(
       suffix += 1;
     }
 
-    const removeLength = currentChars.length - prefix - suffix;
-    if (removeLength > 0) text.delete(prefix, removeLength);
+    // `charsOf` yields code points, so the diff counts are not the UTF-16 offsets
+    // `Y.XmlText` expects. Convert before touching the shared text; an emoji is two
+    // code units, and using the code-point count cut the string in the wrong place.
+    const prefixOffset = utf16Length(currentChars, 0, prefix);
+    const removeLength = utf16Length(currentChars, prefix, currentChars.length - suffix);
+    if (removeLength > 0) text.delete(prefixOffset, removeLength);
 
     // Insert the changed middle, one run per set of marks. Marks are explicit so a
     // plain run is not silently painted with the formatting to its left.
     const end = nextChars.length - suffix;
-    let index = prefix;
+    let index = prefixOffset;
     let i = prefix;
     while (i < end) {
       const key = nextChars[i]!.key;
@@ -305,6 +309,13 @@ export function setWidgetDelta(
 
 function sameChar(a: MarkedChar, b: MarkedChar): boolean {
   return a.ch === b.ch && a.key === b.key;
+}
+
+/** UTF-16 length of a run of marked characters, the unit `Y.XmlText` indexes in. */
+function utf16Length(chars: readonly MarkedChar[], from = 0, to = chars.length): number {
+  let length = 0;
+  for (let i = from; i < to; i += 1) length += chars[i]!.ch.length;
+  return length;
 }
 
 /**

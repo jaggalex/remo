@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import { orderBetween, type Widget } from "@remo/model";
+import { newId, orderBetween, type Widget } from "@remo/model";
 import type { BoardDocument } from "./board";
 import {
   cardsOf,
@@ -104,7 +104,7 @@ export function addColumn(
     const newColumnWidth = Number(kanban.get("newColumnWidth") ?? 574.6);
 
     const entry = new Y.Map<unknown>();
-    entry.set("id", uniqueId("col", entries.map((c) => String(c.get("id")))));
+    entry.set("id", newId("col"));
     entry.set("title", uniqueTitle(title, entries.map((c) => String(c.get("title")))));
     entry.set("accent", "#9ca3af");
     // The captured product widens the widget by exactly this much per added column.
@@ -226,7 +226,7 @@ export function addSwimlane(
     const swimlanes = swimlanesOf(kanban);
     const entries = swimlanes.toArray();
     const entry = new Y.Map<unknown>();
-    entry.set("id", uniqueId("lane", entries.map((s) => String(s.get("id")))));
+    entry.set("id", newId("lane"));
     entry.set("title", uniqueTitle(title, entries.map((s) => String(s.get("title")))));
     if (atIndex == null) swimlanes.push([entry]);
     else swimlanes.insert(Math.min(Math.max(atIndex, 0), swimlanes.length), [entry]);
@@ -318,13 +318,6 @@ function resizeToColumns(
     .reduce((total, column) => total + Number(column.get("width") ?? 0), 0);
   const widget = board.widgets.get(kanbanId);
   if (widget) board.widgets.set(kanbanId, { ...widget, width });
-}
-
-function uniqueId(prefix: string, taken: string[]): string {
-  const used = new Set(taken);
-  let n = taken.length + 1;
-  while (used.has(`${prefix}${n}`)) n += 1;
-  return `${prefix}${n}`;
 }
 
 function uniqueTitle(base: string, taken: string[]): string {
