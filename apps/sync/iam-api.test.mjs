@@ -251,6 +251,7 @@ suite("IAM API", () => {
       anchor: { kind: "point", x: 1, y: 2 },
       body: "Mine",
     });
+    expect(created.body.thread.comments[0].authorHandle).toBe(commenterReg.body.user.handle);
     const messageId = created.body.thread.comments[0].id;
 
     // The audit view filters by org_id; a comment event without it is invisible.
@@ -784,6 +785,49 @@ suite("invitations and administration", () => {
     // The same token cannot be used twice.
     const again = await invited("POST", "/invitations/accept", { token });
     expect(again.status).toBe(410);
+  });
+
+  it("gives every account a unique handle and rejects invalid ones", async () => {
+    const first = client();
+    const a = await first("POST", "/auth/register", {
+      email: email("handle-a"),
+      password,
+      name: "A",
+    });
+    expect(a.body.user.handle).toMatch(/^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$/);
+
+    const second = client();
+    const b = await second("POST", "/auth/register", {
+      email: email("handle-b"),
+      password,
+      name: "B",
+      handle: "unique.nick-1",
+    });
+    expect(b.body.user.handle).toBe("unique.nick-1");
+
+    const duplicate = await client()("POST", "/auth/register", {
+      email: email("handle-c"),
+      password,
+      name: "C",
+      handle: "unique.nick-1",
+    });
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body.error).toBe("HANDLE_TAKEN");
+
+    for (const handle of ["ab", "has space", "bad(handle)", "admin"]) {
+      const res = await client()("POST", "/auth/register", {
+        email: email(`handle-bad-${handle.replace(/[^a-z]/g, "")}`),
+        password,
+        name: "Bad",
+        handle,
+      });
+      expect(res.status, handle).toBe(422);
+    }
+
+    // A handle is stored lower-case; the same person may change it.
+    const renamed = await first("PATCH", "/auth/me", { handle: "Renamed.Handle" });
+    expect(renamed.status).toBe(200);
+    expect(renamed.body.user.handle).toBe("renamed.handle");
   });
 
   it("renames the account and keeps the session name current", async () => {

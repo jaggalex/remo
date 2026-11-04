@@ -44,10 +44,10 @@ suite("legacy room ids", () => {
     live.getMap("widgets").set("w1", sticky("w1", 42));
     await store.writeState(encoded, live);
     const { rows: owners } = await store.pool.query(
-      `insert into users (email, password_hash, name)
-       values ($1, 'x', 'Owner') on conflict (email) do update set name = excluded.name
+      `insert into users (email, password_hash, name, handle)
+       values ($1, 'x', 'Owner', $2) on conflict (email) do update set name = excluded.name
        returning id`,
-      [`merge-owner-${Date.now()}@example.com`],
+      [`merge-owner-${Date.now()}@example.com`, `merge-owner-${Date.now()}`],
     );
     await store.pool.query(
       `update boards set owner_id = $2, acl_version = 2, claimed_at = now() where id = $1`,
@@ -211,10 +211,10 @@ suite("legacy room ids", () => {
     await seedRoom(encoded, "Agent copy");
 
     const { rows: owners } = await store.pool.query(
-      `insert into users (email, password_hash, name)
-       values ($1, 'x', 'Agent Owner') on conflict (email) do update set name = excluded.name
+      `insert into users (email, password_hash, name, handle)
+       values ($1, 'x', 'Agent Owner', $2) on conflict (email) do update set name = excluded.name
        returning id`,
-      [`merge-agent-${Date.now()}@example.com`],
+      [`merge-agent-${Date.now()}@example.com`, `merge-agent-${Date.now()}`],
     );
     const owner = owners[0].id;
     const { rows: orgs } = await store.pool.query(

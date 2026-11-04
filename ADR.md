@@ -6847,3 +6847,38 @@ an identity key. The account menu keeps the local cursor name for guests.
 
 **Limits.** No unique handle, no email change, no avatar, and no bulk rewrite of the names
 stored on historical comments.
+
+## ADR-164: Every account has a unique handle
+
+**Status:** accepted (2026-11-04). Extends ADR-163 and the names plan in issue #41.
+
+**Context.** A display name is not an identifier: two people can be called Alex, and a
+name may contain spaces, punctuation or an email address. Communications still need a
+short, stable way to name a person that cannot collide and is pleasant to read.
+
+**Decision.**
+
+- **Every account has a handle, mandatory and unique case-insensitively.** It is stored
+  lower-case and shown as `@handle`.
+- **Shape:** 3–32 characters, `a–z`, `0–9`, `_`, `-`, `.`; the first and last character
+  are a letter or digit. Parentheses, spaces, control characters and other punctuation
+  are rejected. A short reserved list (`admin`, `support`, `remo`, `system`, `everyone`,
+  `here`) cannot be claimed.
+- **Registration may omit a handle.** The server derives one from the email local part,
+  sanitises it to the same shape and adds a numeric suffix if taken. A supplied handle is
+  validated and `409 HANDLE_TAKEN` is returned on collision.
+- **`PATCH /auth/me` changes the name and/or the handle.** Both are audited as
+  `auth.profile_changed`; the response carries the updated user.
+- **Communications show `Name @handle`.** Presence, comments and the account menu carry
+  both. A comment stores the handle written at the time, like the author name; renaming
+  does not rewrite history.
+- **A per-organisation/team/board switch between name and handle is deferred.** Showing
+  both is unambiguous and needs no policy; a switch is a separate ADR if the product
+  needs one.
+
+**Consequences.** The email remains the login; the handle is the public, mentionable
+identity. Derived handles make registration frictionless while keeping the column
+non-null. Existing accounts are backfilled from the email local part and deduplicated.
+
+**Limits.** No handle history, no reserved-word localisation, and no display-style policy
+yet. A handle is not a login and cannot be used to sign in.

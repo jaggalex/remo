@@ -116,7 +116,7 @@ export function App() {
     visiblePresence,
     saveLabel,
     saveTitle,
-  } = useBoardSession({ board, identity, accountId: me?.id ?? null, access, refreshAccess,
+  } = useBoardSession({ board, identity, accountId: me?.id ?? null, accountHandle: me?.handle ?? null, access, refreshAccess,
     setNotice: showNotice, t });
   /** One voting session, shared by the panel and the chips on the board (ADR-115). */
   const { vote, open: voteOpen, setOpen: setVoteOpen, cast, withdraw } = useBoardVote({

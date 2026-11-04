@@ -44,7 +44,9 @@ export function Peers({
           title={
             followTarget === peer.sessionKey
               ? t("follow.stop")
-              : t("follow.follow", { name: peer.label })
+              : peer.handle
+                ? `${t("follow.follow", { name: peer.label })} @${peer.handle}`
+                : t("follow.follow", { name: peer.label })
           }
           onClick={() => onToggleFollow(peer.sessionKey, peer.label)}
         >

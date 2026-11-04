@@ -1,2 +1,2 @@
 /** Bump when `schema.sql` gains a table/column the code depends on (ADR-089). */
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;

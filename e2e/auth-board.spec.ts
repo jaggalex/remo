@@ -207,3 +207,16 @@ test("renames the account from the menu", async ({ page }) => {
   await page.reload();
   await expect(page.locator(".account-button")).toHaveAttribute("title", /After/);
 });
+
+test("changes the account handle and keeps it after a reload", async ({ page }) => {
+  await freshBoard(page, "handle-account", { user: "Handle" });
+  await openAccount(page);
+  const field = page.locator(".account-name-field");
+  await field.getByLabel("Handle").fill("handle.person");
+  await field.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.locator(".account-who")).toContainText("@handle.person");
+
+  await page.reload();
+  await openAccount(page);
+  await expect(page.locator(".account-who")).toContainText("@handle.person");
+});

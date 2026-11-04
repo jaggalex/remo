@@ -270,6 +270,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
             self={self}
             color={identity.color}
             signedIn={Boolean(me)}
+            handle={me?.handle ?? ""}
             roleLine={roleLine}
             identityName={identity.name}
             onRenameSelf={renameSelf}

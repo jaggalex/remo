@@ -7,19 +7,27 @@ import { normalizeEmail } from "../iam.mjs";
  * a seat, and every mutation of rights leaves an audit row.
  */
 export const iamUserMethods = {
-async createUser({ email, passwordHash, name }) {
+async createUser({ email, passwordHash, name, handle }) {
   const { rows } = await this.pool.query(
-    `insert into users (email, password_hash, name)
-     values ($1, $2, $3)
-     returning id, email, name, state, theme, lang, created_at`,
-    [email, passwordHash, name],
+    `insert into users (email, password_hash, name, handle)
+     values ($1, $2, $3, $4)
+     returning id, email, name, handle, state, theme, lang, created_at`,
+    [email, passwordHash, name, handle],
   );
   return rows[0];
 },
 
+async findUserByHandle(handle) {
+  const { rows } = await this.pool.query(
+    `select id, email, name, handle, state, theme, lang from users where lower(handle) = lower($1)`,
+    [handle],
+  );
+  return rows[0] ?? null;
+},
+
 async findUserByEmail(email) {
   const { rows } = await this.pool.query(
-    `select id, email, name, state, theme, lang, password_hash, created_at
+    `select id, email, name, handle, state, theme, lang, password_hash, created_at
        from users where email = $1`,
     [email],
   );
@@ -28,7 +36,7 @@ async findUserByEmail(email) {
 
 async findUserById(id) {
   const { rows } = await this.pool.query(
-    `select id, email, name, state, theme, lang, created_at from users where id = $1`,
+    `select id, email, name, handle, state, theme, lang, created_at from users where id = $1`,
     [id],
   );
   return rows[0] ?? null;
@@ -65,7 +73,7 @@ async createSession({ userId, tokenHash, expiresAt, userAgent }) {
 async findSession(tokenHash) {
   const { rows } = await this.pool.query(
     `select s.id, s.user_id, s.expires_at,
-            u.email, u.name, u.state, u.theme, u.lang
+            u.email, u.name, u.handle, u.state, u.theme, u.lang
        from sessions s
        join users u on u.id = s.user_id
       where s.token_hash = $1
@@ -168,10 +176,13 @@ async createOrgWithOwner({ name, slug, userId }) {
   }
 },
 
-async renameUser({ userId, name }) {
+async renameUser({ userId, name = null, handle = null }) {
   const { rows } = await this.pool.query(
-    `update users set name = $2 where id = $1 returning id, email, name`,
-    [userId, name],
+    `update users
+        set name = coalesce($2, name), handle = coalesce($3, handle)
+      where id = $1
+      returning id, email, name, handle`,
+    [userId, name, handle],
   );
   return rows[0] ?? null;
 },
