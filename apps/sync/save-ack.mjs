@@ -45,3 +45,14 @@ export function isSyncStep1(bytes) {
     return false;
   }
 }
+
+/** A client sync step 2: `[messageSync, messageYjsSyncStep2, ...]`. */
+export function isSyncStep2(bytes) {
+  if (!bytes || bytes.length < 2) return false;
+  try {
+    const decoder = decoding.createDecoder(bytes);
+    return decoding.readVarUint(decoder) === 0 && decoding.readVarUint(decoder) === 1;
+  } catch {
+    return false;
+  }
+}
