@@ -133,15 +133,15 @@ async revokeUserSessions(userId) {
   );
 },
 
-async createOrgWithOwner({ name, slug, userId }) {
+async createOrgWithOwner({ name, slug, userId, kind = "shared" }) {
   const client = await this.pool.connect();
   try {
     await client.query("begin");
     const org = (
       await client.query(
-        `insert into orgs (name, slug, created_by) values ($1, $2, $3)
-         returning id, name, slug`,
-        [name, slug, userId],
+        `insert into orgs (name, slug, created_by, kind) values ($1, $2, $3, $4)
+         returning id, name, slug, kind`,
+        [name, slug, userId, kind],
       )
     ).rows[0];
     await client.query(
@@ -189,7 +189,7 @@ async renameUser({ userId, name = null, handle = null }) {
 
 async getOrg(orgId) {
   const { rows } = await this.pool.query(
-    `select id, name, slug, created_at from orgs where id = $1`,
+    `select id, name, slug, kind, created_at from orgs where id = $1`,
     [orgId],
   );
   return rows[0] ?? null;
@@ -197,7 +197,7 @@ async getOrg(orgId) {
 
 async renameOrg({ orgId, name }) {
   const { rows } = await this.pool.query(
-    `update orgs set name = $2 where id = $1 returning id, name, slug`,
+    `update orgs set name = $2 where id = $1 returning id, name, slug, kind`,
     [orgId, name],
   );
   return rows[0] ?? null;
@@ -205,7 +205,7 @@ async renameOrg({ orgId, name }) {
 
 async listOrgsForUser(userId) {
   const { rows } = await this.pool.query(
-    `select o.id, o.name, o.slug, m.relation, m.state
+    `select o.id, o.name, o.slug, o.kind, m.relation, m.state
        from org_memberships m
        join orgs o on o.id = m.org_id
       where m.user_id = $1 and m.state in ('active', 'invited')

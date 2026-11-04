@@ -72,10 +72,14 @@ export function saveIdentity(identity: Identity): void {
   }
 }
 
+/** The room in the address, or null on the organisation home (ADR-168). */
+export function roomFromUrl(): string | null {
+  return new URLSearchParams(window.location.search).get("room");
+}
+
 /** Room name, overridable with `?room=` for parallel experiments. */
 export function currentRoom(fallback = "board-main"): string {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("room") ?? fallback;
+  return roomFromUrl() ?? fallback;
 }
 
 /**

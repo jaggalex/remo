@@ -78,6 +78,90 @@ async listReadableBoards(userId) {
   return rows;
 },
 
+/**
+ * One page of the board directory (ADR-168).
+ *
+ * The access predicate is the same one `listReadableBoards` uses; `org`, search, sort
+ * and pagination only narrow what the person may already read. Author is the creator,
+ * not the current owner; both are joined on purpose.
+ */
+async listBoardDirectory(userId, { orgSlug = null, q = null, sort = "updated", dir = "desc", page = 1, limit = 24, trash = false } = {}) {
+  const order = {
+    updated: '"updatedAt"',
+    created: '"createdAt"',
+    name: 'lower(title)',
+    author: `lower(coalesce("createdByName", ''))`,
+  }[sort] ?? '"updatedAt"';
+  const direction = dir === "asc" ? "asc" : "desc";
+  const pageSize = Math.min(Math.max(Number(limit) || 24, 1), 60);
+  const currentPage = Math.max(Number(page) || 1, 1);
+  const offset = (currentPage - 1) * pageSize;
+  const needle = String(q ?? "").trim() || null;
+
+  const { rows } = await this.pool.query(
+    `with visible as (
+       select distinct b.id, b.org_id as "orgId", b.title, b.icon,
+              b.created_at as "createdAt", b.updated_at as "updatedAt",
+              b.visibility, b.archived_at as "archivedAt",
+              b.team_id as "teamId", t.name as "teamName",
+              u.name as "createdByName", u.handle as "createdByHandle",
+              (b.owner_id = $1) as "canDelete",
+              (b.owner_id = $1 or exists (
+                select 1 from board_grants g
+                 where g.board_id = b.id and g.subject_type = 'user'
+                   and g.subject_id = $1 and g.role = 'coowner'
+              )) as "canDuplicate",
+              coalesce(w.count, 0)::int as widgets,
+              coalesce(g.count, 0)::int as grants
+         from boards b
+         join orgs o on o.id = b.org_id
+         join org_memberships m
+           on m.org_id = b.org_id and m.user_id = $1 and m.state = 'active'
+         left join teams t on t.id = b.team_id
+         left join users u on u.id = coalesce(b.created_by, b.owner_id)
+         left join (select board_id, count(*) from widgets group by board_id) w
+           on w.board_id = b.id
+         left join (select board_id, count(*) from board_grants group by board_id) g
+           on g.board_id = b.id
+        where b.owner_id is not null
+          and b.archived_at is ${trash ? "not null" : "null"}
+          ${trash ? `and (b.owner_id = $1 or exists (
+            select 1 from board_grants g
+             where g.board_id = b.id and g.subject_type = 'user'
+               and g.subject_id = $1 and g.role = 'coowner'
+          ))` : ""}
+          and ($2::text is null or o.slug = $2)
+          and ($3::text is null or b.title ilike '%' || $3 || '%')
+          and (
+            b.owner_id = $1
+            or exists (
+              select 1 from board_grants g
+               where g.board_id = b.id and g.subject_type = 'user' and g.subject_id = $1)
+            or exists (
+              select 1
+                from board_grants g
+                join team_memberships tm
+                  on tm.team_id = g.subject_id and tm.user_id = $1
+               where g.board_id = b.id and g.subject_type = 'team')
+            or (m.relation = 'member' and exists (
+              select 1 from board_grants g
+               where g.board_id = b.id and g.subject_type = 'org' and g.subject_id = b.org_id))
+          )
+     )
+     select *, count(*) over() as total
+       from visible
+      order by ${order} ${direction}, id
+      limit $4 offset $5`,
+    [userId, orgSlug, needle, pageSize, offset],
+  );
+  return {
+    boards: rows.map(({ total: _total, ...row }) => row),
+    total: Number(rows[0]?.total ?? 0),
+    page: currentPage,
+    pageSize,
+  };
+},
+
 async readBoardState(boardId) {
   const { rows } = await this.pool.query(
     "select snapshot, snapshot_through from boards where id = $1",

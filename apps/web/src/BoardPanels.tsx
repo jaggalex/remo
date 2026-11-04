@@ -1,26 +1,22 @@
-import { useState } from "react";
 import type { Camera } from "@remo/canvas";
 import type { AgentPlan, AppliedAgentPlan } from "@remo/doc";
 import type { Widget } from "@remo/model";
 import type { Access, SessionUser } from "./api";
-import type { OrgSummary } from "./api";
 import { AgentDialog } from "./AgentDialog";
 import { TidyDialog } from "./TidyDialog";
 import type { TidyCommand } from "./useTidyCommand";
 import { BoardDeleteDialog } from "./BoardDeleteDialog";
-import { BoardsPanel } from "./BoardsPanel";
 import { OrganisationDialog } from "./OrganisationDialog";
 import { SettingsPanel } from "./SettingsPanel";
-import { loadActiveOrg, saveActiveOrg } from "./activeOrg";
 import { useI18n } from "./i18n";
 import type { BoardSettings } from "./settings";
 
 /**
  * The screens that hang off the board, not the board itself.
  *
- * Organisation, AI, settings, the board list and the trash open from the header menus;
- * keeping them here means `App` composes and the file stays inside the Q4 size ratchet
- * (ADR-119 № 10 postponed this until the forms moved — S5a is that step).
+ * Organisation, AI, settings and the trash open from the board chrome; the board list
+ * itself is the organisation home (ADR-168), not an overlay. Keeping these here means
+ * `BoardApp` composes and the file stays inside the Q4 size ratchet.
  */
 export function BoardPanels({
   accountOpen,
@@ -42,12 +38,8 @@ export function BoardPanels({
   settings,
   onChangeSettings,
   onCloseSettings,
-  boardsOpen,
-  orgs,
   refreshOrgs,
   boardOrgId,
-  onCloseBoards,
-  onOpenBoard,
   trashOpen,
   onCloseTrash,
   onConfirmTrash,
@@ -75,32 +67,21 @@ export function BoardPanels({
   settings: BoardSettings;
   onChangeSettings: (value: BoardSettings) => void;
   onCloseSettings: () => void;
-  boardsOpen: boolean;
-  orgs: OrgSummary[];
   refreshOrgs: () => void | Promise<void>;
   /** The organisation of the open board; null for a legacy room. */
   boardOrgId: string | null;
-  onCloseBoards: () => void;
-  onOpenBoard: (boardId: string, widgetId?: string, template?: string, name?: string) => void;
   trashOpen: boolean;
   onCloseTrash: () => void;
   onConfirmTrash: () => void;
 }) {
   const { t } = useI18n();
-  const [storedOrg, setStoredOrg] = useState<string | null>(() => loadActiveOrg());
-  // A stored id can name an organisation this account has left; treat it as "all".
-  const activeOrgId = storedOrg && orgs.some((org) => org.id === storedOrg) ? storedOrg : null;
-  const chooseOrg = (orgId: string | null) => {
-    setStoredOrg(orgId);
-    saveActiveOrg(orgId);
-  };
   return (
     <>
       {me && (
         <OrganisationDialog
           open={accountOpen}
           me={me}
-          initialOrgId={activeOrgId ?? boardOrgId}
+          initialOrgId={boardOrgId}
           onOrgsChanged={refreshOrgs}
           onClose={onCloseAccount}
           onSignedOut={onSignedOut}
@@ -144,15 +125,6 @@ export function BoardPanels({
         settings={settings}
         onChange={onChangeSettings}
         onClose={onCloseSettings}
-      />
-      <BoardsPanel
-        open={boardsOpen}
-        onClose={onCloseBoards}
-        orgs={orgs}
-        activeOrgId={activeOrgId}
-        fallbackOrgId={boardOrgId}
-        onActiveOrg={chooseOrg}
-        onOpenBoard={onOpenBoard}
       />
     </>
   );

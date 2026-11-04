@@ -6961,3 +6961,81 @@ dialog for a global context switch. No schema, permission or route changes.
 **Limits.** There is no organisation home page and no `?org=` route: the directory is
 the switcher. Being a guest in one organisation still shows only that organisation's
 boards and no people list.
+
+## ADR-167: Every account has a personal organisation
+
+**Status:** accepted (2026-11-04). Completes the tenancy decision of ADR-166.
+
+**Context.** Registration already created an organisation and a `General` team, but the
+organisation was called "Name's workspace" and looked like a company account. A person
+who works alone, or with a group of friends around an interest, read that as "I have no
+organisation". Making the organisation optional would require a second owner for boards
+and a second access path; the current IAM is organisation-scoped on purpose.
+
+**Decision.**
+
+- **`orgs.kind` is `personal` or `shared`.** Registration creates exactly one personal
+  organisation, named after the person. Every account always has one.
+- **A personal organisation is a normal tenant.** It has teams, boards, invitations and
+  the same permissions as a shared one. The kind only supplies the "Personal" badge and
+  the guarantee that the account is never tenantless.
+- **Additional organisations are `shared`.** Creating one through the account screen
+  creates a shared organisation; it can be left or renamed under the existing rules.
+- **"Private" is not the personal organisation.** Private is a board visibility; a
+  personal organisation may contain private and link-visible boards.
+- **The backfill uses the first organisation a person created.** Existing deployments
+  have no marker for the auto-created organisation; the earliest `orgs.created_at` row
+  with that creator is the closest honest answer. Its old name is kept; it can be
+  renamed.
+
+**Consequences.** "No organisation" disappears as a product state: the solo and the
+interest-group scenarios live in the personal organisation. No nullable `org_id`, no
+second board owner, no parallel permission model.
+
+**Limits.** Personal and shared organisations are not converted into each other. The
+backfill can be wrong for an account whose first organisation was deliberately shared;
+the badge makes the result visible and the name can be corrected.
+
+## ADR-168: The organisation home is the board directory
+
+**Status:** accepted (2026-11-04). Extends ADR-166 and ADR-167.
+
+**Context.** After ADR-166 the organisation picker filtered the board list but kept the
+current board mounted. Changing the tenant looked like a filter rather than a switch, and
+there was no screen for "this organisation, no board chosen". Boards also had only a
+title: no emoji, no creation date and no author in the read model.
+
+**Decision.**
+
+- **The address decides the screen.** `?room=<id>` is a board; `?org=<slug>` is the
+  organisation home; no room means the home. Switching organisation navigates to
+  `?org=…` and unmounts the board, so the previous organisation and board are left.
+- **The home is a tile directory.** Each tile shows an emoji, the title, the team, the
+  creator (`Name @handle`), the creation date and the last-update date. The whole tile
+  opens the board; a tile menu changes the emoji, duplicates or trashes it by permission.
+- **Search and sort are server-side.** Search is by board title. Sort is one of
+  `updated`, `created`, `name`, `author`, with an ascending/descending direction;
+  `updated` descending is the default. Tiles flow left-to-right then top-to-bottom in a
+  CSS grid.
+- **Pagination is 24 tiles per page**, with numbered pages. Search and sort reset to
+  page one. The directory state (`org`, `q`, `sort`, `dir`, `page`) lives in the address.
+- **Author means creator.** `boards.created_by` is written once and does not follow a
+  later ownership transfer. `owner_id` remains the current owner and the permission
+  source.
+- **The board icon is one emoji for now**, stored as `boards.icon`. A named DS icon can
+  reuse the same string later. Images are deliberately out of scope: remo has no upload,
+  storage, thumbnail or backup path for them yet.
+- **The read model returns `orgId` and the tile fields.** The access predicate is the
+  same one the board directory already used; grouping and sorting never widen access.
+- **Existing boards get `created_at = updated_at`.** The exact creation moment is not
+  recoverable; the UI shows the approximation as a normal date. `created_by` falls back
+  to the current owner when the creator is unknown.
+
+**Consequences.** Organisation switching is now a real context switch, and an account
+with no chosen board lands on a usable directory instead of a hidden legacy room. The old
+overlay board panel is removed: the home is the one board directory. The board header's
+"All boards" button and the organisation breadcrumb lead home.
+
+**Limits.** No cross-organisation "all boards" view and no board image upload. The home
+does not restore the last board automatically; a person chooses a tile. A guest sees only
+the boards and organisations their seat allows.

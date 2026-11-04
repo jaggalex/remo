@@ -1,0 +1,25 @@
+{
+  "id": "capabilities/home",
+  "type": "explanation",
+  "status": "available",
+  "order": 34,
+  "title": {
+    "ru": "Домашняя страница организации",
+    "en": "Organisation home"
+  },
+  "summary": {
+    "ru": "Плитки досок, поиск, сортировка, страницы, эмодзи и смена организации.",
+    "en": "Board tiles, search, sorting, pages, emoji and switching organisation."
+  },
+  "related": [
+    "capabilities/access",
+    "how-to/create-board",
+    "capabilities/presentation"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:6ca535e82714dd7a5e149f41246514132ac66f572b6c7cde7e224b383389b290"
+    }
+  }
+}

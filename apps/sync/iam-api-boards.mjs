@@ -16,6 +16,14 @@ import {
   readBody,
 } from "./iam-http.mjs";
 
+/** One emoji for a board tile; empty clears it. Images are a later ADR. */
+function normalizeIcon(value) {
+  const icon = String(value ?? "").trim();
+  if (Array.from(icon).length > 16) return { code: "ICON_TOO_LONG" };
+  if (/[\u0000-\u001f\u007f]/.test(icon)) return { code: "BAD_ICON" };
+  return { icon };
+}
+
 export async function handleBoardRoutes(ctx) {
   const { request, response, url, store, method, parts, user, audit, ip, requireUser, onAclChanged } = ctx;
 
@@ -125,6 +133,35 @@ export async function handleBoardRoutes(ctx) {
           visibility: board.visibility,
         },
       });
+      return true;
+    }
+
+    if (parts[2] === "icon" && method === "PATCH") {
+      if (!access.allowed || !access.capabilities.includes("board.edit")) {
+        return fail(response, 403, "FORBIDDEN", "you cannot change this board"), true;
+      }
+      const body = await readBody(request);
+      const normalized = normalizeIcon(body?.icon);
+      if (normalized.code) {
+        return fail(
+          response,
+          422,
+          normalized.code,
+          normalized.code === "ICON_TOO_LONG"
+            ? "an icon is one short emoji"
+            : "the icon contains control characters",
+        ), true;
+      }
+      const updated = await store.setBoardIcon(boardId, normalized.icon);
+      if (!updated) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+      await audit({
+        actorId: me?.id ?? null,
+        orgId: board.org_id,
+        boardId,
+        action: "board.icon",
+        subject: normalized.icon,
+      });
+      json(response, 200, { board: updated });
       return true;
     }
 

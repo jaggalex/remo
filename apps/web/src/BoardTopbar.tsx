@@ -38,8 +38,7 @@ export interface BoardTopbarProps {
   orgName: string | null;
   writeBlocked: boolean;
   readOnly: boolean;
-  boardsOpen: boolean;
-  setBoardsOpen: (value: boolean) => void;
+  onOpenHome: () => void;
   canShare: boolean;
   copied: boolean;
   copyShareLink: () => void;
@@ -105,7 +104,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
   const [renaming, setRenaming] = useState(false);
   const {
     title, titleDraft, setTitleDraft, titleCancelled, renameBoard, orgName, writeBlocked,
-    readOnly, boardsOpen, setBoardsOpen, canShare, copied, copyShareLink, setShareOpen,
+    readOnly, onOpenHome, canShare, copied, copyShareLink, setShareOpen,
     canExport, canBackup, canImport, canDuplicate, canDelete, canFacilitate, canAskAgents, canUseApps,
     setSettingsOpen, setExportOpen, onRestore, onDuplicate, onTrash, voteRunning, voteHint,
     timerRunning, timerHint, setVoteOpen, setTimerOpen, setFollowOpen, setAgentOpen,
@@ -140,17 +139,17 @@ export function BoardTopbar(props: BoardTopbarProps) {
           <img src="/remo-logo.svg" alt="" />
         </span>
         <Tooltip label={t("board.allBoards")} shortcut={["⌘", "K"]}>
-          <IconButton
-            icon="boards"
-            label={t("board.allBoards")}
-            selected={boardsOpen}
-            onClick={() => setBoardsOpen(!boardsOpen)}
-          />
+          <IconButton icon="boards" label={t("board.allBoards")} onClick={onOpenHome} />
         </Tooltip>
         {orgName && (
-          <span className="topbar-path" title={orgName}>
+          <button
+            type="button"
+            className="topbar-path topbar-path-button"
+            title={t("board.allBoards")}
+            onClick={onOpenHome}
+          >
             {orgName} <span aria-hidden="true">/</span>
-          </span>
+          </button>
         )}
         <BoardTitleMenu
           title={title}

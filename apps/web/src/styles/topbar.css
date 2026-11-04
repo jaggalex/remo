@@ -56,6 +56,17 @@
   color: var(--text-muted);
 }
 
+.topbar-path-button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.topbar-path-button:hover {
+  color: var(--text-primary);
+}
+
 .board-title {
   border: 1px solid transparent;
   border-radius: var(--radius-sm);

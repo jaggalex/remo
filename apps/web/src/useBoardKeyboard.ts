@@ -27,7 +27,7 @@ export function useBoardKeyboard({
   addConnectedNote,
   setEditingId,
   setSelectedIds,
-  setBoardsOpen,
+  onOpenHome,
   forceRender,
   pasteSelection,
   onTool,
@@ -46,7 +46,8 @@ export function useBoardKeyboard({
   addConnectedNote: (id: string, side: "left" | "right") => void;
   setEditingId: (id: string | null) => void;
   setSelectedIds: (ids: string[]) => void;
-  setBoardsOpen: (update: boolean | ((open: boolean) => boolean)) => void;
+  /** Leave the board for the organisation home (ADR-168). */
+  onOpenHome: () => void;
   forceRender: (update: (n: number) => number) => void;
   /** Only a dependency: a stale command context must not keep the old listener. */
   pasteSelection: unknown;
@@ -140,7 +141,7 @@ useEffect(() => {
     if (mod && key === "k") {
       // The same shortcut the source product uses to get to things.
       event.preventDefault();
-      setBoardsOpen((value) => !value);
+      onOpenHome();
       return;
     }
 
@@ -164,7 +165,6 @@ useEffect(() => {
     if (event.key === "Escape") {
       setEditingId(null);
       setSelectedIds([]);
-      setBoardsOpen(false);
       return;
     }
 

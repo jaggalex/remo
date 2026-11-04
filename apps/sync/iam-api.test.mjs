@@ -77,6 +77,7 @@ suite("IAM API", () => {
     expect(me.status).toBe(200);
     expect(me.body.user.name).toBe("Owner");
     expect(me.body.orgs).toHaveLength(1);
+    expect(me.body.orgs[0].kind).toBe("personal");
   });
 
   it("keeps theme and language on the account, not the browser", async () => {
@@ -324,6 +325,84 @@ suite("IAM API", () => {
 
     const access = await owner("GET", `/boards/${created.body.board.id}/access`);
     expect(access.body.access).toMatchObject({ allowed: true, role: "owner" });
+  });
+
+  it("keeps one emoji on a board and refuses a long icon", async () => {
+    const owner = client();
+    const registered = await owner("POST", "/auth/register", {
+      email: email("board-icon"),
+      password,
+      name: "Icon Owner",
+    });
+    const created = await owner("POST", `/orgs/${registered.body.org.id}/boards`, {
+      title: "Icon board",
+    });
+    const boardId = created.body.board.id;
+
+    const saved = await owner("PATCH", `/boards/${boardId}/icon`, { icon: "🚀" });
+    expect(saved.status).toBe(200);
+    expect(saved.body.board.icon).toBe("🚀");
+
+    const cleared = await owner("PATCH", `/boards/${boardId}/icon`, { icon: "" });
+    expect(cleared.body.board.icon).toBe("");
+
+    const tooLong = await owner("PATCH", `/boards/${boardId}/icon`, {
+      icon: "🚀".repeat(17),
+    });
+    expect(tooLong.status).toBe(422);
+    expect(tooLong.body.error).toBe("ICON_TOO_LONG");
+  });
+
+  it("lists the board directory by organisation, name, author and page", async () => {
+    const owner = client();
+    const registered = await owner("POST", "/auth/register", {
+      email: email("directory"),
+      password,
+      name: "Directory Owner",
+    });
+    const orgId = registered.body.org.id;
+    const org = await store.getOrg(orgId);
+    for (const title of ["Beta plan", "Alpha plan", "Gamma plan"]) {
+      const created = await owner("POST", `/orgs/${orgId}/boards`, { title });
+      expect(created.status).toBe(201);
+    }
+
+    const first = await store.listBoardDirectory(registered.body.user.id, {
+      orgSlug: org.slug,
+      q: "plan",
+      sort: "name",
+      dir: "asc",
+      limit: 2,
+    });
+    expect(first.total).toBe(3);
+    expect(first.boards.map((board) => board.title)).toEqual(["Alpha plan", "Beta plan"]);
+    expect(first.boards[0]).toMatchObject({
+      createdByName: "Directory Owner",
+      orgId,
+    });
+    expect(first.boards[0].createdAt).toBeTruthy();
+    expect(first.boards[0].createdByHandle).toBeTruthy();
+
+    const second = await store.listBoardDirectory(registered.body.user.id, {
+      orgSlug: org.slug,
+      sort: "name",
+      dir: "asc",
+      page: 2,
+      limit: 2,
+    });
+    expect(second.boards.map((board) => board.title)).toEqual(["Gamma plan"]);
+
+    const stranger = client();
+    await stranger("POST", "/auth/register", {
+      email: email("directory-stranger"),
+      password,
+      name: "Stranger",
+    });
+    const hidden = await store.listBoardDirectory((await stranger("GET", "/auth/me")).body.user.id, {
+      orgSlug: org.slug,
+    });
+    expect(hidden.total).toBe(0);
+    expect(hidden.boards).toEqual([]);
   });
 
   it("lets a member create a board and refuses a guest", async () => {

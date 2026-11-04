@@ -379,6 +379,28 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/boards") {
+    const orgSlug = url.searchParams.get("org");
+    if (orgSlug) {
+      if (!store.listBoardDirectory) return notSupported(response, store);
+      const session = await sessionFromRequest(request, store);
+      if (!session) {
+        response.writeHead(401, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ error: "AUTH_REQUIRED" }));
+        return;
+      }
+      const page = await store.listBoardDirectory(session.user.id, {
+        orgSlug,
+        q: url.searchParams.get("q"),
+        sort: url.searchParams.get("sort") ?? "updated",
+        dir: url.searchParams.get("dir") ?? "desc",
+        page: Number(url.searchParams.get("page") ?? 1),
+        limit: Number(url.searchParams.get("limit") ?? 24),
+        trash: url.searchParams.get("trash") === "1",
+      });
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ store: store.kind, ...page }));
+      return;
+    }
     if (!store.listReadableBoards) return notSupported(response, store);
     const session = await sessionFromRequest(request, store);
     const boards = await discoverableBoards(store, {
