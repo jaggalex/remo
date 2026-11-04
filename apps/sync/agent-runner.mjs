@@ -63,6 +63,18 @@ export async function runAgentTask({
     return { status: "failed", code, message };
   };
 
+  /**
+   * The document must be the room's current one when the write happens, and the write
+   * must be durable before the task says `applied`. A reload can replace the room while
+   * the model is thinking; writing to the retired document loses the objects.
+   */
+  const flushApplied = async (doc) => {
+    const current = await store.roomDocument(task.board_id);
+    if (doc && current !== doc) return false;
+    const stored = await store.flushRoom?.(task.board_id);
+    return stored !== false;
+  };
+
   try {
     const first = await decide(store, task, agent);
     if (!first.decision.allowed) {
@@ -208,6 +220,9 @@ export async function runAgentTask({
         model: null,
         changeSetId: changeSet.id,
       };
+      if (!(await flushApplied(ydoc))) {
+        return fail("APPLY_FAILED", "the room was replaced before the write was stored");
+      }
       const updated = await store.finishAgentTask({
         id: task.id,
         status: "applied",
@@ -321,7 +336,7 @@ export async function runAgentTask({
       // a clear refusal.
       let plan;
       try {
-        plan = convertToCards(ydoc, {
+        plan = convertToCards(await store.roomDocument(task.board_id), {
           ...options,
           selectionIds: selection,
           maxCards: budget.maxActions,
@@ -342,12 +357,18 @@ export async function runAgentTask({
       const created = [];
       const skipped = [...plan.skipped];
       let targetResult = plan.target;
+      let lastDoc = null;
       for (const [index, chunk] of chunks.entries()) {
         const fresh = await store.getAgentTask(task.id);
         if (!fresh || fresh.status !== "running") return { status: "cancelled" };
+        const current = await store.roomDocument(task.board_id);
+        if (lastDoc && current !== lastDoc) {
+          return fail("APPLY_FAILED", "the room was replaced during the card conversion");
+        }
+        lastDoc = current;
         let converted;
         try {
-          converted = convertToCards(ydoc, {
+          converted = convertToCards(current, {
             ...options,
             selectionIds: chunk,
             maxCards: chunk.length,
@@ -407,6 +428,9 @@ export async function runAgentTask({
         skillVersion: skill.version,
         model: null,
       };
+      if (!(await flushApplied(lastDoc))) {
+        return fail("APPLY_FAILED", "the room was replaced before the write was stored");
+      }
       const updated = await store.finishAgentTask({
         id: task.id,
         status: "applied",
@@ -544,8 +568,10 @@ export async function runAgentTask({
       y: finite(task.input?.origin?.y),
     };
     let applied;
+    let currentDoc = null;
     try {
-      applied = applyDiagram(ydoc, diagram, {
+      currentDoc = await store.roomDocument(task.board_id);
+      applied = applyDiagram(currentDoc, diagram, {
         origin,
         agent: { id: agent.id, name: agent.name },
         taskId: task.id,
@@ -576,6 +602,9 @@ export async function runAgentTask({
       model: completion.model,
       keySource: providerInfo.source,
     };
+    if (!(await flushApplied(currentDoc))) {
+      return fail("APPLY_FAILED", "the room was replaced before the write was stored");
+    }
     const updated = await store.finishAgentTask({
       id: task.id,
       status: "applied",

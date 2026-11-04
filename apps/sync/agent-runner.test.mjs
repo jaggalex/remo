@@ -164,6 +164,19 @@ describe("runAgentTask", () => {
     expect(store.state.task.usage.actions).toBe(3);
   });
 
+  it("refuses to mark applied when the room was replaced", async () => {
+    const store = fakeStore();
+    const original = store.roomDocument;
+    let calls = 0;
+    store.roomDocument = async (id) => {
+      calls += 1;
+      return calls === 1 ? original(id) : new Y.Doc();
+    };
+    const result = await runAgentTask({ store, taskId: "t1", ai: goodAi, log: { error() {} } });
+    expect(result.status).toBe("failed");
+    expect(store.state.task.error).toMatch(/APPLY_FAILED/);
+  });
+
   it("denies a task when the board has agents switched off", async () => {
     const store = fakeStore({ boardAgents: false });
     const result = await runAgentTask({ store, taskId: "t1", ai: goodAi, log: { error() {} } });
