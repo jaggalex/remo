@@ -177,6 +177,22 @@ describe("columns", () => {
     expect(restored.widgets.find((w) => w.id === "k1")!.width).toBe(1200);
   });
 
+  it("gives concurrent column additions distinct ids", () => {
+    const a = fresh();
+    const b = new BoardDocument(new Y.Doc());
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+
+    addColumn(a, "k1", "From A");
+    addColumn(b, "k1", "From B");
+
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+    Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc));
+
+    const columns = a.snapshot().kanbanStates.k1!.columns;
+    expect(columns).toHaveLength(4);
+    expect(new Set(columns.map((column) => column.id)).size).toBe(4);
+  });
+
   it("renames a column", () => {
     const doc = fresh();
     renameColumn(doc, "k1", "col1", "In review");
