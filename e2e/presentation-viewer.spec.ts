@@ -31,7 +31,10 @@ test("a late viewer joins the current slide and stays after the stop", async ({
   await expect(viewerPage.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
   await startPresentation(page);
-  await page.locator(".presentation-actions .primary-button").click();
+  await page
+    .locator(".presentation-panel")
+    .getByRole("button", { name: "Start presentation", exact: true })
+    .click();
   await expect(page.locator(".present-bar")).toBeVisible();
 
   await expect(viewerPage.locator(".present-join")).toBeVisible({ timeout: 10_000 });

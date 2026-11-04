@@ -700,6 +700,7 @@ export function BoardCanvas({
       <PresentationLayer
         board={board}
         widgets={widgets}
+        selectedIds={selectedIds}
         camera={camera}
         setCamera={onCamera}
         connection={connection}

@@ -17,12 +17,14 @@ import {
   setGroupName,
   setTagColor,
   setWidgetLink,
+  setWidgetName,
   setWidgetTags,
   toggleWidgetTag,
   widgetsWithTag,
 } from "@remo/doc";
 import { currentRoom } from "./identity";
-import { ConfirmDialog as UiConfirmDialog } from "@remo/ui";
+import { Button, ConfirmDialog as UiConfirmDialog, Input } from "@remo/ui";
+import { writeClipboard } from "./clipboard";
 import { useI18n, type TranslationKey } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 
@@ -33,6 +35,73 @@ const TAG_COLOR_KEY: Record<TagColor, TranslationKey> = {
   red: "tag.color.red",
   gray: "tag.color.gray",
 };
+
+/**
+ * The interface name of one object, plus its stable id (ADR-165).
+ *
+ * The name is committed on blur or Enter, so typing is one undo step. The id is shown
+ * read-only because it is what a link, a command or a bug report needs; renaming it is
+ * not a product operation.
+ */
+export function ObjectNameField({
+  board,
+  widget,
+  disabled,
+}: {
+  board: BoardDocument;
+  widget: Widget;
+  disabled: boolean;
+}) {
+  const { t } = useI18n();
+  const [value, setValue] = useState(widget.name ?? "");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setValue(widget.name ?? "");
+    setCopied(false);
+  }, [widget.id, widget.name]);
+
+  const commit = () => {
+    if (value.trim() === (widget.name ?? "")) return;
+    setWidgetName(board, widget.id, value);
+  };
+
+  return (
+    <div className="object-name-field">
+      <Input
+        label={t("inspector.objectName")}
+        hint={t("inspector.objectNameHint")}
+        placeholder={t("inspector.objectNamePlaceholder")}
+        value={value}
+        maxLength={120}
+        disabled={disabled}
+        onChange={(event) => setValue(event.currentTarget.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          } else if (event.key === "Escape") {
+            setValue(widget.name ?? "");
+            event.currentTarget.blur();
+          }
+        }}
+      />
+      <div className="object-id-row">
+        <span className="muted">{t("inspector.objectId")}</span>
+        <code className="object-id">{widget.id}</code>
+        <Button
+          size="compact"
+          variant="secondary"
+          onClick={() => {
+            void writeClipboard(widget.id).then((ok) => setCopied(ok));
+          }}
+        >
+          {copied ? t("inspector.idCopied") : t("inspector.copyId")}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 /**
  * The name of one group.

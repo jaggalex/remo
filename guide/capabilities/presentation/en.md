@@ -1,8 +1,10 @@
 ## What it gives
 
-Presentation shows board frames in order as slides. The presenter advances, followers see the
-current slide; a late joiner starts on the current slide, not the first. The order lives in the
-document and does not depend on where the frames sit on the canvas.
+Presentation shows board objects in order as slides. A slide can be a frame, a sticky note, a
+card, a shape or another object; a connector is shown together with both ends. The presenter
+advances, followers see the current slide; a late joiner starts on the current slide, not the
+first. The order lives in the document and does not depend on where the objects sit on the
+canvas.
 
 ## When to use it
 
@@ -13,9 +15,9 @@ document and does not depend on where the frames sit on the canvas.
 
 ## How it works
 
-1. Click the ▶ icon in the header (**Start presentation**); reorder the frames in the panel and start the show.
+1. Click the ▶ icon in the header (**Start presentation**); add objects in the panel, reorder them and start the show. A slide label comes from the object name, then its title or text; the name is set in the inspector.
 2. The presenter uses **‹** and **›**; the counter shows the current slide and the total.
-3. Participants click **Watch** and stay on the current slide. The camera fits the frame
+3. Participants click **Watch** and stay on the current slide. The camera fits the object
    locally, so the slide stays readable on a small screen.
 4. **Return to presenter** goes back to the current slide after panning.
 5. **Stop** closes the mode: the presenter returns to the view they had before the start,
@@ -31,8 +33,9 @@ the camera is fitted to their screen.
 
 ## Limits
 
-- Only frames become slides; objects outside frames are not collected into slides.
-- A presentation without frames explains what to add and does not start.
+- Any object can be a slide; there is no separate "slide" type.
+- Object names are not unique: two objects may share a name, and the id remains the identity.
+- A presentation without slides explains what to add and does not start.
 - A follower cannot advance; they can leave the view.
 - Edits during a presentation are not blocked and are visible to everyone.
 

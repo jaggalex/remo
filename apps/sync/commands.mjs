@@ -23,6 +23,8 @@ const TEXT_TYPES = new Set(["sticky_note", "text", "shape", "card", "connector"]
 const CREATABLE = new Set(["sticky_note", "text", "shape", "frame"]);
 const CONNECTABLE = new Set(["sticky_note", "text", "shape", "image", "stamp", "card"]);
 const CONTAINERS = new Set(["frame", "kanban", "group"]);
+/** The object name is a short label, not a field of text (ADR-165). */
+const MAX_NAME = 120;
 
 /** Stable document version: any Yjs update changes the state vector. */
 export function docVersion(ydoc) {
@@ -154,6 +156,7 @@ export const COMMANDS = {
       if (data.height !== undefined) number(data.height, "height", { min: 1, max: 20_000 });
       if (data.content !== undefined) text(data.content, "content");
       if (data.title !== undefined) text(data.title, "title", 2_000);
+      if (data.name !== undefined) text(data.name, "name", MAX_NAME);
       if (data.style !== undefined) sanitizeStyle(data.style);
       // An explicit container is for a template or a script that already knows where
       // the object belongs; a person's drop goes through the centre rule (ADR-110).
@@ -185,6 +188,7 @@ export const COMMANDS = {
         height: input.height ?? (input.type === "sticky_note" ? 180 : 110),
         ...(input.title ? { title: input.title } : {}),
         ...(input.content ? { content: input.content } : {}),
+        ...(input.name?.trim() ? { name: input.name.trim() } : {}),
         ...(input.style ? { style: sanitizeStyle(input.style) } : {}),
         createdBy: actor.name ?? actor.id,
         createdAt: Date.now(),
@@ -215,7 +219,7 @@ export const COMMANDS = {
       const data = object(input, "input");
       text(data.id, "id", 200);
       const patch = object(data.patch, "patch");
-      const allowed = ["x", "y", "width", "height", "title", "content", "style", "locked"];
+      const allowed = ["x", "y", "width", "height", "title", "content", "name", "style", "locked"];
       for (const key of Object.keys(patch)) {
         if (!allowed.includes(key)) throw new CommandError("BAD_INPUT", `patch.${key} is not allowed`);
       }
@@ -225,6 +229,10 @@ export const COMMANDS = {
       if (patch.height !== undefined) number(patch.height, "height", { min: 1, max: 20_000 });
       if (patch.title !== undefined) text(patch.title, "title", 2_000);
       if (patch.content !== undefined) text(patch.content, "content");
+      if (patch.name !== undefined) {
+        text(patch.name, "name", MAX_NAME);
+        patch.name = patch.name.trim();
+      }
       if (patch.style !== undefined) sanitizeStyle(patch.style);
       if (patch.locked !== undefined && typeof patch.locked !== "boolean") {
         throw new CommandError("BAD_INPUT", "locked must be a boolean");
@@ -263,6 +271,8 @@ export const COMMANDS = {
           delete next.lockedByName;
           delete next.lockedAt;
         }
+        // An empty name clears the metadata instead of storing a blank label.
+        if (patch.name === "") delete next.name;
         widgets(ydoc).set(input.id, next);
         if (patch.content !== undefined) replaceText(ydoc, input.id, patch.content);
       });
