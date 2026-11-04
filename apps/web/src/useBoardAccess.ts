@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError, type Access, type OrgSummary, type SessionUser } from "./api";
 import { currentRoom } from "./identity";
 
@@ -45,16 +45,34 @@ export function useBoardAccess() {
     };
   }, []);
 
+  /** Guards against a slow answer overwriting a newer access decision. */
+  const accessSeq = useRef(0);
+  const retryAccess = useRef<number | null>(null);
+
   /** What this viewer may do with this board, straight from the server. */
   const refreshAccess = useCallback(async () => {
+    const seq = ++accessSeq.current;
     try {
       const result = await api.access(currentRoom());
+      if (seq !== accessSeq.current) return;
+      if (retryAccess.current) {
+        window.clearTimeout(retryAccess.current);
+        retryAccess.current = null;
+      }
       setAccess(result.access);
       setBoardOrgId(result.board?.orgId);
       setBoardTitle(result.board?.title);
     } catch (failure) {
+      if (seq !== accessSeq.current) return;
       const status = failure instanceof ApiError ? failure.status : 0;
       const code = failure instanceof ApiError ? failure.code : "";
+      // A network failure or a 5xx is not a decision. Keep the last one and retry;
+      // showing "no access" would close the gate on a restarting server.
+      if (status === 0 || status >= 500) {
+        if (retryAccess.current) window.clearTimeout(retryAccess.current);
+        retryAccess.current = window.setTimeout(() => void refreshAccess(), 2_000);
+        return;
+      }
       setAccess({
         allowed: false,
         role: null,
@@ -71,6 +89,13 @@ export function useBoardAccess() {
       });
     }
   }, []);
+
+  useEffect(
+    () => () => {
+      if (retryAccess.current) window.clearTimeout(retryAccess.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     void refreshAccess();
