@@ -5,6 +5,14 @@ import { emitMetric } from "./metrics-events.mjs";
 import { orgCapabilitiesFor } from "./iam.mjs";
 import { boardIdFor, fail, json, orgSlugFor, readBody } from "./iam-http.mjs";
 
+/** A display name for an organisation or a team: one line, 1–120 characters. */
+function nameProblem(value) {
+  const name = String(value ?? "").trim();
+  if (!name) return "a name is required";
+  if (name.length > 120) return "the name must be at most 120 characters";
+  return null;
+}
+
 export async function handleOrgRoutes(ctx) {
   const { request, response, url, store, method, parts, audit, requireUser, membershipOf, isActiveMember, isOrgAdmin, hasOrgRole } = ctx;
 
@@ -45,6 +53,23 @@ export async function handleOrgRoutes(ctx) {
       membership,
       roles: await store.listOrgRoles(org.id, me.id),
     });
+    return true;
+  }
+
+  if (parts[0] === "orgs" && parts[1] && parts.length === 2 && method === "PATCH") {
+    const me = requireUser();
+    if (!me) return true;
+    const orgId = parts[1];
+    if (!(await isOrgAdmin(orgId, me.id))) {
+      return fail(response, 403, "FORBIDDEN", "only an organisation admin can rename it"), true;
+    }
+    const body = await readBody(request);
+    const problem = nameProblem(body?.name);
+    if (problem) return fail(response, 422, "ORG_NAME_REQUIRED", problem), true;
+    const org = await store.renameOrg({ orgId, name: String(body.name).trim() });
+    if (!org) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+    await audit({ actorId: me.id, orgId, action: "org.rename", subject: org.name });
+    json(response, 200, { org });
     return true;
   }
 
@@ -104,7 +129,7 @@ export async function handleOrgRoutes(ctx) {
     return true;
   }
 
-  if (parts[0] === "orgs" && parts[2] === "teams" && method === "POST") {
+  if (parts[0] === "orgs" && parts[2] === "teams" && parts.length === 3 && method === "POST") {
     const me = requireUser();
     if (!me) return true;
     const orgId = parts[1];
@@ -119,7 +144,7 @@ export async function handleOrgRoutes(ctx) {
     return true;
   }
 
-  if (parts[0] === "orgs" && parts[2] === "teams" && method === "GET") {
+  if (parts[0] === "orgs" && parts[2] === "teams" && parts.length === 3 && method === "GET") {
     const me = requireUser();
     if (!me) return true;
     const orgId = parts[1];
@@ -128,6 +153,109 @@ export async function handleOrgRoutes(ctx) {
     }
     json(response, 200, { teams: await store.listTeams(orgId) });
     return true;
+  }
+
+  if (parts[0] === "orgs" && parts[2] === "teams" && parts[3] && parts.length === 4) {
+    const me = requireUser();
+    if (!me) return true;
+    const orgId = parts[1];
+    const teamId = parts[3];
+    if (!(await isOrgAdmin(orgId, me.id))) {
+      return fail(response, 403, "FORBIDDEN", "only an organisation admin can change teams"), true;
+    }
+    const team = await store.getTeam(orgId, teamId);
+    if (!team) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+
+    if (method === "PATCH") {
+      const body = await readBody(request);
+      const problem = nameProblem(body?.name);
+      if (problem) return fail(response, 422, "TEAM_NAME_REQUIRED", problem), true;
+      try {
+        const renamed = await store.renameTeam({
+          orgId,
+          teamId,
+          name: String(body.name).trim(),
+        });
+        if (!renamed) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+        await audit({ actorId: me.id, orgId, action: "team.rename", subject: renamed.name });
+        json(response, 200, { team: renamed });
+      } catch (error) {
+        if (error?.code === "23505") {
+          return fail(response, 409, "TEAM_NAME_TAKEN", "a team with this name already exists"), true;
+        }
+        throw error;
+      }
+      return true;
+    }
+
+    if (method === "DELETE") {
+      const usage = await store.teamUsage(teamId);
+      if (usage.boards || usage.grants) {
+        return json(
+          response,
+          409,
+          {
+            error: "TEAM_IN_USE",
+            message: "move its boards and remove its grants first",
+            boards: usage.boards,
+            grants: usage.grants,
+          },
+        ), true;
+      }
+      await store.deleteTeam({ orgId, teamId });
+      await audit({ actorId: me.id, orgId, action: "team.delete", subject: team.name });
+      json(response, 200, { ok: true });
+      return true;
+    }
+  }
+
+  if (
+    parts[0] === "orgs" &&
+    parts[2] === "teams" &&
+    parts[3] &&
+    parts[4] === "members"
+  ) {
+    const me = requireUser();
+    if (!me) return true;
+    const orgId = parts[1];
+    const teamId = parts[3];
+    const team = await store.getTeam(orgId, teamId);
+    if (!team) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+
+    if (method === "GET" && parts.length === 5) {
+      const membership = await membershipOf(orgId, me.id);
+      if (!membership || membership.state !== "active") {
+        return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+      }
+      json(response, 200, { members: await store.listTeamMembers(teamId) });
+      return true;
+    }
+
+    if (!(await isOrgAdmin(orgId, me.id))) {
+      return fail(response, 403, "FORBIDDEN", "only an organisation admin can change teams"), true;
+    }
+
+    if (method === "POST" && parts.length === 5) {
+      const body = await readBody(request);
+      const userId = String(body?.userId ?? "");
+      const role = body?.role === "admin" ? "admin" : "member";
+      const target = await membershipOf(orgId, userId);
+      if (!target || target.state !== "active" || target.relation !== "member") {
+        return fail(response, 422, "TARGET_NOT_MEMBER", "add an active member of this organisation"), true;
+      }
+      await store.addTeamMember({ teamId, userId, role });
+      await audit({ actorId: me.id, orgId, action: "team.member.add", subject: userId });
+      json(response, 200, { ok: true });
+      return true;
+    }
+
+    if (method === "DELETE" && parts.length === 6) {
+      const removed = await store.removeTeamMember({ teamId, userId: parts[5] });
+      if (!removed) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+      await audit({ actorId: me.id, orgId, action: "team.member.remove", subject: parts[5] });
+      json(response, 200, { ok: true });
+      return true;
+    }
   }
 
   if (parts[0] === "orgs" && parts[2] === "members" && method === "GET") {

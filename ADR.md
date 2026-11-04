@@ -6784,3 +6784,36 @@ no mail. For an address without an account, the link is effectively a bearer sec
 the sharing guide must say. Closing this needs email verification, a separate decision.
 Agents and their tokens still outlive the owner's seat (AG-07), and a legacy unclaimed
 board can still be claimed without a token.
+
+## ADR-162: A team can be renamed, deleted and staffed
+
+**Status:** accepted (2026-11-04). Amends ADR-100 (organisations and teams) and ADR-161.
+
+**Context.** A team was created and listed, and a board grant could name it, but there
+was no way to rename it, delete it or put anyone in it. The only membership write was the
+claim path, which made the claimant a team admin. A team grant therefore named a group
+nobody could staff, and a mistyped team name was permanent.
+
+**Decision.**
+
+- **The organisation admin owns the team lifecycle.** Rename and delete a team, and add
+  or remove a member, need `org_admin`; reading the member list needs an active seat.
+- **A team name is unique inside its organisation.** A rename that collides answers
+  `409 TEAM_NAME_TAKEN`; the database enforces it.
+- **A team is not deleted while it is an access subject.** If a board names the team or a
+  grant refers to it, the delete answers `409 TEAM_IN_USE` with the counts. The manager
+  moves the boards and removes the grants first; there is no silent cascade.
+- **Membership is an active seat plus a team role.** Only an active `member` of the
+  organisation can be added, with `member` or `admin`; removing a direct membership
+  removes the team grant's effect for that person. Team grants still decide the board
+  role; membership only decides who inherits it.
+- **The organisation name can be changed by an org admin.** The slug stays stable, so
+  existing links and rooms keep working.
+
+**Consequences.** A team becomes a real access subject: a manager can staff it, rename
+it, and remove it once it is unused. Existing teams and memberships are unchanged; the
+first rename or delete is the first write to the row since creation.
+
+**Limits.** Only an org admin manages a team; a team admin cannot yet edit its own team.
+Moving a board to another team is not part of this record. Deleting an organisation, or a
+team that still has boards or grants, remains a deliberate manual operation.

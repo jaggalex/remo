@@ -473,6 +473,34 @@ export const api = {
     call<{ team: { id: string; name: string } }>(`/orgs/${encodeURIComponent(orgId)}/teams`, { method: "POST", body: { name } }),
   teams: (orgId: string) =>
     call<{ teams: Array<{ id: string; name: string }> }>(`/orgs/${orgId}/teams`),
+  renameOrg: (orgId: string, name: string) =>
+    call<{ org: { id: string; name: string; slug: string } }>(`/orgs/${encodeURIComponent(orgId)}`, {
+      method: "PATCH",
+      body: { name },
+    }),
+  renameTeam: (orgId: string, teamId: string, name: string) =>
+    call<{ team: { id: string; name: string } }>(
+      `/orgs/${encodeURIComponent(orgId)}/teams/${encodeURIComponent(teamId)}`,
+      { method: "PATCH", body: { name } },
+    ),
+  deleteTeam: (orgId: string, teamId: string) =>
+    call<{ ok: true }>(`/orgs/${encodeURIComponent(orgId)}/teams/${encodeURIComponent(teamId)}`, {
+      method: "DELETE",
+    }),
+  teamMembers: (orgId: string, teamId: string) =>
+    call<{ members: Array<{ id: string; name: string; email: string; role: "admin" | "member" }> }>(
+      `/orgs/${encodeURIComponent(orgId)}/teams/${encodeURIComponent(teamId)}/members`,
+    ),
+  addTeamMember: (orgId: string, teamId: string, userId: string, role: "admin" | "member") =>
+    call<{ ok: true }>(
+      `/orgs/${encodeURIComponent(orgId)}/teams/${encodeURIComponent(teamId)}/members`,
+      { method: "POST", body: { userId, role } },
+    ),
+  removeTeamMember: (orgId: string, teamId: string, userId: string) =>
+    call<{ ok: true }>(
+      `/orgs/${encodeURIComponent(orgId)}/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}`,
+      { method: "DELETE" },
+    ),
   createBoard: (orgId: string, body: { title: string; teamId?: string }) =>
     call<{ board: { id: string; title: string } }>(`/orgs/${orgId}/boards`, { method: "POST", body }),
   org: (orgId: string) =>

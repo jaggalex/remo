@@ -588,18 +588,63 @@ button.peer:disabled {
 
 .org-team-list {
   list-style: none;
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .org-team-list li {
   border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 2px 9px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  font: var(--type-body);
+}
+
+.org-title,
+.org-rename,
+.org-team-row,
+.org-team-member,
+.org-team-add {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.org-rename .rm-input,
+.org-team-row .rm-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.org-team-name {
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+
+.org-team-members {
+  margin-top: var(--space-2);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--line);
+}
+
+.org-team-member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.org-team-member {
+  font: var(--type-caption);
+}
+
+.org-team-add {
+  margin-top: var(--space-2);
 }
 
 .comment-placement {

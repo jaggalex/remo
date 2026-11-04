@@ -176,6 +176,14 @@ async getOrg(orgId) {
   return rows[0] ?? null;
 },
 
+async renameOrg({ orgId, name }) {
+  const { rows } = await this.pool.query(
+    `update orgs set name = $2 where id = $1 returning id, name, slug`,
+    [orgId, name],
+  );
+  return rows[0] ?? null;
+},
+
 async listOrgsForUser(userId) {
   const { rows } = await this.pool.query(
     `select o.id, o.name, o.slug, m.relation, m.state
@@ -281,6 +289,53 @@ async createTeam({ orgId, name }) {
   return rows[0];
 },
 
+async getTeam(orgId, teamId) {
+  const { rows } = await this.pool.query(
+    `select id, name from teams where id = $2 and org_id = $1`,
+    [orgId, teamId],
+  );
+  return rows[0] ?? null;
+},
+
+async renameTeam({ orgId, teamId, name }) {
+  const { rows } = await this.pool.query(
+    `update teams set name = $3 where id = $2 and org_id = $1 returning id, name`,
+    [orgId, teamId, name],
+  );
+  return rows[0] ?? null;
+},
+
+async teamUsage(teamId) {
+  const { rows } = await this.pool.query(
+    `select
+       (select count(*)::int from boards where team_id = $1) as boards,
+       (select count(*)::int from board_grants
+         where subject_type = 'team' and subject_id = $1) as grants`,
+    [teamId],
+  );
+  return rows[0] ?? { boards: 0, grants: 0 };
+},
+
+async deleteTeam({ orgId, teamId }) {
+  const { rows } = await this.pool.query(
+    `delete from teams where id = $2 and org_id = $1 returning id`,
+    [orgId, teamId],
+  );
+  return rows[0] ?? null;
+},
+
+async listTeamMembers(teamId) {
+  const { rows } = await this.pool.query(
+    `select u.id, u.name, u.email, tm.role
+       from team_memberships tm
+       join users u on u.id = tm.user_id
+      where tm.team_id = $1 and tm.source = 'direct'
+      order by u.name`,
+    [teamId],
+  );
+  return rows;
+},
+
 async addTeamMember({ teamId, userId, role = "member" }) {
   await this.pool.query(
     `insert into team_memberships (team_id, user_id, role)
@@ -291,10 +346,11 @@ async addTeamMember({ teamId, userId, role = "member" }) {
 },
 
 async removeTeamMember({ teamId, userId }) {
-  await this.pool.query(
+  const { rowCount } = await this.pool.query(
     `delete from team_memberships where team_id = $1 and user_id = $2 and source = 'direct'`,
     [teamId, userId],
   );
+  return rowCount > 0;
 },
 
 async createInvitation({
