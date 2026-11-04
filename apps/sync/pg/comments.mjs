@@ -267,7 +267,9 @@ export const commentMethods = {
       createdByName: thread.created_by_name,
       comments: thread.comments.map((comment) => ({
         authorName: comment.author_name,
-        body: comment.body,
+        // A deleted comment's text stays in the row for moderation, but a backup is
+        // not a moderation surface: the DTO already hides it, and so must this.
+        body: comment.deleted_at ? "" : comment.body,
         createdAt: comment.created_at,
         editedAt: comment.edited_at,
         deletedAt: comment.deleted_at,

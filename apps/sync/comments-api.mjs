@@ -96,8 +96,12 @@ export async function handleComments(ctx) {
   }
   const canComment = access.capabilities.includes("board.comment");
   const canManage = access.capabilities.includes("board.manage");
+  const orgId = resolved?.facts?.board?.orgId ?? null;
   /** Comments are not document state, so peers learn about a change on the socket. */
   const announce = () => void onCommentsChanged?.(boardId);
+  // The organisation audit view filters by org_id; a comment row without it is
+  // invisible to the admin whose job is to read it.
+  const auditComment = (event) => audit({ orgId, ...event });
 
   // Restoring replaces everyone's words and who said them, which deleting one comment
   // already reserves for a manager; taking a backup does not imply it (ADR-161).
@@ -110,7 +114,7 @@ export async function handleComments(ctx) {
       return fail(response, 422, "COMMENT_THREADS_REQUIRED", "threads are required"), true;
     }
     const restored = await store.replaceCommentsFromBackup(boardId, body.threads);
-    await audit({
+    await auditComment({
       actorId: sessionUser.id,
       boardId,
       action: "comment.restored",
@@ -141,7 +145,7 @@ export async function handleComments(ctx) {
       authorName: sessionUser.name,
       body: text,
     });
-    await audit({
+    await auditComment({
       actorId: sessionUser.id,
       boardId,
       action: "comment.created",
@@ -166,7 +170,7 @@ export async function handleComments(ctx) {
       text,
     );
     if (!comment) return fail(response, 404, "THREAD_NOT_FOUND", "thread not found"), true;
-    await audit({
+    await auditComment({
       actorId: sessionUser.id,
       boardId,
       action: "comment.created",
@@ -202,7 +206,7 @@ export async function handleComments(ctx) {
       sessionUser.id,
     );
     if (!thread) return fail(response, 404, "THREAD_NOT_FOUND", "thread not found"), true;
-    await audit({
+    await auditComment({
       actorId: sessionUser.id,
       boardId,
       action: body.resolved ? "comment.resolved" : "comment.reopened",
@@ -217,6 +221,7 @@ export async function handleComments(ctx) {
     const comment = await store.getComment(messageId, boardId);
     if (!comment) return fail(response, 404, "COMMENT_NOT_FOUND", "comment not found"), true;
     if (method === "PATCH") {
+      if (!canComment) return fail(response, 403, "COMMENT_FORBIDDEN", "you cannot comment"), true;
       if (comment.author_id !== sessionUser.id) {
         return fail(response, 403, "COMMENT_AUTHOR_ONLY", "only the author can edit"), true;
       }
@@ -224,7 +229,7 @@ export async function handleComments(ctx) {
       const text = textBody(body?.body);
       if (!text) return fail(response, 422, "COMMENT_BODY_REQUIRED", "write a comment"), true;
       const edited = await store.editComment(messageId, boardId, text);
-      await audit({
+      await auditComment({
         actorId: sessionUser.id,
         boardId,
         action: "comment.edited",
@@ -235,11 +240,14 @@ export async function handleComments(ctx) {
       return true;
     }
     if (method === "DELETE") {
+      if (!canComment && !canManage) {
+        return fail(response, 403, "COMMENT_FORBIDDEN", "you cannot comment"), true;
+      }
       if (comment.author_id !== sessionUser.id && !canManage) {
         return fail(response, 403, "COMMENT_FORBIDDEN", "only the author or a manager can delete"), true;
       }
       const deleted = await store.deleteComment(messageId, boardId);
-      await audit({
+      await auditComment({
         actorId: sessionUser.id,
         boardId,
         action: "comment.deleted",
