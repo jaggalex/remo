@@ -10,6 +10,7 @@ import { createServer } from "node:http";
 import { handleIam } from "./iam-api.mjs";
 import { testDatabaseStore } from "./test-db.mjs";
 import { discoverableBoards } from "./discovery.mjs";
+import { Y } from "./y.mjs";
 
 const database = await testDatabaseStore("IAM API");
 const store = database?.store ?? null;
@@ -215,6 +216,93 @@ suite("IAM API", () => {
     });
     expect(res.status).toBe(422);
     expect(res.body.error).toBe("WEAK_PASSWORD");
+  });
+
+  it("does not let a former commenter edit or delete their comment", async () => {
+    const owner = client();
+    const registered = await owner("POST", "/auth/register", {
+      email: email("comments-revoked-owner"),
+      password,
+      name: "Owner",
+    });
+    const orgId = registered.body.org.id;
+    const board = await owner("POST", `/orgs/${orgId}/boards`, { title: "Revoked comments" });
+    const boardId = board.body.board.id;
+
+    const commenter = client();
+    const commenterReg = await commenter("POST", "/auth/register", {
+      email: email("comments-revoked-author"),
+      password,
+      name: "Commenter",
+    });
+    const invite = await owner("POST", `/orgs/${orgId}/invitations`, {
+      email: commenterReg.body.user.email,
+    });
+    await commenter("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+    await owner("POST", `/boards/${boardId}/grants`, {
+      subjectType: "user",
+      subjectId: commenterReg.body.user.id,
+      role: "commenter",
+    });
+
+    const created = await commenter("POST", `/boards/${boardId}/comments`, {
+      anchor: { kind: "point", x: 1, y: 2 },
+      body: "Mine",
+    });
+    const messageId = created.body.thread.comments[0].id;
+
+    // The audit view filters by org_id; a comment event without it is invisible.
+    const audit = await owner("GET", `/orgs/${orgId}/audit`);
+    expect(audit.body.events.some((event) => event.action === "comment.created")).toBe(true);
+
+    await owner("POST", `/boards/${boardId}/grants`, {
+      subjectType: "user",
+      subjectId: commenterReg.body.user.id,
+      role: "viewer",
+    });
+    expect(
+      (
+        await commenter("PATCH", `/boards/${boardId}/comment-messages/${messageId}`, {
+          body: "Changed",
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (await commenter("DELETE", `/boards/${boardId}/comment-messages/${messageId}`)).status,
+    ).toBe(403);
+
+    // A manager can delete, and the backup does not carry the deleted text.
+    expect(
+      (await owner("DELETE", `/boards/${boardId}/comment-messages/${messageId}`)).status,
+    ).toBe(200);
+    const backup = await store.commentsForBackup(boardId);
+    expect(backup[0].comments[0].body).toBe("");
+  });
+
+  it("reads a stored board state without an open room", async () => {
+    // `pg/rooms.mjs` used to override `pg/boards.mjs` through Object.assign, so the
+    // one-argument call returned undefined and backup answered 500.
+    const boardId = `backup-${Date.now()}`;
+    await store.pool.query("insert into boards (id, title) values ($1, 'Backup')", [boardId]);
+    const doc = new Y.Doc();
+    doc.getMap("meta").set("title", "Backup");
+    const update = Y.encodeStateAsUpdate(doc);
+    doc.destroy();
+    await store.pool.query("insert into board_updates (board_id, update) values ($1, $2)", [
+      boardId,
+      Buffer.from(update),
+    ]);
+
+    const state = await store.readBoardState(boardId);
+    expect(state).toBeInstanceOf(Uint8Array);
+    const restored = new Y.Doc();
+    Y.applyUpdate(restored, state);
+    expect(restored.getMap("meta").get("title")).toBe("Backup");
+    restored.destroy();
+
+    await store.pool.query("delete from boards where id = $1", [boardId]);
   });
 
   it("creates a board owned by its creator and lists it for them", async () => {
