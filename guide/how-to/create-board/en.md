@@ -10,7 +10,7 @@ A new board is created in your organisation — in a team when one is chosen —
 
 ## Steps
 
-1. Press **All boards** in the header. Result: a panel with your boards and search.
+1. Press **All boards** in the header. Result: the organisation home with board tiles, search and sorting. If there are several organisations, choose one in the **Organisation** field: the list shows only its boards.
 2. Click **New board**. Result: a dialog with a name, organisation, team and template.
 3. Enter a name. Result: it becomes the title of the new board.
 4. If there are several organisations or teams, choose the right ones. Result: the board appears in the chosen organisation, and in the team when one is selected.
@@ -19,16 +19,16 @@ A new board is created in your organisation — in a team when one is chosen —
 
 ## Organisation and team
 
-If you need a separate organisation, open the account settings and click **+ New organisation**: enter a name and create it. Then choose it in the **Organisation** field of **All boards** — that switches the context of the board list and creation.
+If you need a separate organisation, open the account menu under **Organisation and people** and click **+ New organisation**: enter a name and create it. Then choose it in the **Organisation** field on the home — that switches the context of the board list and creation.
 
-A team is created in the same screen, in the **Teams** block; only an organisation admin can do this. A new organisation already has a **General** team; create another one for a separate direction.
+A team is created in the same screen, in the **Teams** block; only an organisation admin can do this. There you can also rename a team, delete an unused one and add or remove members. A new organisation already has a **General** team; create another one for a separate direction.
 
 ## Check
 
 - The title in the header matches the one you entered.
-- The board is findable by its name in the **Boards** panel.
+- The board is findable by its name on the home, in the **Boards** tab.
 - An empty board shows no objects; a template board shows the template's objects.
-- The new board is in the **Boards** panel.
+- The new board is in the **Boards** tab on the home.
 - The save indicator shows **saved**.
 
 ## Common mistakes

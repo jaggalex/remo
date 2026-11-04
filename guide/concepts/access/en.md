@@ -10,7 +10,9 @@ Organisation
     └── Board  ← the role is granted here
 ```
 
-The organisation sets policy: whether members may share boards, whether public links are allowed. A team is a way to grant a role to a group of people at once. The board is where the role takes effect.
+The organisation sets policy: whether members may share boards, whether public links are allowed. Every account has a **personal organisation** (the **Personal** badge); shared organisations are an additional context for work or a club. A team is a way to grant a role to a group of people at once. The board is where the role takes effect.
+
+At the organisation level, `org_admin`, `user_admin` and `security_admin` manage people, teams and policy; they do not replace a board role.
 
 ## Where the role comes from
 

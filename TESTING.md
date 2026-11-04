@@ -109,8 +109,8 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 | ADR | 168, latest ADR-168 |
 | Schema version | 16 |
 | Browser scenarios | 112 in 27 files |
-| Help topics | 28 (RU + EN) |
-| Portal pages | 67 |
+| Help topics | 31 (RU + EN) |
+| Portal pages | 68 |
 | Baselines | 21 product + 12 DS |
 | Largest file | `apps/web/src/BoardApp.tsx` — 800 lines |
 <!-- generated:state:end -->
@@ -139,6 +139,9 @@ keeping overridden paths disjoint between concurrent runs is the caller's respon
 `scripts/e2e-db.mjs` recreates only a database carrying this run's marker — it fails closed
 on anything else and never forces a drop.
 
+The table lists the specs that encode product decisions; smaller specs cover gestures,
+groups, tools and object panels, and unit suites cover the rest.
+
 | Spec | Covers | Manual rows it replaces |
 |---|---|---|
 | `auth-board` | sign-up → board → sticky → `saved`; sign-out | ACC basics |
@@ -151,12 +154,13 @@ on anything else and never forces a drop.
 | `perf` | 120 connectors inside the frame budget | stage-1 FPS debt |
 | `cards` | card status, assignee, date range survive a reload | M1 |
 | `tags-links` | tag vocabulary, selection by tag, external and internal link | M2 |
-| `presentation`, `presentation-viewer` | frame order, presenter/followers, late viewer, camera restore | M3 |
+| `presentation`, `presentation-viewer` | slide order of any object, presenter/followers, late viewer, camera restore | M3 |
 | `comments` | thread, pin, resolve, reload, live frame, second `commenter` account | M4 |
 | `lock` | author unlocks, editor refused, duplicate unlocked | M5 |
 | `apps` | install, hello action, kill switch | Q6 |
 | `theme` | light/dark/system on the board and in help, persistence | — |
 | `organisation` | create a second organisation and a team | — |
+| `home` | personal org, board tiles, emoji, search/sort, 24-per-page, trash/restore | ADR-167/168 |
 
 The suite uses a per-run `remo_test_e2e_<run>` database on the dedicated test server
 (created and dropped automatically), sync on `:1235`, a controllable proxy on `:1237` and
@@ -370,9 +374,10 @@ http://192.168.1.42:5173/?user=Bob&room=sprint-12
 
 Notes:
 
-- The room name is the invitation: everyone opening the same `?room=` lands on the same board.
-  **Share** hands out the room URL without your `?user=` name, so the recipient appears as
-  themselves and can rename the field in the header.
+- A bare `?room=` link is not an invitation for a claimed board: **Share** grants access to
+  a named account or produces a public link. Only a legacy unclaimed room still opens by
+  room name. The shared URL does not carry your `?user=` name, so the recipient appears as
+  themselves.
 - `?user=` gives a person a name. Two browser tabs with different `?user=` values behave like
   two people, which is useful for solo checks.
 - If the other machine cannot connect, it is almost always the macOS firewall or both machines
@@ -395,7 +400,7 @@ Useful checks:
 ```bash
 curl -s http://localhost:1234/health          # ok, store, connections, rooms, uptime, Postgres version
 curl -s http://localhost:1234/metrics         # Prometheus scrape (also /api/metrics through the web server)
-curl -s http://localhost:5173/api/boards      # board list, through the web server
+curl -s -b /tmp/iam.jar http://localhost:5173/api/boards  # board list with a session; without one: 401
 pnpm db:prune                                 # list boards left over from testing
 pnpm db:backup:list                           # dumps on disk
 ```
@@ -611,8 +616,8 @@ run. Open items belong in an issue or a pull request, not in a release note.
 
 ## IAM P1 (API)
 
-The accounts layer is server-side in this phase: no screens yet, so the checks are HTTP.
-Start the stack (`pnpm stack`), then:
+The API checks below run before the organisation screens. The screen flow is in IAM P3.1;
+these HTTP checks still prove the server rules. Start the stack (`pnpm stack`), then:
 
 ```bash
 # 1. Create an account: a personal organisation and a General team come with it.
@@ -677,7 +682,7 @@ sends it. The invited person must sign in with that email.
 | IAM-24 | Accept with a different account | 422 `EMAIL_MISMATCH`; the invitation stays usable for the right person |
 | IAM-25 | Share a board with an email that has no account | The Share dialog offers an invitation link instead of an error |
 | IAM-26 | Open that link as a new account | You land on the board with "View only"; other boards of that organisation are 404 |
-| IAM-27 | `POST /api/orgs/{org}/members/{user}/suspend` | Their session ends, their socket closes, the board answers 401 |
+| IAM-27 | `POST /api/orgs/{org}/members/{user}/suspend` | Their session stays signed in; that organisation's board and sockets close, and the board is hidden (404); another organisation still works |
 | IAM-28 | `DELETE /api/orgs/{org}/members/{user}` for someone who owns a board | 409 `OWNER_TRANSFER_REQUIRED` with the board list |
 | IAM-29 | `POST /api/boards/{board}/transfer` with another member | They become owner, the old owner becomes editor |
 | IAM-30 | `DELETE /api/orgs/{org}/admin-roles/{user}/org_admin` on the last admin | 409 `LAST_ADMIN` |
@@ -695,7 +700,7 @@ actions and the journal.
 | IAM-33 | As a guest, open the same panel and pick the host organisation | "You are a guest…", no people, no tabs; `GET /api/orgs/{org}/members` answers 404 |
 | IAM-34 | As an `org_admin`, press "Rights" on a member and tick "People admin" | The badge appears; the change is in "History" as "Administrator role granted" |
 | IAM-35 | Untick the last `org_admin` (or press Suspend on them) | 409 `LAST_ADMIN` and a sentence saying an administrator must remain |
-| IAM-36 | Suspend a member, then press "Restore" | Their session is gone (401); after restore they sign in again; the badge disappears |
+| IAM-36 | Suspend a member, then press "Restore" | The session was not revoked; after restore the same session works again and the badge disappears |
 | IAM-37 | Remove a member who owns a board | The row shows "These boards still belong to this person" with the board titles |
 | IAM-38 | As the owner, Share → choose a member under "Hand over ownership" → confirm | They become owner, you stay an editor, the dialog closes, Share now copies the link |
 | IAM-39 | Open "History" as `org_admin` or `security_admin` | Actions in words, actor name, board title, local time; a member has no such tab |
@@ -712,7 +717,7 @@ caller can read, and metrics are closed to the internet.
 | DISC-2 | `GET /api/search?q=<text>` without a session | 401; nothing from the board is returned |
 | DISC-3 | Sign in and `GET /api/boards?room=<current>` | only boards you own or were granted; no other tenant's board |
 | DISC-4 | Search for text that exists on two boards, one not shared with you | hits only from the board you may read |
-| DISC-5 | Suspend the member, read `/api/boards` with their old cookie | 401; after restore and a new sign-in the granted board returns |
+| DISC-5 | Suspend the member, read `/api/boards` with their old cookie | Hidden from that organisation's directory; after restore the granted board returns without a new sign-in |
 | DISC-6 | Open a legacy room (no owner) signed out, press Boards | the room itself is listed because the address names it; nothing else |
 | DISC-7 | `GET /api/metrics` in production without the token | 404 |
 | DISC-8 | `GET /api/metrics` with `Authorization: Bearer $REMO_METRICS_TOKEN` on loopback | 200, Prometheus text |
@@ -876,7 +881,7 @@ generated file or a literal that bypassed the tokens.
 | # | Step | Expected |
 |---|---|---|
 | DS-1 | `pnpm ds:check` | Tokens match `tokens.json`; 154/154 contrast pairs; stylelint clean |
-| DS-2 | `pnpm test` | 440 passed (40 skipped without Postgres); includes token rules, literal scan, component render and product-style guards |
+| DS-2 | `pnpm test` | All tests pass; the run prints the current count, including token rules, literal scan, component render and product-style guards |
 | DS-3 | `pnpm dev:web` → `/__ds` | All components with states; theme, density and language switches work |
 | DS-4 | In the catalogue: open a dialog, press `Esc` | Focus moves into the dialog, Tab is trapped, `Esc` closes and focus returns |
 | DS-5 | Switch density in the catalogue | Controls measure 32 and 28 px; labels do not reflow |

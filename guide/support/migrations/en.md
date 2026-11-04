@@ -1,6 +1,6 @@
 ## How migrations work
 
-The service applies the schema itself at start: `schema.sql` is idempotent, the version is stored in `schema_meta`. There is no separate migration command — which means **the backup is taken before the upgrade, not after**. The current version is 9: it adds the comment tables.
+The service applies the schema itself at start: `schema.sql` is idempotent, the version is stored in `schema_meta`. There is no separate migration command — which means **the backup is taken before the upgrade, not after**. The current version is 16. Versions 12–16 added account interface preferences, an audit link to the session, idempotency indexes, the mandatory `@handle`, and the organisation model: `orgs.kind`, board emoji, creation date and author.
 
 :::warning
 The schema is applied when the service starts. A backup taken after the upgrade leaves nothing to roll back to.

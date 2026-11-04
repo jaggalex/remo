@@ -53,6 +53,7 @@ A frame is a container: an object inside it moves with it. A kanban is a grid of
 | Link | one field: an external URL or another board object |
 | Lock | a flag and an author; the author or a board manager releases it |
 | Comments | a server thread anchored to an object or a point |
+| Name and ID | an optional name up to 120 characters; a read-only ID that can be copied |
 | Reactions | a live burst near the cursor; not stored |
 
 ## Where to go next

@@ -17,10 +17,11 @@
     "reference/roles",
     "concepts/presence"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:7e156ae7635cdf36f1531e9cf78fbe7a3395907ddbe5fa76c6916f55d304293a"
+      "sourceHash": "sha256:9dbf0642ac5cbab454fb05d9e528b3e0b0fa613b7c0cede7b3133178a3a9cfc0",
+      "targetHash": "sha256:76cb88a77ebc7fe2301d3198c1e06c85ad9589185fca562a30a89c305c6ef516"
     }
   }
 }

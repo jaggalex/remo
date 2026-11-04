@@ -17,10 +17,11 @@
     "start/quickstart",
     "concepts/access"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:c257cb904e035630173e41af4d0d7ed799ea37da01066c96ff4625b04fe91948"
+      "sourceHash": "sha256:d89608752b78c4c57873d12dda0f2a367e2478944f26affdf3105fede21a9766",
+      "targetHash": "sha256:0809c73a4a88564cc130f06fa08ddb8ab20a57338ba9f8dd961dc732d1dce9a0"
     }
   }
 }

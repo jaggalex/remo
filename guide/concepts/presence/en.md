@@ -10,7 +10,7 @@ Presence is not saved: close the tab and you disappear from the list. The edit h
 
 ## Name and colour
 
-A participant is represented by a name and a colour. In a browser without a session the default name is a guest (`Guest 59a8`); a guest can set their own cursor name in the account menu, and it is stored in this browser. After signing in the cursor carries the account name.
+A participant is represented by a name and a colour. In a browser without a session the default name is a guest (`Guest 59a8`); a guest can set their own cursor name in the account menu, and it is stored in this browser. After signing in the cursor carries the account name and the presence tooltip shows `Name @handle`.
 
 Every tab or device is a separate **session**. If one account has two sessions, both appear in the participant list: `Alexander Kostylev`, `Alexander Kostylev (2)`. Follow targets a specific session, so you can follow the right laptop or phone. A vote still belongs to the account: a second session does not get another quota.
 

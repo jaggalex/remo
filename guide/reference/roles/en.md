@@ -2,11 +2,21 @@
 
 | Role | What it can do |
 |---|---|
-| **Просмотр** (viewer) | read the board, export a visible image |
-| **Комментарии** (commenter) | read the board and write in the discussion; cannot change objects |
-| **Редактор** (editor) | change content, comment, share (if policy allows), export, take a backup, facilitate |
-| **Со-владелец** (co-owner) | everything **Редактор** can, plus manage the board and appoint co-owners |
-| **Владелец** (owner) | everything, including transferring ownership and deleting |
+| **Viewer** | read the board, export a visible image |
+| **Commenter** | read the board and write in the discussion; cannot change objects |
+| **Editor** | change content, comment, share (if policy allows), export, take a backup, facilitate |
+| **Co-owner** | everything **Editor** can, plus manage the board and appoint co-owners |
+| **Owner** | everything, including transferring ownership and deleting |
+
+## Organisation roles
+
+| Role | Can do |
+|---|---|
+| Organisation administrator (`org_admin`) | people, teams, invitations, organisation settings, agents and policy |
+| User administrator (`user_admin`) | the people list, invitations and member roles |
+| Security administrator (`security_admin`) | the audit log and security policy |
+
+An organisation role does not replace a board role: access to content is still granted on the board.
 
 ## Capabilities
 

@@ -52,7 +52,7 @@ The short version:
 - Provider keys and webhook secrets are stored encrypted with a KEK that is not in the
   database. A database dump alone does not reveal them.
 - Outbound AI and webhook requests are HTTPS-only and reject private addresses by default.
-- Public links are read-only and never grant export or backup.
+- Public links are read-only for board content and never grant export or backup. An open vote may accept a link visitor's vote (FAC-13).
 
 The full boundary list is in [ADR-109](ADR.md) and
 [docs/architecture](docs/architecture).

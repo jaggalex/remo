@@ -17,10 +17,11 @@
     "concepts/extensions",
     "reference/roles"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:4c7dec822a20d47d4b39530f2401cfaf2f05d689599e051dc52339300c990e9d"
+      "sourceHash": "sha256:2c66667afa858652d086d3b4c15efdabff2952d52bda325ed0c03dc3a583770f",
+      "targetHash": "sha256:26e9b4baf5c11b70b6270a81e3cdac6d1f3920918af7c2a2cd9771d5da9af664"
     }
   }
 }

@@ -19,6 +19,7 @@ import { useBoardAccess } from "./useBoardAccess";
 import { useCursorIdentity } from "./useCursorIdentity";
 import { useI18n } from "./i18n";
 import { useTheme } from "./useTheme";
+import { HelpLink } from "./help/HelpLink";
 
 type Sort = "updated" | "created" | "name" | "author";
 const PAGE_SIZE = 24;
@@ -360,6 +361,7 @@ export function WorkspaceHome() {
                 {activeOrg.kind === "personal" && (
                   <span className="org-badge personal">{t("org.personal")}</span>
                 )}
+                <HelpLink topicId="boards.home" />
               </h1>
               <p className="muted">
                 {total > 0 ? t("home.count", { from, to, total }) : null}
