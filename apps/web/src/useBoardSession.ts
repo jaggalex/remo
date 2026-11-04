@@ -74,6 +74,10 @@ export function useBoardSession({
     : "none";
 
   useEffect(() => {
+    // Wait for the first access decision: connecting while it is unknown and then
+    // rebuilding on the answer dropped this session's presence (and its follow target)
+    // for a moment, which two same-account sessions then read as a renamed peer.
+    if (!access || access.allowed === false) return;
     const connection = connectBoard(board, {
       url: syncUrl(),
       room: currentRoom(),
@@ -103,7 +107,7 @@ export function useBoardSession({
       connection.disconnect();
       setConnection(null);
     };
-  }, [board, refreshAccess, session, accessKey]);
+  }, [board, refreshAccess, session, accessKey, access]);
 
   // A failed upgrade (401/403/404) reaches the browser as close 1006, not 4403, so the
   // access callback never fires. While disconnected, refresh the decision so a revoked
