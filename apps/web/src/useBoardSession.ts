@@ -66,6 +66,13 @@ export function useBoardSession({
   const accountIdRef = useRef(accountId);
   accountIdRef.current = accountId;
 
+  // The socket is rebuilt when the access decision changes in a way the handshake cares
+  // about: signing in from a public link or losing edit rights. A plain refresh with the
+  // same role and capabilities must not reconnect.
+  const accessKey = access
+    ? `${access.role ?? ""}:${[...access.capabilities].sort().join(",")}:${[...access.sources].sort().join(",")}`
+    : "none";
+
   useEffect(() => {
     const connection = connectBoard(board, {
       url: syncUrl(),
@@ -96,7 +103,32 @@ export function useBoardSession({
       connection.disconnect();
       setConnection(null);
     };
-  }, [board, refreshAccess, session]);
+  }, [board, refreshAccess, session, accessKey]);
+
+  // A failed upgrade (401/403/404) reaches the browser as close 1006, not 4403, so the
+  // access callback never fires. While disconnected, refresh the decision so a revoked
+  // editor sees the gate instead of an endless offline queue.
+  useEffect(() => {
+    if (status !== "disconnected") return;
+    const refresh = () => void refreshAccess();
+    const timer = window.setInterval(refresh, 5_000);
+    const wake = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("online", wake);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", wake);
+      window.removeEventListener("online", wake);
+    };
+  }, [status, refreshAccess]);
+
+  // A denied decision means there is nothing to reconnect to. The next allowed decision
+  // changes accessKey and rebuilds the socket.
+  useEffect(() => {
+    if (access?.allowed === false) connection?.disconnect();
+  }, [access, connection]);
 
   // Renaming the cursor (or adopting the account name, ADR-149), signing in or changing
   // the account is awareness, not a new room: update it in place so the socket and the
