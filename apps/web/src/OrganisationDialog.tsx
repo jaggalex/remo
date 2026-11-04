@@ -12,6 +12,8 @@ import {
 } from "./api";
 import { formatMoment, initials } from "./format";
 import { AgentsPanel } from "./AgentsPanel";
+import { OrganisationTeams } from "./OrganisationTeams";
+import { Button, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { ABOUT } from "./about";
@@ -44,7 +46,8 @@ export function OrganisationDialog({
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
   const [creatingOrg, setCreatingOrg] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
-  const [newTeamName, setNewTeamName] = useState("");
+  const [renamingOrg, setRenamingOrg] = useState(false);
+  const [orgNameDraft, setOrgNameDraft] = useState("");
   const [orgId, setOrgId] = useState<string | null>(null);
   const [org, setOrg] = useState<{ id: string; name: string; slug: string } | null>(null);
   const [membership, setMembership] = useState<{ relation: string; state: string } | null>(null);
@@ -164,6 +167,8 @@ export function OrganisationDialog({
     setEditingRoles(null);
     setConfirmRemove(null);
     setBlocked(null);
+    setRenamingOrg(false);
+    setOrgNameDraft("");
     setError(null);
     setTab("people");
     void load(orgId);
@@ -205,6 +210,27 @@ export function OrganisationDialog({
       } else {
         setError(describe(failure));
       }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function renameOrg(event: React.FormEvent) {
+    event.preventDefault();
+    if (!orgId || !orgNameDraft.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await api.renameOrg(orgId, orgNameDraft.trim());
+      setOrg(result.org);
+      setOrgs((current) =>
+        current.map((candidate) =>
+          candidate.id === orgId ? { ...candidate, name: result.org.name } : candidate,
+        ),
+      );
+      setRenamingOrg(false);
+    } catch (failure) {
+      setError(describe(failure));
     } finally {
       setBusy(false);
     }
@@ -259,7 +285,12 @@ export function OrganisationDialog({
     "auth.logout": "audit.logout",
     "auth.password_changed": "audit.password",
     "org.create": "audit.orgCreate",
+    "org.rename": "audit.orgRename",
     "team.create": "audit.teamCreate",
+    "team.rename": "audit.teamRename",
+    "team.delete": "audit.teamDelete",
+    "team.member.add": "audit.teamMemberAdd",
+    "team.member.remove": "audit.teamMemberRemove",
     "board.create": "audit.boardCreate",
     "board.claim": "audit.boardClaim",
     "board.transfer": "audit.boardTransfer",
@@ -330,22 +361,6 @@ export function OrganisationDialog({
     }
   };
 
-  const createTeam = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!orgId || !newTeamName.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.createTeam(orgId, newTeamName.trim());
-      setNewTeamName("");
-      await load(orgId);
-    } catch (failure) {
-      setError(describe(failure));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const manageable = members.filter((member) => member.relation === "member" && member.state !== "suspended");
 
   return (
@@ -359,7 +374,45 @@ export function OrganisationDialog({
       >
         <header className="org-head">
           <div>
-            <h2>{org?.name ?? t("org.title")}</h2>
+            {renamingOrg && org ? (
+              <form className="org-rename" onSubmit={renameOrg}>
+                <Input
+                  size="compact"
+                  value={orgNameDraft}
+                  maxLength={120}
+                  aria-label={t("org.renameOrg")}
+                  onChange={(event) => setOrgNameDraft(event.target.value)}
+                />
+                <Button
+                  type="submit"
+                  size="compact"
+                  variant="primary"
+                  loading={busy}
+                  disabled={!orgNameDraft.trim()}
+                >
+                  {t("org.save")}
+                </Button>
+                <Button size="compact" variant="ghost" onClick={() => setRenamingOrg(false)}>
+                  {t("org.cancel")}
+                </Button>
+              </form>
+            ) : (
+              <div className="org-title">
+                <h2>{org?.name ?? t("org.title")}</h2>
+                {isOrgAdmin && org && (
+                  <Button
+                    size="compact"
+                    variant="ghost"
+                    onClick={() => {
+                      setRenamingOrg(true);
+                      setOrgNameDraft(org.name);
+                    }}
+                  >
+                    {t("org.rename")}
+                  </Button>
+                )}
+              </div>
+            )}
             <p className="muted">
               {isGuest ? t("org.guestBody") : t("org.memberCount", { n: members.length })}
             </p>
@@ -446,36 +499,16 @@ export function OrganisationDialog({
 
         {!isGuest && tab === "people" && (
           <>
-            <section className="org-teams">
-              <h3>{t("org.teams")}</h3>
-              {teams.length ? (
-                <ul className="org-team-list">
-                  {teams.map((team) => (
-                    <li key={team.id}>{team.name}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted">{t("org.noTeams")}</p>
-              )}
-              {isOrgAdmin && (
-                <form className="org-create" onSubmit={createTeam}>
-                  <input
-                    value={newTeamName}
-                    maxLength={120}
-                    placeholder={t("org.teamNamePlaceholder")}
-                    aria-label={t("org.teamNamePlaceholder")}
-                    onChange={(event) => setNewTeamName(event.target.value)}
-                  />
-                  <button
-                    type="submit"
-                    className="ghost-button"
-                    disabled={busy || !newTeamName.trim()}
-                  >
-                    + {t("org.createTeam")}
-                  </button>
-                </form>
-              )}
-            </section>
+            {orgId && (
+              <OrganisationTeams
+                orgId={orgId}
+                teams={teams}
+                members={members}
+                canManage={isOrgAdmin}
+                onChanged={() => load(orgId)}
+                onError={setError}
+              />
+            )}
 
             {isUserAdmin && (
               <form
