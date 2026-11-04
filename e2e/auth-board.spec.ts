@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { PASSWORD, addSticky, freshBoard, openAccount, openBoard, register } from "./helpers";
+import { PASSWORD, addSticky, enableLink, freshBoard, openAccount, openBoard, register } from "./helpers";
 
 test("a new account opens its board, adds a note and the server confirms the save", async ({
   page,
@@ -162,4 +162,36 @@ test("a cookie mutation must come from this origin and echo the CSRF cookie", as
     headers: { Origin: origin, "X-CSRF-Token": csrf?.value ?? "" },
   });
   expect(accepted.ok(), await accepted.text()).toBeTruthy();
+});
+
+test("a public-link visitor who signs in gets a writable socket", async ({ page, browser }) => {
+  const account = await register(page, "link-signin", { title: "Link sign-in" });
+  await enableLink(page, account.boardId);
+
+  const context = await browser.newContext();
+  const visitor = await context.newPage();
+  try {
+    await visitor.goto(`/?room=${account.boardId}&lang=en`);
+    await expect(visitor.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+
+    await openAccount(visitor);
+    await visitor.getByRole("button", { name: "Sign in", exact: true }).click();
+    const dialog = visitor.locator(".auth-dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.locator('input[type="email"]').fill(account.email);
+    await dialog.locator('input[type="password"]').fill(PASSWORD);
+    await dialog.getByRole("button", { name: "Sign in" }).click();
+    await expect(dialog).toHaveCount(0, { timeout: 20_000 });
+
+    // The socket must be rebuilt with the account's editor rights. Otherwise the note
+    // stays pending forever and disappears on reload.
+    await addSticky(visitor);
+    await visitor.reload();
+    await expect(visitor.locator(".counts li", { hasText: "Sticky note" })).toContainText(
+      "1",
+      { timeout: 20_000 },
+    );
+  } finally {
+    await context.close();
+  }
 });
