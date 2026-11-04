@@ -177,16 +177,28 @@ function assertConnector(ydoc, connectorId) {
 }
 
 /** Read-only plan: how many changes, what is skipped, and does the budget fit. */
-export function estimateChangeSet({ ydoc, operations, budget, agent, taskId, origin }) {
+export function estimateChangeSet({
+  ydoc,
+  operations,
+  budget,
+  agent,
+  taskId,
+  origin,
+  processed = [],
+}) {
   const plan = validateOperations(operations);
+  const done = new Set(processed);
   let cards = 0;
   let connectorChanges = 0;
   const skipped = [];
-  for (const operation of operations) {
+  for (const [operationIndex, operation] of operations.entries()) {
+    if (!CARD_OPS.has(operation.op) && done.has(`connector:${operationIndex}`)) continue;
     if (CARD_OPS.has(operation.op)) {
+      const selectionIds = operation.selectionIds.filter((id) => !done.has(String(id)));
+      if (!selectionIds.length) continue;
       const estimate = convertToCards(ydoc, {
         ...cardOptions(operation, agent, taskId, origin),
-        selectionIds: operation.selectionIds,
+        selectionIds,
         maxCards: Number.POSITIVE_INFINITY,
         dryRun: true,
       });
@@ -210,7 +222,14 @@ export function estimateChangeSet({ ydoc, operations, budget, agent, taskId, ori
   // Everything being locked is a reported skip, not a failure; nothing usable at all is.
   const lockedOnly =
     changes === 0 && skipped.length > 0 && skipped.every((entry) => entry.reason === "locked");
-  if (changes === 0 && !lockedOnly) {
+  // A resume whose every operation is already processed has nothing left to do; that is
+  // a successful no-op, not an empty selection.
+  const allProcessed = operations.every((operation, index) =>
+    CARD_OPS.has(operation.op)
+      ? operation.selectionIds.every((id) => done.has(String(id)))
+      : done.has(`connector:${index}`),
+  );
+  if (changes === 0 && !lockedOnly && !allProcessed) {
     throw new ChangeSetError("EMPTY_SELECTION", "nothing with text was selected");
   }
   if (changes > budget.maxActions) {
@@ -351,7 +370,15 @@ export async function executeChangeSet({
 }) {
   validateOperations(operations);
   const processed = new Set(Array.isArray(progress.processed) ? progress.processed : []);
-  const planned = estimateChangeSet({ ydoc, operations, budget, agent, taskId, origin });
+  const planned = estimateChangeSet({
+    ydoc,
+    operations,
+    budget,
+    agent,
+    taskId,
+    origin,
+    processed: [...processed],
+  });
   const total = planned.changes;
   const created = [];
   const connectors = [];
