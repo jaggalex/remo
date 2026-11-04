@@ -20,6 +20,20 @@ function boardWithNote(id = "n"): BoardDocument {
 }
 
 describe("rich text", () => {
+  it("edits rich text with an emoji without splitting the surrogate pair", () => {
+    const board = boardWithNote();
+    setWidgetDelta(board, "n", [{ insert: "😀 abc", attributes: { bold: true } }]);
+    expect(plainOf(board.texts.get("n")!)).toBe("😀 abc");
+
+    // Appending used to write into the middle of the surrogate pair.
+    setWidgetDelta(board, "n", [{ insert: "😀 abcd", attributes: { bold: true } }]);
+    expect(plainOf(board.texts.get("n")!)).toBe("😀 abcd");
+
+    // Truncating used to leave the tail of the old text.
+    setWidgetDelta(board, "n", [{ insert: "😀 a", attributes: { bold: true } }]);
+    expect(plainOf(board.texts.get("n")!)).toBe("😀 a");
+  });
+
   it("keeps a plain edit on the plain path, so merging stays character-wise", () => {
     const board = boardWithNote();
     setWidgetDelta(board, "n", [{ insert: "hello" }]);
