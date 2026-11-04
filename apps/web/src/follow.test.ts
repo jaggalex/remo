@@ -14,6 +14,7 @@ const peer = (name: string, over: Partial<Presence> = {}): Presence => ({
   sessionKey: over.sessionKey ?? name,
   accountId: null,
   name,
+  handle: over.handle ?? "",
   label: over.label ?? name,
   joinedAt: 0,
   color: "#000",

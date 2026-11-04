@@ -15,6 +15,7 @@ import {
 } from "./iam.mjs";
 import { clearFailures, reserveAttempt } from "./attempts.mjs";
 import { hashQueue } from "./hash-queue.mjs";
+import { deriveHandle, handleCandidate, handleProblem, normalizeHandle } from "./handle.mjs";
 import {
   SESSION_DAYS,
   clearedSessionCookie,
@@ -70,6 +71,23 @@ export async function handleAuthRoutes(ctx) {
       return fail(response, 409, "EMAIL_TAKEN", "this email already has an account"), true;
     }
 
+    const requestedHandle = normalizeHandle(body.handle);
+    let handle;
+    if (requestedHandle) {
+      const problem = handleProblem(requestedHandle);
+      if (problem) return fail(response, 422, problem.code, problem.message), true;
+      if (await store.findUserByHandle(requestedHandle)) {
+        return fail(response, 409, "HANDLE_TAKEN", "this handle is already taken"), true;
+      }
+      handle = requestedHandle;
+    } else {
+      const base = deriveHandle(email);
+      handle = base;
+      for (let attempt = 2; await store.findUserByHandle(handle); attempt += 1) {
+        handle = handleCandidate(base, attempt);
+      }
+    }
+
     let passwordHash;
     try {
       passwordHash = await hashQueue.withSlot(() => hashPassword(body.password));
@@ -79,7 +97,15 @@ export async function handleAuthRoutes(ctx) {
       }
       throw error;
     }
-    const created = await store.createUser({ email, passwordHash, name });
+    let created;
+    try {
+      created = await store.createUser({ email, passwordHash, name, handle });
+    } catch (error) {
+      if (error?.code === "23505") {
+        return fail(response, 409, "HANDLE_TAKEN", "this handle is already taken"), true;
+      }
+      throw error;
+    }
     const { org, team } = await store.createOrgWithOwner({
       name: `${name}'s workspace`,
       slug: orgSlugFor(name),
@@ -106,6 +132,7 @@ export async function handleAuthRoutes(ctx) {
           id: created.id,
           email: created.email,
           name: created.name,
+          handle: created.handle,
           preferences: preferencesOf(created),
         },
         org,
@@ -188,6 +215,7 @@ export async function handleAuthRoutes(ctx) {
           id: found.id,
           email: found.email,
           name: found.name,
+          handle: found.handle,
           preferences: preferencesOf(found),
         },
       },
@@ -219,19 +247,43 @@ export async function handleAuthRoutes(ctx) {
     if (!session) return fail(response, 401, "AUTH_REQUIRED", "sign in first"), true;
     const body = await readBody(request);
     if (!body) return fail(response, 400, "BAD_JSON", "malformed request"), true;
-    const name = String(body.name ?? "").trim();
-    if (!name) return fail(response, 422, "NAME_REQUIRED", "a name is required"), true;
-    if (name.length > 80) {
+    const name = body.name === undefined ? null : String(body.name).trim();
+    if (name !== null && !name) {
+      return fail(response, 422, "NAME_REQUIRED", "a name is required"), true;
+    }
+    if (name !== null && name.length > 80) {
       return fail(response, 422, "NAME_TOO_LONG", "the name must be at most 80 characters"), true;
     }
-    const updated = await store.renameUser({ userId: user.id, name });
+    const requestedHandle = body.handle === undefined ? null : normalizeHandle(body.handle);
+    if (requestedHandle !== null) {
+      const problem = handleProblem(requestedHandle);
+      if (problem) return fail(response, 422, problem.code, problem.message), true;
+      const owner = await store.findUserByHandle(requestedHandle);
+      if (owner && owner.id !== user.id) {
+        return fail(response, 409, "HANDLE_TAKEN", "this handle is already taken"), true;
+      }
+    }
+    let updated;
+    try {
+      updated = await store.renameUser({ userId: user.id, name, handle: requestedHandle });
+    } catch (error) {
+      if (error?.code === "23505") {
+        return fail(response, 409, "HANDLE_TAKEN", "this handle is already taken"), true;
+      }
+      throw error;
+    }
     if (!updated) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
-    await audit({ actorId: user.id, action: "auth.profile_changed", subject: name });
+    await audit({
+      actorId: user.id,
+      action: "auth.profile_changed",
+      subject: updated.handle,
+    });
     json(response, 200, {
       user: {
         id: updated.id,
         email: updated.email,
         name: updated.name,
+        handle: updated.handle,
         preferences: user.preferences,
       },
     });

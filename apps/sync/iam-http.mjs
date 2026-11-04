@@ -102,6 +102,7 @@ export async function sessionFromRequest(request, store) {
       id: row.user_id,
       email: row.email,
       name: row.name,
+      handle: row.handle,
       preferences: { theme: row.theme ?? null, lang: row.lang ?? null },
     },
   };

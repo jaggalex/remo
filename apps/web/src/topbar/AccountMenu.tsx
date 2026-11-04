@@ -1,7 +1,7 @@
 import { Avatar, Button, Input, Popover, Segmented } from "@remo/ui";
 import { useEffect, useState } from "react";
 import type { Presence } from "@remo/doc";
-import { api, type SessionUser } from "../api";
+import { api, ApiError, type SessionUser } from "../api";
 import { useI18n, type Lang } from "../i18n";
 import { ABOUT } from "../about";
 import type { Theme } from "../useTheme";
@@ -19,6 +19,7 @@ export function AccountMenu({
   open,
   onOpen,
   name,
+  handle,
   self,
   color,
   signedIn,
@@ -40,6 +41,7 @@ export function AccountMenu({
   onOpen: (value: boolean) => void;
   /** The display name for the tooltip and the face. */
   name: string;
+  handle: string;
   /** This person in the presence list, when the room shows people at all. */
   self: Presence | undefined;
   /** The cursor colour: the face and the pointer of one person must match. */
@@ -62,24 +64,35 @@ export function AccountMenu({
   const { t } = useI18n();
   const anchor = useMenuFocus(open, true, ".rm-popover input");
   const [nameDraft, setNameDraft] = useState(name);
+  const [handleDraft, setHandleDraft] = useState(handle);
   const [savingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameSaved, setNameSaved] = useState(false);
 
   useEffect(() => setNameDraft(name), [name]);
+  useEffect(() => setHandleDraft(handle), [handle]);
 
   const saveName = async () => {
     const next = nameDraft.trim();
-    if (!next || next === name || savingName) return;
+    const nextHandle = handleDraft.trim().toLowerCase();
+    if (!next || !nextHandle || savingName) return;
+    if (next === name && nextHandle === handle) return;
     setSavingName(true);
     setNameError(null);
     setNameSaved(false);
     try {
-      const result = await api.renameAccount(next);
+      const result = await api.renameAccount({ name: next, handle: nextHandle });
       onAccountRenamed(result.user);
       setNameSaved(true);
-    } catch {
-      setNameError(t("account.nameFailed"));
+    } catch (failure) {
+      const code = failure instanceof ApiError ? failure.code : "";
+      setNameError(
+        code === "HANDLE_TAKEN"
+          ? t("account.handleTaken")
+          : code === "BAD_HANDLE" || code === "HANDLE_TOO_SHORT" || code === "HANDLE_TOO_LONG" || code === "HANDLE_RESERVED"
+            ? t("account.handleInvalid")
+            : t("account.nameFailed"),
+      );
     } finally {
       setSavingName(false);
     }
@@ -107,6 +120,7 @@ export function AccountMenu({
           {signedIn ? (
             <div className="account-who">
               <strong>{name}</strong>
+              <span className="account-role">@{handle}</span>
               {roleLine && <span className="account-role">{roleLine}</span>}
             </div>
           ) : (
@@ -127,11 +141,28 @@ export function AccountMenu({
                   void saveName();
                 }}
               />
+              <Input
+                label={t("account.handle")}
+                hint={t("account.handleHint")}
+                prefix="@"
+                value={handleDraft}
+                maxLength={32}
+                onChange={(event) => setHandleDraft(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  void saveName();
+                }}
+              />
               <Button
                 size="compact"
                 variant="primary"
                 loading={savingName}
-                disabled={!nameDraft.trim() || nameDraft.trim() === name}
+                disabled={
+                  !nameDraft.trim() ||
+                  !handleDraft.trim() ||
+                  (nameDraft.trim() === name && handleDraft.trim().toLowerCase() === handle)
+                }
                 onClick={() => void saveName()}
               >
                 {t("account.save")}
