@@ -9,9 +9,10 @@ import { currentRoom } from "./identity";
  * capability in the UI is a read of that answer, not a local guess. The invitation token
  * is read once from the address (ADR-064/081).
  */
-export function useBoardAccess() {
+export function useBoardAccess(room: string | null = currentRoom()) {
   const [me, setMe] = useState<SessionUser | null>(null);
   const [orgs, setOrgs] = useState<OrgSummary[]>([]);
+  const [sessionReady, setSessionReady] = useState(false);
   const [access, setAccess] = useState<Access | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   /** The organisation this board belongs to; a legacy room has none. */
@@ -34,11 +35,13 @@ export function useBoardAccess() {
         if (!alive) return;
         setMe(result.user);
         setOrgs(result.orgs);
+        setSessionReady(true);
       })
       .catch(() => {
         if (!alive) return;
         setMe(null);
         setOrgs([]);
+        setSessionReady(true);
       });
     return () => {
       alive = false;
@@ -61,9 +64,14 @@ export function useBoardAccess() {
 
   /** What this viewer may do with this board, straight from the server. */
   const refreshAccess = useCallback(async () => {
+    if (!room) {
+      setAccess(null);
+      setBoardOrgId(undefined);
+      return;
+    }
     const seq = ++accessSeq.current;
     try {
-      const result = await api.access(currentRoom());
+      const result = await api.access(room);
       if (seq !== accessSeq.current) return;
       if (retryAccess.current) {
         window.clearTimeout(retryAccess.current);
@@ -98,7 +106,7 @@ export function useBoardAccess() {
                 : "NOT_FOUND",
       });
     }
-  }, []);
+  }, [room]);
 
   useEffect(
     () => () => {
@@ -134,6 +142,7 @@ export function useBoardAccess() {
     setMe,
     orgs,
     refreshOrgs,
+    sessionReady,
     access,
     refreshAccess,
     boardOrgId,

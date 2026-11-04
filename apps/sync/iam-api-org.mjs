@@ -25,6 +25,7 @@ export async function handleOrgRoutes(ctx) {
       name: String(body.name),
       slug: orgSlugFor(body.name),
       userId: me.id,
+      kind: "shared",
     });
     await audit({ actorId: me.id, orgId: org.id, action: "org.create", subject: org.name });
     json(response, 201, { org });

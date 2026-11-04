@@ -1,0 +1,25 @@
+{
+  "id": "boards.home",
+  "type": "how-to",
+  "title": {
+    "ru": "Домашняя страница организации",
+    "en": "Organisation home"
+  },
+  "summary": {
+    "ru": "Плитки досок, поиск, сортировка, страницы, эмодзи и переключение организации.",
+    "en": "Board tiles, search, sorting, pages, emoji and switching organisation."
+  },
+  "related": [
+    "boards.create",
+    "access.roles",
+    "presentation.mode"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:a65ea56fe3cc862aecc6ff85732f9da5d685e22c222c6f9f82b1d968d95fe185"
+    }
+  }
+}

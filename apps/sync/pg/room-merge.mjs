@@ -135,11 +135,12 @@ export const roomMergeMethods = {
 
     if (!target) {
       await client.query(
-        `insert into boards (id, title, snapshot, snapshot_through, org_id, team_id, owner_id,
-                             visibility, acl_version, archived_at, claimed_at, claim_token_hash,
-                             agents_enabled, updated_at)
-         select $2, title, snapshot, 0, org_id, team_id, owner_id, visibility, acl_version,
-                archived_at, claimed_at, claim_token_hash, agents_enabled, updated_at
+        `insert into boards (id, title, icon, snapshot, snapshot_through, org_id, team_id,
+                             owner_id, created_by, created_at, visibility, acl_version,
+                             archived_at, claimed_at, claim_token_hash, agents_enabled, updated_at)
+         select $2, title, icon, snapshot, 0, org_id, team_id, owner_id, created_by, created_at,
+                visibility, acl_version, archived_at, claimed_at, claim_token_hash,
+                agents_enabled, updated_at
            from boards where id = $1`,
         [sourceId, targetId],
       );

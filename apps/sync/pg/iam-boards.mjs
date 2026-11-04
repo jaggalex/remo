@@ -133,18 +133,27 @@ async validLinkUnlock({ boardId, tokenHash, passwordVersion }) {
 
 async createIamBoard({ id, orgId, teamId, ownerId, title }) {
   const { rows } = await this.pool.query(
-    `insert into boards (id, title, org_id, team_id, owner_id)
-     values ($1, $2, $3, $4, $5)
+    `insert into boards (id, title, org_id, team_id, owner_id, created_by)
+     values ($1, $2, $3, $4, $5, $5)
      on conflict (id) do update set title = excluded.title
-     returning id, title, org_id, team_id, owner_id, visibility, acl_version`,
+     returning id, title, icon, org_id, team_id, owner_id, created_by, visibility, acl_version`,
     [id, title ?? "", orgId, teamId, ownerId],
   );
   return rows[0];
 },
 
+/** The board tile icon is list metadata, not Yjs content (ADR-168). */
+async setBoardIcon(boardId, icon) {
+  const { rows } = await this.pool.query(
+    `update boards set icon = $2 where id = $1 returning id, icon`,
+    [boardId, icon],
+  );
+  return rows[0] ?? null;
+},
+
 async getIamBoard(boardId) {
   const { rows } = await this.pool.query(
-    `select id, title, org_id, team_id, owner_id, visibility, acl_version,
+    `select id, title, icon, org_id, team_id, owner_id, visibility, acl_version,
             archived_at, agents_enabled, claim_token_hash is not null as has_claim_token,
             updated_at
        from boards where id = $1`,
@@ -468,7 +477,7 @@ async duplicateBoard({ sourceId, newId, title, ownerId, copyGrants = true }) {
   try {
     await client.query("begin");
     const { rows: sources } = await client.query(
-      `select org_id, team_id, owner_id, snapshot, snapshot_through
+      `select org_id, team_id, owner_id, icon, snapshot, snapshot_through
          from boards where id = $1`,
       [sourceId],
     );
@@ -492,10 +501,18 @@ async duplicateBoard({ sourceId, newId, title, ownerId, copyGrants = true }) {
 
     const { rows } = await client.query(
       `insert into boards
-         (id, title, org_id, team_id, owner_id, visibility, snapshot, snapshot_through)
-       values ($1, $2, $3, $4, $5, 'private', $6, 0)
-       returning id, title`,
-      [newId, title, source.org_id, source.team_id, ownerId ?? source.owner_id, snapshot],
+         (id, title, icon, org_id, team_id, owner_id, created_by, visibility, snapshot, snapshot_through)
+       values ($1, $2, $3, $4, $5, $6, $6, 'private', $7, 0)
+       returning id, title, icon`,
+      [
+        newId,
+        title,
+        source.icon ?? "",
+        source.org_id,
+        source.team_id,
+        ownerId ?? source.owner_id,
+        snapshot,
+      ],
     );
 
     await client.query(

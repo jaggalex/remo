@@ -25,5 +25,6 @@
   "presentation.mode": "how-to/present",
   "comments.thread": "how-to/comment",
   "objects.lock": "how-to/lock",
-  "about.remo": "support/about"
+  "about.remo": "support/about",
+  "boards.home": "capabilities/home"
 }

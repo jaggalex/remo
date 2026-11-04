@@ -7,6 +7,7 @@ It answers "what can this product do at all" and shows which capabilities combin
 | Capability | Category | Task | Result | Combines with | More |
 |---|---|---|---|---|---|
 | Create a board | Start | begin work | a board from a template or empty | canvas, access, templates | [Create a board](/guide/how-to/create-board) |
+| Organisation home | Start | find a board and switch organisation | board tiles, search, sorting, pages | access, presentation | [Organisation home](/guide/capabilities/home) |
 | The board screen | Start | find a command on screen | header, menus, rail and bottom | canvas, presentation | [The board screen](/guide/concepts/board-chrome) |
 | Canvas and objects | Canvas | assemble visual material | a board with sticky notes, shapes and text | frames, connectors, export | [Canvas: what it does and where it stops](/guide/capabilities/canvas) |
 | Palette and colours | Canvas | set an object's colour | seven tones at three levels, white, black, transparent | canvas, shapes, connectors | [Palette](/guide/concepts/colors) |
@@ -17,7 +18,7 @@ It answers "what can this product do at all" and shows which capabilities combin
 | Connectors | Connectors | show dependencies | a line with an anchor and routing | canvas, agents | [Connectors](/guide/capabilities/connectors) |
 | Frames and kanban | Structure | structure work | sections and columns with cards | canvas, facilitation | [Frames and kanban](/guide/capabilities/frames-kanban) |
 | Cards, tags and links | Structure | see work and sources | status, assignee, date range, tags, link | kanban, access | [Cards, tags and links](/guide/capabilities/cards) |
-| Presentation | People | run a meeting | slides from frames, presenter and followers | facilitation, access | [Presentation](/guide/capabilities/presentation) |
+| Presentation | People | run a meeting | slides from objects, presenter and followers | facilitation, access | [Presentation](/guide/capabilities/presentation) |
 | Collaboration | People | work together | cursors, presence, follow, comments, reactions, lock | access, saving | [Collaboration](/guide/capabilities/collaboration) |
 | History and trash | Data | undo and bring back | undo/redo, trash, copy | canvas, export | [History, trash and copies](/guide/capabilities/history) |
 | Agents | Extensions | delegate routine work | a task, a plan, a diagram, cards, tidying | access, events | [Agents](/guide/capabilities/agents) |

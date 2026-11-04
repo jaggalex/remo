@@ -1,0 +1,336 @@
+/* The organisation home: directory chrome and board tiles (ADR-168). */
+
+.home {
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.home-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-bar);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--topbar-height);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-panel);
+}
+
+.home-brand,
+.home-context,
+.home-account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.home-brand {
+  font-size: 13px;
+}
+
+.home-mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+
+.home-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.home-context {
+  min-width: 0;
+}
+
+.home-context .rm-field {
+  width: min(260px, 42vw);
+}
+
+.home-account {
+  margin-left: auto;
+}
+
+.home-content {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-8);
+}
+
+.home-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.home-heading h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font: var(--type-title);
+}
+
+.home-heading p {
+  margin: var(--space-1) 0 0;
+  font: var(--type-caption);
+}
+
+.home-views {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.home-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px auto;
+  align-items: end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+}
+
+.home-toolbar .rm-field {
+  margin: 0;
+}
+
+.home-tiles {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: var(--space-3);
+}
+
+.home-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  transition: box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.home-tile:hover,
+.home-tile:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-hover);
+}
+
+.home-tile-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-4);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.home-tile-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--type-label);
+  font-weight: 600;
+}
+
+.home-tile-team,
+.home-tile-author {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--type-caption);
+}
+
+.home-tile-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: var(--space-1);
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.home-tile-menu {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.home-tile:hover .home-tile-menu,
+.home-tile:focus-within .home-tile-menu {
+  opacity: 1;
+}
+
+.home-emoji-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.home-emoji-anchor .rm-popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: var(--z-popover);
+}
+
+.home-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-1);
+}
+
+.home-emoji,
+.home-emoji-none {
+  display: grid;
+  place-items: center;
+  min-height: 32px;
+  padding: var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.home-emoji:hover,
+.home-emoji:focus-visible,
+.home-emoji-none:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
+}
+
+.home-emoji-none {
+  grid-column: 1 / -1;
+  font: var(--type-caption);
+}
+
+.home-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-top: var(--space-6);
+}
+
+.home-page-gap {
+  padding: 0 var(--space-1);
+  color: var(--text-muted);
+}
+
+.home-empty,
+.home-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 280px;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.home-empty h1,
+.home-empty h2 {
+  margin: 0;
+  font: var(--type-subtitle);
+}
+
+.home-empty p {
+  max-width: 460px;
+  margin: 0;
+}
+
+.home-state {
+  color: var(--text-muted);
+  font: var(--type-body);
+}
+
+.home-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--text-danger);
+  font: var(--type-caption);
+}
+
+@media (max-width: 720px) {
+  .home-topbar {
+    flex-wrap: wrap;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .home-context .rm-field {
+    width: min(240px, 70vw);
+  }
+
+  .home-content {
+    padding: var(--space-4) var(--space-3) var(--space-7);
+  }
+
+  .home-heading {
+    flex-direction: column;
+  }
+
+  .home-views {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.home-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
