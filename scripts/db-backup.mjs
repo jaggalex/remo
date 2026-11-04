@@ -25,8 +25,23 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 const BACKUP_DIR = process.env.REMO_BACKUP_DIR ?? join(ROOT, "backups");
-/** How many dumps to keep; oldest go first once the list is longer. */
-const KEEP = Number(process.env.REMO_BACKUP_KEEP ?? 14);
+
+/**
+ * How many dumps to keep; oldest go first once the list is longer.
+ *
+ * `Number("")` is 0 and `Number("abc")` is NaN; `slice(0)` and `slice(NaN)` both
+ * return the whole list, which used to delete every dump including the new one.
+ */
+export function backupKeep(raw = process.env.REMO_BACKUP_KEEP) {
+  if (raw === undefined || raw === "") return 14;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error("REMO_BACKUP_KEEP must be a positive integer");
+  }
+  return value;
+}
+
+const KEEP = backupKeep();
 /** The compose service that runs postgres, used when pg_dump is not installed. */
 const COMPOSE_SERVICE = process.env.REMO_DB_SERVICE ?? "db";
 
@@ -218,9 +233,11 @@ async function listBackups() {
   }
 }
 
-async function prune() {
+async function prune(keepPath = null) {
   const backups = await listBackups();
-  const doomed = backups.slice(KEEP);
+  // A restore must never prune the file it is about to read.
+  const candidates = keepPath ? backups.filter((backup) => backup.path !== keepPath) : backups;
+  const doomed = candidates.slice(KEEP);
   for (const backup of doomed) {
     await rm(backup.path, { force: true });
     await rm(backup.path.replace(/\.dump$/, ".json"), { force: true });
@@ -278,7 +295,7 @@ async function restore(file) {
   }
 
   // Safety net: the state being replaced is saved before it disappears.
-  const safety = await backup();
+  const safety = await backup({ keepPath: path });
   console.log(`[restore] safety copy: ${safety}`);
 
   const runner = await dumper();
@@ -286,6 +303,7 @@ async function restore(file) {
   console.log("[restore] done");
 }
 
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
 try {
   if (flag("list")) {
     const backups = await listBackups();
@@ -301,4 +319,5 @@ try {
 } catch (error) {
   console.error(`[backup] failed: ${error.message}`);
   process.exitCode = 1;
+}
 }
