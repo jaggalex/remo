@@ -140,6 +140,11 @@ export const COMMANDS = {
     capabilities: ["board.edit"],
     validate(input) {
       const data = object(input, "input");
+      // The id is assigned by the command runner (or by a change set's forced id); a
+      // caller-supplied id would overwrite an existing object, including a locked one.
+      if (data.id !== undefined) {
+        throw new CommandError("BAD_INPUT", "the server assigns the object id");
+      }
       if (!CREATABLE.has(data.type)) {
         throw new CommandError("BAD_INPUT", `type must be one of ${[...CREATABLE].join(", ")}`);
       }
@@ -156,6 +161,9 @@ export const COMMANDS = {
       return data;
     },
     apply({ ydoc, input, actor, objectId }) {
+      if (widgets(ydoc).has(objectId)) {
+        throw new CommandError("OBJECT_EXISTS", `object ${objectId} already exists`, 409);
+      }
       let parentId = null;
       if (input.parentId) {
         const parent = widgets(ydoc).get(input.parentId);
