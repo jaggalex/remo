@@ -17,10 +17,11 @@
     "capabilities/apps",
     "reference/limits"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:65a7e9f2baf85d101af39255a6dec46ceb170696dbba6672d0f2f71f7430baf8"
+      "sourceHash": "sha256:73dedc71c9b27068026f76a868a3a3f60eea513d3a449651d2158d08443fe194",
+      "targetHash": "sha256:e930bfaac9b20eb01df76b84de15b261b0ee8b48de96089d72aaef0ffe5d44da"
     }
   }
 }

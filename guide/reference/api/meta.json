@@ -17,10 +17,11 @@
     "reference/events",
     "how-to/connect-integration"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:f148b96cfcb4ca5b453bdfac9d390b5a97ed06120a2c0ba796cd14791c7e2a83"
+      "sourceHash": "sha256:5c1a1dc22d23907440af6297bcc5de65b9d38c8a1153a4e24365c4e9a2180d0f",
+      "targetHash": "sha256:9a38e244f549a8561a23baec7b65bacaa04df7ac510337b98e9ee4e34a389ec8"
     }
   }
 }

@@ -17,10 +17,11 @@
     "concepts/board",
     "concepts/access"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:3a0e2c5df29a1de56df72083dca0103c24a547a5036c3ff78f22bd8c5c46ac92"
+      "sourceHash": "sha256:b1e1c1aed1a0743940632d4eb6c89348b5d04a598c7f820f4620cd5661e303ce",
+      "targetHash": "sha256:d0b6d79d89f06cf8c8fe38ad28addc3d88ea346183e9c9ceddc9d5b8bc4f7eb5"
     }
   }
 }

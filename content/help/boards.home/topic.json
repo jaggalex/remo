@@ -11,15 +11,18 @@
   },
   "related": [
     "boards.create",
-    "access.roles",
-    "presentation.mode"
+    "account.profile",
+    "org.manage",
+    "objects.name",
+    "access.roles"
   ],
   "verifiedAgainst": "2026-11-04",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:a65ea56fe3cc862aecc6ff85732f9da5d685e22c222c6f9f82b1d968d95fe185"
+      "sourceHash": "sha256:e77ae9c94f73a9f63d3ebd6cdef48174c1688d1baa056cca981cc0f0c415456e",
+      "targetHash": "sha256:6f471a83a10882b5cf2ed537bc02a7416033d20909fddf812bf4f0f7a003c151"
     }
   }
 }

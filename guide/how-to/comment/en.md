@@ -31,7 +31,7 @@ You need to discuss an object or a point on the board without moving the convers
 
 - Comments are online; a reply draft is kept, sending waits for the network and says so.
 - One anchor per thread; no nested threads.
-- Mentions and notifications are not in v1.
+- Mentions and notifications are not in v1; the author name is shown with the `@handle` it had when sent.
 - PNG/PDF include only open threads and at most three messages per thread; the full text stays in remo.
 
 ## Where to go next

@@ -222,6 +222,23 @@
       "example": "how-to/create-board"
     },
     {
+      "id": "home",
+      "title": {
+        "ru": "Домашняя страница организации",
+        "en": "Organisation home"
+      },
+      "capability": "capabilities/home",
+      "concept": "concepts/access",
+      "howto": [
+        "how-to/create-board"
+      ],
+      "reference": [
+        "reference/api"
+      ],
+      "limits": "reference/limits",
+      "example": "start/quickstart"
+    },
+    {
       "id": "cards",
       "title": {
         "ru": "Карточка, теги и ссылки",

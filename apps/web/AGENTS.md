@@ -21,9 +21,9 @@ Nothing below repeats a rule that is already written there.
 - **Every user-visible string is a key** in `src/i18n/` (RU and EN). A missing translation
   fails `tsc` — that is the enforcement, not a convention.
 - **A new file above 800 lines fails `pnpm size:check`.** Split by reason to change.
-- **`App.tsx` and `BoardCanvas.tsx` are near the limit** (786 and 777). A feature that needs
-  more room in either starts with a split; ADR-093 records the ratchet and the previous
-  were done.
+- **`BoardApp.tsx` is at the 800-line limit** and `BoardCanvas.tsx` is close (781). A
+  feature that needs more room starts with a split; the home lives in `WorkspaceHome.tsx`,
+  not in `BoardApp.tsx`. ADR-093 records the ratchet.
 
 ## Testing here
 

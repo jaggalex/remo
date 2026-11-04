@@ -4,10 +4,9 @@ A new board is created in your organisation — in a team when one is chosen —
 
 ## Steps
 
-1. Open **All boards** in the header.
-2. Click New board.
+1. Open **All boards** in the header. If you belong to several organisations, choose one in the **Organisation** field — the previous board closes and the list shows the new organisation's boards.
 3. Enter a name.
-4. If there are several organisations or teams, choose the right ones. Create an organisation in the account settings with "+ New organisation"; create a team in the **Teams** block (organisation admin).
+4. If there are several organisations or teams, choose the right ones. Create an organisation in the account menu under **Organisation and people** with **+ New organisation**; create a team in the **Teams** block (organisation admin).
 5. Choose Empty board or a template.
 6. Click Create.
 
@@ -19,6 +18,6 @@ A new board is created in your organisation — in a team when one is chosen —
 
 ## Limits
 
-- A guest cannot create a board: the button is hidden and a direct request is refused. Ask the organisation administrator.
+- A guest cannot create a board: the button is disabled and a direct request is refused. Ask the organisation administrator.
 - Creation belongs to an active organisation member. A view-only link does not grant it.
 - A template can be added later from **More ▾ → Templates…**.

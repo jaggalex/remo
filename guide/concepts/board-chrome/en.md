@@ -4,7 +4,7 @@ The screen has three zones and menus: the header describes the board and the ses
 
 ## Header
 
-On the left: the logo, **All boards** (⌘K), the organisation path and the board name. The name is a button with a menu: rename, board settings, export, restore from a backup, create a copy, move to trash.
+On the left: the logo, **All boards** (⌘K), the organisation path and the board name. **All boards** and the organisation name lead to the organisation home. The name is a button with a menu: rename, board settings, export, restore from a backup, create a copy, move to trash.
 
 On the right, in order from left to right:
 
@@ -13,10 +13,10 @@ On the right, in order from left to right:
 | **Facilitation** | timer, voting, shared viewing, reactions |
 | **More** | templates, an AI task, apps |
 | Saving indicator | the save state and the "Saving and offline" help |
-| Avatar | cursor name, theme, language, organisation, sign in and out |
+| Avatar | the account name and `@handle`, cursor name, theme, language, organisation, sign in and out |
 | Participants | who is on the board; clicking a face follows that person |
 | **Properties** | the right panel with object or board properties |
-| **Start presentation** | the panel of frame slides |
+| **Start presentation** | the slide-order panel |
 | **Discussion** | the comments panel; the counter shows unread comments |
 | **Share** | participant roles and the public link |
 

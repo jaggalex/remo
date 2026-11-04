@@ -16,10 +16,11 @@
     "capabilities/access",
     "how-to/share"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:073c8a2a0f2bf1f21c56a296212fd66ff2f2e734104835338f7f00a45df5871b"
+      "sourceHash": "sha256:8b2af9f47dc6e3502a60cd49ab26b5764f35590f1b761e21bad92b65183f8deb",
+      "targetHash": "sha256:765df27aafee6a85f204869e11693f864e090196fc9e3723d205199273139828"
     }
   }
 }

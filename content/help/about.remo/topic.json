@@ -13,12 +13,13 @@
     "boards.create",
     "export.backup"
   ],
-  "verifiedAgainst": "2026-10-29",
+  "verifiedAgainst": "2026-11-04",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:3eed3295898b3cd1fead4664ed214c0b30825e0dde8b637ba71524e9a778e0b2"
+      "sourceHash": "sha256:80fda0763c619d4baee431b5e7ccbae68cbd64d175cca1d7da4759c3867870cb",
+      "targetHash": "sha256:4974642ce880960f48c21198293b82ecb6e7157edfdffed1a52ff57ad60de0b2"
     }
   }
 }

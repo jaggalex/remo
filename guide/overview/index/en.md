@@ -12,7 +12,7 @@ https://docs.remo.letii.ru/guide/llms.txt
 
 remo is a visual canvas where a team assembles plans, diagrams, kanban boards and notes, then takes the result out as a file or hands it to an integration. A board is both the unit of work and the unit of access: whatever a person can do, they can do on a specific board and nowhere else.
 
-The product is sized for a team of roughly ten people: one organisation, a few teams, and boards that live for a long time and change often.
+The product is sized for a team of roughly ten people: an organisation (personal for every account, shared when needed), a few teams, and boards that live for a long time and change often.
 
 :::actions
 
@@ -31,10 +31,11 @@ The product is sized for a team of roughly ten people: one organisation, a few t
 | Result | How it is built |
 |---|---|
 | A team canvas | organisation → team → board; the role is granted on the board |
+| Organisation home | board tiles with an emoji, search, sorting and trash |
 | Visual material | sticky notes, shapes, text, frames, kanban, cards, connectors |
 | Card work | status, assignee, date range, WIP, tags and links |
 | Discussion | server threads on an object or point, pins, resolve, live reactions |
-| Presentation | frame order, presenter and followers, late viewer |
+| Presentation | slide order, presenter and followers, late viewer |
 | Protection from edits | author lock; the author or a board manager releases it |
 | Real-time collaboration | cursors, presence, follow, "Bring everyone to me" |
 | Controlled access | a role for a person or a team, a public link with a password and an expiry |
@@ -51,6 +52,7 @@ The product is sized for a team of roughly ten people: one organisation, a few t
 ## Where to go next
 
 - [Capability map](/guide/overview/map) — every capability in one table, and how they combine.
+- [Organisation home](/guide/capabilities/home) — board tiles and switching organisation.
 - [Quick start](/guide/start/quickstart) — a working board in ten minutes.
 - [Product model](/guide/concepts/board) — what a board is made of and how access works.
 - [About remo](/guide/support/about) — version, author and licence.

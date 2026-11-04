@@ -18,10 +18,11 @@
     "concepts/board",
     "reference/roles"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:6fd2a8d12c0a37056e2d5809262b7160c923a3afdbaeb28670bab3c6915ed4e6"
+      "sourceHash": "sha256:a768879d32a4007476fbd9cfad0d297f1a47cdfe3f46e627642f41bb1b6a91b9",
+      "targetHash": "sha256:604e2eb8c2384e167911d52aee32044e121b10e1a5a2538f6f47ce15bd5e4854"
     }
   }
 }

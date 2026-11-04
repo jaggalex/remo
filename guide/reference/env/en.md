@@ -53,6 +53,17 @@ Metrics are never written to the boards database.
 
 Without a key tasks finish with `AI_NOT_CONFIGURED`; the rest of the product works.
 
+## Proxy and limits
+
+| Variable | What it sets |
+|---|---|
+| `REMO_TRUST_PROXY` | `1` trusts `X-Forwarded-For` behind a reverse proxy |
+| `REMO_LOGIN_LIMIT` | sign-in attempts per email + IP in 15 minutes; 10 by default |
+| `REMO_LOGIN_IP_LIMIT` | sign-in attempts from one IP in 15 minutes; 100 by default |
+| `REMO_REGISTER_LIMIT` | registrations from one IP per hour; 20 by default |
+| `REMO_HASH_CONCURRENCY` | parallel password hashes; 4 by default |
+| `REMO_AI_ALLOW_PRIVATE` | `1` allows AI outbound to a private network; off by default |
+
 ## Webhook and debugging
 
 | Variable | What it sets |

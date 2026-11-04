@@ -60,6 +60,26 @@ message says what is wrong without leaking secrets or board text.
 | `THREAD_NOT_FOUND` | 404 | the thread is missing or on another board | reload the list |
 | `COMMENT_NOT_FOUND` | 404 | the message is missing | reload the thread |
 
+## Profile, organisation and board
+
+| Code | Status | What it means | What to do |
+|---|---|---|---|
+| `HANDLE_TAKEN` | 409 | the handle is taken | choose another |
+| `BAD_HANDLE` | 422 | the handle breaks the rules | 3–32 characters, Latin letters, digits, `.`, `-`, `_`; start and end with a letter or digit |
+| `HANDLE_TOO_SHORT` / `HANDLE_TOO_LONG` | 422 | the handle is outside 3–32 | fix the length |
+| `HANDLE_RESERVED` | 422 | a reserved handle | choose another |
+| `NAME_REQUIRED` / `NAME_TOO_LONG` | 422 | the name is empty or longer than 80 | enter a name of 1–80 characters |
+| `ICON_TOO_LONG` / `BAD_ICON` | 422 | the emoji is too long or contains control characters | choose one emoji |
+| `EMAIL_TAKEN` | 409 | the email is already registered | sign in or recover access |
+| `WEAK_PASSWORD` | 422 | the password is shorter than 10 characters | choose a longer password |
+| `RATE_LIMITED` | 429 | too many attempts | wait and retry |
+| `ORG_NAME_REQUIRED` | 422 | the organisation has no name | enter a name |
+| `TEAM_NAME_REQUIRED` / `TEAM_NAME_TAKEN` | 422/409 | the team name is empty or taken | choose another name |
+| `TEAM_IN_USE` | 409 | boards or grants refer to the team | reassign them first |
+| `TEAM_REQUIRED` | 409 | the organisation has no team | create a team |
+| `ALREADY_ARCHIVED` / `NOT_ARCHIVED` | 409 | the board is already in the trash or already out of it | re-read the state |
+| `BOARD_CREATE_FORBIDDEN` | 403 | the role cannot create boards | ask for active organisation membership |
+
 ## Export
 
 | Code | Status | Meaning | Action |

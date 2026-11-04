@@ -42,6 +42,6 @@ The meeting runs on the board: you need to keep to time, pick an option quickly 
 
 ## Where to go next
 
-[Present the board by frames](/guide/how-to/present) — how to run a meeting by slides.
+[Present the board](/guide/how-to/present) — how to run a meeting by slides.
 
 [Facilitation](/guide/capabilities/facilitation) — what it gives and where the limit is.

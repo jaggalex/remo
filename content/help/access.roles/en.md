@@ -16,4 +16,4 @@ A role can come directly, through a team or through the organisation. The access
 
 - The board is the unit of access: permissions are checked on the board, not on a single object.
 - A guest does not inherit organisation access: they get a personal board grant.
-- An archived board is read-only; only the owner can restore it.
+- A board in the trash does not open; only the owner can restore it.

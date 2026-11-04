@@ -17,10 +17,11 @@
     "capabilities/events",
     "concepts/sync"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:780a71177f0f85ca2980ff2013a665a9e7f81cf612723820acf656783ef2086f"
+      "sourceHash": "sha256:77e2183cb2b3eab5ce622736c1f2d1a27a3e2e280f6b020feff3a52a40b8a65b",
+      "targetHash": "sha256:159a5aa15f9120f2074e81d7580b26391ff424a5e305033a4788d8b488532f72"
     }
   }
 }

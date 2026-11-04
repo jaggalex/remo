@@ -8,6 +8,7 @@ It answers "what can this product do at all" and shows which capabilities combin
 |---|---|---|---|---|---|
 | Create a board | Start | begin work | a board from a template or empty | canvas, access, templates | [Create a board](/guide/how-to/create-board) |
 | Organisation home | Start | find a board and switch organisation | board tiles, search, sorting, pages | access, presentation | [Organisation home](/guide/capabilities/home) |
+| Account and team | People | set the name, handle and teams | personal organisation, @handle, members | access, home | [Account and team](/guide/how-to/account) |
 | The board screen | Start | find a command on screen | header, menus, rail and bottom | canvas, presentation | [The board screen](/guide/concepts/board-chrome) |
 | Canvas and objects | Canvas | assemble visual material | a board with sticky notes, shapes and text | frames, connectors, export | [Canvas: what it does and where it stops](/guide/capabilities/canvas) |
 | Palette and colours | Canvas | set an object's colour | seven tones at three levels, white, black, transparent | canvas, shapes, connectors | [Palette](/guide/concepts/colors) |

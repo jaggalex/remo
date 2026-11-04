@@ -28,8 +28,9 @@ pnpm dev:web
 pnpm verify --e2e
 ```
 
-This runs the dedicated test database, typecheck, unit and database tests, browser
-acceptance, documentation and guide checks, the build and the design-system checks. A pull
+This checks the dedicated test database (start it first with `pnpm test:db:up`), typecheck,
+unit and database tests, browser acceptance, documentation and guide checks, the build and
+the design-system checks. A pull
 request is ready only when it is green. Run `pnpm verify:fast` in the inner loop.
 
 ## Rules that reviewers enforce

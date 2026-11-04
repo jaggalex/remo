@@ -1,0 +1,26 @@
+{
+  "id": "account.profile",
+  "type": "how-to",
+  "title": {
+    "ru": "Имя и ник аккаунта",
+    "en": "Account name and handle"
+  },
+  "summary": {
+    "ru": "Имя для людей и уникальный @ник для упоминаний; где их менять.",
+    "en": "A display name and a unique @handle for mentions; where to change them."
+  },
+  "related": [
+    "boards.home",
+    "access.share",
+    "comments.thread"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:585430da70efa45a41e765a3537857f43d3a8491df5622efd0d967c6cfd5106d",
+      "targetHash": "sha256:4a289894f78d5ab6cbae39b6f0af7ac2c3a99f4a9dfa681decc7fc91feee67d7"
+    }
+  }
+}

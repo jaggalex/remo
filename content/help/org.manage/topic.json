@@ -1,0 +1,26 @@
+{
+  "id": "org.manage",
+  "type": "how-to",
+  "title": {
+    "ru": "Организация и команды",
+    "en": "Organisation and teams"
+  },
+  "summary": {
+    "ru": "Личная и общая организация, переименование, команды и их участники.",
+    "en": "Personal and shared organisation, renaming, teams and their members."
+  },
+  "related": [
+    "access.roles",
+    "boards.home",
+    "access.share"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:095d76500d8d6856b0007a33c3d4dac950eb47dc2a0615b7d1626ca686ad08ab",
+      "targetHash": "sha256:4d8404145e39f48dc36b5d13cda6db282895a6a39f9c7be185ad49107c157afe"
+    }
+  }
+}

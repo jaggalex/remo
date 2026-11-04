@@ -21,6 +21,11 @@ export function hash(text) {
   return `sha256:${createHash("sha256").update(text).digest("hex")}`;
 }
 
+/** Hash the source and translation payload, including title and summary. */
+export function translationHash(meta, locale, body) {
+  return hash(`${meta.title?.[locale] ?? ""}\n${meta.summary?.[locale] ?? ""}\n${body}`);
+}
+
 export function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }

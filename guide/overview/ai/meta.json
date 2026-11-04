@@ -17,10 +17,11 @@
     "reference/api",
     "capabilities/agents"
   ],
-  "updated": "2026-11-03",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:09665c58e0ba7f7269993797e3ea76ca96b66800c2f3cbc554f194168d7408a9"
+      "sourceHash": "sha256:d4f00553d0b24fbdd7070e499bd7b39846649cbbed63c5e7733d02a0cacc07c7",
+      "targetHash": "sha256:798f6fe6ac52677a70d08b59a49ed57f8fa39d2f76aced4e96a4765dc257e854"
     }
   }
 }

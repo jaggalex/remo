@@ -5,9 +5,11 @@ before the first edit; the product rules are not optional style preferences.
 
 ## What remo is
 
-A self-hosted, local-first visual canvas for a small team: boards, frames, sticky notes,
-cards, kanban, connectors, presentation, comments, access and AI agents. A board is both the
-unit of work and the unit of access.
+A self-hosted, local-first visual canvas for a small team: an organisation home with board
+tiles, boards, frames, sticky notes, cards, kanban, connectors, presentation, comments,
+access and AI agents. A board is both the unit of work and the unit of access. Every account
+has a personal organisation; shared organisations are additional. `?org=<slug>` is the
+organisation home, `?room=<id>` is a board.
 
 - `apps/web` — React + Vite client, Canvas 2D renderer.
 - `apps/sync` — Node service: API, Yjs rooms, IAM, commands, agents, webhooks.
@@ -102,8 +104,8 @@ _Факты дерева, проверяются `pnpm state:check`; числа 
 | ADR | 168, последний — ADR-168 |
 | Версия схемы | 16 |
 | Браузерные сценарии | 112 в 27 файлах |
-| Темы помощи | 28 (RU + EN) |
-| Страницы портала | 67 |
+| Темы помощи | 31 (RU + EN) |
+| Страницы портала | 68 |
 | Эталоны | 21 продуктовых + 12 DS |
 | Крупнейший файл | `apps/web/src/BoardApp.tsx` — 800 строк |
 <!-- generated:state:end -->

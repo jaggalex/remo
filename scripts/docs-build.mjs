@@ -10,7 +10,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { hash, markdown, plain, readJson } from "./docs-core.mjs";
+import { markdown, plain, readJson, translationHash } from "./docs-core.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CONTENT = join(ROOT, "content/help");
@@ -68,11 +68,21 @@ for (const name of readdirSync(CONTENT).sort()) {
     bodies[locale] = readFileSync(path, "utf8");
     if (!bodies[locale].trim()) fail(`${name}: ${locale}.md is empty`);
   }
-  const sourceHash = bodies.ru ? hash(bodies.ru) : "";
-  const current = meta.translations?.en?.sourceHash === sourceHash;
+  const sourceHash = bodies.ru ? translationHash(meta, "ru", bodies.ru) : "";
+  const targetHash = bodies.en ? translationHash(meta, "en", bodies.en) : "";
+  const previousSource = meta.translations?.en?.sourceHash;
+  const previousTarget = meta.translations?.en?.targetHash;
+  const current = previousSource === sourceHash && previousTarget === targetHash;
   if (accept && sourceHash) {
-    meta.translations = { ...(meta.translations ?? {}), en: { ...(meta.translations?.en ?? {}), sourceHash } };
-    writeFileSync(join(dir, "topic.json"), `${JSON.stringify(meta, null, 2)}\n`);
+    if (previousSource && previousSource !== sourceHash && previousTarget && previousTarget === targetHash) {
+      fail(`${name}: EN translation did not change while RU did; translate it before accepting`);
+    } else {
+      meta.translations = {
+        ...(meta.translations ?? {}),
+        en: { ...(meta.translations?.en ?? {}), sourceHash, targetHash },
+      };
+      writeFileSync(join(dir, "topic.json"), `${JSON.stringify(meta, null, 2)}\n`);
+    }
   }
   const status = !bodies.en ? "missing" : current || accept ? "current" : "outdated";
   if (meta.audience === "public" && status !== "current" && (check || accept === false)) {

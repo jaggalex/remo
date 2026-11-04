@@ -16,10 +16,11 @@
     "how-to/present",
     "capabilities/collaboration"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:8527fc74bab1af7bbde1a4c6b353fb06a318868a41b720d593b24fdcf8059b1d"
+      "sourceHash": "sha256:d7a6ad4caaa91e0883ac160bad14c76c01a8624f4f2ff3691e09fdf4563a129b",
+      "targetHash": "sha256:60ac58bc580e72680513761da1e7f501f79bd955ba510ff96fc97495ecf41053"
     }
   }
 }

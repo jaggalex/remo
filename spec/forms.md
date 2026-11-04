@@ -18,9 +18,10 @@
 | Форма | Где открывается | Файл | Что собирает | Проверка |
 |---|---|---|---|---|
 | Вход и регистрация | «Войти» в топбаре, гейт доступа | `apps/web/src/AuthDialog.tsx` | email, пароль, имя; вкладки «Вход» / «Регистрация» | `e2e/auth-board.spec.ts` |
-| Вход по ссылке с паролем | Открытие доски по ссылке, защищённой паролем | `apps/web/src/LinkPasswordGate.tsx` | пароль ссылки | `apps/sync/iam-api-share.test.mjs` |
+| Вход по ссылке с паролем | Открытие доски по ссылке, защищённой паролем | `apps/web/src/LinkPasswordGate.tsx` | пароль ссылки | `apps/sync/iam-api.test.mjs`, `e2e/sharing-link.spec.ts` |
 | Приглашение | Диалог приглашения в организацию | `apps/web/src/InviteDialog.tsx` | email приглашённого | `e2e/organisation.spec.ts` |
-| Организация и команды | Меню аккаунта → «Организация» | `apps/web/src/OrganisationDialog.tsx` | название, команды, участники, роли, передача владения | `e2e/organisation.spec.ts` |
+| Аккаунт: имя и @ник | Меню аккаунта | `apps/web/src/topbar/AccountMenu.tsx` | имя 1–80 и уникальный ник 3–32; проверка занятости | `e2e/auth-board.spec.ts` |
+| Организация и команды | Меню аккаунта → «Организация и люди» | `apps/web/src/OrganisationDialog.tsx`, `apps/web/src/OrganisationTeams.tsx` | название, команды, участники, роли, передача владения | `e2e/organisation.spec.ts` |
 | Доступ к доске | «Поделиться» в топбаре | `apps/web/src/ShareDialog.tsx` | роль участника и команды, ссылка, пароль и срок ссылки, передача доски | `e2e/sharing-link.spec.ts`, `e2e/organisation.spec.ts` |
 | Ссылка без буфера обмена | Неудачное копирование ссылки | `apps/web/src/ShareLinkDialog.tsx` | только чтение ссылки + повторное копирование | `e2e/sharing-link.spec.ts` |
 
@@ -28,12 +29,12 @@
 
 | Форма | Где открывается | Файл | Что собирает | Проверка |
 |---|---|---|---|---|
-| Новая доска | «+ Доска» в панели досок | `apps/web/src/NewBoardDialog.tsx` | название, шаблон | `e2e/boards.spec.ts` |
-| Доски и поиск | Шапка → «Все доски» (⌘K) | `apps/web/src/BoardsPanel.tsx` | поиск по названию, выбор организации, открытие доски | `e2e/boards.spec.ts` |
+| Новая доска | Домашняя страница организации → «Новая доска» | `apps/web/src/NewBoardDialog.tsx` | название, организация, команда, шаблон | `e2e/boards.spec.ts` |
+| Домашняя страница | Шапка → «Все доски» (⌘K) или название организации | `apps/web/src/WorkspaceHome.tsx` | организация, поиск по названию, сортировка и направление, страницы по 24, корзина, эмодзи плитки, открытие доски | `e2e/home.spec.ts`, `e2e/boards.spec.ts` |
 | Настройки доски | Меню названия доски → «Настройки доски» | `apps/web/src/SettingsPanel.tsx` | сетка, привязка, шрифты, цвета заметок, поведение связей | `e2e/gestures.spec.ts` |
-| Удаление доски | Панель досок → удалить; меню доски → «Убрать в корзину…» | `apps/web/src/BoardDeleteDialog.tsx` | подтверждение с названием доски | `e2e/boards.spec.ts` |
+| Удаление доски | Меню плитки → «Удалить»; меню доски → «Убрать в корзину…» | `apps/web/src/BoardDeleteDialog.tsx` | подтверждение с названием доски | `e2e/boards.spec.ts`, `e2e/home.spec.ts` |
 | Инспектор | Правая панель «Свойства» | `apps/web/src/BoardInspector.tsx` | свойства объекта, теги, канбан, замена доски шаблоном | `e2e/tags-links.spec.ts`, `e2e/gestures.spec.ts` |
-| Свойства объекта | Выбор объекта → инспектор | `apps/web/src/BoardObjectPanels.tsx` | текст, стиль, размер, карточка, теги; удаление тега | `e2e/tags-links.spec.ts` |
+| Свойства объекта | Выбор объекта → инспектор | `apps/web/src/BoardObjectPanels.tsx` | имя объекта 1–120, ID только для чтения и «Скопировать ID», текст, стиль, размер, карточка, теги; удаление тега | `e2e/presentation.spec.ts`, `e2e/tags-links.spec.ts` |
 | Фильтр карточек | Канбан → фильтр | `apps/web/src/CardFilterPanel.tsx` | состояние, исполнитель, тег, текст | `e2e/cards.spec.ts` |
 
 ## 3. Объекты на доске

@@ -14,12 +14,13 @@
     "access.link",
     "access.lifecycle"
   ],
-  "verifiedAgainst": "2026-10-27",
+  "verifiedAgainst": "2026-11-04",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:ec2ac4b585a67632a3dd880846e7029379e37eea288184f08bc4f150c482fb4a"
+      "sourceHash": "sha256:1848055647876e47862dde2784f06c594b63a478baceac54cedc4703296b9f55",
+      "targetHash": "sha256:d74f24b5cec7d92ceb94419da5905be5da942eabcebd0a985fc0562bb303732a"
     }
   }
 }

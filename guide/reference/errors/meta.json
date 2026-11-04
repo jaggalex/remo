@@ -17,10 +17,11 @@
     "how-to/export-backup",
     "concepts/access"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:467df356540549ea667a720e5e2e560705068f195a17d6efd9b8851ee7a505ac"
+      "sourceHash": "sha256:f7fcf222357fd6af3deca1c23c346b218379521f3f120b9f543673c057d99f46",
+      "targetHash": "sha256:fcae772f8424af5e921af01efc4a99ff84fee08fd37a16bb6cd1d13aceba9545"
     }
   }
 }

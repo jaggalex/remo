@@ -5,15 +5,15 @@ A working board with sticky notes and a connector, shared with a colleague, with
 ## Before you start
 
 - An account is needed to claim the board. While a board has no owner, anyone with the link can change it; once it is claimed, the board opens read-only without signing in — step 6 checks this.
-- A board is addressed by a name in the page address: `/?room=<name>`. Without a name, `board-main` is used.
+- A board opens at `/?room=<id>`. Without `room`, the organisation home opens (`?org=<slug>`), not a hidden `board-main` board.
 
 ## Steps
 
 1. Open `/?room=demo` and sign in. If the board has no owner yet, press **Claim this board**. Result: the board belongs to you and the tools appear in the header and on the rail.
 2. Press **Sticky note** on the tool rail three times (or `N`). Result: three sticky notes on the canvas.
 3. Select the first sticky note with a single click, then drag from its edge to the second. Result: a connector anchored at both ends. Anchors are visible only on the selected object — without a selection the same gesture moves the sticky note.
-4. Open the board menu (the board’s name) in the header and choose **Переименовать** (rename). Result: everyone who has the board open sees the new name.
-5. Press **Поделиться** (share), enable **Публичная ссылка** (public link) and copy it. Result: the dialog warns that the link is read-only.
+4. Open the board menu (the board’s name) in the header and choose **Rename**. Result: everyone who has the board open sees the new name.
+5. Press **Share**, enable **Public link** and copy it. Result: the dialog warns that the link is read-only.
 6. Open the link in a private window. Result: the board is visible, the editing tools are not.
 
 ## Check

@@ -26,5 +26,8 @@
   "comments.thread": "how-to/comment",
   "objects.lock": "how-to/lock",
   "about.remo": "support/about",
-  "boards.home": "capabilities/home"
+  "boards.home": "capabilities/home",
+  "account.profile": "how-to/account",
+  "org.manage": "how-to/account",
+  "objects.name": "concepts/board"
 }

@@ -2,7 +2,7 @@
 
 The public remo documentation as text for LLMs and AI agents. Copy a link, give it to an agent and ask in plain words: it reads the material and answers.
 
-This is **not** an API token and **not** access to a board. The files contain documentation only: they cannot open a board, read its content or change anything.
+This is **not** an API token and **not** access to a board. The files contain the public guide only: they cannot open a board, read its content or change anything. The in-app help (`/help`) is a separate short reference and is not part of these files.
 
 ## Links
 
@@ -35,11 +35,13 @@ The agent answers from the documentation. Acting on a board needs a normal accou
 
 - the product overview and capability map;
 - boards, objects, access, export and integrations;
+- the organisation home and the personal organisation;
+- presentation of any object, object names and the `@handle`;
 - step-by-step scenarios and limits;
 - roles, codes, formats and limits;
 - administration and security.
 
-The main file is built from the English pages: most models read it more easily. The Russian pages remain on the portal.
+The main file is built from the English pages: most models read it more easily. The Russian pages remain on the portal. The files are generated from `guide/` during the build; the `llms.txt` header states the latest page update and the schema version. If the documentation disagrees with the interface, trust the interface and report the drift.
 
 ## Where to go next
 

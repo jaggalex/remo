@@ -605,7 +605,6 @@ export const enCore = {
   "boards.searchHint":
     "Type two or more characters to search every board — notes, cards and sticker captions.",
   "boards.org": "Organisation",
-  "boards.allOrgs": "All organisations",
   "boards.inStore": "{count} in the store",
   "boards.pending": "{count} pending",
   "boards.unreachable": "read API unreachable — is the sync service running?",
@@ -639,7 +638,7 @@ export const enCore = {
   "home.signInTitle": "Sign in to see your boards",
   "home.signInBody": "Boards live in an organisation. Sign in or create an account to open the directory.",
   "home.signInAction": "Sign in",
-  "home.noOrg": "No organisation yet. Create one in the account menu.",
+  "home.noOrg": "Organisations did not load. Sign in again or create one.",
   "home.previousPage": "Previous page",
   "home.nextPage": "Next page",
   "home.page": "Page {page}",

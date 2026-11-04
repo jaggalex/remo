@@ -20,7 +20,6 @@ import { fileURLToPath } from "node:url";
 import {
   directories,
   exists,
-  hash,
   headingProblems,
   headings,
   helpTopicIds,
@@ -28,11 +27,15 @@ import {
   markdown,
   plain,
   readJson,
+  translationHash,
   withContainers,
   withHeadingIds,
 } from "./docs-core.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const { SCHEMA_VERSION } = await import(
+  new URL("../apps/sync/schema-version.mjs", import.meta.url)
+);
 const PACKAGE = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
 const SOURCE_URL = "https://github.com/jaggalex/remo";
 const ABOUT = {
@@ -184,15 +187,22 @@ for (const section of sections) {
       bodies[locale] = readFileSync(path, "utf8");
       if (!bodies[locale].trim()) fail(`${id}: ${locale}.md is empty`);
     }
-    const sourceHash = bodies.ru ? hash(bodies.ru) : "";
-    const current = meta.translations?.en?.sourceHash === sourceHash;
+    const sourceHash = bodies.ru ? translationHash(meta, "ru", bodies.ru) : "";
+    const targetHash = bodies.en ? translationHash(meta, "en", bodies.en) : "";
+    const previousSource = meta.translations?.en?.sourceHash;
+    const previousTarget = meta.translations?.en?.targetHash;
+    const current = previousSource === sourceHash && previousTarget === targetHash;
     if (accept && sourceHash) {
-      meta.translations = {
-        ...(meta.translations ?? {}),
-        en: { ...(meta.translations?.en ?? {}), sourceHash },
-      };
-      writeFileSync(join(base, "meta.json"), `${JSON.stringify(meta, null, 2)}\n`);
-      delete meta.__rewritten;
+      if (previousSource && previousSource !== sourceHash && previousTarget && previousTarget === targetHash) {
+        fail(`${id}: EN translation did not change while RU did; translate it before accepting`);
+      } else {
+        meta.translations = {
+          ...(meta.translations ?? {}),
+          en: { ...(meta.translations?.en ?? {}), sourceHash, targetHash },
+        };
+        writeFileSync(join(base, "meta.json"), `${JSON.stringify(meta, null, 2)}\n`);
+        delete meta.__rewritten;
+      }
     }
     const translation = !bodies.en ? "missing" : current || accept ? "current" : "outdated";
     if (translation !== "current") fail(`${id}: EN translation is ${translation}`);
@@ -345,6 +355,11 @@ const ordered = [...pages.values()].sort(
 
 /** The reading order, so each page can point at exactly one "next". */
 const sequence = ordered.map((page) => page.id);
+const contentUpdated = ordered
+  .map((page) => page.meta.updated ?? "")
+  .filter(Boolean)
+  .sort()
+  .at(-1) ?? "";
 
 function rewriteLinks(body, locale) {
   return body
@@ -579,6 +594,7 @@ function llmsIndex() {
     "> This is public product documentation for AI agents. It grants no account, board or API access.",
     "",
     `Full text in one file: ${PUBLIC_GUIDE}/llms-full.txt`,
+    `Content updated: ${contentUpdated}. Schema version: ${SCHEMA_VERSION}. Pages: ${ordered.length}.`,
     "",
   ];
   for (const section of sections) {
@@ -596,6 +612,7 @@ function llmsIndex() {
     "- This file is a map; open the links for the full page.",
     `- \`${PUBLIC_GUIDE}/llms-full.txt\` contains every page in one text file.`,
     "- The portal also has Russian pages; the AI files use English for broader model support.",
+    "- The in-app help is a separate short reference at https://remo.letii.ru/help/en and is not included in this file.",
     "- Documentation is not an API token: it cannot read or change a board.",
     "",
   );
@@ -613,6 +630,10 @@ function absoluteGuideLinks(body) {
     .replace(
       /\]\(\/help\/([a-z0-9.-]+)(#[^)]*)?\)/g,
       (_all, topic, anchor = "") => `](https://remo.letii.ru/help/en/${topic}${anchor})`,
+    )
+    .replace(
+      /\]\(\/guide\/([^)]+)\)/g,
+      (_all, path) => `](${PUBLIC_GUIDE}/${path})`,
     );
 }
 
@@ -622,7 +643,9 @@ function llmsFull() {
     "# remo documentation",
     "",
     "> Public product documentation for AI agents. It grants no account, board or API access.",
+    "> The in-app help is a separate short reference at https://remo.letii.ru/help/en.",
     `> Source map: ${PUBLIC_GUIDE}/llms.txt`,
+    `> Content updated: ${contentUpdated}. Schema version: ${SCHEMA_VERSION}. Pages: ${ordered.length}.`,
     "",
   ];
   for (const page of ordered) {

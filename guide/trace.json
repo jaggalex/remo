@@ -214,6 +214,7 @@
     ],
     "code": [
       "packages/doc/src",
+      "apps/web/src/BoardApp.tsx",
       "apps/web/src/WorkspaceHome.tsx"
     ],
     "tests": [
@@ -279,11 +280,13 @@
   },
   "capabilities/presentation": {
     "adr": [
-      108
+      108,
+      165
     ],
     "code": [
       "packages/doc/src/presentation.ts",
-      "apps/web/src/usePresentation.ts"
+      "apps/web/src/usePresentation.ts",
+      "apps/web/src/PresentationLayer.tsx"
     ],
     "tests": [
       "packages/doc/src/presentation.test.ts",
@@ -562,6 +565,39 @@
       142,
       143,
       144
+    ]
+  },
+  "capabilities/home": {
+    "adr": [
+      167,
+      168
+    ],
+    "code": [
+      "apps/web/src/WorkspaceHome.tsx",
+      "apps/web/src/boardDirectory.ts",
+      "apps/sync/pg/boards.mjs"
+    ],
+    "tests": [
+      "apps/sync/iam-api.test.mjs",
+      "e2e/boards.spec.ts",
+      "e2e/home.spec.ts"
+    ]
+  },
+  "how-to/account": {
+    "adr": [
+      162,
+      163,
+      164,
+      167
+    ],
+    "code": [
+      "apps/web/src/topbar/AccountMenu.tsx",
+      "apps/web/src/OrganisationDialog.tsx",
+      "apps/web/src/OrganisationTeams.tsx"
+    ],
+    "tests": [
+      "e2e/auth-board.spec.ts",
+      "e2e/organisation.spec.ts"
     ]
   }
 }

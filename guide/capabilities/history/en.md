@@ -14,7 +14,7 @@ Three different ways back: **undo** for the last edit, **trash** for the whole b
 
 **Trash** is an archive of the board, not the deletion of an object. A board in the trash does not open by link and does not count as active. The interface shows 90 days, but there is no automatic purge; only the owner can restore it.
 
-**Copy** creates a new board with the same content and a new address. The original does not change; participants' access is carried over, the person who copied becomes the owner, and the public link is off on the copy. A role with the share right can create it.
+**Copy** creates a new board with the same content and a new address. The original does not change; participants' access is carried over, the person who copied becomes the owner, and the public link is off on the copy. Only an owner or co-owner (`board.manage`) can create it.
 
 ## Example
 

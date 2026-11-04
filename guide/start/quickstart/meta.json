@@ -18,10 +18,11 @@
     "capabilities/canvas",
     "how-to/share"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:0d4c24f6ab780db7ccf3523763505588e2e6564bbfe9479af263d9d17ca09c28"
+      "sourceHash": "sha256:7b057b886c428b77c5051b701a97d0ec445d9dc33eaf3d59a9b2bc1a0b57f01a",
+      "targetHash": "sha256:0916e6f8f0cb692ec524f005eb791860aa98255cddd6a5379581b64695aec67e"
     }
   }
 }

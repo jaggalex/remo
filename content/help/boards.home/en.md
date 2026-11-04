@@ -23,7 +23,7 @@ The same screen carries name search, sorting, pages and the organisation switche
 6. Click a tile to open the board. The tile menu changes the emoji, duplicates or trashes
    the board when you have the right.
 7. Click **New board** to create one in the chosen organisation.
-8. **Trash** beside **Boards** shows deleted boards; **Restore** puts a board back in the list.
+8. **Trash** beside **Boards** shows deleted boards; **Restore** puts a board back in the list. Only the owner can restore.
 
 ## Check
 

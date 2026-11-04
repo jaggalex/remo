@@ -1,8 +1,9 @@
 # IAM v1 — целевые требования
 
-**Версия:** 1.0 · **Дата:** 25.10.2026 · **Основа:** ADR-061…ADR-064.
+**Версия:** 1.1 · **Дата:** 04.11.2026 · **Основа:** ADR-061…ADR-168.
 Этот файл — нормативный: он описывает **что строим** и какие границы считаем
-обязательными.
+обязательными. ADR-161…168 уточняют модель: личная организация, домашняя страница,
+`@ник`, имена объектов и приостановка без отзыва сессии.
 
 ## 1. Принципы
 
@@ -22,14 +23,14 @@
 
 | Уровень | Что это в v1 | Чего нет в v1 |
 |---|---|---|
-| Пользователь | email + пароль, имя, состояние `active/suspended` | MFA, magic-link, соцвходы |
-| Организация | рабочее пространство; владелец создаёт при регистрации | биллинг, несколько одновременно активных org в UI |
-| Команда | группа досок внутри организации; участники и `team_admin` | SCIM-группы, вложенность, discovery-политики |
+| Пользователь | email + пароль, имя, обязательный уникальный `@ник`, состояние `active/suspended` | MFA, magic-link, соцвходы |
+| Организация | личная у каждого аккаунта или общая; `kind = personal/shared`; переключение и домашняя страница | биллинг |
+| Команда | группа досок внутри организации; участники, `team_admin`, переименование и удаление | SCIM-группы, вложенность, discovery-политики |
 | Доска | один владелец, co-owner/editor/viewer, гость, публичная ссылка | Space, папки, шаблоны на уровне org |
 | Лицензия | один флаг `can_edit` на участника org | тарифы, квоты, гостевые лимиты |
 
-Пользователь может состоять в нескольких организациях (модель это поддерживает), но UI v1
-показывает одну активную — переключатель появится вместе с приглашениями в другие org.
+Пользователь может состоять в нескольких организациях; переключатель и домашняя страница
+(`?org=<slug>`) входят в v1. Каждый аккаунт всегда имеет личную организацию.
 
 ## 3. Роли и capabilities
 
@@ -49,6 +50,9 @@
 | `board.comment` | | ✓¹ | ✓¹ | ✓ | ✓ |
 | `board.edit` | | | ✓ | ✓ | ✓ |
 | `board.share` | | | при `can_share` | ✓ | ✓ |
+| `board.export` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `board.backup` | | | ✓ | ✓ | ✓ |
+| `board.facilitate` | | | ✓ | ✓ | ✓ |
 | `board.manage` (назначать co-owner, менять политику доски) | | | | ✓ | ✓ |
 | `board.transfer`, `board.delete` | | | | | ✓ |
 
@@ -102,13 +106,15 @@ effective(board, viewer) -> { role, capabilities[], sources[], reason }
 
 ```
 users(id uuid pk, email citext unique, password_hash text, name text,
-      state text check in ('active','suspended'), created_at, updated_at)
+      handle text unique, state text check in ('active','suspended'),
+      theme text, lang text, created_at, updated_at)
 
 sessions(id uuid pk, user_id fk, token_hash bytea unique, created_at,
          last_seen_at, expires_at, revoked_at,
          user_agent text, ip inet)
 
-orgs(id uuid pk, name text, slug text unique, created_by fk users(id), created_at)
+orgs(id uuid pk, name text, slug text unique, kind check in ('personal','shared'),
+     created_by fk users(id), created_at)
 
 org_memberships(org_id fk, user_id fk, relation check in ('member','guest'),
                 state check in ('invited','active','suspended','removed'),
@@ -125,8 +131,9 @@ team_memberships(team_id, user_id, role check in ('member','admin'),
                  source check in ('direct','group'), created_at,
                  primary key(team_id, user_id, source))
 
-boards(id uuid pk, org_id fk, team_id fk null, title text,
-       owner_id fk users(id) not null,          -- ровно один владелец структурно
+boards(id uuid pk, org_id fk, team_id fk null, title text, icon text,
+       owner_id fk users(id) null,              -- null только у legacy-комнаты
+       created_by fk users(id) null,            -- автор, не текущий владелец
        visibility check in ('private','link') default 'private',
        acl_version bigint not null default 1,
        archived_at timestamptz null, created_at, updated_at)
@@ -172,7 +179,8 @@ org_policies(org_id fk pk, can_share bool default true,
   p=1, 64 байта), сравнение постоянного времени; минимум 10 символов.
 - `POST /auth/login` — email + пароль; при неудаче — одинаковый ответ и задержка.
 - `POST /auth/logout` — отзывает текущую сессию.
-- `GET /auth/me` — пользователь, активная организация, csrf-токен, capabilities.
+- `GET /auth/me` — пользователь, все его организации (`kind`, членство, capabilities),
+  csrf-токен.
 - Сессия: cookie `remo_session` (`httpOnly`, `SameSite=Lax`, `Secure` в prod), 30 дней
   скользяще; сервер хранит только SHA-256 токена.
 - CSRF: `SameSite=Lax` + проверка `Origin` на всех мутациях + double-submit
@@ -200,7 +208,7 @@ org_policies(org_id fk pk, can_share bool default true,
   соединений этой доски и закрывает/понижает их (`4403`). Дополнительно — sweep каждые
   30 с (heartbeat) пересчитывает `session.valid && acl_version`; расхождение → закрыть.
   SLO v1: **≤30 с**; 10 с — вместе с pub/sub (вне v1).
-- Presence: имя и цвет берутся из `users.name` и цвета сессии; `?user=` больше не
+- Presence: имя и `@ник` берутся из `users.name`/`users.handle`, цвет — из сессии; `?user=` больше не
   авторизует, только отображаемое имя гостя в публичной ссылке.
 
 ## 8. HTTP API v1
@@ -208,20 +216,23 @@ org_policies(org_id fk pk, can_share bool default true,
 | Метод, путь | Что | capability |
 |---|---|---|
 | `POST /auth/register` · `/login` · `/logout` · `GET /auth/me` | сессии | public / self |
-| `POST /orgs` · `GET /orgs/{id}` | организация | сессия / членство |
+| `POST /orgs` · `GET /orgs` · `GET /orgs/{id}` · `PATCH /orgs/{id}` | организация | сессия / членство / `org_admin` для rename |
 | `GET /orgs/{id}/members` | справочник людей (гости — только админам) | `member` |
 | `POST` · `GET` · `DELETE /orgs/{id}/invitations` | приглашения ссылкой | `user_admin` |
 | `PUT /orgs/{id}/admin-roles/{user}/{role}` | админ-роль | `org_admin` (step-up отложен, §13) |
-| `POST /orgs/{id}/teams` · `GET /orgs/{id}/teams` | команды | `user_admin` / member |
-| `POST /orgs/{id}/teams/{team}/members` | добавить существующего | `team_admin`/`user_admin` |
-| `DELETE /orgs/{id}/teams/{team}/members/{user}` | снять membership | то же |
+| `POST /orgs/{id}/teams` · `PATCH/DELETE /orgs/{id}/teams/{team}` | команды | `org_admin` |
+| `POST /orgs/{id}/teams/{team}/members` | добавить существующего | `org_admin` |
+| `DELETE /orgs/{id}/teams/{team}/members/{user}` | снять membership | `org_admin` |
 | `POST /orgs/{id}/boards` | создать доску | `can_edit` + team member |
 | `GET /orgs/{id}/boards` | список доступных | member |
+| `GET /boards?org=<slug>&q=&sort=&dir=&page=&trash=` | домашняя страница: плитки, поиск, сортировка, страницы | сессия + членство |
+| `PATCH /auth/me` | имя и/или `@ник` | self |
 | `GET /boards/{id}` | доска + роль | `board.read` |
+| `PATCH /boards/{id}/icon` | эмодзи плитки | `board.edit` |
 | `PATCH /boards/{id}` | название, команда, архив | `board.manage` |
 | `DELETE /boards/{id}` | убрать в корзину (ссылка выключается) | `board.delete` |
 | `POST /boards/{id}/restore` | восстановить из корзины (ссылка остаётся off) | владелец |
-| `POST /boards/{id}/duplicate` | копия содержимого и доступов, без ссылки | `board.share` |
+| `POST /boards/{id}/duplicate` | копия содержимого и доступов, без ссылки | `board.manage` |
 | `POST /boards/{id}/transfer` | передать владение | `board.transfer` |
 | `GET/POST/DELETE /boards/{id}/grants` | выдать/снять доступ | `board.share`; создание, повышение, понижение и снятие `coowner` — `board.manage` |
 | `PUT /boards/{id}/link` | включить/выключить ссылку, пароль, срок | `board.manage` + org policy |
@@ -232,7 +243,7 @@ org_policies(org_id fk pk, can_share bool default true,
 | `GET /orgs/{id}/audit` | журнал (с именами) | `org_admin` / `security_admin` |
 | `GET /boards` · `GET /search` | каталог и поиск: только доски с `board.read`; legacy-комната — если названа в `?room=` | `board.read` (аноним без комнаты → 401) |
 | `POST /orgs/{id}/members/{user}/suspend` | блокировка | `user_admin` |
-| `POST /orgs/{id}/members/{user}/restore` | снять блокировку (сессии не возвращаются) | `user_admin` |
+| `POST /orgs/{id}/members/{user}/restore` | снять блокировку; сессия не отзывалась и снова работает | `user_admin` |
 
 `GET /metrics` не является продуктовым API: в production требует
 `Authorization: Bearer $REMO_METRICS_TOKEN`, иначе 404.
@@ -296,7 +307,7 @@ org_policies(org_id fk pk, can_share bool default true,
 | IAM-32 | участник открывает экран организации | видит список людей; гостей и админ-действий нет; журнала нет |
 | IAM-33 | гость открывает экран организации | видит только своё место («вы гость»), список людей недоступен (404) |
 | IAM-34 | админ назначает и снимает админ-роли | роли независимы, видны бейджами, каждое действие в журнале |
-| IAM-35 | админ приостанавливает и восстанавливает участника | сессии завершены, после restore нужен новый вход |
+| IAM-35 | админ приостанавливает и восстанавливает участника | сессия не отзывается; доски этой организации и сокеты закрыты, после restore та же сессия снова работает |
 | IAM-36 | админ удаляет владельца доски | 409 `OWNER_TRANSFER_REQUIRED` со списком досок и подсказкой |
 | IAM-37 | владелец передаёт доску из «Поделиться» | новый owner, бывший — editor, диалог закрывается |
 | IAM-38 | журнал открыт админом | действие, актор, доска и время человекочитаемы |
@@ -356,7 +367,7 @@ org_policies(org_id fk pk, can_share bool default true,
 
 ## 16. Что остаётся открытым (решаем по ходу)
 
-1. Несколько активных организаций в UI v1 — переключатель или позже?
+1. ~~Несколько активных организаций в UI v1~~ — решено ADR-166/168: переключатель и домашняя страница.
 2. Нужен ли `security_admin` в v1, если SSO/политик ещё нет? (сейчас: только аудит)
 3. Формат хранения IP в сессиях (приватность) — хранить хэш?
 4. Показывать ли гостю название организации, к которой относится доска.

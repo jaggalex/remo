@@ -33,6 +33,10 @@ Version 2 adds group names, the tag vocabulary, presentation order and comments.
 lock (`locked`, `lockedBy`, `lockedByName`, `lockedAt`) lives inside `widgets` and is restored
 with the object: a backup restores the board as it was, it does not make a copy.
 
+`presentation` is the ordered list of slide ids; any object can be a slide. Until the order
+is edited, an empty list means "all frames". After the first edit `meta.presentation_configured`
+is `"1"`, and an empty list becomes the real state "no slides".
+
 Checks on import:
 
 1. `manifest.format` and `manifest.version` match the expected ones.

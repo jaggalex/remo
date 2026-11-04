@@ -20,7 +20,8 @@
   "updated": "2026-11-02",
   "translations": {
     "en": {
-      "sourceHash": "sha256:37bfac2b45ee1d3d97f53e8081f76231e948fe69dd1b35e53e7a7948e720d0f4"
+      "sourceHash": "sha256:beee4544002105201911508f97cdd14bdeb799983ab2390ec2ad1797964f54a2",
+      "targetHash": "sha256:c2e8c16a099228a02af2eb39988f7e748f87c85a5bc22b3a85045d096dd1bc9b"
     }
   }
 }

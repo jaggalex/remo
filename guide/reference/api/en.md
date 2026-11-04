@@ -12,7 +12,12 @@ An integration token is not accepted on agent routes, and an agent token is not 
 
 | Method and path | What it does |
 |---|---|
+| `GET /boards?org=<slug>&q=&sort=&dir=&page=&trash=` | the home: board tiles, search, sorting and pages |
 | `GET /boards/:id` | board metadata and your role |
+| `PATCH /boards/:id/icon` | the tile emoji: `{icon}`; an empty string clears it |
+| `DELETE /boards/:id` | move the board to the trash |
+| `POST /boards/:id/restore` | restore a board from the trash (owner) |
+| `POST /boards/:id/duplicate` | copy a board (owner or co-owner) |
 | `GET /boards/:id/access` | the access decision for the current viewer |
 | `GET /boards/:id/widgets` | board objects (a token needs `board.read`) |
 | `POST /boards/:id/commands` | run a command (a token needs `board.edit`) |
@@ -36,14 +41,14 @@ An integration token is not accepted on agent routes, and an agent token is not 
 
 | Command | `input` |
 |---|---|
-| `board.item.create` | `{type: "sticky_note"\|"text"\|"shape", x, y, width?, height?, content?, style?}` |
-| `board.item.update` | `{id, patch: {x?, y?, width?, height?, title?, content?, style?, locked?}}` |
+| `board.item.create` | `{type: "sticky_note"\|"text"\|"shape"\|"frame", x, y, width?, height?, content?, name?, style?}` |
+| `board.item.update` | `{id, patch: {x?, y?, width?, height?, title?, content?, name?, style?, locked?}}` |
 | `board.item.delete` | `{id}` |
 | `board.text.set` | `{id, text}` |
 | `board.connector.create` | `{from, to, routing?, arrow?, waypoints?, style?, id?}` |
 | `board.connector.update` | `{id, routing?, waypoints?}` |
 
-All six require the `board.edit` capability. `ifVersion` is compared with the current document
+`name` is an optional label of up to 120 characters; an empty string clears it and uniqueness is not checked. All six commands require the `board.edit` capability. `ifVersion` is compared with the current document
 version: a mismatch gives `409 STALE`. Updating or deleting a locked object is refused with
 `OBJECT_LOCKED`; only the author or a `board.manage` holder may send `locked: false`, and a
 foreign attempt gets `LOCKED_BY_OTHER`.

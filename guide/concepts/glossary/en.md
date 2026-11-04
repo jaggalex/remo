@@ -36,8 +36,14 @@ One term, one concept. If a word in the documentation differs from the word on s
 | Term | Meaning |
 |---|---|
 | **Organisation** | the top level: people, teams, policy |
+| **Personal organisation** | the organisation every account has, marked with the **Personal** badge |
+| **Handle** | the unique `@handle` beside the name; shown in the account menu, presence and comments |
+| **Object name** | an optional label of up to 120 characters for search and presentation; not painted on the canvas |
+| **Object ID** | the permanent identifier; read-only and copyable |
+| **Board tile** | a card on the organisation home: emoji, title, team, author and dates |
+| **Trash** | the board archive; a trashed board does not open and the owner can restore it |
 | **Team** | a group inside the organisation; roles can be granted to a team |
-| **Role** | what a person can do on the board: **Просмотр** (viewer), **Комментарии** (commenter), **Редактор** (editor), **Со-владелец** (co-owner), **Владелец** (owner) |
+| **Role** | what a person can do on the board: **Viewer**, **Commenter**, **Editor**, **Co-owner**, **Owner** |
 | **Capability** | an atomic right of a role: `board.edit`, `board.export` and others |
 | **Grant** | the assignment of a role to a person, a team or the organisation |
 | **Public link** | a board property: read-only access, without an account |
@@ -48,7 +54,7 @@ One term, one concept. If a word in the documentation differs from the word on s
 | **Lock** | protection of an object from edits; records its author |
 | **Lock author** | the person who locked it; they or a board manager release it |
 | **Reaction** | a live emoji burst near the cursor; not stored or counted |
-| **Presentation** | a mode that shows frames in order |
+| **Presentation** | a mode that shows board objects in order; any object can be a slide |
 | **Presenter**, **follower** | the person advancing slides and the person watching the current one |
 
 ## Saving and result

@@ -96,22 +96,50 @@ try {
   if (scrollFailures.length) fail(`horizontal scroll: ${scrollFailures.join(", ")}`);
   else pass("layout", `no horizontal scroll at ${WIDTHS.join("/")} on ${SAMPLES.length} pages`);
 
+  const expectedPages = [];
+  for (const section of readdirSync(join(ROOT, "guide"))) {
+    const sectionDir = join(ROOT, "guide", section);
+    if (!statSync(sectionDir).isDirectory()) continue;
+    for (const slug of readdirSync(sectionDir)) {
+      if (existsSync(join(sectionDir, slug, "meta.json"))) expectedPages.push(`${section}/${slug}`);
+    }
+  }
   const llms = await fetch(`${base}/guide/llms.txt`);
   const llmsText = await llms.text();
   const llmsFull = await fetch(`${base}/guide/llms-full.txt`);
   const llmsFullText = await llmsFull.text();
+  const mappedPages = [...llmsText.matchAll(/\]\(https:\/\/docs\.remo\.letii\.ru\/guide\/en\/[^)]+\)/g)].length;
+  const sourcedPages = [...llmsFullText.matchAll(/^Source: https:\/\/docs\.remo\.letii\.ru\/guide\/en\//gm)].length;
+  const stalePhrases = [
+    "board-main is used",
+    "current version is 9",
+    "Frame order",
+    "frame order",
+    "shows frames in order",
+    "Present the board by frames",
+  ];
+  const stale = stalePhrases.filter((phrase) => llmsText.includes(phrase) || llmsFullText.includes(phrase));
+  const relativeAssets = /\]\(\/guide\//.test(llmsFullText);
   if (
     llms.status !== 200 ||
     !llmsText.includes("# remo") ||
     !llmsText.includes("/guide/en/overview/index.html") ||
     !llmsText.includes("llms-full.txt") ||
+    !/Content updated: \d{4}-\d{2}-\d{2}/.test(llmsText) ||
+    !/Schema version: \d+/.test(llmsText) ||
     llmsFull.status !== 200 ||
     !llmsFullText.includes("# remo documentation") ||
-    !llmsFullText.includes("Source: https://docs.remo.letii.ru/guide/en/")
+    !llmsFullText.includes("Source: https://docs.remo.letii.ru/guide/en/") ||
+    mappedPages !== expectedPages.length ||
+    sourcedPages !== expectedPages.length ||
+    stale.length > 0 ||
+    relativeAssets
   ) {
-    fail(`AI files: llms ${llms.status}, full ${llmsFull.status}`);
+    fail(
+      `AI files: llms ${llms.status}, full ${llmsFull.status}; pages ${mappedPages}/${sourcedPages} of ${expectedPages.length}; stale ${stale.join(", ") || "none"}; relative assets ${relativeAssets}`,
+    );
   } else {
-    pass("AI files", "llms.txt maps pages, llms-full.txt contains every page");
+    pass("AI files", `llms.txt maps all ${expectedPages.length} pages, llms-full.txt contains every page`);
   }
 
   const aiPage = await open("/guide/ru/overview/ai.html");
