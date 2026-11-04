@@ -65,6 +65,8 @@ export function useBoardSession({
   identityRef.current = identity;
   const accountIdRef = useRef(accountId);
   accountIdRef.current = accountId;
+  const accessRef = useRef(access);
+  accessRef.current = access;
 
   // The socket is rebuilt when the access decision changes in a way the handshake cares
   // about: signing in from a public link or losing edit rights. A plain refresh with the
@@ -77,7 +79,7 @@ export function useBoardSession({
     // Wait for the first access decision: connecting while it is unknown and then
     // rebuilding on the answer dropped this session's presence (and its follow target)
     // for a moment, which two same-account sessions then read as a renamed peer.
-    if (!access || access.allowed === false) return;
+    if (!accessRef.current || accessRef.current.allowed === false) return;
     const connection = connectBoard(board, {
       url: syncUrl(),
       room: currentRoom(),
@@ -107,7 +109,7 @@ export function useBoardSession({
       connection.disconnect();
       setConnection(null);
     };
-  }, [board, refreshAccess, session, accessKey, access]);
+  }, [board, refreshAccess, session, accessKey]);
 
   // A failed upgrade (401/403/404) reaches the browser as close 1006, not 4403, so the
   // access callback never fires. While disconnected, refresh the decision so a revoked
