@@ -1,16 +1,55 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BoardConnection, Presence } from "@remo/doc";
-import { presentationFrames } from "@remo/doc";
+import { presentationSlides } from "@remo/doc";
 import type { BoardDocument } from "@remo/doc";
 import type { Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 import type { TranslationKey } from "./i18n";
 
 /**
- * Presentation is frame order in the document and live state in awareness (ADR-108).
+ * The camera box of a slide (ADR-165).
+ *
+ * A connector has no meaningful rectangle of its own: its box is derived from the two
+ * objects it joins, so presenting a line shows both ends. Every other object uses its
+ * own rectangle.
+ */
+function slideBox(
+  slide: Widget,
+  byId: Map<string, Widget>,
+): { x: number; y: number; width: number; height: number } {
+  const own = {
+    x: slide.x,
+    y: slide.y,
+    width: Math.max(slide.width, 1),
+    height: Math.max(slide.height, 1),
+  };
+  if (slide.type !== "connector") return own;
+  const ends = [slide.start?.item, slide.end?.item]
+    .map((id) => (id ? byId.get(id) : undefined))
+    .filter((widget): widget is Widget => Boolean(widget));
+  if (!ends.length) return own;
+  const boxes = [own, ...ends.map((widget) => ({
+    x: widget.x,
+    y: widget.y,
+    width: Math.max(widget.width, 1),
+    height: Math.max(widget.height, 1),
+  }))];
+  const left = Math.min(...boxes.map((box) => box.x));
+  const top = Math.min(...boxes.map((box) => box.y));
+  const right = Math.max(...boxes.map((box) => box.x + box.width));
+  const bottom = Math.max(...boxes.map((box) => box.y + box.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+function widgetsById(widgets: Widget[]): Map<string, Widget> {
+  return new Map(widgets.map((widget) => [widget.id, widget]));
+}
+
+/**
+ * Presentation is slide order in the document and live state in awareness (ADR-108).
  *
  * The presenter writes `presenting = {frameId, index, startedAt}` to awareness; followers
- * fit the same frame locally instead of mirroring a pixel viewport. Nothing about "who is
+ * fit the same slide locally instead of mirroring a pixel viewport. Nothing about "who is
  * presenting" is written to the board.
  */
 export function usePresentation({
@@ -46,20 +85,21 @@ export function usePresentation({
   const local = self?.presenting ?? null;
   const remotePeer = presence.find((peer) => !peer.self && peer.presenting);
   const remote = remotePeer?.presenting ?? null;
-  const frames = presentationFrames(board);
+  const slides = presentationSlides(board);
 
-  const fitFrame = useCallback(
-    (frameId: string) => {
-      const frame = widgets.find((widget) => widget.id === frameId && widget.type === "frame");
-      if (!frame) return;
+  const fitSlide = useCallback(
+    (slideId: string) => {
+      const slide = widgets.find((widget) => widget.id === slideId);
+      if (!slide) return;
+      const box = slideBox(slide, widgetsById(widgets));
       const width = Math.max(320, window.innerWidth - 120);
       const height = Math.max(240, window.innerHeight - 180);
       const zoom = Math.max(
         0.1,
-        Math.min(2.5, width / Math.max(frame.width, 1), height / Math.max(frame.height, 1)),
+        Math.min(2.5, width / Math.max(box.width, 1), height / Math.max(box.height, 1)),
       );
-      setCamera({ x: frame.x, y: frame.y, zoom });
-      lastFit.current = frameId;
+      setCamera({ x: box.x, y: box.y, zoom });
+      lastFit.current = slideId;
     },
     [setCamera, widgets],
   );
@@ -67,8 +107,8 @@ export function usePresentation({
   // A follower follows the slide, not the presenter's every pan.
   useEffect(() => {
     if (!watching || !remote || remote.frameId === lastFit.current) return;
-    fitFrame(remote.frameId);
-  }, [fitFrame, remote?.frameId, watching]);
+    fitSlide(remote.frameId);
+  }, [fitSlide, remote?.frameId, watching]);
 
   // The presenter stopped: the follower stays where the last slide was.
   useEffect(() => {
@@ -82,8 +122,8 @@ export function usePresentation({
       setNotice(t("presentation.forbidden"));
       return;
     }
-    if (!frames.length) {
-      setNotice(t("presentation.noFrames"));
+    if (!slides.length) {
+      setNotice(t("presentation.noSlides"));
       return;
     }
     // One presentation per board (ADR-152): the audience has one "now showing" state,
@@ -97,14 +137,14 @@ export function usePresentation({
     }
     savedCamera.current = camera;
     connection?.awareness?.setLocalStateField("presenting", {
-      frameId: frames[0],
+      frameId: slides[0],
       index: 0,
       startedAt: Date.now(),
     });
-    fitFrame(frames[0]!);
+    fitSlide(slides[0]!);
     setPanelOpen(false);
     setNotice(null);
-  }, [camera, canFacilitate, connection, fitFrame, frames, presence, t]);
+  }, [camera, canFacilitate, connection, fitSlide, presence, slides, t]);
 
   const stop = useCallback(() => {
     if (!local) return;
@@ -117,32 +157,32 @@ export function usePresentation({
 
   const go = useCallback(
     (direction: 1 | -1) => {
-      if (!local || !frames.length) return;
-      const index = (local.index + direction + frames.length) % frames.length;
-      const frameId = frames[index]!;
+      if (!local || !slides.length) return;
+      const index = (local.index + direction + slides.length) % slides.length;
+      const frameId = slides[index]!;
       connection?.awareness?.setLocalStateField("presenting", {
         frameId,
         index,
         startedAt: local.startedAt,
       });
-      fitFrame(frameId);
+      fitSlide(frameId);
     },
-    [connection, fitFrame, frames, local],
+    [connection, fitSlide, local, slides],
   );
 
   const join = useCallback(() => {
     if (!remote) return;
     setWatching(true);
-    if (remote.frameId !== lastFit.current) fitFrame(remote.frameId);
-  }, [fitFrame, remote]);
+    if (remote.frameId !== lastFit.current) fitSlide(remote.frameId);
+  }, [fitSlide, remote]);
 
   const leave = useCallback(() => setWatching(false), []);
   const returnToPresenter = useCallback(() => {
     if (remote) {
       setWatching(true);
-      fitFrame(remote.frameId);
+      fitSlide(remote.frameId);
     }
-  }, [fitFrame, remote]);
+  }, [fitSlide, remote]);
 
   return {
     panelOpen,
@@ -150,7 +190,7 @@ export function usePresentation({
     watching,
     notice,
     setNotice,
-    frames,
+    slides,
     local,
     remote,
     presenterName: local ? self?.label : remotePeer?.label,

@@ -8,8 +8,8 @@
     "en": "Presentation"
   },
   "summary": {
-    "ru": "Показ фреймов по порядку: ведущий, ведомые и поздний зритель.",
-    "en": "Show frames in order: presenter, followers and a late viewer."
+    "ru": "Показ объектов по порядку: слайды, ведущий, ведомые и поздний зритель.",
+    "en": "Show objects in order: slides, presenter, followers and a late viewer."
   },
   "related": [
     "capabilities/frames-kanban",
@@ -19,7 +19,7 @@
   "updated": "2026-10-29",
   "translations": {
     "en": {
-      "sourceHash": "sha256:d9c8b377a8ec949605a12e64239cfafd3ad40319ccbe2ae8da1ef9c0c82b5aaf"
+      "sourceHash": "sha256:9a8663086a8039574f510e70f2741f4f3e9c2fba0aa09cdfd98d0301884854cb"
     }
   }
 }

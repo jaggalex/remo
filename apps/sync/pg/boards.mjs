@@ -148,7 +148,8 @@ async listWidgets(boardId, { type, q, limit = 200 } = {}) {
         and ($2::text is null or type = $2)
         and ($3::text is null
              or title ilike '%' || $3 || '%'
-             or content ilike '%' || $3 || '%')
+             or content ilike '%' || $3 || '%'
+             or props ->> 'name' ilike '%' || $3 || '%')
       order by updated_at desc
       limit $4`,
     [boardId, type ?? null, q ?? null, Math.min(Math.max(limit, 1), 500)],
@@ -163,21 +164,24 @@ async search(q, { limit = 50, type, boardIds = null } = {}) {
     // Ranking by match position rather than trigram similarity: the server runs in
     // the C collation, where pg_trgm scores non-ASCII text as 0. The filter itself
     // still benefits from the trigram index.
-    // The filter also looks into a sticker or lane caption. Only title/content have
-    // trigram indexes; at this scale the extra OR costs nothing measurable.
+    // The filter also looks into a sticker or lane caption and the object name
+    // (ADR-165). Only title/content have trigram indexes; at this scale the extra OR
+    // costs nothing measurable.
     `select w.board_id, w.id, w.type, w.title, w.content, w.props, w.updated_at,
-            left(coalesce(nullif(w.title, ''), w.content, w.props ->> 'label'), 140) as snippet,
-            position(lower($1) in lower(coalesce(w.title, ''))) as title_position
+            left(coalesce(nullif(w.props ->> 'name', ''), nullif(w.title, ''), w.content,
+                          w.props ->> 'label'), 140) as snippet,
+            position(lower($1) in lower(coalesce(w.props ->> 'name', w.title, ''))) as title_position
        from widgets w
       where (w.title ilike '%' || $1 || '%'
              or w.content ilike '%' || $1 || '%'
-             or w.props ->> 'label' ilike '%' || $1 || '%')
+             or w.props ->> 'label' ilike '%' || $1 || '%'
+             or w.props ->> 'name' ilike '%' || $1 || '%')
         and ($2::text is null or w.type = $2)
         and ($4::text[] is null or w.board_id = any($4::text[]))
-      order by (lower(coalesce(w.title, '')) = lower($1)) desc,
-               (lower(coalesce(w.title, '')) like lower($1) || '%') desc,
-               (case when position(lower($1) in lower(coalesce(w.title, ''))) = 0 then 1 else 0 end),
-               position(lower($1) in lower(coalesce(w.title, ''))),
+      order by (lower(coalesce(w.props ->> 'name', w.title, '')) = lower($1)) desc,
+               (lower(coalesce(w.props ->> 'name', w.title, '')) like lower($1) || '%') desc,
+               (case when position(lower($1) in lower(coalesce(w.props ->> 'name', w.title, ''))) = 0 then 1 else 0 end),
+               position(lower($1) in lower(coalesce(w.props ->> 'name', w.title, ''))),
                w.updated_at desc
       limit $3`,
     [q.trim(), type ?? null, Math.min(Math.max(limit, 1), 200), boardIds],

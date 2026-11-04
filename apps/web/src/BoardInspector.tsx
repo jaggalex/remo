@@ -14,6 +14,7 @@ import {
   CardFieldsPanel,
   GroupNameField,
   ObjectLinkPanel,
+  ObjectNameField,
   TagsPanel,
 } from "./BoardObjectPanels";
 
@@ -225,6 +226,9 @@ export function BoardInspector(props: BoardInspectorProps) {
                   people={people}
                   disabled={writeBlocked}
                 />
+              )}
+              {selectedWidget && (
+                <ObjectNameField board={board} widget={selectedWidget} disabled={writeBlocked} />
               )}
               {selectedWidget && (
                 <ObjectLinkPanel
