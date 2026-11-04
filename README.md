@@ -19,12 +19,12 @@ remo is a collaborative workspace for teams of roughly ten people. A board is bo
 unit of work and the unit of access: a role is granted on a board, and everything on it
 follows that role.
 
-- **Canvas:** sticky notes, shapes, text, frames, images, connectors and groups.
+- **Canvas:** sticky notes, shapes, text, frames, connectors and groups.
 - **Cards and kanban:** status, assignee, dates, WIP limits, tags and links.
 - **Real-time collaboration:** cursors, presence, follow, shared selection and offline save state.
-- **Facilitation:** shared timer, voting on objects, presentation by frames.
+- **Facilitation:** shared timer, voting on objects, presentation of any object.
 - **Discussion:** server-side threads on an object or a point, pins and live reactions.
-- **Access:** organisations, teams, five board roles, public links with password and expiry.
+- **Access:** personal and shared organisations, teams, five board roles, public links with password and expiry. Every account has a unique `@handle`; boards and objects can carry names.
 - **AI agents:** person-owned agents, plans with preview, tidy-up, cards, budgets and an evidential journal.
 - **Export and backup:** PNG, PDF and a plain JSON backup that restores the whole board.
 - **Extensions:** domain events, signed webhooks, integration tokens and first-party app panels.
@@ -46,9 +46,11 @@ pnpm sync           # API and websocket rooms on :1234
 pnpm dev:web        # product on http://localhost:5173
 ```
 
-Register an account, create a board and open it in two browser windows to see
-collaboration. `?room=<id>` opens a specific board; `?user=<name>` gives a tab a separate
-cursor identity for testing.
+Register an account and land on the organisation home: `?org=<slug>` shows board tiles,
+search, sorting and trash, while `?room=<id>` opens a specific board. Every account gets a
+personal organisation; shared organisations are additional. Open a board in two browser
+windows to see collaboration; `?user=<name>` gives a tab a separate cursor identity for
+testing.
 
 ## Verify
 
@@ -57,8 +59,8 @@ pnpm verify           # types, unit and database tests, build, docs, design syst
 pnpm verify --e2e     # the full gate, including browser acceptance and the guide audit
 ```
 
-Both commands use the dedicated test PostgreSQL from `docker-compose.test.yml`
-(`pnpm test:db:up`). The gate is what CI runs; a change is ready when it is green.
+Both commands check the dedicated test PostgreSQL from `docker-compose.test.yml`; start it
+first with `pnpm test:db:up`. The gate is what CI runs; a change is ready when it is green.
 
 ## Repository
 

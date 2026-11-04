@@ -1,0 +1,26 @@
+{
+  "id": "how-to/account",
+  "type": "how-to",
+  "status": "available",
+  "order": 3,
+  "title": {
+    "ru": "Аккаунт, организация и команда",
+    "en": "Account, organisation and team"
+  },
+  "summary": {
+    "ru": "Имя и уникальный @ник, личная и общая организация, переименование и участники команды.",
+    "en": "Name and unique @handle, personal and shared organisation, renaming and team members."
+  },
+  "related": [
+    "how-to/create-board",
+    "capabilities/home",
+    "capabilities/access"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:0229e50a97f0ad68db987776cd0e0eb1d625514ce0d7c23ee23e0425e5ae1c62",
+      "targetHash": "sha256:1b63dc1abf0e03108642340dd5fc002070cfc6a6ed52e6ac4736e74c9bebfbdc"
+    }
+  }
+}

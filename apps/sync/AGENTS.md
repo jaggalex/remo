@@ -18,7 +18,7 @@ Nothing below repeats a rule that is already written there.
   changes rights or content writes an `audit` row (ADR-092).
 - **A schema change bumps `SCHEMA_VERSION`** in `schema-version.mjs` and lands in
   `schema.sql`; `pnpm db:check` applies the file, so two DDL sources never drift (ADR-089).
-- **A new file above 800 lines fails `pnpm size:check`.** `agent-runner.mjs` is at 793.
+- **A new file above 800 lines fails `pnpm size:check`.** `agent-runner.mjs` is at 730.
 - **A test that needs the database uses `testDatabaseUrl()`** from `test-db.mjs`, never
   `DATABASE_URL` directly — otherwise it writes into the developer's own database (ADR-131).
 - **Board is the unit of authorization.** There are no per-object permissions: a Yjs update

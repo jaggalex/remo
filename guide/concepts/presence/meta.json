@@ -17,10 +17,11 @@
     "capabilities/access",
     "capabilities/facilitation"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:66691e2c4afedb5c27f9349bbc02656c13d5cf39b67c6321607879e900f42e19"
+      "sourceHash": "sha256:85eb58252e572bf4c64cef5cf8cb5e9d99e536046658d9d73dcbd9fde34f2ffe",
+      "targetHash": "sha256:bb145024cd370fa3bb02da9256bf3c231255425a30b00e61be35f630c917b086"
     }
   }
 }

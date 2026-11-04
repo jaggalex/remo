@@ -26,6 +26,9 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_TRUST_PROXY` | set to `1` behind the shipped proxy, so rate limits key on `X-Forwarded-For` |
 | `REMO_LOGIN_LIMIT`, `REMO_LOGIN_IP_LIMIT`, `REMO_REGISTER_LIMIT` | optional rate-limit overrides (defaults: 10 per email+IP, 100 per IP, 20 registrations per IP; the first two per 15 minutes, registration per hour) |
 | `REMO_EDGE_NETWORK`, `REMO_DB_NETWORK` | Docker networks shared with the proxy and the database |
+| `REMO_DB_HOST` | host used by the `db-tools` container |
+| `REMO_DOCS_ORIGIN`, `REMO_METRICS` | optional docs origin and metrics switch |
+| `REMO_HASH_CONCURRENCY` | parallel password hashes (default 4) |
 
 `REMO_KEK` is not stored in PostgreSQL. Losing it makes saved provider keys unreadable.
 Keep a copy outside the server.
@@ -70,7 +73,8 @@ the health endpoints after the switch.
 ## Backups and upgrades
 
 - Back up PostgreSQL before a schema change; `scripts/db-backup.mjs` writes a
-  custom-format dump and checks it with `pg_restore --list`.
+  custom-format dump and a manifest with its size, SHA-256 and row counts. Validate the
+  dump with `pg_restore --list` separately if your runbook requires it.
 - `pnpm db:restore` restores into an empty database; it is a deliberate operator
   action, not part of a release.
 - The schema version is in `apps/sync/schema-version.mjs`. A newer build may require a

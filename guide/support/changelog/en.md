@@ -16,6 +16,11 @@ ship together with a schema version; there is no separate "documentation release
 | 9 | comments: `comment_threads`, `comments`, `comment_reads` |
 | 10 | an agent plan: `agent_task_plans`, statuses `proposed`/`approved`/`applied`/`rejected` |
 | 11 | task input: `agent_task_inputs` with the `selection` source |
+| 12 | account interface preferences: `users.theme`, `users.lang` |
+| 13 | audit linked to the session: `audit_events.session_id` |
+| 14 | idempotency indexes for commands and tasks |
+| 15 | the mandatory unique `@handle`: `users.handle` |
+| 16 | personal organisations and the home: `orgs.kind`, `boards.icon`, `boards.created_at`, `boards.created_by` |
 
 Versions 1–3 are the early line: rooms, access and the command journal. Databases created
 earlier are upgraded by the same `schema.sql` at start.
@@ -24,6 +29,11 @@ earlier are upgraded by the same `schema.sql` at start.
 
 | Date | What |
 |---|---|
+| 04.11.2026 | Every account has a personal organisation; the home shows board tiles with name search, sorting, 24-per-page, trash and emoji; switching organisation leaves the board. |
+| 04.11.2026 | Presentation accepts any object, not only a frame; an object has a name, a read-only ID and **Copy ID**; search reads the name. |
+| 04.11.2026 | A unique `@handle` beside the name: the account menu, presence and comments show `Name @handle`. |
+| 04.11.2026 | An organisation and a team can be renamed, a team deleted and its members managed; the account display name is editable. |
+| 03.11.2026 | Security and reliability pass: CSRF/Origin, sign-in limits, comment permissions, backup, webhooks, idempotency and crash recovery. |
 | 02.11.2026 | An agent proposes a plan from text, a file or a selection: a preview with a map and warnings, Apply in one transaction, one ⌘Z; a plan above 300 objects is refused before it is stored. |
 | 02.11.2026 | Tidy up lays a selection out by Auto, By prefix, By type, Grid and By meaning; blocks are frames, up to 50 objects, one ⌘Z. |
 | 02.11.2026 | One palette for the rail and the object window: seven tones at three levels, with white, black and transparent in a separate column and keys 1–7. |

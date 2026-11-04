@@ -18,7 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:7530ea6ec44159eca619fe6f910cccf7b853a68769bd059a636a032510149434"
+      "sourceHash": "sha256:631902cbbc52c5c5100e9694b10359de31d8145b7e291de8ff56a387a21906b0",
+      "targetHash": "sha256:4da429f7f72492beade33badc658554e60565c2a7e6f82aa371e3fd4b3ed24ed"
     }
   }
 }

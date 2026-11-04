@@ -12,7 +12,12 @@
 
 | Метод и путь | Что делает |
 |---|---|
+| `GET /boards?org=<slug>&q=&sort=&dir=&page=&trash=` | домашняя страница: плитки досок, поиск, сортировка и страницы |
 | `GET /boards/:id` | метаданные доски и ваша роль |
+| `PATCH /boards/:id/icon` | эмодзи плитки: `{icon}`; пустая строка убирает |
+| `DELETE /boards/:id` | убрать доску в корзину |
+| `POST /boards/:id/restore` | вернуть доску из корзины (владелец) |
+| `POST /boards/:id/duplicate` | копия доски (владелец или со-владелец) |
 | `GET /boards/:id/access` | решение о доступе для текущего зрителя |
 | `GET /boards/:id/widgets` | объекты доски (токену нужен `board.read`) |
 | `POST /boards/:id/commands` | выполнить команду (токену нужен `board.edit`) |
@@ -36,14 +41,14 @@
 
 | Команда | `input` |
 |---|---|
-| `board.item.create` | `{type: "sticky_note"\|"text"\|"shape", x, y, width?, height?, content?, style?}` |
-| `board.item.update` | `{id, patch: {x?, y?, width?, height?, title?, content?, style?, locked?}}` |
+| `board.item.create` | `{type: "sticky_note"\|"text"\|"shape"\|"frame", x, y, width?, height?, content?, name?, style?}` |
+| `board.item.update` | `{id, patch: {x?, y?, width?, height?, title?, content?, name?, style?, locked?}}` |
 | `board.item.delete` | `{id}` |
 | `board.text.set` | `{id, text}` |
 | `board.connector.create` | `{from, to, routing?, arrow?, waypoints?, style?, id?}` |
 | `board.connector.update` | `{id, routing?, waypoints?}` |
 
-Все шесть требуют capability `board.edit`. `ifVersion` сверяется с текущей версией документа:
+`name` — необязательная подпись до 120 символов; пустая строка убирает её, уникальность не проверяется. Все шесть команд требуют capability `board.edit`. `ifVersion` сверяется с текущей версией документа:
 несовпадение — `409 STALE`. Правка или удаление заблокированного объекта отклоняется с
 `OBJECT_LOCKED`; `locked: false` принимается только от автора или носителя `board.manage`,
 иначе — `LOCKED_BY_OTHER`.
@@ -62,6 +67,14 @@
 
 | Метод и путь | Что делает |
 |---|---|
+| `GET /orgs` | организации аккаунта: `kind`, `relation`, `state`, capabilities |
+| `GET /orgs/:id` | организация, членство и роли вызывающего |
+| `PATCH /orgs/:id` | `{name}` — переименовать (администратор организации) |
+| `POST /orgs/:id/teams` | `{name}` — создать команду |
+| `PATCH/DELETE /orgs/:id/teams/:teamId` | переименовать или удалить команду |
+| `GET/POST /orgs/:id/teams/:teamId/members` | участники команды |
+| `DELETE /orgs/:id/teams/:teamId/members/:userId` | убрать участника |
+| `PATCH /auth/me` | `{name?, handle?}` — имя и обязательный `@ник` |
 | `GET /orgs/:id/apps` | установленные приложения с панелями |
 | `POST /orgs/:id/apps` | установить по `{appId}` |
 | `PATCH /orgs/:id/apps/:appId` | `{enabled}` — выключить или включить |

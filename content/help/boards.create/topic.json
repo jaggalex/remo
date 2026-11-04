@@ -6,19 +6,20 @@
     "en": "Create a board"
   },
   "summary": {
-    "ru": "Новая доска в команде: название, шаблон и сразу открытая доска.",
-    "en": "A new board in a team: name, template and an open board."
+    "ru": "Новая доска в организации (и в команде, если выбрана).",
+    "en": "A new board in an organisation (and a team when one is chosen)."
   },
   "related": [
     "access.share",
     "access.roles"
   ],
-  "verifiedAgainst": "2026-11-02",
+  "verifiedAgainst": "2026-11-04",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:31ea4333f6d81ef6e7c44e71b2edb317eb6937add664892ded87d435a777ba45"
+      "sourceHash": "sha256:bb75c560e47f0edf4bc7da1454256652cee6423a1f46ed42a788a90c35bd9c5a",
+      "targetHash": "sha256:de2ec34a84908da5153c6bd3f8ba6a87e7c6bed835ff3373b95c4af97a181655"
     }
   }
 }

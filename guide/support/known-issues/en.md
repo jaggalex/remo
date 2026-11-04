@@ -15,7 +15,7 @@
 | A token is never wider than its owner | there is no separate "organisation token" |
 | Apps come only from the build | your own schema or third-party code cannot be installed |
 | There is no marketplace | this is a direction, not a forgotten feature |
-| No board-name search | search covers content; the title is a separate work item |
+| Home search is title-only | there is no search across all board content |
 
 ## Synchronisation
 

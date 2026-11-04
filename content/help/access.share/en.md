@@ -4,7 +4,7 @@ The person gets access to the board with the chosen role. The access list shows 
 
 ## Before you start
 
-- You need the Share permission on the board. Only an owner or co-owner can change a team role.
+- You need the Share permission on the board. Only an owner or co-owner can change a team role and assign a co-owner.
 - The person needs an account with the email you enter. If there is no account, an invitation link appears; send it yourself.
 
 ## Steps

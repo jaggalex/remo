@@ -16,10 +16,11 @@
     "how-to/build-board",
     "capabilities/facilitation"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:e7f0c249bb58ebe93fe29242500f774ab745598e50064bd082cd7de33d4705d0"
+      "sourceHash": "sha256:b5a1c1adec3a25f843d1281015e67f6bc7b84181baab13d886cc8fe9ef4c250b",
+      "targetHash": "sha256:f79c78a61cedf82898c74d3cabf2eeb76a1dd3e5e2ff41d2a0170c13856a6ee1"
     }
   }
 }

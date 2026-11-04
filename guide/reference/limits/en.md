@@ -10,6 +10,12 @@
 | Tags per object | 10 |
 | Tag name length | 32 characters |
 | Comment body | 4000 characters |
+| Object name | 120 characters; optional and not unique |
+| Board emoji | 16 code points |
+| Tiles per home page | 24 |
+| Organisation or team name | 120 characters |
+| Account name | 1 to 80 characters |
+| Account handle | 3 to 32 characters; Latin letters, digits, `.`, `-`, `_`; reserved words are taken |
 
 ## Access and links
 

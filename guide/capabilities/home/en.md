@@ -23,7 +23,7 @@ its board are left behind instead of becoming a filter over an open canvas.
 3. Search looks at the board name. Sort by updated, created, name or author; the arrow
    changes direction. Newest-updated comes first by default.
 4. Tiles flow left to right, then top to bottom, 24 per page. Page numbers sit below.
-5. A tile shows the team, the author `Name @handle` and the dates. Author means creator;
+5. A tile shows the team (or the organisation when the board has no team), the author `Name @handle` and the dates. Author means creator;
    handing over ownership does not rewrite it.
 6. The tile menu changes the emoji, duplicates or trashes the board by permission.
 7. **New board** creates a board in the chosen organisation.
@@ -45,7 +45,7 @@ shows only the work organisation's boards, and the chosen board opens at `?room=
 
 ## Practical instructions
 
-[Create a board](/guide/how-to/create-board) — step by step.
+[Create a board](/guide/how-to/create-board) — step by step. [Account and team](/guide/how-to/account) — name, handle and organisations.
 
 ## Related capabilities
 
