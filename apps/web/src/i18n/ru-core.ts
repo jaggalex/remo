@@ -601,6 +601,8 @@ export const ruCore = {
   "boards.searchLabel": "Искать по названию доски и тексту",
   "boards.searchHint":
     "Введите два символа или больше, чтобы искать по всем доскам — заметки, карточки и подписи стикеров.",
+  "boards.org": "Организация",
+  "boards.allOrgs": "Все организации",
   "boards.inStore": "В хранилище: {count}",
   "boards.pending": "в очереди: {count}",
   "boards.unreachable": "API чтения недоступно — запущен ли сервис синхронизации?",

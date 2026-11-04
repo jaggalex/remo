@@ -348,7 +348,7 @@ export const enWork = {
   "board.apps": "Apps",
   "apps.title": "Apps",
   "apps.body": "Apps are declared, not coded: the server sends a schema and the board draws it.",
-  "apps.empty": "No apps are installed in this organisation. An administrator installs them for the workspace.",
+  "apps.empty": "No apps are installed in this organisation. An administrator installs them for the organisation.",
   "apps.noOrg": "Apps belong to an organisation. This board has none, so there is nothing to install yet.",
   "apps.loadFailed": "The apps could not be loaded.",
   "apps.actionFailed": "The app did not answer; try again.",

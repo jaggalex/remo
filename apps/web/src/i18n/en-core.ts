@@ -604,6 +604,8 @@ export const enCore = {
   "boards.searchLabel": "Search board names and text",
   "boards.searchHint":
     "Type two or more characters to search every board — notes, cards and sticker captions.",
+  "boards.org": "Organisation",
+  "boards.allOrgs": "All organisations",
   "boards.inStore": "{count} in the store",
   "boards.pending": "{count} pending",
   "boards.unreachable": "read API unreachable — is the sync service running?",

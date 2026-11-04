@@ -1,5 +1,13 @@
 import { test, expect } from "@playwright/test";
-import { addSticky, enableLink, freshBoard, openBoard, openBoardMenu, register } from "./helpers";
+import {
+  addSticky,
+  enableLink,
+  freshBoard,
+  openAccount,
+  openBoard,
+  openBoardMenu,
+  register,
+} from "./helpers";
 
 test("creates a board from the board list and opens the chosen template", async ({ page }) => {
   await freshBoard(page, "create");
@@ -131,6 +139,42 @@ test("a board with a non-ASCII name is one room, not a percent-encoded twin", as
       ),
   );
   expect(ids).toContain(stickyId);
+});
+
+test("filters the board directory by organisation", async ({ page }) => {
+  await freshBoard(page, "org-filter", { title: "First org board" });
+
+  // A second organisation is created through the same screen people use.
+  await openAccount(page);
+  await page.getByRole("button", { name: "Organisation and people" }).click();
+  await page.getByRole("button", { name: "+ New organisation" }).click();
+  await page.locator(".org-create input").first().fill("Second team");
+  await page.getByRole("button", { name: "Create organisation" }).click();
+  await expect(page.locator(".org-dialog h2")).toHaveText("Second team");
+  await page.locator(".org-dialog").getByRole("button", { name: "Close" }).click();
+
+  // A board in that organisation, so the filter has something to switch between.
+  await page.getByRole("button", { name: "All boards" }).click();
+  await page.getByRole("button", { name: "New board" }).click();
+  const create = page.locator(".new-board-dialog");
+  await create.locator("input").first().fill("Second org board");
+  await create.getByLabel("Organisation").selectOption({ label: "Second team" });
+  await create.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+
+  await page.getByRole("button", { name: "All boards" }).click();
+  const panel = page.locator(".boards-panel");
+  await expect(panel).toContainText("First org board");
+  await expect(panel).toContainText("Second org board");
+
+  // Switching the directory context is explicit and visibly changes the list.
+  const chooser = panel.getByLabel("Organisation");
+  await chooser.selectOption({ label: "Second team" });
+  await expect(panel).toContainText("Second org board");
+  await expect(panel).not.toContainText("First org board");
+
+  await chooser.selectOption({ label: "All organisations" });
+  await expect(panel).toContainText("First org board");
 });
 
 test("finds a board by its name in the board panel", async ({ page }) => {

@@ -19,7 +19,7 @@ A new board is created in your organisation — in a team when one is chosen —
 
 ## Organisation and team
 
-If you need a separate organisation, open the account settings and click **+ New organisation**: enter a name and create it. The new organisation becomes current immediately.
+If you need a separate organisation, open the account settings and click **+ New organisation**: enter a name and create it. Then choose it in the **Organisation** field of **All boards** — that switches the context of the board list and creation.
 
 A team is created in the same screen, in the **Teams** block; only an organisation admin can do this. A new organisation already has a **General** team; create another one for a separate direction.
 

@@ -45,6 +45,16 @@ export function useBoardAccess() {
     };
   }, []);
 
+  /** Re-read the organisation list after creating or renaming one (ADR-166). */
+  const refreshOrgs = useCallback(async () => {
+    try {
+      const result = await api.me();
+      setOrgs(result.orgs);
+    } catch {
+      // The next full sign-in or reload will try again; the current list stays usable.
+    }
+  }, []);
+
   /** Guards against a slow answer overwriting a newer access decision. */
   const accessSeq = useRef(0);
   const retryAccess = useRef<number | null>(null);
@@ -123,6 +133,7 @@ export function useBoardAccess() {
     me,
     setMe,
     orgs,
+    refreshOrgs,
     access,
     refreshAccess,
     boardOrgId,
