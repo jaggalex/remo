@@ -284,6 +284,7 @@ export function OrganisationDialog({
     "auth.login": "audit.login",
     "auth.logout": "audit.logout",
     "auth.password_changed": "audit.password",
+    "auth.profile_changed": "audit.profileName",
     "org.create": "audit.orgCreate",
     "org.rename": "audit.orgRename",
     "team.create": "audit.teamCreate",

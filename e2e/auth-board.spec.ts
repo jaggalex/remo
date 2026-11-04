@@ -195,3 +195,15 @@ test("a public-link visitor who signs in gets a writable socket", async ({ page,
     await context.close();
   }
 });
+
+test("renames the account from the menu", async ({ page }) => {
+  await freshBoard(page, "rename-account", { user: "Before" });
+  await openAccount(page);
+  const field = page.locator(".account-name-field");
+  await field.getByLabel("Account name").fill("After");
+  await field.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.locator(".account-button")).toHaveAttribute("title", /After/);
+
+  await page.reload();
+  await expect(page.locator(".account-button")).toHaveAttribute("title", /After/);
+});

@@ -786,6 +786,23 @@ suite("invitations and administration", () => {
     expect(again.status).toBe(410);
   });
 
+  it("renames the account and keeps the session name current", async () => {
+    const api = client();
+    const registered = await api("POST", "/auth/register", {
+      email: email("rename-account"),
+      password,
+      name: "Before",
+    });
+    expect(registered.body.user.name).toBe("Before");
+
+    const changed = await api("PATCH", "/auth/me", { name: "After" });
+    expect(changed.status).toBe(200);
+    expect(changed.body.user.name).toBe("After");
+    expect((await api("GET", "/auth/me")).body.user.name).toBe("After");
+
+    expect((await api("PATCH", "/auth/me", { name: "   " })).status).toBe(422);
+  });
+
   it("renames an organisation and edits a team, but not one still in use", async () => {
     const { owner, orgId } = await setup("team-edit");
     const created = await owner("POST", `/orgs/${orgId}/teams`, { name: "Design" });

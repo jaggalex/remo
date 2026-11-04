@@ -77,6 +77,7 @@ export interface BoardTopbarProps {
   identity: Identity;
   roleLine: string | null;
   renameSelf: (value: string) => void;
+  onAccountRenamed: (user: SessionUser) => void;
   theme: Theme;
   setTheme: (value: Theme) => void;
   lang: Lang;
@@ -109,7 +110,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
     setSettingsOpen, setExportOpen, onRestore, onDuplicate, onTrash, voteRunning, voteHint,
     timerRunning, timerHint, setVoteOpen, setTimerOpen, setFollowOpen, setAgentOpen,
     setAppsOpen, onReact, follow, toggleFollow, myFollowers, otherPeers, followOpen,
-    visiblePresence, me, identity, roleLine, renameSelf, theme, setTheme, lang, setLang,
+    visiblePresence, me, identity, roleLine, renameSelf, onAccountRenamed, theme, setTheme, lang, setLang,
     setAccountOpen, setAuthOpen, onSignOut, saveState, saveLabel, saveTitle, inspectorOpen,
     toggleInspector, presentOpen, setPresentOpen, commentsOpen, setCommentsOpen,
     commentsUnread, addTemplate,
@@ -272,6 +273,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
             roleLine={roleLine}
             identityName={identity.name}
             onRenameSelf={renameSelf}
+            onAccountRenamed={onAccountRenamed}
             theme={theme}
             onTheme={setTheme}
             lang={lang}

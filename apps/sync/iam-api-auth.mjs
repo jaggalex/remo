@@ -215,6 +215,29 @@ export async function handleAuthRoutes(ctx) {
     return true;
   }
 
+  if (url.pathname === "/auth/me" && method === "PATCH") {
+    if (!session) return fail(response, 401, "AUTH_REQUIRED", "sign in first"), true;
+    const body = await readBody(request);
+    if (!body) return fail(response, 400, "BAD_JSON", "malformed request"), true;
+    const name = String(body.name ?? "").trim();
+    if (!name) return fail(response, 422, "NAME_REQUIRED", "a name is required"), true;
+    if (name.length > 80) {
+      return fail(response, 422, "NAME_TOO_LONG", "the name must be at most 80 characters"), true;
+    }
+    const updated = await store.renameUser({ userId: user.id, name });
+    if (!updated) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
+    await audit({ actorId: user.id, action: "auth.profile_changed", subject: name });
+    json(response, 200, {
+      user: {
+        id: updated.id,
+        email: updated.email,
+        name: updated.name,
+        preferences: user.preferences,
+      },
+    });
+    return true;
+  }
+
   if (url.pathname === "/auth/sessions" && method === "GET") {
     if (!session) return fail(response, 401, "AUTH_REQUIRED", "sign in first"), true;
     const rows = await store.listSessionsForUser(user.id);

@@ -168,6 +168,14 @@ async createOrgWithOwner({ name, slug, userId }) {
   }
 },
 
+async renameUser({ userId, name }) {
+  const { rows } = await this.pool.query(
+    `update users set name = $2 where id = $1 returning id, email, name`,
+    [userId, name],
+  );
+  return rows[0] ?? null;
+},
+
 async getOrg(orgId) {
   const { rows } = await this.pool.query(
     `select id, name, slug, created_at from orgs where id = $1`,
