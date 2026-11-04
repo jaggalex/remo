@@ -133,6 +133,8 @@ create table if not exists users (
   email text not null unique,
   password_hash text not null,
   name text not null,
+  -- Public, mentionable identity (ADR-164). Unique case-insensitively.
+  handle text,
   state text not null default 'active' check (state in ('active', 'suspended')),
   -- Interface preferences that follow the person, not the browser (ADR-150). Null means
   -- "this account has not chosen yet": the first browser to sign in seeds it locally.
@@ -145,6 +147,25 @@ create table if not exists users (
 -- Older deployments created `users` without the preference columns.
 alter table users add column if not exists theme text;
 alter table users add column if not exists lang text;
+alter table users add column if not exists handle text;
+
+-- Backfill a mandatory handle from the email local part, then deduplicate it.
+update users
+   set handle = lower(regexp_replace(split_part(email, '@', 1), '[^a-zA-Z0-9]', '', 'g'))
+ where handle is null;
+update users set handle = 'user' where handle is null or handle = '';
+update users set handle = handle || 'user' where length(handle) < 3;
+with ranked as (
+  select id, handle,
+         row_number() over (partition by lower(handle) order by created_at, id) as rn
+    from users
+)
+update users u
+   set handle = left(u.handle, 28) || r.rn
+  from ranked r
+ where u.id = r.id and r.rn > 1;
+alter table users alter column handle set not null;
+create unique index if not exists users_handle_idx on users (lower(handle));
 
 create table if not exists sessions (
   id uuid primary key default gen_random_uuid(),
@@ -821,12 +842,18 @@ create table if not exists comments (
   board_id text not null references boards (id) on delete cascade,
   author_id uuid references users (id) on delete set null,
   author_name text not null default '',
+  author_handle text not null default '',
   body text not null check (char_length(body) between 1 and 4000),
   created_at timestamptz not null default now(),
   edited_at timestamptz,
   deleted_at timestamptz
 );
 
+alter table comments add column if not exists author_handle text not null default '';
+update comments c
+   set author_handle = coalesce(u.handle, '')
+  from users u
+ where c.author_id = u.id and c.author_handle = '';
 create index if not exists comments_thread_idx on comments (thread_id, created_at);
 create index if not exists comments_board_idx on comments (board_id, created_at);
 
@@ -846,5 +873,5 @@ create table if not exists schema_meta (
   updated_at timestamptz not null default now()
 );
 
-insert into schema_meta (id, version) values (1, 14)
+insert into schema_meta (id, version) values (1, 15)
 on conflict (id) do update set version = excluded.version, updated_at = now();

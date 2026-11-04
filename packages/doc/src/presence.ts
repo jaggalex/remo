@@ -14,6 +14,8 @@ export interface Presence {
   accountId: string | null;
   /** The base display name: account name or guest name. */
   name: string;
+  /** The account handle, or an empty string for a guest or an old client. */
+  handle: string;
   /** The name shown to people; duplicates of one account get " (2)", " (3)". */
   label: string;
   /** When this session joined, used to order duplicate labels. */
@@ -44,6 +46,7 @@ export interface Presence {
 
 export interface PresenceUser {
   name: string;
+  handle?: string;
   color: string;
   /** Stable per-tab key. Absent on a client from before ADR-151. */
   sessionKey?: string;
@@ -105,6 +108,7 @@ export function readPresence(
       sessionKey,
       accountId: user?.accountId ?? null,
       name,
+      handle: typeof user?.handle === "string" ? user.handle : "",
       label: name,
       joinedAt: typeof user?.joinedAt === "number" ? user.joinedAt : 0,
       color: user?.color ?? colorFor(clientId),

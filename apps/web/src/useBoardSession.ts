@@ -24,6 +24,7 @@ export function useBoardSession({
   board,
   identity,
   accountId,
+  accountHandle,
   access,
   refreshAccess,
   setNotice,
@@ -33,6 +34,8 @@ export function useBoardSession({
   identity: Identity;
   /** The signed-in account; null for a guest. */
   accountId: string | null;
+  /** The account handle; null for a guest. */
+  accountHandle: string | null;
   access: Access | null;
   refreshAccess: () => Promise<void>;
   setNotice: (message: string) => void;
@@ -65,6 +68,8 @@ export function useBoardSession({
   identityRef.current = identity;
   const accountIdRef = useRef(accountId);
   accountIdRef.current = accountId;
+  const accountHandleRef = useRef(accountHandle);
+  accountHandleRef.current = accountHandle;
 
   // The socket is rebuilt when the access decision changes in a way the handshake cares
   // about: signing in from a public link or losing edit rights. A plain refresh with the
@@ -96,6 +101,7 @@ export function useBoardSession({
       room: currentRoom(),
       user: {
         name: identityRef.current.name,
+        handle: accountHandleRef.current ?? "",
         color: identityRef.current.color,
         sessionKey: session.key,
         accountId: accountIdRef.current,
@@ -153,12 +159,13 @@ export function useBoardSession({
   useEffect(() => {
     connection?.setUser({
       name: identity.name,
+      handle: accountHandle ?? "",
       color: identity.color,
       sessionKey: session.key,
       accountId,
       joinedAt: session.joinedAt,
     });
-  }, [connection, identity.name, identity.color, accountId, session]);
+  }, [connection, identity.name, identity.color, accountId, accountHandle, session]);
 
   const saveLabel =
     saveState.state === "offline"

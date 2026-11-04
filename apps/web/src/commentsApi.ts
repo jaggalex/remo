@@ -14,6 +14,7 @@ export interface CommentMessage {
   id: string;
   authorId: string | null;
   authorName: string;
+  authorHandle: string;
   body: string;
   createdAt: string;
   editedAt: string | null;

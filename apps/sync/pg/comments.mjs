@@ -5,7 +5,7 @@
  * The read marker is per subject so unread is a query, not a counter that can drift.
  */
 export const commentMethods = {
-  async createCommentThread({ boardId, anchor, authorId, authorName, body }) {
+  async createCommentThread({ boardId, anchor, authorId, authorName, authorHandle, body }) {
     const client = await this.pool.connect();
     try {
       await client.query("begin");
@@ -26,10 +26,10 @@ export const commentMethods = {
       );
       const thread = threads[0];
       const { rows: comments } = await client.query(
-        `insert into comments (thread_id, board_id, author_id, author_name, body)
-         values ($1, $2, $3, $4, $5)
+        `insert into comments (thread_id, board_id, author_id, author_name, author_handle, body)
+         values ($1, $2, $3, $4, $5, $6)
          returning *`,
-        [thread.id, boardId, authorId, authorName, body],
+        [thread.id, boardId, authorId, authorName, authorHandle ?? "", body],
       );
       await client.query("commit");
       return { thread, comment: comments[0] };
@@ -82,7 +82,7 @@ export const commentMethods = {
     });
   },
 
-  async addComment(threadId, boardId, authorId, authorName, body) {
+  async addComment(threadId, boardId, authorId, authorName, authorHandle, body) {
     const client = await this.pool.connect();
     try {
       await client.query("begin");
@@ -95,10 +95,10 @@ export const commentMethods = {
         return null;
       }
       const { rows } = await client.query(
-        `insert into comments (thread_id, board_id, author_id, author_name, body)
-         values ($1, $2, $3, $4, $5)
+        `insert into comments (thread_id, board_id, author_id, author_name, author_handle, body)
+         values ($1, $2, $3, $4, $5, $6)
          returning *`,
-        [threadId, boardId, authorId, authorName, body],
+        [threadId, boardId, authorId, authorName, authorHandle ?? "", body],
       );
       await client.query(
         `update comment_threads
@@ -267,6 +267,7 @@ export const commentMethods = {
       createdByName: thread.created_by_name,
       comments: thread.comments.map((comment) => ({
         authorName: comment.author_name,
+        authorHandle: comment.author_handle ?? "",
         // A deleted comment's text stays in the row for moderation, but a backup is
         // not a moderation surface: the DTO already hides it, and so must this.
         body: comment.deleted_at ? "" : comment.body,

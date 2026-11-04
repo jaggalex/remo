@@ -14,6 +14,7 @@ function commentDto(row) {
     id: row.id,
     authorId: row.author_id,
     authorName: row.author_name,
+    authorHandle: row.author_handle ?? "",
     body: row.deleted_at ? "" : row.body,
     createdAt: row.created_at,
     editedAt: row.edited_at,
@@ -143,6 +144,7 @@ export async function handleComments(ctx) {
       anchor,
       authorId: sessionUser.id,
       authorName: sessionUser.name,
+      authorHandle: sessionUser.handle ?? "",
       body: text,
     });
     await auditComment({
@@ -167,6 +169,7 @@ export async function handleComments(ctx) {
       boardId,
       sessionUser.id,
       sessionUser.name,
+      sessionUser.handle ?? "",
       text,
     );
     if (!comment) return fail(response, 404, "THREAD_NOT_FOUND", "thread not found"), true;

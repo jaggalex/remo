@@ -358,6 +358,9 @@ export function CommentsPanel({
                 <article key={comment.id} className="comment-message">
                   <div className="comment-meta">
                     <b>{comment.authorName}</b>
+                    {comment.authorHandle && (
+                      <span className="muted"> @{comment.authorHandle}</span>
+                    )}
                     <span>{formatMoment(comment.createdAt, lang)}</span>
                     {comment.editedAt && <span>{t("comments.edited")}</span>}
                   </div>
