@@ -9,7 +9,7 @@
  */
 import { WebSocketServer } from "ws";
 import { guardReadOnly } from "./readonly.mjs";
-import { decodeSaveAck, isSyncStep1, SAVE_ACK_MESSAGE } from "./save-ack.mjs";
+import { decodeSaveAck, isSyncStep1, isSyncStep2, SAVE_ACK_MESSAGE } from "./save-ack.mjs";
 import { Y, encoding, websocketUtils } from "./y.mjs";
 import { failUpgrade, roomFromRequestUrl } from "./http-boundary.mjs";
 import { originAllowed } from "./csrf.mjs";
@@ -122,6 +122,11 @@ export function attachWebSocket({
           encoding.writeVarUint(encoder, 0);
           encoding.writeVarUint8Array(encoder, Y.encodeStateVector(roomDoc));
           if (socket.readyState === 1) socket.send(encoding.toUint8Array(encoder));
+          return;
+        }
+        if (isSyncStep2(bytes)) {
+          saveAcks.markSyncReady?.(socket);
+          if (!store.hasPendingWrites?.(docName)) saveAcks.flushSaveAcks?.(docName);
           return;
         }
         if (bytes[0] === SAVE_ACK_MESSAGE) {
