@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Y } from "./y.mjs";
-import { CommandError, docVersion, runCommand } from "./commands.mjs";
+import { CommandError, commandObjectId, docVersion, runCommand } from "./commands.mjs";
 
 const actor = { type: "user", id: "u1", name: "Alex" };
 
@@ -28,6 +28,29 @@ describe("command registry (ADR-092)", () => {
       createdBy: "Alex",
     });
     expect(ydoc.getMap("texts").get(id).toString()).toBe("Hello");
+  });
+
+  it("refuses to create over an existing object", () => {
+    const { ydoc, id } = docWithNote();
+    expect(() =>
+      runCommand({
+        ydoc,
+        name: "board.item.create",
+        input: { type: "sticky_note", x: 0, y: 0 },
+        actor,
+        boardId: "b1",
+        objectId: id,
+      }),
+    ).toThrow(expect.objectContaining({ code: "OBJECT_EXISTS", status: 409 }));
+    expect(() =>
+      runCommand({
+        ydoc,
+        name: "board.item.create",
+        input: { id, type: "sticky_note", x: 0, y: 0 },
+        actor,
+        boardId: "b1",
+      }),
+    ).toThrow(expect.objectContaining({ code: "BAD_INPUT" }));
   });
 
   it("changes a version on every write and refuses a stale caller", () => {
@@ -159,9 +182,9 @@ describe("command registry (ADR-092)", () => {
     expect(ydoc.getMap("widgets").has(link.result.id)).toBe(false);
   });
 
-  it("is deterministic with an idempotency key, and unique without one", () => {
+  it("derives a stable id from an idempotency key and refuses a second apply", () => {
     const first = docWithNote();
-    const again = runCommand({
+    const created = runCommand({
       ydoc: first.ydoc,
       name: "board.item.create",
       input: { type: "text", x: 0, y: 0 },
@@ -169,20 +192,42 @@ describe("command registry (ADR-092)", () => {
       boardId: "b1",
       idempotencyKey: "key-1",
     });
-    const replayed = runCommand({
-      ydoc: first.ydoc,
-      name: "board.item.create",
-      input: { type: "text", x: 0, y: 0 },
-      actor,
-      boardId: "b1",
-      idempotencyKey: "key-1",
-    });
-    expect(replayed.result.id).toBe(again.result.id);
-    // The second apply wrote the same id again: one object, not two.
-    const textObjects = [...first.ydoc.getMap("widgets").values()].filter(
-      (widget) => widget.type === "text",
+    expect(created.result.id).toBe(
+      commandObjectId({
+        boardId: "b1",
+        actorId: actor.id,
+        key: "board.item.create:key-1",
+        prefix: "item",
+      }),
     );
-    expect(textObjects).toHaveLength(1);
+    // The HTTP layer replays the recorded result before apply; a second apply must not
+    // silently overwrite the object (it could be locked).
+    expect(() =>
+      runCommand({
+        ydoc: first.ydoc,
+        name: "board.item.create",
+        input: { type: "text", x: 0, y: 0 },
+        actor,
+        boardId: "b1",
+        idempotencyKey: "key-1",
+      }),
+    ).toThrow(expect.objectContaining({ code: "OBJECT_EXISTS", status: 409 }));
+
+    const one = runCommand({
+      ydoc: first.ydoc,
+      name: "board.item.create",
+      input: { type: "text", x: 0, y: 0 },
+      actor,
+      boardId: "b1",
+    });
+    const two = runCommand({
+      ydoc: first.ydoc,
+      name: "board.item.create",
+      input: { type: "text", x: 0, y: 0 },
+      actor,
+      boardId: "b1",
+    });
+    expect(one.result.id).not.toBe(two.result.id);
   });
 
   it("keeps waypoints, style and agent provenance, and refuses a duplicate pair", () => {
