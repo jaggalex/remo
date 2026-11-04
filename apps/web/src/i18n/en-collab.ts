@@ -108,6 +108,7 @@ export const enCollab = {
   "audit.register": "Joined",
   "audit.login": "Signed in",
   "audit.logout": "Signed out",
+  "audit.profileName": "Profile name changed",
   "audit.password": "Changed password",
   "audit.orgCreate": "Organisation created",
   "audit.teamCreate": "Team created",
