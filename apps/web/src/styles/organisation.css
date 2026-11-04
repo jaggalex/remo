@@ -30,22 +30,6 @@
   font-size: 12px;
 }
 
-.org-switch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.org-switch select {
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 6px 8px;
-  font: inherit;
-  font-size: 12.5px;
-  background: var(--bg-panel);
-}
-
 .org-tabs {
   display: flex;
   gap: 4px;

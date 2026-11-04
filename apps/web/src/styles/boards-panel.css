@@ -534,6 +534,10 @@
   font-family: var(--font-mono);
 }
 
+.boards-org {
+  margin-top: var(--space-1);
+}
+
 .boards-search {
   border: 1px solid var(--line-strong);
   border-radius: 9px;

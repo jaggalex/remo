@@ -30,7 +30,7 @@ The product is sized for a team of roughly ten people: one organisation, a few t
 
 | Result | How it is built |
 |---|---|
-| A team workspace | organisation → team → board; the role is granted on the board |
+| A team canvas | organisation → team → board; the role is granted on the board |
 | Visual material | sticky notes, shapes, text, frames, kanban, cards, connectors |
 | Card work | status, assignee, date range, WIP, tags and links |
 | Discussion | server threads on an object or point, pins, resolve, live reactions |

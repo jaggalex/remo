@@ -1,6 +1,6 @@
 ## What it is
 
-remo is a local-first visual workspace for a small team: boards, cards, connectors, presentation, comments, access and extensions. Version **0.1.0**.
+remo is a local-first visual canvas for a small team: boards, cards, connectors, presentation, comments, access and extensions. Version **0.1.0**.
 
 ## Author and licence
 
