@@ -88,6 +88,51 @@ describe("command registry (ADR-092)", () => {
     expect(ydoc.getMap("texts").get(id).toString()).toBe("Changed");
   });
 
+  it("names an object without touching its text or geometry", () => {
+    const { ydoc, id } = docWithNote();
+    runCommand({
+      ydoc,
+      name: "board.item.update",
+      input: { id, patch: { name: "  Intro  " } },
+      actor,
+      boardId: "b1",
+    });
+    expect(ydoc.getMap("widgets").get(id)).toMatchObject({ name: "Intro", content: "Hello", x: 10 });
+    expect(ydoc.getMap("texts").get(id).toString()).toBe("Hello");
+
+    // A second object may carry the same name: names are labels, not identity.
+    const second = runCommand({
+      ydoc,
+      name: "board.item.create",
+      input: { type: "sticky_note", x: 300, y: 20, name: "Intro" },
+      actor,
+      boardId: "b1",
+    });
+    expect(ydoc.getMap("widgets").get(second.result.id).name).toBe("Intro");
+
+    runCommand({
+      ydoc,
+      name: "board.item.update",
+      input: { id, patch: { name: "" } },
+      actor,
+      boardId: "b1",
+    });
+    expect(ydoc.getMap("widgets").get(id).name).toBeUndefined();
+  });
+
+  it("refuses a name longer than 120 characters", () => {
+    const { ydoc, id } = docWithNote();
+    expect(() =>
+      runCommand({
+        ydoc,
+        name: "board.item.update",
+        input: { id, patch: { name: "x".repeat(121) } },
+        actor,
+        boardId: "b1",
+      }),
+    ).toThrow(expect.objectContaining({ code: "BAD_INPUT" }));
+  });
+
   it("sets text without touching geometry", () => {
     const { ydoc, id } = docWithNote();
     runCommand({

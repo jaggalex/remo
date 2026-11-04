@@ -30,6 +30,24 @@ export function createWidget(board: BoardDocument, widget: Widget): void {
   });
 }
 
+/**
+ * Rename an object (ADR-165).
+ *
+ * A name is interface metadata, not canvas text: it is trimmed, capped and never
+ * painted. An empty value clears it, which is how a person removes a name.
+ */
+export function setWidgetName(board: BoardDocument, id: string, name: string): void {
+  const trimmed = name.trim().slice(0, 120);
+  board.transact(() => {
+    const current = board.widgets.get(id);
+    if (!current) return;
+    const next = { ...current };
+    if (trimmed) next.name = trimmed;
+    else delete next.name;
+    board.widgets.set(id, next);
+  });
+}
+
 export function patchWidget(
   board: BoardDocument,
   id: string,

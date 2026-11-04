@@ -1,25 +1,31 @@
+import { useMemo, useState } from "react";
 import {
   addAllFrames,
-  movePresentationFrame,
-  removePresentationFrame,
+  addPresentationSlide,
+  addPresentationSlides,
+  movePresentationSlide,
+  removePresentationSlide,
+  slideLabel,
   type BoardDocument,
 } from "@remo/doc";
 import type { BoardConnection, Presence } from "@remo/doc";
 import type { Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
+import { Button, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { usePresentation } from "./usePresentation";
 
 /**
- * Presentation controls (ADR-108).
+ * Presentation controls (ADR-108, ADR-165).
  *
  * A floating trigger and a compact panel keep the board readable; the presenter's live
- * state lives in awareness, and the order lives beside the frames in the document.
+ * state lives in awareness, and the order of any objects lives in the document.
  */
 export function PresentationLayer({
   board,
   widgets,
+  selectedIds,
   camera,
   setCamera,
   connection,
@@ -30,6 +36,7 @@ export function PresentationLayer({
 }: {
   board: BoardDocument;
   widgets: Widget[];
+  selectedIds: readonly string[];
   camera: Camera;
   setCamera: (camera: Camera) => void;
   connection: BoardConnection | null;
@@ -39,6 +46,7 @@ export function PresentationLayer({
   onPanelOpen: (value: boolean) => void;
 }) {
   const { t } = useI18n();
+  const [filter, setFilter] = useState("");
   const presentation = usePresentation({
     board,
     widgets,
@@ -51,9 +59,22 @@ export function PresentationLayer({
     setPanelOpen: onPanelOpen,
     t,
   });
-  const frames = presentation.frames;
-  const frameName = (id: string) =>
-    widgets.find((widget) => widget.id === id)?.title || id;
+  const slides = presentation.slides;
+  const byId = useMemo(() => new Map(widgets.map((widget) => [widget.id, widget])), [widgets]);
+  const labelOf = (id: string) => {
+    const widget = byId.get(id);
+    return widget ? slideLabel(widget) : id;
+  };
+  // Names are not unique (ADR-165), so a short id keeps two same-named objects apart.
+  const shortId = (id: string) => id.slice(0, 8);
+
+  const chosen = new Set(slides);
+  const needle = filter.trim().toLowerCase();
+  const available = widgets
+    .filter((widget) => !chosen.has(widget.id))
+    .filter((widget) => !needle || slideLabel(widget).toLowerCase().includes(needle))
+    .sort((a, b) => slideLabel(a).localeCompare(slideLabel(b)));
+  const selectedOnBoard = selectedIds.filter((id) => byId.has(id) && !chosen.has(id));
 
   return (
     <>
@@ -62,7 +83,7 @@ export function PresentationLayer({
           <span>
             {t("presentation.slide", {
               current: (presentation.local.index ?? 0) + 1,
-              total: frames.length,
+              total: slides.length,
             })}
           </span>
           <button type="button" onClick={presentation.previous} aria-label={t("presentation.previous")}>
@@ -134,32 +155,33 @@ export function PresentationLayer({
               </button>
             </header>
             <p className="muted">{t("presentation.hint")}</p>
-            {frames.length === 0 && <p className="muted">{t("presentation.noFrames")}</p>}
+            {slides.length === 0 && <p className="muted">{t("presentation.noSlides")}</p>}
             <ol className="presentation-list">
-              {frames.map((id, index) => (
+              {slides.map((id, index) => (
                 <li key={id}>
                   <span>
-                    {index + 1}. {frameName(id)}
+                    {index + 1}. {labelOf(id)}{" "}
+                    <span className="presentation-id">{shortId(id)}</span>
                   </span>
                   <button
                     type="button"
                     disabled={index === 0}
-                    onClick={() => movePresentationFrame(board, id, index - 1)}
+                    onClick={() => movePresentationSlide(board, id, index - 1)}
                     aria-label={t("presentation.up")}
                   >
                     ↑
                   </button>
                   <button
                     type="button"
-                    disabled={index === frames.length - 1}
-                    onClick={() => movePresentationFrame(board, id, index + 1)}
+                    disabled={index === slides.length - 1}
+                    onClick={() => movePresentationSlide(board, id, index + 1)}
                     aria-label={t("presentation.down")}
                   >
                     ↓
                   </button>
                   <button
                     type="button"
-                    onClick={() => removePresentationFrame(board, id)}
+                    onClick={() => removePresentationSlide(board, id)}
                     aria-label={t("presentation.remove")}
                   >
                     ✕
@@ -167,18 +189,56 @@ export function PresentationLayer({
                 </li>
               ))}
             </ol>
+
+            <div className="presentation-picker">
+              <Input
+                type="search"
+                size="compact"
+                label={t("presentation.filter")}
+                placeholder={t("presentation.filterPlaceholder")}
+                value={filter}
+                onChange={(event) => setFilter(event.currentTarget.value)}
+              />
+              <ul className="presentation-available">
+                {available.map((widget) => (
+                  <li key={widget.id}>
+                    <span>
+                      {slideLabel(widget)}{" "}
+                      <span className="presentation-id">{shortId(widget.id)}</span>
+                    </span>
+                    <Button
+                      size="compact"
+                      variant="secondary"
+                      onClick={() => addPresentationSlide(board, widget.id)}
+                    >
+                      {t("presentation.add")}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              {available.length === 0 && widgets.length > 0 && (
+                <p className="muted">{t("presentation.noAvailable")}</p>
+              )}
+            </div>
+
             <div className="presentation-actions">
-              <button type="button" onClick={() => addAllFrames(board)}>
+              <Button variant="secondary" onClick={() => addAllFrames(board)}>
                 {t("presentation.addAll")}
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={!canFacilitate || frames.length === 0}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={selectedOnBoard.length === 0}
+                onClick={() => addPresentationSlides(board, selectedOnBoard)}
+              >
+                {t("presentation.addSelection", { count: selectedOnBoard.length })}
+              </Button>
+              <Button
+                variant="primary"
+                disabled={!canFacilitate || slides.length === 0}
                 onClick={presentation.start}
               >
                 {t("presentation.start")}
-              </button>
+              </Button>
             </div>
             {!canFacilitate && <p className="muted">{t("presentation.forbidden")}</p>}
           </div>

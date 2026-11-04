@@ -121,6 +121,7 @@ describe("board projection", () => {
           y: 0,
           width: 177,
           height: 177,
+          name: "Intro",
           label: "Hot!",
         },
         {
@@ -138,7 +139,10 @@ describe("board projection", () => {
     });
 
     const { widgets } = projectBoard(doc);
-    expect(widgets.find((row) => row.id === "s1").props).toEqual({ label: "Hot!" });
+    expect(widgets.find((row) => row.id === "s1").props).toEqual({
+      name: "Intro",
+      label: "Hot!",
+    });
     expect(widgets.find((row) => row.id === "sh1").props).toEqual({ shapeKind: "diamond" });
     // A plain card has nothing modelled about it, so the column stays null.
     expect(widgets.find((row) => row.id === "c1").props).toBeNull();

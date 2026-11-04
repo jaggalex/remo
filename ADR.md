@@ -6882,3 +6882,44 @@ non-null. Existing accounts are backfilled from the email local part and dedupli
 
 **Limits.** No handle history, no reserved-word localisation, and no display-style policy
 yet. A handle is not a login and cannot be used to sign in.
+
+## ADR-165: Objects have a name, and any object can be a slide
+
+**Status:** accepted (2026-11-04). Extends ADR-108 (presentation) and finishes issue #41.
+
+**Context.** Presentation order was a list of frames. A person who wants to present a
+sticky note, a card or a kanban cannot: the panel only knows frames, and a slide is
+identified by a random id. Frames also have a `title` that belongs to the canvas, so using
+it as the presentation label would overload one field with two jobs.
+
+**Decision.**
+
+- **`Widget.name` is optional metadata.** It is not painted on the canvas and is not a
+  replacement for `title` or `content`. It is trimmed, limited to 120 characters, and an
+  empty value removes it. Absent means "no name"; a label falls back to `title`, then
+  `content`, then the id.
+- **Names are not unique.** The CRDT cannot stop a direct Yjs write that bypasses a
+  command, so a uniqueness check would be a promise the document cannot keep. The issue
+  records this limit. IDs remain the unique, stable identity and are never edited.
+- **`board.item.create` and `board.item.update` accept `name`.** The update patch allows
+  `name` beside the existing geometry, text, style and lock fields. The command layer
+  validates it under `board.edit` and audits the run as `board.command`.
+- **The inspector shows a name field, a read-only id and "Copy ID".** The id is visible
+  because it is what a link, a command or a bug report needs; it is not editable.
+- **Search reads the name.** The projection stores it in `props.name`, and both the board
+  filter and the cross-board search match it; the snippet prefers the name.
+- **A slide is any object.** `presentation` keeps its ordered ids, but a slide may be any
+  widget on the board. A connector's camera box is the union of its endpoints; any other
+  object uses its own rectangle.
+- **An empty order still means "all frames" until someone edits it.** The meta flag
+  `presentation_configured` separates "not configured" from "deliberately no slides".
+  Existing boards therefore keep their old meaning, and an explicit empty order is now
+  representable.
+
+**Consequences.** The present bar and the follow camera work with any object without a
+second presentation mechanism. A name change is one undo step and does not touch canvas
+geometry. The panel gains an object picker but the storage stays a flat ordered list.
+
+**Limits.** No name uniqueness, no name history and no rename of ids. A per-object
+"show name on canvas" mode is not added: a name is a label in the interface, not a second
+caption on the board.

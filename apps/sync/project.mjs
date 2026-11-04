@@ -30,6 +30,8 @@ export function widgetText(doc, id, widget) {
  */
 export function projectProps(widget) {
   const props = {};
+  // The interface label (ADR-165): search and presentation read it, the canvas does not.
+  if (typeof widget.name === "string" && widget.name) props.name = widget.name;
   if (typeof widget.label === "string") props.label = widget.label;
   if (widget.shapeKind) props.shapeKind = widget.shapeKind;
   // Connector endpoints: which two objects a line joins.

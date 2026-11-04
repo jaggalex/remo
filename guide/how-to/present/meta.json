@@ -4,12 +4,12 @@
   "status": "available",
   "order": 8,
   "title": {
-    "ru": "Провести презентацию по фреймам",
-    "en": "Present the board by frames"
+    "ru": "Провести презентацию",
+    "en": "Present the board"
   },
   "summary": {
-    "ru": "Порядок фреймов, ведущий и ведомые, возврат к ведущему и завершение.",
-    "en": "Frame order, presenter and followers, return to the presenter and stop."
+    "ru": "Порядок слайдов из любых объектов, ведущий и ведомые, возврат к ведущему и завершение.",
+    "en": "Slide order from any objects, presenter and followers, return to the presenter and stop."
   },
   "related": [
     "how-to/run-meeting",
@@ -19,7 +19,7 @@
   "updated": "2026-10-28",
   "translations": {
     "en": {
-      "sourceHash": "sha256:dddb821ed49aca9b09266a0f8a37100667e83c99a7f3955ee9d4d65734110622"
+      "sourceHash": "sha256:e7f0c249bb58ebe93fe29242500f774ab745598e50064bd082cd7de33d4705d0"
     }
   }
 }

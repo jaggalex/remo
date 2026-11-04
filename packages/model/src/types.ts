@@ -129,6 +129,13 @@ export interface Widget extends Rect {
   content?: string;
   title?: string;
   /**
+   * Human-readable name for lists, search and presentation (ADR-165).
+   *
+   * Metadata, not canvas text: the board does not paint it. Optional and deliberately
+   * not unique; the id stays the identity.
+   */
+  name?: string;
+  /**
    * Card status (ADR-106 amendment, R1). A field of the card, not the kanban column:
    * a card outside a kanban can still be `todo`, and moving it between columns does
    * not rewrite this value in v1.
