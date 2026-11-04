@@ -72,8 +72,25 @@ export function useBoardSession({
   const accessKey = access
     ? `${access.role ?? ""}:${[...access.capabilities].sort().join(",")}:${[...access.sources].sort().join(",")}`
     : "none";
+  /** Bumped only when an access decision changes after the socket already exists. */
+  const [connectionEpoch, setConnectionEpoch] = useState(0);
+  const lastAccessKey = useRef(accessKey);
 
   useEffect(() => {
+    if (lastAccessKey.current === accessKey) return;
+    // The first decision describes the socket that already opened with this cookie.
+    // Rebuilding it here dropped this session's presence for a moment and made two
+    // same-account sessions lose their (2) label.
+    if (lastAccessKey.current === "none") {
+      lastAccessKey.current = accessKey;
+      return;
+    }
+    lastAccessKey.current = accessKey;
+    setConnectionEpoch((epoch) => epoch + 1);
+  }, [accessKey]);
+
+  useEffect(() => {
+    lastAccessKey.current = accessKey;
     const connection = connectBoard(board, {
       url: syncUrl(),
       room: currentRoom(),
@@ -103,7 +120,7 @@ export function useBoardSession({
       connection.disconnect();
       setConnection(null);
     };
-  }, [board, refreshAccess, session, accessKey]);
+  }, [board, refreshAccess, session, connectionEpoch]);
 
   // A failed upgrade (401/403/404) reaches the browser as close 1006, not 4403, so the
   // access callback never fires. While disconnected, refresh the decision so a revoked
