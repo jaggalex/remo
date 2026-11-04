@@ -67,7 +67,12 @@ async function widgets(page: Page): Promise<ProbeWidget[]> {
 }
 
 async function widget(page: Page, id: string): Promise<ProbeWidget> {
-  const found = (await widgets(page)).find((entry) => entry.id === id);
+  // Save status can settle before the loaded document reaches the canvas probe.
+  let found: ProbeWidget | undefined;
+  await expect.poll(async () => {
+    found = (await widgets(page)).find((entry) => entry.id === id);
+    return found;
+  }, { message: `seeded widget ${id} reaches the canvas` }).toBeDefined();
   if (!found) throw new Error(`no widget ${id}`);
   return found;
 }
