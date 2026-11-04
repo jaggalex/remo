@@ -55,14 +55,16 @@ test("two sessions of one account are two follow targets with labels", async ({
     await other.goto(`/?room=${account.boardId}&lang=en`);
     await expect(other.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
-    // Presence is per session: the later one gets an index, and neither label is an email.
+    // Presence is per session: the later one gets an index, and neither label is an
+    // email — the @ belongs to the public handle (ADR-164).
     await expect(page.locator(".presence .peer")).toHaveCount(1);
     await expect(other.locator(".presence .peer")).toHaveCount(1);
     const later = await page.locator(".presence .peer").getAttribute("title");
     const earlier = await other.locator(".presence .peer").getAttribute("title");
     expect(later).toContain("Sess (2)");
     expect(earlier).toContain("Sess");
-    expect(later).not.toContain("@");
+    expect(later).toContain("@");
+    expect(later).not.toContain(account.email);
 
     // Follow the exact session, not the account as a whole.
     await page.locator(".presence .peer").click();
