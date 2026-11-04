@@ -307,7 +307,13 @@ async function handleRequest(request, response) {
       response,
       url,
       store,
-      getDocument: async (boardId) => docs.get(boardId) ?? (await store.roomDocument(boardId)),
+      // The Postgres store resolves the current room under the load lock; `docs.get`
+      // can hand a command a document that is still loading or already retired. The
+      // disk store has no room lock, so it keeps its in-memory map.
+      getDocument: async (boardId) =>
+        typeof store.roomDocument === "function"
+          ? store.roomDocument(boardId)
+          : docs.get(boardId),
       resolveAccess: (boardId, caller) => exports.boardAccessForRequest(request, boardId, caller),
       log: console,
     })
