@@ -655,7 +655,7 @@ export function App() {
         me={me}
         identity={identity}
         roleLine={roleLine}
-        renameSelf={renameSelf}
+        renameSelf={renameSelf} onAccountRenamed={setMe}
         theme={theme}
         setTheme={setTheme}
         lang={lang}

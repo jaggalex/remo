@@ -6817,3 +6817,33 @@ first rename or delete is the first write to the row since creation.
 **Limits.** Only an org admin manages a team; a team admin cannot yet edit its own team.
 Moving a board to another team is not part of this record. Deleting an organisation, or a
 team that still has boards or grants, remains a deliberate manual operation.
+
+## ADR-163: A person can change their display name
+
+**Status:** accepted (2026-11-04). Part of the names work in issue #41.
+
+**Context.** `users.name` was fixed when the account was created. The only editable name
+was the local cursor name, which never reaches the account row, so a person could not fix
+a typo in the name their teammates see. The names plan also raised uniqueness: a display
+name is not a login, and two people can legitimately share a real name.
+
+**Decision.**
+
+- **`PATCH /auth/me { name }` changes the display name.** It needs a session, trims the
+  value, accepts 1–80 characters, writes an `auth.profile_changed` audit row and returns
+  the updated user.
+- **The display name is not unique.** It is how a person is shown, not an identifier.
+  A unique nickname is a separate `handle` field and needs its own decision; until then
+  email remains the login and the only unique account key.
+- **History keeps the name written at the time.** A comment stores its author name when
+  it is written; renaming the account does not rewrite old comments. Presence, new
+  comments and the current session show the new name.
+- **The cursor name stays local.** A guest still names this browser; a signed-in cursor is
+  named by the account (ADR-149).
+
+**Consequences.** A person can correct their name from the account menu without
+re-registering. Two accounts may share a display name, so the interface must not use it as
+an identity key. The account menu keeps the local cursor name for guests.
+
+**Limits.** No unique handle, no email change, no avatar, and no bulk rewrite of the names
+stored on historical comments.

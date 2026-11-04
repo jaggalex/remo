@@ -277,6 +277,8 @@ export const api = {
     }),
   login: (body: { email: string; password: string }) =>
     call<{ user: SessionUser }>("/auth/login", { method: "POST", body }),
+  renameAccount: (name: string) =>
+    call<{ user: SessionUser }>("/auth/me", { method: "PATCH", body: { name } }),
   updatePreferences: (body: { theme: string | null; lang: string | null }) =>
     call<{ preferences: NonNullable<SessionUser["preferences"]> }>("/auth/preferences", { method: "PATCH", body }),
   logout: () => call<{ ok: true }>("/auth/logout", { method: "POST" }),

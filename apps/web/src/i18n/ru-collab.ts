@@ -117,6 +117,7 @@ export const ruCollab = {
   "audit.register": "Присоединился",
   "audit.login": "Вошёл",
   "audit.logout": "Вышел",
+  "audit.profileName": "Имя профиля изменено",
   "audit.password": "Сменил пароль",
   "audit.orgCreate": "Организация создана",
   "audit.teamCreate": "Команда создана",

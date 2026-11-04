@@ -1,5 +1,7 @@
-import { Avatar, Input, Popover, Segmented } from "@remo/ui";
+import { Avatar, Button, Input, Popover, Segmented } from "@remo/ui";
+import { useEffect, useState } from "react";
 import type { Presence } from "@remo/doc";
+import { api, type SessionUser } from "../api";
 import { useI18n, type Lang } from "../i18n";
 import { ABOUT } from "../about";
 import type { Theme } from "../useTheme";
@@ -23,6 +25,7 @@ export function AccountMenu({
   roleLine,
   identityName,
   onRenameSelf,
+  onAccountRenamed,
   theme,
   onTheme,
   lang,
@@ -45,6 +48,7 @@ export function AccountMenu({
   roleLine: string | null;
   identityName: string;
   onRenameSelf: (value: string) => void;
+  onAccountRenamed: (user: SessionUser) => void;
   theme: Theme;
   onTheme: (value: Theme) => void;
   lang: Lang;
@@ -57,6 +61,29 @@ export function AccountMenu({
 }) {
   const { t } = useI18n();
   const anchor = useMenuFocus(open, true, ".rm-popover input");
+  const [nameDraft, setNameDraft] = useState(name);
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [nameSaved, setNameSaved] = useState(false);
+
+  useEffect(() => setNameDraft(name), [name]);
+
+  const saveName = async () => {
+    const next = nameDraft.trim();
+    if (!next || next === name || savingName) return;
+    setSavingName(true);
+    setNameError(null);
+    setNameSaved(false);
+    try {
+      const result = await api.renameAccount(next);
+      onAccountRenamed(result.user);
+      setNameSaved(true);
+    } catch {
+      setNameError(t("account.nameFailed"));
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   return (
     <span className="topbar-anchor topbar-account" ref={anchor}>
@@ -84,6 +111,34 @@ export function AccountMenu({
             </div>
           ) : (
             <p className="account-role">{t("auth.loginHint")}</p>
+          )}
+
+          {signedIn && (
+            <div className="account-field account-name-field">
+              <Input
+                label={t("account.name")}
+                hint={t("account.nameHint")}
+                value={nameDraft}
+                maxLength={80}
+                onChange={(event) => setNameDraft(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  void saveName();
+                }}
+              />
+              <Button
+                size="compact"
+                variant="primary"
+                loading={savingName}
+                disabled={!nameDraft.trim() || nameDraft.trim() === name}
+                onClick={() => void saveName()}
+              >
+                {t("account.save")}
+              </Button>
+              {nameError && <p className="auth-error">{nameError}</p>}
+              {nameSaved && <p className="account-role">{t("account.nameSaved")}</p>}
+            </div>
           )}
 
           {/* A signed-in cursor is named by the account; only a guest names this browser. */}
