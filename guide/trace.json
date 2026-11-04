@@ -214,7 +214,7 @@
     ],
     "code": [
       "packages/doc/src",
-      "apps/web/src/BoardsPanel.tsx"
+      "apps/web/src/WorkspaceHome.tsx"
     ],
     "tests": [
       "apps/sync/store.test.mjs"

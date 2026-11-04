@@ -53,7 +53,12 @@ export function OrganisationDialog({
   const [renamingOrg, setRenamingOrg] = useState(false);
   const [orgNameDraft, setOrgNameDraft] = useState("");
   const [orgId, setOrgId] = useState<string | null>(null);
-  const [org, setOrg] = useState<{ id: string; name: string; slug: string } | null>(null);
+  const [org, setOrg] = useState<{
+    id: string;
+    name: string;
+    slug: string;
+    kind: "personal" | "shared";
+  } | null>(null);
   const [membership, setMembership] = useState<{ relation: string; state: string } | null>(null);
   const [roles, setRoles] = useState<OrgRole[]>([]);
   const [members, setMembers] = useState<OrgMember[]>([]);
@@ -295,6 +300,7 @@ export function OrganisationDialog({
     "team.member.remove": "audit.teamMemberRemove",
     "board.create": "audit.boardCreate",
     "board.claim": "audit.boardClaim",
+    "board.icon": "audit.boardIcon",
     "board.transfer": "audit.boardTransfer",
     "grant.put": "audit.grantPut",
     "grant.delete": "audit.grantDelete",
@@ -400,6 +406,9 @@ export function OrganisationDialog({
             ) : (
               <div className="org-title">
                 <h2>{org?.name ?? t("org.title")}</h2>
+                {org?.kind === "personal" && (
+                  <span className="org-badge personal">{t("org.personal")}</span>
+                )}
                 {isOrgAdmin && org && (
                   <Button
                     size="compact"

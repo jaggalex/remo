@@ -11,6 +11,9 @@ create table if not exists boards (
   -- Board name: the document's `meta` title once it has one, otherwise the name the
   -- board was created with. An empty document title never clears it.
   title text not null default '',
+  -- A board's tile image is one emoji for now (ADR-168); images come later.
+  icon text not null default '',
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   -- Full Yjs state as of `snapshot_through`; the log after that point is replayed on load.
   snapshot bytea,
@@ -19,8 +22,15 @@ create table if not exists boards (
 
 -- Older deployments created `boards` without these columns.
 alter table boards add column if not exists title text not null default '';
+alter table boards add column if not exists icon text not null default '';
 alter table boards add column if not exists snapshot bytea;
 alter table boards add column if not exists snapshot_through bigint not null default 0;
+-- Older boards have no creation time. `updated_at` is the best available approximation;
+-- the migration is honest about that rather than pretending the date is exact.
+alter table boards add column if not exists created_at timestamptz;
+update boards set created_at = updated_at where created_at is null;
+alter table boards alter column created_at set default now();
+alter table boards alter column created_at set not null;
 
 create table if not exists board_updates (
   id bigserial primary key,
@@ -149,6 +159,19 @@ alter table users add column if not exists theme text;
 alter table users add column if not exists lang text;
 alter table users add column if not exists handle text;
 
+-- The author of a board is its creator, not its current owner: ownership can be
+-- transferred, history should not be rewritten (ADR-168).
+alter table boards add column if not exists created_by uuid;
+update boards set created_by = owner_id where created_by is null and owner_id is not null;
+do $$
+begin
+  alter table boards
+    add constraint boards_created_by_fkey
+    foreign key (created_by) references users (id) on delete set null not valid;
+exception
+  when duplicate_object then null;
+end $$;
+
 -- Backfill a mandatory handle from the email local part, then deduplicate it.
 update users
    set handle = lower(regexp_replace(split_part(email, '@', 1), '[^a-zA-Z0-9]', '', 'g'))
@@ -184,9 +207,33 @@ create table if not exists orgs (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   slug text not null unique,
+  -- `personal` is the one organisation every account gets; it is a normal tenant
+  -- with a badge, not a second permission model (ADR-167).
+  kind text not null default 'shared' check (kind in ('personal', 'shared')),
   created_by uuid references users (id),
   created_at timestamptz not null default now()
 );
+
+alter table orgs add column if not exists kind text not null default 'shared';
+do $$
+begin
+  alter table orgs
+    add constraint orgs_kind_check check (kind in ('personal', 'shared'));
+exception
+  when duplicate_object then null;
+end $$;
+
+-- Existing deployments: the first organisation a person created was their personal one.
+with first_org as (
+  select distinct on (created_by) id, created_by
+    from orgs
+   where created_by is not null
+   order by created_by, created_at, id
+)
+update orgs o
+   set kind = 'personal'
+  from first_org f
+ where o.id = f.id and o.kind = 'shared';
 
 create table if not exists org_memberships (
   org_id uuid not null references orgs (id) on delete cascade,
@@ -873,5 +920,10 @@ create table if not exists schema_meta (
   updated_at timestamptz not null default now()
 );
 
-insert into schema_meta (id, version) values (1, 15)
+-- The board directory is sorted and searched per organisation (ADR-168).
+create index if not exists boards_org_updated_idx on boards (org_id, updated_at desc);
+create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
+create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
+
+insert into schema_meta (id, version) values (1, 16)
 on conflict (id) do update set version = excluded.version, updated_at = now();

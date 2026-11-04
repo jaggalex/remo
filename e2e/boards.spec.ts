@@ -95,10 +95,10 @@ test("an empty board stays empty and a rename reaches the board list", async ({ 
     .toBe("Renamed launch");
 
   await page.getByRole("button", { name: "All boards" }).click();
-  // The topbar button is also called "Board menu: Renamed launch"; the list row is the
-  // one that proves the stored name reached the directory.
+  // The topbar button is also called "Board menu: Renamed launch"; the tile is the one
+  // that proves the stored name reached the directory.
   await expect(
-    page.locator(".boards-panel").getByRole("button", { name: /Renamed launch/ }),
+    page.locator(".home-tile").getByRole("button", { name: /Renamed launch/ }),
   ).toBeVisible();
 });
 
@@ -141,7 +141,7 @@ test("a board with a non-ASCII name is one room, not a percent-encoded twin", as
   expect(ids).toContain(stickyId);
 });
 
-test("filters the board directory by organisation", async ({ page }) => {
+test("switches the organisation and leaves the previous board", async ({ page }) => {
   await freshBoard(page, "org-filter", { title: "First org board" });
 
   // A second organisation is created through the same screen people use.
@@ -163,26 +163,26 @@ test("filters the board directory by organisation", async ({ page }) => {
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
   await page.getByRole("button", { name: "All boards" }).click();
-  const panel = page.locator(".boards-panel");
-  await expect(panel).toContainText("First org board");
-  await expect(panel).toContainText("Second org board");
+  const home = page.locator(".home");
+  // The board belongs to the second organisation, so leaving it shows that context.
+  await expect(home).toContainText("Second org board");
+  await expect(home).not.toContainText("First org board");
 
-  // Switching the directory context is explicit and visibly changes the list.
-  const chooser = panel.getByLabel("Organisation");
-  await chooser.selectOption({ label: "Second team" });
-  await expect(panel).toContainText("Second org board");
-  await expect(panel).not.toContainText("First org board");
-
-  await chooser.selectOption({ label: "All organisations" });
-  await expect(panel).toContainText("First org board");
+  // Switching is a full context switch: the previous board is gone and the new list is
+  // the personal organisation's boards.
+  await home
+    .getByLabel("Organisation")
+    .selectOption({ label: "Personal · org-filter" });
+  await expect(page).toHaveURL(/\?org=/);
+  await expect(page.locator(".home")).toContainText("First org board");
+  await expect(page.locator(".home")).not.toContainText("Second org board");
 });
 
-test("finds a board by its name in the board panel", async ({ page }) => {
-  const account = await freshBoard(page, "title-search", { title: "Quarterly planning" });
+test("finds a board by its name on the home", async ({ page }) => {
+  await freshBoard(page, "title-search", { title: "Quarterly planning" });
   await page.getByRole("button", { name: "All boards" }).click();
-  await page.locator(".boards-search").fill("Quarterly");
-  const section = page.locator(".boards-section").filter({ hasText: "Boards by title" });
-  await expect(section).toContainText(account.boardId);
+  await page.locator(".home-search").fill("Quarterly");
+  await expect(page.locator(".home-tile")).toContainText("Quarterly planning");
 });
 
 test("opening a named board without a template keeps its name and stays empty", async ({

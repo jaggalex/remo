@@ -33,6 +33,8 @@ export interface OrgSummary {
   id: string;
   name: string;
   slug: string;
+  /** `personal` is the one organisation every account gets (ADR-167). */
+  kind: "personal" | "shared";
   relation: string;
   state: string;
   /** Organisation-level capabilities; `board.create` for an active member (ADR-100). */
@@ -477,7 +479,7 @@ export const api = {
   teams: (orgId: string) =>
     call<{ teams: Array<{ id: string; name: string }> }>(`/orgs/${orgId}/teams`),
   renameOrg: (orgId: string, name: string) =>
-    call<{ org: { id: string; name: string; slug: string } }>(`/orgs/${encodeURIComponent(orgId)}`, {
+    call<{ org: { id: string; name: string; slug: string; kind: "personal" | "shared" } }>(`/orgs/${encodeURIComponent(orgId)}`, {
       method: "PATCH",
       body: { name },
     }),
@@ -508,7 +510,7 @@ export const api = {
     call<{ board: { id: string; title: string } }>(`/orgs/${orgId}/boards`, { method: "POST", body }),
   org: (orgId: string) =>
     call<{
-      org: { id: string; name: string; slug: string };
+      org: { id: string; name: string; slug: string; kind: "personal" | "shared" };
       membership: { relation: string; state: string };
       roles: OrgRole[];
     }>(`/orgs/${encodeURIComponent(orgId)}`),

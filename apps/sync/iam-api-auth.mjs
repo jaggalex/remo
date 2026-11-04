@@ -107,9 +107,10 @@ export async function handleAuthRoutes(ctx) {
       throw error;
     }
     const { org, team } = await store.createOrgWithOwner({
-      name: `${name}'s workspace`,
+      name,
       slug: orgSlugFor(name),
       userId: created.id,
+      kind: "personal",
     });
     const sessionToken = newToken();
     await store.createSession({

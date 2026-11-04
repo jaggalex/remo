@@ -176,6 +176,16 @@
   color: var(--text-accent);
 }
 
+.org-badge.personal {
+  margin-left: var(--space-2);
+  background: var(--accent-soft);
+  color: var(--text-accent);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .org-badge.guest {
   background: var(--warning-soft);
   color: var(--state-warning);
