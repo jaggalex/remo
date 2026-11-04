@@ -51,6 +51,49 @@ export async function openBoard(
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 }
 
+/** Document sync can finish before the HTTP access decision enables editing. */
+export async function waitForBoardEditor(page: Page): Promise<void> {
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Sticky note", exact: true })).toBeEnabled();
+}
+
+/** Select the requested kanban card, or the first card when none is specified. */
+export async function selectKanbanCard(page: Page, cardId?: string): Promise<string> {
+  await waitForBoardEditor(page);
+  // After a reload the document arrives over the socket; the probe is empty until then.
+  await page.waitForFunction((wanted) => {
+    const probe = window as unknown as {
+      __remo?: { layouts: Array<{ placements: Array<{ cardId: string }> }> };
+    };
+    return Boolean(probe.__remo?.layouts?.some((entry) =>
+      entry.placements.some((placement) => !wanted || placement.cardId === wanted),
+    ));
+  }, cardId);
+  const point = await page.evaluate((wanted) => {
+    const probe = window as unknown as {
+      __remo: {
+        camera: { x: number; y: number; zoom: number };
+        layouts: Array<{ placements: Array<{ cardId: string; x: number; y: number }> }>;
+      };
+    };
+    const placement = probe.__remo.layouts
+      .flatMap((entry) => entry.placements)
+      .find((entry) => !wanted || entry.cardId === wanted)!;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      id: placement.cardId,
+      x: rect.left + rect.width / 2 + (placement.x - probe.__remo.camera.x) * probe.__remo.camera.zoom,
+      y: rect.top + rect.height / 2 + (placement.y - probe.__remo.camera.y) * probe.__remo.camera.zoom,
+    };
+  }, cardId);
+  await page.mouse.click(point.x, point.y);
+  await expect.poll(() => page.evaluate(
+    () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+  )).toEqual([point.id]);
+  return point.id;
+}
+
 /** A fresh account plus an open, empty board. */
 export async function freshBoard(
   page: Page,
@@ -62,6 +105,7 @@ export async function freshBoard(
     user: options.user,
     template: options.template ?? "kanban-framework",
   });
+  await waitForBoardEditor(page);
   return account;
 }
 

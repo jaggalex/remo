@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { freshBoard, PASSWORD, type Account } from "./helpers";
+import { freshBoard, PASSWORD, waitForBoardEditor, type Account } from "./helpers";
 
 test("the author releases the lock, another editor is refused, copies are unlocked", async ({
   page,
@@ -44,7 +44,7 @@ test("the author releases the lock, another editor is refused, copies are unlock
   await editorPage.goto(
     `${origin}/?room=${account.boardId}&lang=en&user=Editor&select=${widgetId}`,
   );
-  await expect(editorPage.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  await waitForBoardEditor(editorPage);
   await expect(editorPage.locator(".badge-lock")).toHaveCount(1);
 
   // Another editor may not release it; the refusal names the author.
@@ -54,7 +54,11 @@ test("the author releases the lock, another editor is refused, copies are unlock
 
   // The author can; the second page sees the change over the document socket.
   await page.goto(`${origin}/?room=${account.boardId}&lang=en&user=Owner&select=${widgetId}`);
-  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  await waitForBoardEditor(page);
+  await expect.poll(() => page.evaluate(
+    () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+  )).toEqual([widgetId]);
+  await expect(page.locator(".badge-lock")).toHaveCount(1);
   await page.keyboard.press("Meta+Shift+l");
   await expect(page.locator(".badge-lock")).toHaveCount(0);
   await expect(editorPage.locator(".badge-lock")).toHaveCount(0, { timeout: 10_000 });

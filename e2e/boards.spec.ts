@@ -132,13 +132,12 @@ test("a board with a non-ASCII name is one room, not a percent-encoded twin", as
 
   await page.reload();
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
-  const ids = await page.evaluate(
+  await expect.poll(() => page.evaluate(
     () =>
       (window as unknown as { __remo: { widgets: Array<{ id: string }> } }).__remo.widgets.map(
         (widget) => widget.id,
       ),
-  );
-  expect(ids).toContain(stickyId);
+  )).toContain(stickyId);
 });
 
 test("switches the organisation and leaves the previous board", async ({ page }) => {
