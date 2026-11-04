@@ -302,6 +302,31 @@ describe("agent writes are domain events (ADR-097)", () => {
     });
   });
 
+  it("resumes after a connector was created without a duplicate error", async () => {
+    const { ydoc, ids } = boardWithNotes(2);
+    const operations = [{ op: "create_connector", from: ids[0], to: ids[1] }];
+    const first = await executeChangeSet({
+      ydoc,
+      operations,
+      agent: { id: "a1", name: "Scout" },
+      taskId: "t1",
+      budget,
+    });
+    expect(first.processed).toEqual(["connector:0"]);
+
+    // The estimate used to validate every operation, including the connector that is
+    // already in the document, and threw CONNECTOR_EXISTS forever.
+    const resumed = await executeChangeSet({
+      ydoc,
+      operations,
+      agent: { id: "a1", name: "Scout" },
+      taskId: "t1",
+      budget,
+      progress: { processed: first.processed },
+    });
+    expect(resumed.count).toBe(0);
+  });
+
   it("stays quiet when a resume finds the work already done", async () => {
     const { ydoc, ids } = boardWithNotes(3);
     const first = await executeChangeSet({
