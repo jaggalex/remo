@@ -786,6 +786,68 @@ suite("invitations and administration", () => {
     expect(again.status).toBe(410);
   });
 
+  it("renames an organisation and edits a team, but not one still in use", async () => {
+    const { owner, orgId } = await setup("team-edit");
+    const created = await owner("POST", `/orgs/${orgId}/teams`, { name: "Design" });
+    expect(created.status).toBe(201);
+    const teamId = created.body.team.id;
+
+    const renamedOrg = await owner("PATCH", `/orgs/${orgId}`, { name: "Studio" });
+    expect(renamedOrg.status).toBe(200);
+    expect(renamedOrg.body.org.name).toBe("Studio");
+    const renamedTeam = await owner("PATCH", `/orgs/${orgId}/teams/${teamId}`, {
+      name: "Product",
+    });
+    expect(renamedTeam.status).toBe(200);
+    expect(renamedTeam.body.team.name).toBe("Product");
+
+    const memberEmail = email("team-member");
+    const invite = await owner("POST", `/orgs/${orgId}/invitations`, { email: memberEmail });
+    const member = client();
+    const memberReg = await member("POST", "/auth/register", {
+      email: memberEmail,
+      password,
+      name: "Member",
+    });
+    await member("POST", "/invitations/accept", {
+      token: new URL(invite.body.url).searchParams.get("invite"),
+    });
+    expect((await member("PATCH", `/orgs/${orgId}`, { name: "Nope" })).status).toBe(403);
+    expect(
+      (await member("PATCH", `/orgs/${orgId}/teams/${teamId}`, { name: "Nope" })).status,
+    ).toBe(403);
+
+    expect(
+      (
+        await owner("POST", `/orgs/${orgId}/teams/${teamId}/members`, {
+          userId: memberReg.body.user.id,
+          role: "member",
+        })
+      ).status,
+    ).toBe(200);
+    expect((await owner("GET", `/orgs/${orgId}/teams/${teamId}/members`)).body.members).toHaveLength(1);
+    expect(
+      (
+        await owner(
+          "DELETE",
+          `/orgs/${orgId}/teams/${teamId}/members/${memberReg.body.user.id}`,
+        )
+      ).status,
+    ).toBe(200);
+
+    const board = await owner("POST", `/orgs/${orgId}/boards`, {
+      title: "Team board",
+      teamId,
+    });
+    expect(board.status).toBe(201);
+    const inUse = await owner("DELETE", `/orgs/${orgId}/teams/${teamId}`);
+    expect(inUse.status).toBe(409);
+    expect(inUse.body.error).toBe("TEAM_IN_USE");
+
+    const spare = await owner("POST", `/orgs/${orgId}/teams`, { name: "Spare" });
+    expect((await owner("DELETE", `/orgs/${orgId}/teams/${spare.body.team.id}`)).status).toBe(200);
+  });
+
   it("refuses an invitation opened by the wrong account without consuming it", async () => {
     const { owner, orgId } = await setup("inv-wrong");
     const targetEmail = email("inv-target");
