@@ -1,6 +1,6 @@
 ## What it gives
 
-Presentation shows board objects in order as slides. A slide can be a frame, a sticky note, a
+Presentation shows room objects in order as slides. A slide can be a frame, a sticky note, a
 card, a shape or another object; a connector is shown together with both ends. The presenter
 advances, followers see the current slide; a late joiner starts on the current slide, not the
 first. The order lives in the document and does not depend on where the objects sit on the
@@ -8,7 +8,7 @@ canvas.
 
 ## When to use it
 
-- You need to run a meeting over a board that is already built.
+- You need to run a meeting over a room that is already built.
 - You hold the facilitation right (`board.facilitate`): editor and above.
 - You need to show sections one at a time without moving objects.
 - You need a colleague to watch the same slide at their own zoom.
@@ -27,7 +27,7 @@ Discussion pins show the comments of the current slide: a thread anchored to an 
 
 ## Example
 
-Input: a board with three frames. Action: the presenter starts the presentation and moves to
+Input: a room with three frames. Action: the presenter starts the presentation and moves to
 the second slide. Result: the follower has the second frame open, the counter says `2 / 3`, and
 the camera is fitted to their screen.
 

@@ -477,8 +477,8 @@ describe("board title", () => {
     const storyMap = { id: "t", title: "Story map", widgets: [] };
     const roadmap = { id: "t", title: "Roadmap", widgets: [] };
 
-    loadBoard(doc, { id: "t", title: "Kanban board", widgets: [] }, {});
-    expect(doc.snapshot().title).toBe("Kanban board");
+    loadBoard(doc, { id: "t", title: "Kanban room", widgets: [] }, {});
+    expect(doc.snapshot().title).toBe("Kanban room");
 
     // A title that is itself a template name is not a chosen name, so switching
     // templates renames the board instead of describing the previous content.

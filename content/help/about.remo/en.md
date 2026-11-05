@@ -1,6 +1,6 @@
 ## What it is
 
-remo is a local-first visual canvas for a small team: an organisation home, boards, cards, connectors, presentation, comments, access, agents and apps. Version **0.1.0**.
+remo is a local-first visual canvas for a small team: an organisation home, rooms, cards, connectors, presentation, comments, access, agents and apps. Version **0.1.0**.
 
 ## Author and licence
 

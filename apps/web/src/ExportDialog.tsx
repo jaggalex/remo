@@ -530,10 +530,10 @@ export function ExportDialog({
 /** The same slug the server uses, so a downloaded file is recognizable. */
 function filenameFor(title: string, extension: "png" | "pdf"): string {
   const slug =
-    String(title || "board")
+    String(title || "room")
       .toLowerCase()
       .replace(/[^a-z0-9а-яё]+/gi, "-")
       .replace(/^-+|-+$/g, "")
-      .slice(0, 48) || "board";
+      .slice(0, 48) || "room";
   return `${slug}.${extension}`;
 }

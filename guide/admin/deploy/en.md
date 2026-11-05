@@ -1,6 +1,6 @@
 ## What you get
 
-A working installation on one server: nginx terminates HTTPS, the sync service holds rooms and the API, Postgres stores boards and access.
+A working installation on one server: nginx terminates HTTPS, the sync service holds rooms and the API, Postgres stores rooms and access.
 
 **One instance.** Rooms, open sockets and access checks live in the process; two copies behind a load balancer will not see each other's rooms. In this version scaling is up, not out.
 
@@ -33,7 +33,7 @@ curl -sI https://<domain>/                    # 200
 curl -sI https://<domain>/guide/              # 200, documentation
 ```
 
-In the browser: sign-up, a board, a second tab in a private window, dragging a sticky note. In the Network panel the socket must show `101 Switching Protocols`.
+In the browser: sign-up, a room, a second tab in a private window, dragging a sticky note. In the Network panel the socket must show `101 Switching Protocols`.
 
 ## Limitations
 

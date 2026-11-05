@@ -8,15 +8,15 @@ An extension does not get access to the product's browser. Instead the product p
 
 | Part | What it gives | Who configures it |
 |---|---|---|
-| [Events and webhook](/guide/capabilities/events) | the server itself reports a change on the board | organisation administrator |
+| [Events and webhook](/guide/capabilities/events) | the server itself reports a change on the room | organisation administrator |
 | [Integration token](/guide/capabilities/tokens) | an action on behalf of a specific person, but only within their rights and scope | organisation administrator |
-| [App](/guide/capabilities/apps) | a panel on the board, drawn from a schema | organisation administrator |
+| [App](/guide/capabilities/apps) | a panel on the room, drawn from a schema | organisation administrator |
 
-The parts combine: the webhook reports an event, the integration verifies the signature, reads the board with a token and changes it with a command. The app shows the result to a person and can invoke its own action.
+The parts combine: the webhook reports an event, the integration verifies the signature, reads the room with a token and changes it with a command. The app shows the result to a person and can invoke its own action.
 
 ## What counts as an event
 
-An event is a domain fact, not a change of document bytes. It always answers the questions: what happened, on which board, by whom and with which object. That is why "a user dragged a sticky note" is not an event, while "an object was created" is.
+An event is a domain fact, not a change of document bytes. It always answers the questions: what happened, on which room, by whom and with which object. That is why "a user dragged a sticky note" is not an event, while "an object was created" is.
 
 The list of types and the envelope are in the [event reference](/guide/reference/events).
 

@@ -1,10 +1,10 @@
 ## When you need it
 
-A colleague needs access to the board, someone outside the team needs to view it without an account, and after the project access has to be closed.
+A colleague needs access to the room, someone outside the team needs to view it without an account, and after the project access has to be closed.
 
 ## Before you start
 
-- Permission to share the board (`board.share`): the owner and co-owner always have it, an editor has it unless the organisation policy forbids it (allowed by default).
+- Permission to share the room (`board.share`): the owner and co-owner always have it, an editor has it unless the organisation policy forbids it (allowed by default).
 - Only an owner or co-owner can appoint a **Co-owner**: it is a management role, and `board.share` alone is not enough.
 - Only the owner or co-owner can manage the public link: an editor does not see that block in the dialog.
 - A guest does not manage access, whatever their role. Only the owner or co-owner can grant access to a whole organisation or team.
@@ -18,7 +18,7 @@ A colleague needs access to the board, someone outside the team needs to view it
 3. Choose the role: **Viewer**, **Commenter**, **Editor**, **Co-owner**.
 4. Press **Добавить** (add).
 
-Result: the colleague sees the board in their list and gets the chosen permissions.
+Result: the colleague sees the room in their list and gets the chosen permissions.
 
 ## Steps: a link for someone outside the team
 
@@ -29,7 +29,7 @@ This needs the owner or co-owner role.
 3. Set a password and an expiry if you need them.
 4. Copy the link.
 
-Result: the link opens the board read-only; export and backup are not available.
+Result: the link opens the room read-only; export and backup are not available.
 
 ## Steps: revoke access
 
@@ -41,8 +41,8 @@ Result: an open tab switches to read-only on its next action; new sign-ins are r
 
 ## Check
 
-- A colleague with an existing account sees the board immediately after being added: there is no acceptance step. Only someone without an account accepts the invitation link.
-- In a private window the link opens the board without editing tools.
+- A colleague with an existing account sees the room immediately after being added: there is no acceptance step. Only someone without an account accepts the invitation link.
+- In a private window the link opens the room without editing tools.
 - After revocation the colleague cannot change an object.
 
 ## Common mistakes

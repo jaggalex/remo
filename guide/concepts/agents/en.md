@@ -10,7 +10,7 @@ The right to a task is the intersection of three things:
 
 | What | Where it comes from |
 |---|---|
-| Owner's access | the owner's role on the board at the moment of execution |
+| Owner's access | the owner's role on the room at the moment of execution |
 | Organisation policy | whether agents are enabled and what is allowed |
 | Skill requirements | which capabilities are needed for this skill |
 
@@ -26,7 +26,7 @@ A budget is not a hint but a condition: once it is exhausted, the task stops.
 
 - **Plan.** The agent proposes a structure or a layout of the selection, and the preview writes nothing. A person's tab applies the plan in one transaction, and one ⌘Z removes everything. A structure plan and a tidy are one mechanism with different skills.
 - **Diagram.** The agent writes shapes and connectors immediately; there is no preview, and ⌘Z does not undo that write.
-- **Change set.** Cards arrive as a package: operations, progress, the ability to stop and resume. A large diagram does not block the board for a minute — work goes in portions, and progress is kept between portions.
+- **Change set.** Cards arrive as a package: operations, progress, the ability to stop and resume. A large diagram does not block the room for a minute — work goes in portions, and progress is kept between portions.
 
 Without a provider key a task that needs the model does not fail; it waits in the queue. Cards do not call a model, and tidying works without a key.
 

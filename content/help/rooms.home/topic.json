@@ -1,0 +1,28 @@
+{
+  "id": "rooms.home",
+  "type": "how-to",
+  "title": {
+    "ru": "Домашняя страница организации",
+    "en": "Organisation home"
+  },
+  "summary": {
+    "ru": "Плитки комнат, поиск, сортировка, страницы, эмодзи и переключение организации.",
+    "en": "Room tiles, search, sorting, pages, emoji and switching organisation."
+  },
+  "related": [
+    "rooms.create",
+    "account.profile",
+    "org.manage",
+    "objects.name",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:6705cd01b0ad3cda67182030f26b7fa6ff743b8337c16e6b11bbb0d768fa96f9",
+      "targetHash": "sha256:580c449694a75c255326d7b1c4773d0f132dccc17b9f0106949279093250fe9a"
+    }
+  }
+}

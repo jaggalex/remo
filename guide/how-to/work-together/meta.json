@@ -4,8 +4,8 @@
   "status": "available",
   "order": 15,
   "title": {
-    "ru": "Работать вместе на одной доске",
-    "en": "Work together on one board"
+    "ru": "Работать вместе на одной комнате",
+    "en": "Work together on one room"
   },
   "summary": {
     "ru": "Позвать коллегу, включить follow, проверить, что изменения видны, и понять поведение без связи.",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:e5c1ca5145ecf8cc39364caa9ce725004b30104fb014d1f18807622745e7eea4",
-      "targetHash": "sha256:9a74177d51cf9be9108dbc73c87cef38baf47f8769ba29c096d74d6845a1b25e"
+      "sourceHash": "sha256:aaf44ad7cff9ffbcee53c9a56e982ed7d50adb997a15ecfc054132542642fea2",
+      "targetHash": "sha256:20cf09e95045e22fa1ac911b6c4ea675d990312290d11da6ae266fdb956aeda4"
     }
   }
 }

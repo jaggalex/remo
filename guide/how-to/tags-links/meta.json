@@ -8,8 +8,8 @@
     "en": "Tag objects and link them"
   },
   "summary": {
-    "ru": "Теги-словарь доски и ссылка на объект: внешний адрес или другой объект.",
-    "en": "A board tag vocabulary and a link on an object: an external address or another object."
+    "ru": "Теги-словарь комнаты и ссылка на объект: внешний адрес или другой объект.",
+    "en": "A room tag vocabulary and a link on an object: an external address or another object."
   },
   "related": [
     "how-to/card-fields",
@@ -19,8 +19,8 @@
   "updated": "2026-11-02",
   "translations": {
     "en": {
-      "sourceHash": "sha256:93df43d336d88a9e16ed0ea806dc56071344ac69b42bb63fa7e18e15014b2ecf",
-      "targetHash": "sha256:5dd33fb7b25d6fd4ffc6ed0075956970f5694b61cc51c65744e4818022e34290"
+      "sourceHash": "sha256:d52b51f0b48b037cbf446ee0a5aea88e5f8310a18238d1cc9bc431b9641b9e37",
+      "targetHash": "sha256:76a80c3d2f41b9a4181980c34835be1f521d845dd3928d4426db43884a1936cc"
     }
   }
 }

@@ -1,4 +1,4 @@
-## Board backup
+## Room backup
 
 ```json
 {
@@ -31,7 +31,7 @@
 
 Version 2 adds group names, the tag vocabulary, presentation order and comments. An object
 lock (`locked`, `lockedBy`, `lockedByName`, `lockedAt`) lives inside `widgets` and is restored
-with the object: a backup restores the board as it was, it does not make a copy.
+with the object: a backup restores the room as it was, it does not make a copy.
 
 `presentation` is the ordered list of slide ids; any object can be a slide. Until the order
 is edited, an empty list means "all frames". After the first edit `meta.presentation_configured`
@@ -43,7 +43,7 @@ Checks on import:
 2. The `checksum` reconciles with the content.
 3. Objects match what `counts` promises.
 
-Import **replaces** the board: objects, tags, presentation order and comments come from the
+Import **replaces** the room: objects, tags, presentation order and comments come from the
 file. An empty comment list clears the discussion. Author names are kept, but the account
 link is not, because a backup has no user ids. Version 1 backups still import: missing fields
 are treated as empty.
@@ -58,7 +58,7 @@ database tables. The internal document state does not get into the file: the imp
 | `id` | identifier in the registry, for example `app.hello` |
 | `version` | integer, increments on change |
 | `nameKey`, `descriptionKey` | interface dictionary keys |
-| `capabilities` | what the app needs from the board |
+| `capabilities` | what the app needs from the room |
 | `panel` | panel schema: `panel`, `text`, `button`, `field` |
 | `actions` | button actions and their capabilities |
 

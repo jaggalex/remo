@@ -1,10 +1,10 @@
 ## When you need it
 
-You need to run a meeting on the board: show objects in order, keep attention, and return to work afterwards.
+You need to run a meeting on the room: show objects in order, keep attention, and return to work afterwards.
 
 ## Prerequisites
 
-- The board has objects: a slide can be a frame or any other object.
+- The room has objects: a slide can be a frame or any other object.
 - You hold the facilitation right: editor, co-owner or owner.
 
 ## Steps
@@ -14,7 +14,7 @@ You need to run a meeting on the board: show objects in order, keep attention, a
 3. To give a slide a clear label, set the object's **Name** in the inspector. The name is not painted on the canvas; the id beside it is read-only.
 4. Start the presentation from the panel. Result: the first slide and a counter.
 5. Move with **‹** and **›**: the arrow keys pan the canvas, not the slides.
-6. Participants see "{name} is showing the board" and click **Watch**, joining the current slide even if they arrive late.
+6. Participants see "{name} is showing the room" and click **Watch**, joining the current slide even if they arrive late.
 7. **Stop** closes the mode; the presenter returns to the previous view and followers stay on the last slide.
 
 ## Check

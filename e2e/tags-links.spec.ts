@@ -32,12 +32,12 @@ test("an internal link points to another object", async ({ page }) => {
   await expect(link.locator("select option")).not.toHaveCount(0);
   await link.locator("select").selectOption({ index: 1 });
   await link.locator(".link-row button").nth(1).click();
-  await expect(link.locator(".link-current")).toContainText("Object on this board");
+  await expect(link.locator(".link-current")).toContainText("Object on this room");
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
   await page.reload();
   await selectKanbanCard(page, cardId);
   await expect(page.locator(".link-panel .link-current")).toContainText(
-    "Object on this board",
+    "Object on this room",
   );
 });

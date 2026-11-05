@@ -1,6 +1,6 @@
 ## Result
 
-Tags group objects by meaning, and a link on an object leads to a source or to another board object. Both survive a reload and are included in a backup.
+Tags group objects by meaning, and a link on an object leads to a source or to another room object. Both survive a reload and are included in a backup.
 
 ## Tags
 
@@ -14,19 +14,19 @@ Tags group objects by meaning, and a link on an object leads to a source or to a
 
 1. Select one object.
 2. In the Link block, paste an external `https://…` address and click Apply.
-3. Or choose a board object in the list and click its Apply.
+3. Or choose a room object in the list and click its Apply.
 4. Click Open to follow the link, or Remove to clear it.
 
 ## Check
 
 - Tags and the link are still there after a reload.
 - Renaming a tag does not create a second tag.
-- An external link opens in a new window; an internal one opens the object on this board.
+- An external link opens in a new window; an internal one opens the object on this room.
 - A `javascript:` or `data:` link is refused.
 
 ## Limits
 
-- One tag is one board record; 50 tags per board and 10 per object.
+- One tag is one room record; 50 tags per room and 10 per object.
 - A link grants no access: opening an internal link still checks rights.
 - An external link is not embedded or fetched by the server; it only opens.
-- An internal link can only target an object on this board.
+- An internal link can only target an object on this room.

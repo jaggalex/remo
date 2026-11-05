@@ -4,12 +4,12 @@
   "status": "available",
   "order": 10,
   "title": {
-    "ru": "Быстрый старт: доска за десять минут",
-    "en": "Quick start: a board in ten minutes"
+    "ru": "Быстрый старт: комната за десять минут",
+    "en": "Quick start: a room in ten minutes"
   },
   "summary": {
-    "ru": "От пустой доски до общего результата: объекты, связи, доступ и сохранение — с проверкой на каждом шаге.",
-    "en": "From an empty board to a shared result: objects, connectors, access and saving, with a check at each step."
+    "ru": "От пустой комнаты до общего результата: объекты, связи, доступ и сохранение — с проверкой на каждом шаге.",
+    "en": "From an empty room to a shared result: objects, connectors, access and saving, with a check at each step."
   },
   "related": [
     "start/first-scenario",
@@ -21,8 +21,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:7b057b886c428b77c5051b701a97d0ec445d9dc33eaf3d59a9b2bc1a0b57f01a",
-      "targetHash": "sha256:0916e6f8f0cb692ec524f005eb791860aa98255cddd6a5379581b64695aec67e"
+      "sourceHash": "sha256:3e0d13b5f2b6d1be42f1409c6c74e47510ca801a6c4d7d63ee460f01659e62d5",
+      "targetHash": "sha256:b106b82a92e07317af133938fb63a2ddf0a742eb2b32981a6c52504fbda73ce4"
     }
   }
 }

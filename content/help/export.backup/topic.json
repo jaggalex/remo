@@ -6,8 +6,8 @@
     "en": "Backup and restore"
   },
   "summary": {
-    "ru": "Открытый JSON-бэкап доски с контрольной суммой и восстановление только из бэкапа remo.",
-    "en": "An open JSON board backup with a checksum, and restore from a remo backup only."
+    "ru": "Открытый JSON-бэкап комнаты с контрольной суммой и восстановление только из бэкапа remo.",
+    "en": "An open JSON room backup with a checksum, and restore from a remo backup only."
   },
   "related": [
     "export.scope",
@@ -18,8 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:5c64d164cc49b518ff9e49caa00d9856570c068e7c1e5afa3b6637f6241d525a",
-      "targetHash": "sha256:711ef53a23e79de960d21210b89ce75d34b8720c927c26f3f2a5f92d2a0a890c"
+      "sourceHash": "sha256:06de53a242911e405ec883f94f7937e6e8f4e4dfc99c02ab6954a4209d2a2ca5",
+      "targetHash": "sha256:3b6a661e15af1325c0bf493d7e2507f8c96507e4639976674f4c1cb505e6c566"
     }
   }
 }

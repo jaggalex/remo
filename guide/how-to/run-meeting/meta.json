@@ -8,8 +8,8 @@
     "en": "Run a meeting: timer, voting, gathering people"
   },
   "summary": {
-    "ru": "Таймбокс обсуждения, голосование по вариантам и приглашение всей команды на участок доски.",
-    "en": "A discussion timebox, voting on options and an invitation for the whole team to one part of the board."
+    "ru": "Таймбокс обсуждения, голосование по вариантам и приглашение всей команды на участок комнаты.",
+    "en": "A discussion timebox, voting on options and an invitation for the whole team to one part of the room."
   },
   "related": [
     "capabilities/facilitation",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:9dbf0642ac5cbab454fb05d9e528b3e0b0fa613b7c0cede7b3133178a3a9cfc0",
-      "targetHash": "sha256:76cb88a77ebc7fe2301d3198c1e06c85ad9589185fca562a30a89c305c6ef516"
+      "sourceHash": "sha256:7938d55977d36cde3a9cb86d52c7c13061bffd93734a20a3f478106dc29f65be",
+      "targetHash": "sha256:19904b9c775c5a616e0a8f3f942093506fd1cbda690a0a8faf06624aea8007eb"
     }
   }
 }

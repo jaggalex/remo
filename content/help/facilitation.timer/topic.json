@@ -6,8 +6,8 @@
     "en": "Shared timer"
   },
   "summary": {
-    "ru": "Один отсчёт на всю доску: запуск, пауза, +1 минута и «время вышло» — одинаково у всех.",
-    "en": "One countdown for the whole board: start, pause, +1 minute and time is up, the same for everyone."
+    "ru": "Один отсчёт на всю комнату: запуск, пауза, +1 минута и «время вышло» — одинаково у всех.",
+    "en": "One countdown for the whole room: start, pause, +1 minute and time is up, the same for everyone."
   },
   "related": [
     "access.roles",
@@ -18,8 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:522175741fd843202fa46635713adf91e7eb6ecbfebbb2f51c1df0969ea5ab42",
-      "targetHash": "sha256:5a21318b19a674c6d3525232a0cdbd5ba71a1212031a7c69a69c0886661e64bc"
+      "sourceHash": "sha256:3d93db39fa69159745fd3af991941716ae277eaad88325c90eb6d23b325fcbb6",
+      "targetHash": "sha256:0cf77e53230bb130c0a19169bedc1933967f0ddf6300dae13329841a61618c96"
     }
   }
 }

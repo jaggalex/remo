@@ -4,12 +4,12 @@
   "status": "available",
   "order": 4,
   "title": {
-    "ru": "Создать доску",
-    "en": "Create a board"
+    "ru": "Создать комнату",
+    "en": "Create a room"
   },
   "summary": {
-    "ru": "Новая доска в организации (и в команде, если выбрана).",
-    "en": "A new board in an organisation (and a team when one is chosen)."
+    "ru": "Новая комната в организации (и в команде, если выбрана).",
+    "en": "A new room in an organisation (and a team when one is chosen)."
   },
   "related": [
     "start/quickstart",
@@ -19,8 +19,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:a1559c8216195188c15ae52cd1400331df2cdc7186e86336932999eddca3aa16",
-      "targetHash": "sha256:a62b5ee2c7f34dde9f4c91669e5e36c3f5e9564974614514a1debc3ac5491068"
+      "sourceHash": "sha256:a2afadd79101ccef38920a9058083b0118e12a848b5be64244700aa2444dd4fd",
+      "targetHash": "sha256:0e69bff0d734fdc675b47848bd883c798c5baceeab502d419036f062b0fd3384"
     }
   }
 }

@@ -4,19 +4,19 @@ An agent proposes a structure as a plan, you see it on a map before anything is 
 
 ## When you need it
 
-You have a description — a brief, a list of stories, a file or selected sticky notes — and no structure on the board yet. You want to see the result first and then decide whether to write it.
+You have a description — a brief, a list of stories, a file or selected sticky notes — and no structure on the room yet. You want to see the result first and then decide whether to write it.
 
 ## Before you start
 
-- You have edit permission on the board.
-- Agents are enabled in the organisation and on the board, and you have an active agent.
+- You have edit permission on the room.
+- Agents are enabled in the organisation and on the room, and you have an active agent.
 - A provider key is configured. Without a key the task does not fail: it stays queued and runs once the key appears.
 - A file, when you need one, is `.md`, `.txt` or `.csv` in UTF-8, at most 100 000 bytes.
 - A selection, when you use one, is at most 50 objects and 20 000 characters of text.
 
 ## Steps
 
-1. On the board open **More ▾ → Ask AI…**.
+1. On the room open **More ▾ → Ask AI…**.
 2. Choose an agent. The list shows only your active agents.
 3. Choose a source. The task text is always there; a file and a selection are added to it.
 
@@ -28,13 +28,13 @@ You have a description — a brief, a list of stories, a file or selected sticky
 
 The **Source** block shows how many objects and characters will reach the model. **Remove** leaves the task without object text; **Selection only** makes the selection the task itself.
 
-4. Choose the **Brief to board** skill or **Auto**. Auto picks a skill from the task wording and the selection.
+4. Choose the **Brief to room** skill or **Auto**. Auto picks a skill from the task wording and the selection.
 5. Describe the result and attach a file when you need one.
 6. Check **What will go to the model** and set a budget: the number of changes and a dollar limit. Tokens and time are server defaults.
 7. Click **Ask the agent** and wait for the plan ready status. The preview opens by itself; later you can open it with the **Plan** button in Recent tasks.
-8. Read the preview and click **Apply**. Result: the objects and connectors appear in one gesture, and the dialog shows "⌘Z undoes the plan" and "Show on board".
+8. Read the preview and click **Apply**. Result: the objects and connectors appear in one gesture, and the dialog shows "⌘Z undoes the plan" and "Show on room".
 
-**Reject** closes the task and writes nothing. **Show on board** closes the preview and selects nothing: applying the plan is what selects the created frames.
+**Reject** closes the task and writes nothing. **Show on room** closes the preview and selects nothing: applying the plan is what selects the created frames.
 
 ## What the preview shows
 
@@ -52,24 +52,24 @@ A reply with more than 10 operations is not stored: the task fails with `TOO_MAN
 | Task wording | 2 000 characters | — |
 | File | 100 000 bytes; up to 20 000 characters of text | the original file is not stored, only the extracted text |
 | Selection | 50 objects and 20 000 characters | empty and repeated texts are dropped |
-| Board snapshot | 200 objects | it carries only ids, types, coordinates, parents and frame and column ids; no titles, texts, comments or people |
+| Room snapshot | 200 objects | it carries only ids, types, coordinates, parents and frame and column ids; no titles, texts, comments or people |
 
-Task text, a file and the board are data, never instructions. The model cannot change or delete existing objects, read another board, follow a link or send anything out. Its only action is to propose creating objects and connectors.
+Task text, a file and the room are data, never instructions. The model cannot change or delete existing objects, read another room, follow a link or send anything out. Its only action is to propose creating objects and connectors.
 
 ## How a plan differs from the other tasks
 
-| Skill | Before writing | On the board | Undo |
+| Skill | Before writing | On the room | Undo |
 |---|---|---|---|
-| **Brief to board** | a plan preview | after **Apply**, in one transaction | one ⌘Z |
+| **Brief to room** | a plan preview | after **Apply**, in one transaction | one ⌘Z |
 | **Diagram from a description** | no preview | immediately | by hand: ⌘Z does not undo it |
 | **Cards from a selection** | the card count in Preview job | in chunks after **Run job** | by hand; the package can be stopped and resumed |
 | **Tidy up selection** | a before-and-after preview | after **Apply**, in one transaction | one ⌘Z |
 
 ## Check the result
 
-- The object and connector counts in the preview match what appeared on the board.
-- One ⌘Z returns the board to the state before the apply; a second ⌘Z does not break anything.
-- After applying, the dialog shows Applied and Show on board, not the Apply button.
+- The object and connector counts in the preview match what appeared on the room.
+- One ⌘Z returns the room to the state before the apply; a second ⌘Z does not break anything.
+- After applying, the dialog shows Applied and Show on room, not the Apply button.
 - If the same plan is open in two tabs, the tab that applies it second gets an "already applied" answer and writes nothing.
 - Applying a plan leaves organisation journal rows but creates no `board.item.created` event: your tab wrote the objects, not a server command.
 
@@ -78,14 +78,14 @@ Task text, a file and the board are data, never instructions. The model cannot c
 | Symptom | Cause |
 |---|---|
 | No Ask AI… item | you are a viewer, a commenter, a public-link visitor, or you are not signed in |
-| `AGENT_DENIED` | the agent is off, you lost access to the board, or agents are off in the organisation or on the board |
+| `AGENT_DENIED` | the agent is off, you lost access to the room, or agents are off in the organisation or on the room |
 | `BUDGET_REQUIRED` | the task has no budget |
 | No preview, the task stays queued | no provider key is configured; the task runs once the key appears |
 | "The plan is not ready yet" | the task is still running; wait for the status and open the plan from the history |
 | "Apply is blocked" | an object is outside the allowed coordinates; ask for a fresh plan |
 | `TOO_MANY_OPERATIONS` | the reply has more than 10 operations; the plan is not stored — split the task |
 | `PLAN_TOO_LARGE` | more than 300 objects or placements; the plan is not stored — split the task |
-| "The board changed" | the board changed while you were reading; ask for a fresh plan |
+| "The room changed" | the room changed while you were reading; ask for a fresh plan |
 | "The plan is already applied" | it was applied in another tab; nothing was written here |
 | "The file was cut" | the first 20 000 characters reached the model; the plan itself is never cut |
 

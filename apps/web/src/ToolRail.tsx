@@ -212,7 +212,7 @@ export function ToolRail({
                 </div>
               </div>
               <p className="tool-flyout-note">
-                {t("tool.stickyDefault")} <HelpLink topicId="board.colours" className="help-link icon-link" />
+                {t("tool.stickyDefault")} <HelpLink topicId="room.colours" className="help-link icon-link" />
               </p>
             </Popover>
           )}

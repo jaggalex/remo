@@ -8,8 +8,8 @@
     "en": "Organisation home"
   },
   "summary": {
-    "ru": "Плитки досок, поиск, сортировка, страницы, эмодзи и смена организации.",
-    "en": "Board tiles, search, sorting, pages, emoji and switching organisation."
+    "ru": "Плитки комнат, поиск, сортировка, страницы, эмодзи и смена организации.",
+    "en": "Room tiles, search, sorting, pages, emoji and switching organisation."
   },
   "related": [
     "capabilities/access",
@@ -19,8 +19,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:9e84d6e7b7f54e316c73807aabfadc898c5d1259b5884cca46d70111c189c04c",
-      "targetHash": "sha256:5ba2f181b9a069704ce1193a999959971a4f3832245d9cb23e93cffb47289a43"
+      "sourceHash": "sha256:59de860393d1eaaa5ede549e60e4300cfcb3955dcf9f63af2778bce2acd23d1a",
+      "targetHash": "sha256:e4c42ff37c798f86038a1db8239627d84b031d9897309feaca596e399d97f6a6"
     }
   }
 }

@@ -3,7 +3,7 @@ import { freshBoard } from "./helpers";
 
 test("home shows board tiles with metadata and keeps an emoji", async ({ page }) => {
   await freshBoard(page, "home-meta", { title: "Meta board" });
-  await page.getByRole("button", { name: "All boards" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
 
   const home = page.locator(".home");
   await expect(home.locator(".org-badge.personal").first()).toBeVisible();
@@ -23,7 +23,7 @@ test("home shows board tiles with metadata and keeps an emoji", async ({ page })
 
 test("trashes a board and restores it from the home", async ({ page }) => {
   await freshBoard(page, "home-trash", { title: "Trash board" });
-  await page.getByRole("button", { name: "All boards" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
 
   const home = page.locator(".home");
   const tile = home.locator(".home-tile").filter({ hasText: "Trash board" });
@@ -38,7 +38,7 @@ test("trashes a board and restores it from the home", async ({ page }) => {
   await trashed.getByRole("button", { name: "Restore", exact: true }).click();
   await expect(trashed).toHaveCount(0);
 
-  await home.getByRole("button", { name: "Boards", exact: true }).click();
+  await home.getByRole("button", { name: "Rooms", exact: true }).click();
   await expect(home.locator(".home-tile").filter({ hasText: "Trash board" })).toBeVisible();
 });
 
@@ -51,7 +51,7 @@ test("sorts board tiles and pages them twenty-four at a time", async ({ page }) 
     expect(created.ok(), await created.text()).toBeTruthy();
   }
 
-  await page.getByRole("button", { name: "All boards" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
   const home = page.locator(".home");
   await expect(home.locator(".home-tile")).toHaveCount(24);
   await expect(home.getByRole("button", { name: "Page 2" })).toBeVisible();

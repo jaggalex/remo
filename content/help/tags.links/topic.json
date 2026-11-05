@@ -6,20 +6,20 @@
     "en": "Tag objects and link them"
   },
   "summary": {
-    "ru": "Теги-словарь доски и ссылка на объект: внешний адрес или другой объект.",
-    "en": "A board tag vocabulary and a link on an object: an external address or another object."
+    "ru": "Теги-словарь комнаты и ссылка на объект: внешний адрес или другой объект.",
+    "en": "A room tag vocabulary and a link on an object: an external address or another object."
   },
   "related": [
     "cards.fields",
-    "boards.create"
+    "rooms.create"
   ],
   "verifiedAgainst": "2026-11-02",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:ab806fe037ee59c965ba3b6dcb615fb576667cf7570c2f768fb10512af5ca609",
-      "targetHash": "sha256:4d8b3c79daf3f59fd09392884bea59ed826a29a2e192922cbcf499348c5f4474"
+      "sourceHash": "sha256:3fc3c4e533c14b90c34369a0ae5818733e77b697eab0b7bfb7eda3d34025a199",
+      "targetHash": "sha256:db3c9c783172c6259852d3ce1fad070fb41983719317fa520d6cfeca904c9703"
     }
   }
 }

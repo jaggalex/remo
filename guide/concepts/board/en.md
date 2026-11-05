@@ -1,6 +1,6 @@
 ## Model
 
-A board is a document with objects. An object has an identifier, a type, a size, a position, and, for text types, text. The type defines behaviour: a sticky note moves freely, a card lives in a kanban cell, a connector joins two objects.
+A room is a document with objects. An object has an identifier, a type, a size, a position, and, for text types, text. The type defines behaviour: a sticky note moves freely, a card lives in a kanban cell, a connector joins two objects.
 
 | Type | Moves | Contains text | Can be a connector end |
 |---|---|---|---|
@@ -20,15 +20,15 @@ Objects lie in layers: kanban and frames below, sticky notes and shapes above, t
 
 ## Coordinates and camera
 
-The board world is infinite. The camera defines what is visible: position and scale. An object that leaves the screen is not lost — it stays in its place in the world, and the camera looks at another point. This gives a practical rule: **do not move the camera to "bring an object back"** — use zoom and the board overview.
+The room world is infinite. The camera defines what is visible: position and scale. An object that leaves the screen is not lost — it stays in its place in the world, and the camera looks at another point. This gives a practical rule: **do not move the camera to "bring an object back"** — use zoom and the room overview.
 
 ## Selection
 
-The selection is a temporary set of objects: it is not stored on the board and other participants do not see it. Therefore:
+The selection is a temporary set of objects: it is not stored on the room and other participants do not see it. Therefore:
 
 - the selection rectangle captures what falls inside it; when both ends of a connector fall inside, the connector joins the selection with them;
 - delete, move, and align act on the whole set;
-- the selection survives a redraw and does not depend on who else is looking at the board.
+- the selection survives a redraw and does not depend on who else is looking at the room.
 
 A connector with one end outside the selection is not added: a line without its second object is not a separate object but a broken relation. Copying and export apply the same rule.
 
@@ -38,7 +38,7 @@ A frame is a container: an object inside it moves with it. A kanban is a grid of
 
 ## What is not here
 
-- **Per-object permissions.** The board is the unit of access; a lock coordinates edits and
+- **Per-object permissions.** The room is the unit of access; a lock coordinates edits and
   is not an ACL.
 - **Nested comments.** A thread is flat: a root and replies.
 - **Mentions and notifications** in comments.
@@ -49,9 +49,9 @@ A frame is a container: an object inside it moves with it. A kanban is a grid of
 | Capability | Where it lives |
 |---|---|
 | Status, assignee, date range | card fields; a kanban column is a separate place |
-| Tags | board vocabulary, `tagIds` on the object |
-| Link | one field: an external URL or another board object |
-| Lock | a flag and an author; the author or a board manager releases it |
+| Tags | room vocabulary, `tagIds` on the object |
+| Link | one field: an external URL or another room object |
+| Lock | a flag and an author; the author or a room manager releases it |
 | Comments | a server thread anchored to an object or a point |
 | Name and ID | an optional name up to 120 characters; a read-only ID that can be copied |
 | Reactions | a live burst near the cursor; not stored |

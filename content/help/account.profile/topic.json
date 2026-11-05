@@ -10,7 +10,7 @@
     "en": "A display name and a unique @handle for mentions; where to change them."
   },
   "related": [
-    "boards.home",
+    "rooms.home",
     "access.share",
     "comments.thread"
   ],

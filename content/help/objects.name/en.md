@@ -4,7 +4,7 @@ An object has an optional **Name** for search and presentation and a permanent *
 
 ## Steps
 
-1. Select an object on the board.
+1. Select an object on the room.
 2. In the inspector, fill in **Name** and press Enter or click outside the field. An empty value removes the name.
 3. The **ID** beside it is read-only. Click **Copy ID** to paste it into a link, a command or a bug report.
 

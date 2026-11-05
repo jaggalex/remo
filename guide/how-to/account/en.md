@@ -19,21 +19,21 @@ A handle is not a login: you still sign in with your email. Comment history is n
 
 - **Personal** is the organisation every account has; the **Personal** badge appears in the list. Work alone or with an interest group.
 - **Shared** is an additional organisation for work, a club or a client.
-- Permissions and boards work the same way. A personal organisation cannot be deleted.
+- Permissions and rooms work the same way. A personal organisation cannot be deleted.
 
 ## Organisation and teams
 
 1. Open the account menu → **Organisation and people**.
 2. Rename the organisation with **Rename**; an organisation administrator can do this.
-3. In the **Teams** block, create a team, rename it, or delete it when no board or grant refers to it.
+3. In the **Teams** block, create a team, rename it, or delete it when no room or grant refers to it.
 4. Expand the team members, add a person from the organisation and choose a role: team admin or member. Remove a member in the same place.
 
 ## Check
 
 - The account menu shows the new `Name @handle`, and it survives a reload.
 - The organisation screen title shows the new name.
-- The renamed team appears in the list and in the team picker when creating a board.
-- The product refuses to delete a team while boards or grants refer to it.
+- The renamed team appears in the list and in the team picker when creating a room.
+- The product refuses to delete a team while rooms or grants refer to it.
 
 ## Limits
 

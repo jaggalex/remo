@@ -1,11 +1,11 @@
 ## When you need it
 
-An external system must read the board, change it and receive events about changes.
+An external system must read the room, change it and receive events about changes.
 
 ## Before you start
 
 - You are an organisation administrator: only an administrator can issue a token and configure a webhook.
-- Your account has edit permission on the board the integration will work with.
+- Your account has edit permission on the room the integration will work with.
 - The endpoint is reachable over HTTPS, even on the internal network. `REMO_WEBHOOK_ALLOW_PRIVATE=1` allows an internal address but does not waive HTTPS.
 
 ## Steps: a token
@@ -82,7 +82,7 @@ function verify(secret, rawBody, header, now = Date.now()) {
 |---|---|
 | `401 INTEGRATION_TOKEN_EXPIRED` | the token has expired — issue a new one |
 | `403 SCOPE_REQUIRED` | the token has no required scope |
-| `404 RESOURCE_NOT_AVAILABLE` | the token owner cannot see the board |
+| `404 RESOURCE_NOT_AVAILABLE` | the token owner cannot see the room |
 | The event did not arrive | the endpoint is not configured or does not answer `2xx` |
 
 ## Where to go next

@@ -8,8 +8,8 @@
     "en": "Presence and follow"
   },
   "summary": {
-    "ru": "Кто находится на доске, что видят другие и как устроено следование за участником.",
-    "en": "Who is on the board, what others see, and how following a participant works."
+    "ru": "Кто находится на комнате, что видят другие и как устроено следование за участником.",
+    "en": "Who is on the room, what others see, and how following a participant works."
   },
   "related": [
     "capabilities/collaboration",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:85eb58252e572bf4c64cef5cf8cb5e9d99e536046658d9d73dcbd9fde34f2ffe",
-      "targetHash": "sha256:bb145024cd370fa3bb02da9256bf3c231255425a30b00e61be35f630c917b086"
+      "sourceHash": "sha256:255557ff965322da89376cb2886b5cc5e2874b0f0c8a184931160c54eee85a96",
+      "targetHash": "sha256:fab000d073a9735a95023bfef6d1d8bde47d0c6e1d503ccf021b60be55fec7a7"
     }
   }
 }

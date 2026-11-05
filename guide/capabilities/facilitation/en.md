@@ -6,13 +6,13 @@ Tools for a meeting: a timer that everyone sees, voting on objects, and «Поз
 
 - Timebox a discussion.
 - Make a quick decision on a set of options.
-- Gather people in one area of the board.
+- Gather people in one area of the room.
 
 ## How it works
 
-The **timer** lives on the board, not in your tab: everyone sees it, and it keeps running even if you closed the panel. Start, pause, resume, +1 minute and reset are available.
+The **timer** lives on the room, not in your tab: everyone sees it, and it keeps running even if you closed the panel. Start, pause, resume, +1 minute and reset are available.
 
-**Voting** opens a session on the selected objects. Each person has a quota of votes (3 by default, 100 maximum); sessions of one account share one quota, a second browser adds no votes. By default votes are anonymous: only the aggregate is visible. After the session ends the results can be published to the board as plain text: a title, places and votes (up to 10), and the number of participants.
+**Voting** opens a session on the selected objects. Each person has a quota of votes (3 by default, 100 maximum); sessions of one account share one quota, a second browser adds no votes. By default votes are anonymous: only the aggregate is visible. After the session ends the results can be published to the room as plain text: a title, places and votes (up to 10), and the number of participants.
 
 In an open session the results name who voted for what after it ends; in an anonymous session only sums are visible, and nobody — including the facilitator — sees the names. Guests by link are shown as a number.
 
@@ -20,7 +20,7 @@ In an open session the results name who voted for what after it ends; in an anon
 
 ## Example
 
-Input: a board with four options. Action: open voting on these objects, quota 2, anonymous. Result: each person votes twice, you see the sum, then you publish the result.
+Input: a room with four options. Action: open voting on these objects, quota 2, anonymous. Result: each person votes twice, you see the sum, then you publish the result.
 
 ## What you can configure
 
@@ -28,7 +28,7 @@ The timer duration, the vote quota, anonymity, the set of objects for voting.
 
 ## Limitations
 
-- One voting session is open on a board at a time.
+- One voting session is open on a room at a time.
 - Facilitation can be run by a role with the `board.facilitate` capability: editor and above.
 - Votes are not revealed if the session is anonymous. In an open session names are visible only after it ends.
 - A published result is ordinary text with no formatting: a title, lines like "1. … — N" and the number of participants. The snapshot has no rich styling.

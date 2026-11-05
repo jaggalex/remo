@@ -1,11 +1,11 @@
 ## When you need it
 
-Two or more people work on one board at the same time and need to see each other.
+Two or more people work on one room at the same time and need to see each other.
 
 ## Before you start
 
-- The colleague has access to the board: a role is granted in **Share** (see [Grant access and share a link](/guide/how-to/share)).
-- Both of you have the board open in a browser.
+- The colleague has access to the room: a role is granted in **Share** (see [Grant access and share a link](/guide/how-to/share)).
+- Both of you have the room open in a browser.
 
 ## Steps
 
@@ -25,8 +25,8 @@ Two or more people work on one board at the same time and need to see each other
 
 | Symptom | Cause |
 |---|---|
-| The colleague does not appear | they have no access or have not opened the board |
-| Follow "does not work" | you are looking at a different board |
+| The colleague does not appear | they have no access or have not opened the room |
+| Follow "does not work" | you are looking at a different room |
 | Edits are not visible | the connection is lost: check the save indicator |
 
 ## Where to go next

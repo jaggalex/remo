@@ -9,7 +9,7 @@ An organisation administrator sees which model calls happened, with what paramet
 - The key fingerprint, never the key itself.
 - A record hash linked to the previous one: the journal is a chain.
 
-The prompt text and board content are not in the journal.
+The prompt text and room content are not in the journal.
 
 ## Steps
 

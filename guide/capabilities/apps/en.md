@@ -4,13 +4,13 @@ Extending the interface without foreign code. An app declares a panel — text, 
 
 ## When to use
 
-- A single button or a short form is needed on the board.
+- A single button or a short form is needed on the room.
 - You want to show the result of an action without taking the person out of the product.
 - An integration needs an entry point that the team can see.
 
 ## How it works
 
-An app lives in the product registry. An organisation administrator installs it by id; the server writes **its own** manifest into the organisation. The panel is drawn from a closed dictionary of nodes, and all strings come from the interface dictionary. The button invokes the app action on the server, the action checks access to the board, writes the `app.invoked` audit record and sends an event.
+An app lives in the product registry. An organisation administrator installs it by id; the server writes **its own** manifest into the organisation. The panel is drawn from a closed dictionary of nodes, and all strings come from the interface dictionary. The button invokes the app action on the server, the action checks access to the room, writes the `app.invoked` audit record and sends an event.
 
 ## Example
 
