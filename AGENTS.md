@@ -107,5 +107,5 @@ _Факты дерева, проверяются `pnpm state:check`; числа 
 | Темы помощи | 31 (RU + EN) |
 | Страницы портала | 68 |
 | Эталоны | 21 продуктовых + 12 DS |
-| Крупнейший файл | `apps/web/src/BoardApp.tsx` — 799 строк |
+| Крупнейший файл | `apps/web/src/AgentDialog.tsx` — 800 строк |
 <!-- generated:state:end -->
