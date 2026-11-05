@@ -19,7 +19,7 @@ import type { KanbanPlacement, KanbanState } from "./kanban";
 import type { Widget } from "./types";
 
 interface KanbanRecipe {
-  columns: { title: string; accent: string }[];
+  columns: { key: string; accent: string }[];
   swimlanes: string[];
   /**
    * Cards per cell, lane by lane then column by column. Omitted means "spread the
@@ -28,43 +28,74 @@ interface KanbanRecipe {
   cells?: number[];
 }
 
+type TemplateLanguage = "en" | "ru";
+
+const LABELS: Record<TemplateLanguage, Record<string, string>> = {
+  en: {
+    backlog: "Backlog",
+    inProgress: "In progress",
+    done: "Done",
+    now: "Now",
+    next: "Next",
+    later: "Later",
+    notNow: "Not now",
+    product: "Product",
+    platform: "Platform",
+    design: "Design",
+    delivery: "Delivery",
+  },
+  ru: {
+    backlog: "Бэклог",
+    inProgress: "В работе",
+    done: "Готово",
+    now: "Сейчас",
+    next: "Далее",
+    later: "Позже",
+    notNow: "Не сейчас",
+    product: "Продукт",
+    platform: "Платформа",
+    design: "Дизайн",
+    delivery: "Поставка",
+  },
+};
+
 const RECIPES: Record<string, KanbanRecipe> = {
   "kanban-framework": {
     columns: [
-      { title: "Backlog", accent: TODO_ACCENT },
-      { title: "In progress", accent: DOING_ACCENT },
-      { title: "Done", accent: DONE_ACCENT },
+      { key: "backlog", accent: TODO_ACCENT },
+      { key: "inProgress", accent: DOING_ACCENT },
+      { key: "done", accent: DONE_ACCENT },
     ],
-    swimlanes: ["Product", "Platform"],
+    swimlanes: ["product", "platform"],
     cells: [2, 1, 0, 1, 1, 1],
   },
   "product-roadmap-basic": {
     columns: [
-      { title: "Now", accent: TODO_ACCENT },
-      { title: "Next", accent: DOING_ACCENT },
-      { title: "Later", accent: NEUTRAL_ACCENT },
-      { title: "Not now", accent: DONE_ACCENT },
+      { key: "now", accent: TODO_ACCENT },
+      { key: "next", accent: DOING_ACCENT },
+      { key: "later", accent: NEUTRAL_ACCENT },
+      { key: "notNow", accent: DONE_ACCENT },
     ],
-    swimlanes: ["Product", "Design", "Delivery"],
+    swimlanes: ["product", "design", "delivery"],
   },
   "product-roadmap-basic-prefilled": {
     columns: [
-      { title: "Now", accent: TODO_ACCENT },
-      { title: "Next", accent: DOING_ACCENT },
-      { title: "Later", accent: NEUTRAL_ACCENT },
-      { title: "Not now", accent: DONE_ACCENT },
+      { key: "now", accent: TODO_ACCENT },
+      { key: "next", accent: DOING_ACCENT },
+      { key: "later", accent: NEUTRAL_ACCENT },
+      { key: "notNow", accent: DONE_ACCENT },
     ],
-    swimlanes: ["Product", "Design", "Delivery"],
+    swimlanes: ["product", "design", "delivery"],
   },
 };
 
 const FALLBACK: KanbanRecipe = {
   columns: [
-    { title: "Backlog", accent: TODO_ACCENT },
-    { title: "In progress", accent: DOING_ACCENT },
-    { title: "Done", accent: DONE_ACCENT },
+    { key: "backlog", accent: TODO_ACCENT },
+    { key: "inProgress", accent: DOING_ACCENT },
+    { key: "done", accent: DONE_ACCENT },
   ],
-  swimlanes: ["Product"],
+  swimlanes: ["product"],
 };
 
 /**
@@ -75,19 +106,24 @@ export function reconstructKanban(
   templateKey: string,
   kanban: Widget,
   cards: Widget[],
+  lang: TemplateLanguage = "en",
 ): KanbanState {
   const recipe = RECIPES[templateKey] ?? FALLBACK;
+  const labels = LABELS[lang] ?? LABELS.en;
 
   const perColumn = kanban.width / Math.max(recipe.columns.length, 1);
 
   const state: KanbanState = {
     columns: recipe.columns.map((column, index) => ({
       id: `col${index}`,
-      title: column.title,
+      title: labels[column.key] ?? column.key,
       accent: column.accent,
       width: perColumn,
     })),
-    swimlanes: recipe.swimlanes.map((title, index) => ({ id: `lane${index}`, title })),
+    swimlanes: recipe.swimlanes.map((key, index) => ({
+      id: `lane${index}`,
+      title: labels[key] ?? key,
+    })),
     cards: {},
     newColumnWidth: DEFAULT_COLUMN_WIDTH,
     headerHeight: DEFAULT_HEADER_HEIGHT,

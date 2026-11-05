@@ -142,7 +142,16 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     canJoinSelection,
     addFrame,
     addShape,
-  } = useBoardCreation({ board, widgets, selectedIds, kanbanStates, camera, settings, setSelectedIds });
+  } = useBoardCreation({
+    board,
+    widgets,
+    selectedIds,
+    kanbanStates,
+    camera,
+    settings,
+    setSelectedIds,
+    startEditing: setEditingId,
+  });
 
   const textOf = useCallback((id: string) => board.textOf(id), [board]);
   const deltaOf = useCallback((id: string) => board.deltaOf(id), [board]);

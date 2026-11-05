@@ -18,7 +18,7 @@ A card should carry more than text: it has a status, an assignee and a date. The
 ## Card filter
 
 1. Open the **Properties** panel and the **Card filter** block.
-2. Choose an assignee and a due state: any, overdue or no due date.
+2. Click **+** in an empty kanban cell when the card does not exist yet: it is created in that column and swimlane and its text editor opens immediately. Then choose an assignee and a due state: any, overdue or no due date.
 3. Click **Select cards**. Result: matching cards are selected, the others stay on the board.
 
 ## Check
