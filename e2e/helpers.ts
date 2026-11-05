@@ -94,6 +94,17 @@ export async function selectKanbanCard(page: Page, cardId?: string): Promise<str
   return point.id;
 }
 
+/** Set the language preference on the signed-in account (not just the URL). */
+export async function setAccountLanguage(page: Page, lang: "ru" | "en"): Promise<void> {
+  const me = await page.request.get("/api/auth/me");
+  const body = (await me.json()) as { csrfToken?: string | null };
+  const saved = await page.request.patch("/api/auth/preferences", {
+    data: { lang },
+    headers: body.csrfToken ? { "X-CSRF-Token": body.csrfToken } : {},
+  });
+  expect(saved.ok(), await saved.text()).toBeTruthy();
+}
+
 /** A fresh account plus an open, empty board. */
 export async function freshBoard(
   page: Page,

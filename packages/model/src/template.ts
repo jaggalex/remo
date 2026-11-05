@@ -24,6 +24,10 @@ export interface NormalizedWidget {
 
 export interface NormalizedTemplate {
   source?: { url: string; capturedAt: string; widgetCount: number };
+  /** The board title this locale seeds, when the generated file carries one. */
+  title?: string;
+  /** Which language the copy is in; absent means English. */
+  locale?: string;
   types: Record<string, number>;
   widgets: NormalizedWidget[];
 }
@@ -38,11 +42,10 @@ export const TEMPLATE_KEYS = [
 export type TemplateKey = (typeof TEMPLATE_KEYS)[number];
 
 /**
- * The default board title a template seeds, in English (ADR-158).
+ * The English default title a template seeds (ADR-158, ADR-169).
  *
- * This is document content, not UI chrome: a shared board keeps one title whatever
- * language a reader uses. The English menu labels derive from it, the Russian ones
- * live in `newBoard.template.*`.
+ * `TEMPLATE_TITLES` carries every supported language. The document keeps the title it
+ * was born in; changing the profile does not rewrite an existing board.
  */
 export const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   "user-story-map-basic": "Story map",
@@ -50,6 +53,24 @@ export const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   "product-roadmap-basic-prefilled": "Roadmap example",
   "kanban-framework": "Kanban board",
 };
+
+/** The default title per supported language; the document keeps the one it was born in. */
+export const TEMPLATE_TITLES: Record<"en" | "ru", Record<TemplateKey, string>> = {
+  en: TEMPLATE_LABELS,
+  ru: {
+    "user-story-map-basic": "Карта истории",
+    "product-roadmap-basic": "Дорожная карта",
+    "product-roadmap-basic-prefilled": "Пример дорожной карты",
+    "kanban-framework": "Канбан-доска",
+  },
+};
+
+/** Is this a template's default title, in any supported language? */
+export function isTemplateTitle(value: string): boolean {
+  return Object.values(TEMPLATE_TITLES).some((labels) =>
+    Object.values(labels).includes(value),
+  );
+}
 
 const HTML_ENTITIES: Record<string, string> = {
   "&amp;": "&",
@@ -101,7 +122,7 @@ export function toBoard(key: TemplateKey, template: NormalizedTemplate): Board {
 
   return {
     id: key,
-    title: TEMPLATE_LABELS[key],
+    title: template.title || TEMPLATE_LABELS[key],
     widgets,
   };
 }

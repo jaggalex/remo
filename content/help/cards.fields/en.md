@@ -4,7 +4,7 @@ A card keeps a status, one assignee and a date range. These fields appear on the
 
 ## Steps
 
-1. Select a card on the board.
+1. Select a card on the board, or click **+** in an empty kanban cell: the card is created in that column and swimlane and its text editor opens immediately.
 2. On the **Properties** panel, open Card fields.
 3. Choose a status: To do, In progress or Done. The empty value removes the status.
 4. Choose an assignee from the board's people, or leave it Unassigned.

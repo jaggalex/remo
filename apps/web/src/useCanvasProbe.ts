@@ -52,9 +52,11 @@ export function useCanvasProbe({
         width: layout.width,
         height: layout.height,
         headerHeight: layout.headerHeight,
+        padding: layout.padding,
         columns: layout.columns.map((c) => ({
           id: c.id,
           title: c.title,
+          left: c.left,
           centerX: c.centerX,
           width: c.width,
         })),
