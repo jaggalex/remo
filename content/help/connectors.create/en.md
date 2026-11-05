@@ -4,7 +4,7 @@ Two objects are joined by a line. When at least one end is a shape, the line has
 
 ## Before you start
 
-- You need edit permission on the board.
+- You need edit permission on the room.
 - A connector can join sticky notes, text, shapes, images, stickers and cards. A frame, a kanban and another connector cannot: they have no anchors.
 
 ## Steps

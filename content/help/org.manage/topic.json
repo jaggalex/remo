@@ -11,7 +11,7 @@
   },
   "related": [
     "access.roles",
-    "boards.home",
+    "rooms.home",
     "access.share"
   ],
   "verifiedAgainst": "2026-11-04",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:095d76500d8d6856b0007a33c3d4dac950eb47dc2a0615b7d1626ca686ad08ab",
-      "targetHash": "sha256:4d8404145e39f48dc36b5d13cda6db282895a6a39f9c7be185ad49107c157afe"
+      "sourceHash": "sha256:635059a27d71b6abc3deb05ba49c00ce2632b5b2c49113b5ddd15cbdd3d53e7e",
+      "targetHash": "sha256:a1ae397013c1e1acb026cd445c49119402b5bdfc94aefdcc73b6d9799c31d457"
     }
   }
 }

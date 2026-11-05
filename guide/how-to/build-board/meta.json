@@ -4,12 +4,12 @@
   "status": "available",
   "order": 5,
   "title": {
-    "ru": "Собрать доску: шаблон, структура, связи",
-    "en": "Build a board: template, structure, connectors"
+    "ru": "Собрать комнату: шаблон, структура, связи",
+    "en": "Build a room: template, structure, connectors"
   },
   "summary": {
-    "ru": "От пустой доски до структуры, которую видно с первого взгляда: шаблон, фреймы, стикеры, связи.",
-    "en": "From an empty board to a structure you can read at a glance: a template, frames, sticky notes, connectors."
+    "ru": "От пустой комнаты до структуры, которую видно с первого взгляда: шаблон, фреймы, стикеры, связи.",
+    "en": "From an empty room to a structure you can read at a glance: a template, frames, sticky notes, connectors."
   },
   "related": [
     "capabilities/canvas",
@@ -20,8 +20,8 @@
   "updated": "2026-11-02",
   "translations": {
     "en": {
-      "sourceHash": "sha256:beee4544002105201911508f97cdd14bdeb799983ab2390ec2ad1797964f54a2",
-      "targetHash": "sha256:c2e8c16a099228a02af2eb39988f7e748f87c85a5bc22b3a85045d096dd1bc9b"
+      "sourceHash": "sha256:4b96f48febe492d1ca59c5151f8a88054438a1c2539e4d4c5cce8f7d6769b6e0",
+      "targetHash": "sha256:370d2204f6ef031da7ccc78a53cfde6b7ddff97605c477cc31badb2743bdcaef"
     }
   }
 }

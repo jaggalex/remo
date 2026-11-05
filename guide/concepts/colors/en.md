@@ -1,6 +1,6 @@
 ## Palette: one for the rail, the bar and the selection
 
-The palette answers "what colour is this object" the same way in the rail, on the object bar and on the selection bar. An object has several roles — sheet or fill, border, text, line and connector label — and each takes its value from this one palette. The value is stored in the object itself, so the board looks the same to every participant and after a reload.
+The palette answers "what colour is this object" the same way in the rail, on the object bar and on the selection bar. An object has several roles — sheet or fill, border, text, line and connector label — and each takes its value from this one palette. The value is stored in the object itself, so the room looks the same to every participant and after a reload.
 
 ## The tonal grid
 
@@ -56,7 +56,7 @@ Named colours have no number: White, Black and Transparent are chosen with a but
 
 ## Custom colour
 
-When an object stores a value outside the palette — an old board's colour, for example — the window labels it **Custom colour** and shows the value below the grid. That is a label for the value, not a swatch to pick: only palette values can be chosen. The current colour is kept until you choose another: there is no migration, and the board is not repainted after the fact.
+When an object stores a value outside the palette — an old room's colour, for example — the window labels it **Custom colour** and shows the value below the grid. That is a label for the value, not a swatch to pick: only palette values can be chosen. The current colour is kept until you choose another: there is no migration, and the room is not repainted after the fact.
 
 ## Check the result
 
@@ -67,13 +67,13 @@ When an object stores a value outside the palette — an old board's colour, for
 
 ## Limitations
 
-- Colour is a property of an object, not an access right: it does not change who may edit the board.
+- Colour is a property of an object, not an access right: it does not change who may edit the room.
 - A sticky note has no transparency; free text and a connector label have the Auto / Black / White control, while sticky note and shape text has Auto / Dark / Black / White.
 - The palette does not change an object's type, layer or size.
 - Keys 1–7 do not work while the focus is in an input field or a dialog is open.
 
 ## Where to go next
 
-[The board screen](/guide/concepts/board-chrome) — where the palette lives on screen.
+[The room screen](/guide/concepts/board-chrome) — where the palette lives on screen.
 
 [Canvas and objects](/guide/capabilities/canvas) — size, text and how objects behave.

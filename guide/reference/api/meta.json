@@ -8,8 +8,8 @@
     "en": "HTTP API: routes and commands"
   },
   "summary": {
-    "ru": "Точные маршруты, команды доски, идемпотентность и версия документа — в одной таблице.",
-    "en": "Exact routes, board commands, idempotency and document version in one table."
+    "ru": "Точные маршруты, команды комнаты, идемпотентность и версия документа — в одной таблице.",
+    "en": "Exact routes, room commands, idempotency and document version in one table."
   },
   "related": [
     "capabilities/tokens",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:5c1a1dc22d23907440af6297bcc5de65b9d38c8a1153a4e24365c4e9a2180d0f",
-      "targetHash": "sha256:9a38e244f549a8561a23baec7b65bacaa04df7ac510337b98e9ee4e34a389ec8"
+      "sourceHash": "sha256:0125603822cb2dae2475e2ccb39b98af93018701f05db9b70c4eb5b9d572b21e",
+      "targetHash": "sha256:b85123f334676179de71f8479151f5aaed9051c50917e509ac4cea889ee0b484"
     }
   }
 }

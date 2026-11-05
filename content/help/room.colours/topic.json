@@ -1,5 +1,5 @@
 {
-  "id": "board.colours",
+  "id": "room.colours",
   "type": "reference",
   "title": {
     "ru": "Палитра",
@@ -18,8 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:5fb317fe976560fbd861059861ce0c4983abbc2c8e54b4160898de94bb841168",
-      "targetHash": "sha256:25e93c5bc812223ab798a1642318ca515758b61c1cc2e64b0fe2a46aa2c0501f"
+      "sourceHash": "sha256:ea27b1317ba69523c3191a8f46079034e562444dd11c2d47d5c5c8bb09abc446",
+      "targetHash": "sha256:f81a569596ecd0eb972f89bffc0a467e0658530fdf7766f7d4c19963ffdf6183"
     }
   }
 }

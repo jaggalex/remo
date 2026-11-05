@@ -43,7 +43,7 @@ A key works when only objects with that role are selected. In an input field, a 
 
 ## Custom colour
 
-A value outside the palette is labelled **Custom colour** below the grid. That is a label for the value, not a swatch to pick: only palette values can be chosen. The current value is kept until you choose another: the board is not repainted after the fact.
+A value outside the palette is labelled **Custom colour** below the grid. That is a label for the value, not a swatch to pick: only palette values can be chosen. The current value is kept until you choose another: the room is not repainted after the fact.
 
 ## Check the result
 

@@ -8,16 +8,16 @@ behaviour, the boundaries and the invariants; the numbered decisions behind them
 |---|---|
 | [Design system](../../spec/design-system.md) | tokens, components, canvas chrome, keyboard model, grid |
 | [Design-system review](../../spec/design-system-review.md) | what was unverifiable in the first pass and how it was fixed |
-| [IAM v1](../../spec/IAM-v1.md) | organisations, teams, board roles, links, sessions, enforcement |
+| [IAM v1](../../spec/IAM-v1.md) | organisations, teams, room roles, links, sessions, enforcement |
 | [AI agents v1](../../spec/AI-agents-v1.md) | principals, tasks, budgets, skills, the plan contract |
 | [AI agents architecture](../../spec/AI-agents-architecture.md) | provider keys, evidential log, change sets, MCP vs skills |
-| [MCP v0](../../spec/MCP.md) | the stdio façade over boards, skills and change sets |
+| [MCP v0](../../spec/MCP.md) | the stdio façade over rooms, skills and change sets |
 | [Apps](../../spec/apps.md) | declarative first-party panels |
 | [Integrations](../../spec/integrations.md) | tokens, scopes and the command boundary |
 | [Webhooks](../../spec/webhooks.md) | signed delivery, retries and the dead-letter queue |
 | [Metrics](../../spec/metrics.md) | typed events, no content or PII |
 | [Forms](../../spec/forms.md) | dialog and form rules |
-| [Agent skills](../../spec/skills/) | the brief-to-board, cards and tidy-selection contracts |
+| [Agent skills](../../spec/skills/) | the brief-to-room, cards and tidy-selection contracts |
 
 Visual baselines live in `spec/baselines` and `spec/ds-baselines`; they are test assets,
 not documentation.

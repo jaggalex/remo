@@ -438,7 +438,7 @@ test("the agent plan preview is readable and fits the viewport", async ({ page }
   await agentBoard(page, "visual-plan");
   await openMore(page);
   await page.getByRole("menuitem", { name: "Ask AI…" }).click();
-  const agents = page.getByRole("dialog", { name: "AI agents on this board" });
+  const agents = page.getByRole("dialog", { name: "AI agents on this room" });
   await expect(agents).toBeVisible();
   await agents.getByRole("combobox", { name: "Agent", exact: true }).selectOption({
     label: "Planner",

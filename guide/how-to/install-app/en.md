@@ -1,11 +1,11 @@
 ## When you need it
 
-The team needs a button or a short panel on the board, and you do not have to write an extension.
+The team needs a button or a short panel on the room, and you do not have to write an extension.
 
 ## Before you start
 
 - You are an organisation administrator.
-- The board belongs to that organisation: the panel shows the apps of its organisation.
+- The room belongs to that organisation: the panel shows the apps of its organisation.
 
 ## Steps
 
@@ -17,7 +17,7 @@ curl -X POST https://boards.example.com/api/orgs/$ORG/apps \
   -d '{"appId":"app.hello"}'
 ```
 
-2. Open the board, then **Ещё ▾** (More) → **Приложения** (Apps).
+2. Open the room, then **Ещё ▾** (More) → **Приложения** (Apps).
 3. Result: the panel contains the app and its button.
 
 ## Checking the action
@@ -45,7 +45,7 @@ curl -X PATCH https://boards.example.com/api/orgs/$ORG/apps/app.hello \
 |---|---|
 | `404 RESOURCE_NOT_AVAILABLE` on install | there is no such id in the product registry |
 | `403 FORBIDDEN` | you are not an organisation administrator |
-| The panel is empty | the app is off or the board has no organisation |
+| The panel is empty | the app is off or the room has no organisation |
 
 ## Where to go next
 

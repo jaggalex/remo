@@ -10,7 +10,7 @@
     "en": "Status, assignee and a date range: what a card stores and how to change it."
   },
   "related": [
-    "boards.create",
+    "rooms.create",
     "access.share"
   ],
   "verifiedAgainst": "2026-11-02",
@@ -18,8 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:aaab80bff7b9ae203f353a55582a5391dc776280288978fc63e6771b65cb9a2a",
-      "targetHash": "sha256:7dfd4f6e4687bb898766d1c11996f729e1eebc9a265302581c76034bfd6d60df"
+      "sourceHash": "sha256:638e8e23e2ac3bb7fb6fa21f22ba8ce1c3ea66216ea76db80add341ae572c092",
+      "targetHash": "sha256:20d06252a3209d87e4ba81d479f9f095cc58441b5040d5f883a42a30d0374931"
     }
   }
 }

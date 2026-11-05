@@ -1,6 +1,6 @@
 ## In short
 
-remo is an open project. We do not charge for this version and do not promise that it is free of bugs. The software is provided **as is**: use it at your own risk and keep backups of important boards.
+remo is an open project. We do not charge for this version and do not promise that it is free of bugs. The software is provided **as is**: use it at your own risk and keep backups of important rooms.
 
 ## What this means
 

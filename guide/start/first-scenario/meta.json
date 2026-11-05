@@ -8,8 +8,8 @@
     "en": "First complete scenario: a sprint plan"
   },
   "summary": {
-    "ru": "Соберите доску планирования: фреймы, канбан, связи, доступ команде и бэкап — за один проход.",
-    "en": "Build a planning board: frames, kanban, connectors, team access and a backup in one pass."
+    "ru": "Соберите комнату планирования: фреймы, канбан, связи, доступ команде и бэкап — за один проход.",
+    "en": "Build a planning room: frames, kanban, connectors, team access and a backup in one pass."
   },
   "related": [
     "start/quickstart",
@@ -21,8 +21,8 @@
   "updated": "2026-10-28",
   "translations": {
     "en": {
-      "sourceHash": "sha256:1d840299f7e0446cab0ba5e1255277e49dfc1f1ba9f42d5bb7c34c621a8ecf93",
-      "targetHash": "sha256:f3abce20400fbb3121a62e90d84df158bc8adf19c77cffa6ca02f986efc668d0"
+      "sourceHash": "sha256:547d5fe73e3fb91889b832fc576fb61cb082fc49105e7fcd39a4a512b03ecd23",
+      "targetHash": "sha256:bc3f247909f428dedda3297a2cc093c37dd7ccada64d8ff823311c39e74934a7"
     }
   }
 }

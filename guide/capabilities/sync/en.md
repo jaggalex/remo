@@ -4,7 +4,7 @@ Work does not get lost when the connection drops: edits stay local and go to the
 
 ## When to use
 
-This is not a separate mode but a permanent property of the board. You need to understand it in two situations: when the connection drops and when access is revoked.
+This is not a separate mode but a permanent property of the room. You need to understand it in two situations: when the connection drops and when access is revoked.
 
 ## How it works
 
@@ -12,7 +12,7 @@ The client numbers its changes and sends the accumulated number. The server repl
 
 ## Example
 
-Input: an open board, the connection is lost. Action: move a sticky note, add a sticky note. Result: the indicator shows "offline (2)", the edits are visible to you; after the connection is restored the indicator shows "saved" and the edits are visible to others.
+Input: an open room, the connection is lost. Action: move a sticky note, add a sticky note. Result: the indicator shows "offline (2)", the edits are visible to you; after the connection is restored the indicator shows "saved" and the edits are visible to others.
 
 ## What you can configure
 

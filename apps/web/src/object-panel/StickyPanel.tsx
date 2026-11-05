@@ -383,7 +383,7 @@ export function StickyPanel({
         )}
       </span>
 
-      <HelpLink topicId="board.colours" className="sb-help" />
+      <HelpLink topicId="room.colours" className="sb-help" />
     </ObjectBar>
   );
 }

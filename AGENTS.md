@@ -5,11 +5,11 @@ before the first edit; the product rules are not optional style preferences.
 
 ## What remo is
 
-A self-hosted, local-first visual canvas for a small team: an organisation home with board
-tiles, boards, frames, sticky notes, cards, kanban, connectors, presentation, comments,
-access and AI agents. A board is both the unit of work and the unit of access. Every account
+A self-hosted, local-first visual canvas for a small team: an organisation home with room
+tiles, rooms, frames, sticky notes, cards, kanban, connectors, presentation, comments,
+access and AI agents. A room is both the unit of work and the unit of access. Every account
 has a personal organisation; shared organisations are additional. `?org=<slug>` is the
-organisation home, `?room=<id>` is a board.
+organisation home, `?room=<id>` is a room.
 
 - `apps/web` — React + Vite client, Canvas 2D renderer.
 - `apps/sync` — Node service: API, Yjs rooms, IAM, commands, agents, webhooks.
@@ -26,7 +26,7 @@ organisation home, `?room=<id>` is a board.
 2. **ADR before behaviour or data-model changes.** Add a numbered record to `ADR.md` with
    context, decision and consequences. ADRs are never rewritten; supersede them with a new
    record.
-3. **Access is decided on a board.** There are no per-object permissions. HTTP and websocket
+3. **Access is decided on a room.** There are no per-object permissions. HTTP and websocket
    requests use the same access decision.
 4. **Every mutation goes through a command** with a permission check. Anything that changes
    rights or content writes an audit row.
@@ -89,7 +89,7 @@ A page is finished only after a fresh reader has reviewed it against `guide/styl
 
 ## Security
 
-The boundary list is in ADR-109. In short: board-scoped access, httpOnly sessions,
+The boundary list is in ADR-109. In short: room-scoped access, httpOnly sessions,
 encrypted provider keys behind a KEK outside the database, HTTPS-only outbound requests with
 private-address refusal, and public links that never grant export or backup. Report a
 vulnerability through [SECURITY.md](SECURITY.md), not a public issue.
@@ -101,7 +101,7 @@ _Факты дерева, проверяются `pnpm state:check`; числа 
 
 | Факт | Значение |
 |---|---|
-| ADR | 169, последний — ADR-169 |
+| ADR | 170, последний — ADR-170 |
 | Версия схемы | 16 |
 | Браузерные сценарии | 116 в 28 файлах |
 | Темы помощи | 31 (RU + EN) |

@@ -6,8 +6,8 @@
     "en": "What an export includes"
   },
   "summary": {
-    "ru": "Скоуп экспорта: выделение, фрейм или вся доска. Диалог показывает число объектов и не выбирает всю доску молча.",
-    "en": "Export scope: selection, frame or the whole board. The dialog shows the object count and never picks the whole board silently."
+    "ru": "Скоуп экспорта: выделение, фрейм или вся комната. Диалог показывает число объектов и не выбирает всю комнату молча.",
+    "en": "Export scope: selection, frame or the whole room. The dialog shows the object count and never picks the whole room silently."
   },
   "related": [
     "export.formats",
@@ -18,8 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:686b44fd38e547d6f037c58aaad652b3ca25075c98461f52325ccea751a5c43a",
-      "targetHash": "sha256:442157ebcadc1b8cde88de516d8a4bf26714e54af5aa413f62de31425ea52597"
+      "sourceHash": "sha256:f038c17a08108325fffa18199d88a984707e59fb7c28ea9285ae7c53019bbf8f",
+      "targetHash": "sha256:b71ee1ea8fa6c80f030b71ade260d1e01bc37a6fa0c51922f3bd1382ffeeb8bf"
     }
   }
 }

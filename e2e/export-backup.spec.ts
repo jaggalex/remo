@@ -23,7 +23,7 @@ test("exports a PNG and restores the board from the same backup", async ({ page 
   // A real download, not a mocked canvas: the browser renderer is part of the product.
   await openBoardMenu(page);
   await page.getByRole("menuitem", { name: "Export…" }).click();
-  await page.locator(".export-dialog .export-choice", { hasText: "Whole board" }).click();
+  await page.locator(".export-dialog .export-choice", { hasText: "Whole room" }).click();
   const downloadPromise = page.waitForEvent("download");
   await page.locator(".export-dialog .share-button").click();
   const download = await downloadPromise;
@@ -36,8 +36,8 @@ test("exports a PNG and restores the board from the same backup", async ({ page 
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(bundle)),
   });
-  await expect(page.locator(".export-import-confirm")).toContainText("Replace the whole board");
-  await page.getByRole("button", { name: "Replace the board" }).click();
+  await expect(page.locator(".export-import-confirm")).toContainText("Replace the whole room");
+  await page.getByRole("button", { name: "Replace the room" }).click();
   await expect(page.locator(".canvas-notice")).toContainText("restored from the backup");
 });
 
@@ -99,7 +99,7 @@ test("exports a PNG with comment pins and the legend", async ({ page }) => {
 
   await openBoardMenu(page);
   await page.getByRole("menuitem", { name: "Export…" }).click();
-  await page.locator(".export-dialog .export-choice", { hasText: "Whole board" }).click();
+  await page.locator(".export-dialog .export-choice", { hasText: "Whole room" }).click();
   await expect(page.locator(".export-comments input")).toBeChecked();
   const downloadPromise = page.waitForEvent("download");
   await page.locator(".export-dialog .share-button").click();

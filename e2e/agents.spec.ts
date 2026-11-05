@@ -17,7 +17,7 @@ async function openAgents(page: Page): Promise<void> {
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("menuitem", { name: "Ask AI…" }).click();
   await expect(
-    page.getByRole("dialog", { name: "AI agents on this board" }),
+    page.getByRole("dialog", { name: "AI agents on this room" }),
   ).toBeVisible();
 }
 
@@ -116,9 +116,9 @@ test("a brief with a file becomes a plan, applies once and undoes in one step", 
     (element as HTMLButtonElement).click();
   });
   await expect(plan).toContainText(
-    "The objects are on the board. One ⌘Z removes the whole structure.",
+    "The objects are on the room. One ⌘Z removes the whole structure.",
   );
-  await expect(plan.getByRole("button", { name: "Show on board" })).toBeVisible();
+  await expect(plan.getByRole("button", { name: "Show on room" })).toBeVisible();
   await expect(plan.getByRole("button", { name: "Apply" })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(10);
 
@@ -130,7 +130,7 @@ test("a brief with a file becomes a plan, applies once and undoes in one step", 
   );
   expect(frames).toHaveLength(2);
 
-  await plan.getByRole("button", { name: "Show on board" }).click();
+  await plan.getByRole("button", { name: "Show on room" }).click();
   await expect(plan).toHaveCount(0);
 
   // A second visit shows the applied plan and no Apply button: nothing is duplicated.
@@ -139,10 +139,10 @@ test("a brief with a file becomes a plan, applies once and undoes in one step", 
   await expect(plan).toBeVisible();
   await expect(plan).toContainText("Applied");
   await expect(plan.getByRole("button", { name: "Apply" })).toHaveCount(0);
-  await expect(plan.getByRole("button", { name: "Show on board" })).toBeVisible();
+  await expect(plan.getByRole("button", { name: "Show on room" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(10);
 
-  await plan.getByRole("button", { name: "Show on board" }).click();
+  await plan.getByRole("button", { name: "Show on room" }).click();
   await expect(plan).toHaveCount(0);
 
   await page.keyboard.press("ControlOrMeta+z");
@@ -173,7 +173,7 @@ test("a plan applied in one tab is not written again from a second tab", async (
   await expect(secondPlan).toBeVisible({ timeout: 20_000 });
 
   await plan.getByRole("button", { name: "Apply" }).click();
-  await expect(plan.getByRole("button", { name: "Show on board" })).toBeVisible();
+  await expect(plan.getByRole("button", { name: "Show on room" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(10);
 
   // The first approval is already recorded: this tab must show the result, not write
@@ -181,7 +181,7 @@ test("a plan applied in one tab is not written again from a second tab", async (
   await secondPlan.getByRole("button", { name: "Apply" }).click();
   await expect(secondPlan).toContainText("Another tab has already applied this plan");
   await expect(secondPlan.getByRole("button", { name: "Apply" })).toHaveCount(0);
-  await expect(secondPlan.getByRole("button", { name: "Show on board" })).toBeVisible();
+  await expect(secondPlan.getByRole("button", { name: "Show on room" })).toBeVisible();
   await expect(secondPlan.locator(".agent-plan-undo-hint")).toHaveCount(0);
   await expect.poll(() => second.evaluate(() => window.__remo.widgets.length)).toBe(10);
 
@@ -216,7 +216,7 @@ test("a plan with a connector draws a line, applies it and undoes it in one step
 
   await plan.getByRole("button", { name: "Apply" }).click();
   await expect(plan).toContainText(
-    "The objects are on the board. One ⌘Z removes the whole structure.",
+    "The objects are on the room. One ⌘Z removes the whole structure.",
   );
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(3);
 
@@ -248,7 +248,7 @@ test("a plan with a connector draws a line, applies it and undoes it in one step
   });
   expect(created.lines[0]!.startX!).toBeLessThan(created.lines[0]!.endX!);
 
-  await plan.getByRole("button", { name: "Show on board" }).click();
+  await plan.getByRole("button", { name: "Show on room" }).click();
   await expect(plan).toHaveCount(0);
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(0);

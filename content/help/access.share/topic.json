@@ -6,8 +6,8 @@
     "en": "Invite a member and grant access"
   },
   "summary": {
-    "ru": "Добавьте человека на доску и выберите роль: читатель, комментатор, редактор или со-владелец.",
-    "en": "Add a person to a board and choose a role: viewer, commenter, editor or co-owner."
+    "ru": "Добавьте человека на комнату и выберите роль: читатель, комментатор, редактор или со-владелец.",
+    "en": "Add a person to a room and choose a role: viewer, commenter, editor or co-owner."
   },
   "related": [
     "access.roles",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:1848055647876e47862dde2784f06c594b63a478baceac54cedc4703296b9f55",
-      "targetHash": "sha256:d74f24b5cec7d92ceb94419da5905be5da942eabcebd0a985fc0562bb303732a"
+      "sourceHash": "sha256:74b119208b9bc47382630582e5bed45f629b19bbbabad416bd36f22433673c98",
+      "targetHash": "sha256:2ca8ab3d26449e228c6191dc826ca09e97033200db401dcf37924ac0ccf627da"
     }
   }
 }

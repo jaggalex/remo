@@ -11,15 +11,15 @@
   },
   "related": [
     "comments.thread",
-    "boards.create"
+    "rooms.create"
   ],
   "verifiedAgainst": "2026-10-28",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:098cdab156d2d21694a879a1162330c761b304b904c20780e327d90b521065ec",
-      "targetHash": "sha256:5f3324dfad36f95e952d8e34cf640294ff64dab9a3baf9232f4340e48e98ab5a"
+      "sourceHash": "sha256:c9c5b6e13b8ea6ab262bea74deef8c3abadf0835f481701190905b15ca723f0a",
+      "targetHash": "sha256:a9cb776b39af4c2392da7cc8dfda7ea67cd2f79f82071bcc5fdcca4d30d65f95"
     }
   }
 }

@@ -6,14 +6,14 @@ It answers "what can this product do at all" and shows which capabilities combin
 
 | Capability | Category | Task | Result | Combines with | More |
 |---|---|---|---|---|---|
-| Create a board | Start | begin work | a board from a template or empty | canvas, access, templates | [Create a board](/guide/how-to/create-board) |
-| Organisation home | Start | find a board and switch organisation | board tiles, search, sorting, pages | access, presentation | [Organisation home](/guide/capabilities/home) |
+| Create a room | Start | begin work | a room from a template or empty | canvas, access, templates | [Create a room](/guide/how-to/create-board) |
+| Organisation home | Start | find a room and switch organisation | room tiles, search, sorting, pages | access, presentation | [Organisation home](/guide/capabilities/home) |
 | Account and team | People | set the name, handle and teams | personal organisation, @handle, members | access, home | [Account and team](/guide/how-to/account) |
-| The board screen | Start | find a command on screen | header, menus, rail and bottom | canvas, presentation | [The board screen](/guide/concepts/board-chrome) |
-| Canvas and objects | Canvas | assemble visual material | a board with sticky notes, shapes and text | frames, connectors, export | [Canvas: what it does and where it stops](/guide/capabilities/canvas) |
+| The room screen | Start | find a command on screen | header, menus, rail and bottom | canvas, presentation | [The room screen](/guide/concepts/board-chrome) |
+| Canvas and objects | Canvas | assemble visual material | a room with sticky notes, shapes and text | frames, connectors, export | [Canvas: what it does and where it stops](/guide/capabilities/canvas) |
 | Palette and colours | Canvas | set an object's colour | seven tones at three levels, white, black, transparent | canvas, shapes, connectors | [Palette](/guide/concepts/colors) |
-| Access and roles | People | set permissions apart | a role on the board | link, export, agents | [Access: roles and granting](/guide/capabilities/access) |
-| Public link | People | show the board to people outside the team | a link with a password and an expiry | access, export | [Grant access and share a link](/guide/how-to/share) |
+| Access and roles | People | set permissions apart | a role on the room | link, export, agents | [Access: roles and granting](/guide/capabilities/access) |
+| Public link | People | show the room to people outside the team | a link with a password and an expiry | access, export | [Grant access and share a link](/guide/how-to/share) |
 | Saving and offline | Data | not lose work | server confirmation, an offline queue | collaboration | [Saving and offline](/guide/capabilities/sync) |
 | Export and backup | Data | take out and restore | PNG/PDF, a JSON backup, import | access, connectors | [Export and backup](/guide/capabilities/export) |
 | Connectors | Connectors | show dependencies | a line with an anchor and routing | canvas, agents | [Connectors](/guide/capabilities/connectors) |

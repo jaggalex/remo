@@ -51,7 +51,7 @@ export const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   "user-story-map-basic": "Story map",
   "product-roadmap-basic": "Roadmap",
   "product-roadmap-basic-prefilled": "Roadmap example",
-  "kanban-framework": "Kanban board",
+  "kanban-framework": "Kanban room",
 };
 
 /** The default title per supported language; the document keeps the one it was born in. */
@@ -61,12 +61,14 @@ export const TEMPLATE_TITLES: Record<"en" | "ru", Record<TemplateKey, string>> =
     "user-story-map-basic": "Карта истории",
     "product-roadmap-basic": "Дорожная карта",
     "product-roadmap-basic-prefilled": "Пример дорожной карты",
-    "kanban-framework": "Канбан-доска",
+    "kanban-framework": "Канбан-комната",
   },
 };
 
 /** Is this a template's default title, in any supported language? */
 export function isTemplateTitle(value: string): boolean {
+  // Old documents may still carry the pre-room names; they are template defaults too.
+  if (value === "Kanban board" || value === "Канбан-доска") return true;
   return Object.values(TEMPLATE_TITLES).some((labels) =>
     Object.values(labels).includes(value),
   );

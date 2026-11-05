@@ -2,12 +2,12 @@
   "id": "access.lifecycle",
   "type": "how-to",
   "title": {
-    "ru": "Убрать доску в корзину, восстановить и скопировать",
-    "en": "Move a board to the trash, restore and copy it"
+    "ru": "Убрать комнату в корзину, восстановить и скопировать",
+    "en": "Move a room to the trash, restore and copy it"
   },
   "summary": {
-    "ru": "Корзина закрывает доску для всех; восстановление не включает ссылку; копия начинает с выключенной ссылкой.",
-    "en": "The trash closes a board for everyone; restore does not turn the link on; a copy starts with the link off."
+    "ru": "Корзина закрывает комнату для всех; восстановление не включает ссылку; копия начинает с выключенной ссылкой.",
+    "en": "The trash closes a room for everyone; restore does not turn the link on; a copy starts with the link off."
   },
   "related": [
     "access.link",
@@ -18,8 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:8a941c9c69ceb82d810595892c8f7b1d9a56be24eb315c7d57441f92c566c722",
-      "targetHash": "sha256:cd49d4c3ad5bf11cca2122de8493afb4392f9b00aa92f30607210dcbac9657cf"
+      "sourceHash": "sha256:9243eedb396b12438e5d5844a63564934c2e98c8f248bdcd68364b1951cb57c0",
+      "targetHash": "sha256:b9068dd75966121dedcc27f6fc4172a877db1959902882888e2d3506eadd1bcc"
     }
   }
 }

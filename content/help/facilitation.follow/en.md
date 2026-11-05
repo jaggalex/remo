@@ -1,6 +1,6 @@
 ## Result
 
-You see the same part of the board at the same zoom as the chosen person. Others can follow you the same way, and you can stop that.
+You see the same part of the room at the same zoom as the chosen person. Others can follow you the same way, and you can stop that.
 
 ## Steps
 

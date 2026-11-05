@@ -127,7 +127,7 @@ test("five scattered notes become one even column and ⌘Z returns them", async 
   await expect(plan).toContainText("Blocks: US");
   await plan.getByRole("button", { name: "Apply" }).click();
   await expect(plan).toContainText("One ⌘Z puts every object back.");
-  await plan.getByRole("button", { name: "Show on board" }).click();
+  await plan.getByRole("button", { name: "Show on room" }).click();
 
   const after = await widgets(page);
   expect(after).toHaveLength(6);
@@ -198,7 +198,7 @@ test("a selected frame is laid out inside itself and the frame does not move", a
   await expect(plan).toContainText("Moves: 3");
   await expect(plan).toContainText("new blocks: 0");
   await plan.getByRole("button", { name: "Apply" }).click();
-  await plan.getByRole("button", { name: "Show on board" }).click();
+  await plan.getByRole("button", { name: "Show on room" }).click();
 
   const after = await widgets(page);
   const frame = after.find((widget) => widget.id === frameId)!;

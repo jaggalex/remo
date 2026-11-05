@@ -478,7 +478,7 @@
    ]
   },
   "kanban-framework": {
-   "title": "Kanban board",
+   "title": "Kanban room",
    "types": {
     "frame": 2,
     "text": 2,
@@ -495,7 +495,7 @@
      "width": 1400,
      "height": 700,
      "parentId": null,
-     "title": "Board",
+     "title": "Room",
      "fillColor": "#ffffff"
     },
     {
@@ -519,7 +519,7 @@
      "width": 800,
      "height": 60,
      "parentId": "w0022",
-     "content": "Kanban board",
+     "content": "Kanban room",
      "fillColor": "transparent",
      "color": "#1a1a1a",
      "fontSize": 40

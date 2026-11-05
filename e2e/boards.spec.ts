@@ -12,15 +12,15 @@ import {
 test("creates a board from the board list and opens the chosen template", async ({ page }) => {
   await freshBoard(page, "create");
 
-  await page.getByRole("button", { name: "All boards" }).click();
-  await page.getByRole("button", { name: "New board" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
+  await page.getByRole("button", { name: "New room" }).click();
   await page.locator(".new-board-dialog input").fill("M0 launch");
   await page.locator(".new-board-dialog select").selectOption("kanban-framework");
   await page.locator(".new-board-dialog .primary-button").click();
 
   await expect(page).toHaveURL(/room=m0-launch/);
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
-  await expect(page.getByRole("button", { name: /^Board menu: M0 launch/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Room menu: M0 launch/ })).toBeVisible();
   await expect(page.locator(".counts li", { hasText: "Kanban" })).toContainText(/\d+/);
 });
 
@@ -62,8 +62,8 @@ test("copies a deep link to the selected object", async ({ page, context }) => {
 test("an empty board stays empty and a rename reaches the board list", async ({ page }) => {
   await freshBoard(page, "empty");
 
-  await page.getByRole("button", { name: "All boards" }).click();
-  await page.getByRole("button", { name: "New board" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
+  await page.getByRole("button", { name: "New room" }).click();
   await page.locator(".new-board-dialog input").fill("Empty launch");
   await page.locator(".new-board-dialog select").selectOption("empty");
   await page.locator(".new-board-dialog .primary-button").click();
@@ -94,8 +94,8 @@ test("an empty board stays empty and a rename reaches the board list", async ({ 
     )
     .toBe("Renamed launch");
 
-  await page.getByRole("button", { name: "All boards" }).click();
-  // The topbar button is also called "Board menu: Renamed launch"; the tile is the one
+  await page.getByRole("button", { name: "All rooms" }).click();
+  // The topbar button is also called "Room menu: Renamed launch"; the tile is the one
   // that proves the stored name reached the directory.
   await expect(
     page.locator(".home-tile").getByRole("button", { name: /Renamed launch/ }),
@@ -153,15 +153,15 @@ test("switches the organisation and leaves the previous board", async ({ page })
   await page.locator(".org-dialog").getByRole("button", { name: "Close" }).click();
 
   // A board in that organisation, so the filter has something to switch between.
-  await page.getByRole("button", { name: "All boards" }).click();
-  await page.getByRole("button", { name: "New board" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
+  await page.getByRole("button", { name: "New room" }).click();
   const create = page.locator(".new-board-dialog");
   await create.locator("input").first().fill("Second org board");
   await create.getByLabel("Organisation").selectOption({ label: "Second team" });
   await create.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
-  await page.getByRole("button", { name: "All boards" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
   const home = page.locator(".home");
   // The board belongs to the second organisation, so leaving it shows that context.
   await expect(home).toContainText("Second org board");
@@ -179,7 +179,7 @@ test("switches the organisation and leaves the previous board", async ({ page })
 
 test("finds a board by its name on the home", async ({ page }) => {
   await freshBoard(page, "title-search", { title: "Quarterly planning" });
-  await page.getByRole("button", { name: "All boards" }).click();
+  await page.getByRole("button", { name: "All rooms" }).click();
   await page.locator(".home-search").fill("Quarterly");
   await expect(page.locator(".home-tile")).toContainText("Quarterly planning");
 });
@@ -193,7 +193,7 @@ test("opening a named board without a template keeps its name and stays empty", 
   const account = await register(page, "named-no-template", { title: "Quarterly planning" });
   await openBoard(page, account.boardId);
   await expect(
-    page.getByRole("button", { name: /^Board menu: Quarterly planning/ }),
+    page.getByRole("button", { name: /^Room menu: Quarterly planning/ }),
   ).toBeVisible();
   await expect(page.locator(".counts li")).toHaveCount(0);
 
@@ -212,7 +212,7 @@ test("opening a named board without a template keeps its name and stays empty", 
   await page.reload();
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
   await expect(
-    page.getByRole("button", { name: /^Board menu: Quarterly planning/ }),
+    page.getByRole("button", { name: /^Room menu: Quarterly planning/ }),
   ).toBeVisible();
   await expect(page.locator(".counts li")).toHaveCount(0);
 });
@@ -267,7 +267,7 @@ test("a public-link viewer cannot add kanban columns or replace the board", asyn
     await expect(inspector).toBeVisible();
     await expect(inspector.getByRole("button", { name: "+ column" })).toBeDisabled();
     await expect(inspector.getByRole("button", { name: "+ swimlane" })).toBeDisabled();
-    await expect(inspector.getByRole("button", { name: "Replace board" })).toBeDisabled();
+    await expect(inspector.getByRole("button", { name: "Replace room" })).toBeDisabled();
   } finally {
     await context.close();
   }

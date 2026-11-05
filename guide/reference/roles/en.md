@@ -2,10 +2,10 @@
 
 | Role | What it can do |
 |---|---|
-| **Viewer** | read the board, export a visible image |
-| **Commenter** | read the board and write in the discussion; cannot change objects |
+| **Viewer** | read the room, export a visible image |
+| **Commenter** | read the room and write in the discussion; cannot change objects |
 | **Editor** | change content, comment, share (if policy allows), export, take a backup, facilitate |
-| **Co-owner** | everything **Editor** can, plus manage the board and appoint co-owners |
+| **Co-owner** | everything **Editor** can, plus manage the room and appoint co-owners |
 | **Owner** | everything, including transferring ownership and deleting |
 
 ## Organisation roles
@@ -16,7 +16,7 @@
 | User administrator (`user_admin`) | the people list, invitations and member roles |
 | Security administrator (`security_admin`) | the audit log and security policy |
 
-An organisation role does not replace a board role: access to content is still granted on the board.
+An organisation role does not replace a room role: access to content is still granted on the room.
 
 ## Capabilities
 
@@ -35,10 +35,10 @@ An organisation role does not replace a board role: access to content is still g
 
 (*) An editor can share only if the organisation policy allows it.
 
-A **guest** works on a board within the granted role, but never has `board.share`,
+A **guest** works on a room within the granted role, but never has `board.share`,
 `board.manage`, `board.transfer` or `board.delete`, and cannot be a co-owner.
 
-**Copying a board and importing a backup** need `board.manage`. Only an owner or co-owner
+**Copying a room and importing a backup** need `board.manage`. Only an owner or co-owner
 can also grant access to a whole team or organisation.
 
 **Co-owner is a management role.** Appointing, promoting, demoting or removing a co-owner
@@ -49,16 +49,16 @@ themselves.
 
 | Source | How it appears |
 |---|---|
-| Direct grant | the role is granted to a person on the board |
+| Direct grant | the role is granted to a person on the room |
 | Team | the person is in a team, the role is granted to the team |
 | Organisation | the role is granted to the whole organisation; a guest does not inherit it |
-| Public link | a board property; grants `board.read` only |
+| Public link | a room property; grants `board.read` only |
 
 When several sources apply, the strongest role wins.
 
 ## How a link differs from a role
 
-| | Public link | Role on the board |
+| | Public link | Role on the room |
 |---|---|---|
 | Account needed | no | yes |
 | What it grants | read only | the capabilities of the role |
@@ -69,4 +69,4 @@ When several sources apply, the strongest role wins.
 
 ## Where to go next
 
-[Access: organisation, team, board, role](/guide/concepts/access) — why the model is built this way.
+[Access: organisation, team, room, role](/guide/concepts/access) — why the model is built this way.
