@@ -3,6 +3,8 @@ import { deltaOf, plainOf, runsOf, seedTextField, withMaterializedText } from ".
 import { readKanban, writeKanbanState } from "./kanbanState";
 import {
   isTemplateTitle,
+  readTag,
+  readWidget,
   type Board,
   type KanbanState,
   type Tag,
@@ -143,10 +145,16 @@ export class BoardDocument {
   /** Stable between changes — required by `useSyncExternalStore`. */
   snapshot = (): BoardSnapshot => {
     if (this.cache) return this.cache;
+    // Everything below is read through the wire readers (ADR-171): any client can write
+    // any value into the shared maps, and one malformed object must not blank the room
+    // for everyone who syncs it.
     const widgets: Widget[] = [];
-    this.widgets.forEach((widget, id) => {
+    this.widgets.forEach((raw, id) => {
+      const widget = readWidget(raw, id);
+      if (!widget) return;
       const text = this.texts.get(id);
-      if (!text) {
+      // `Y.XmlText` extends `Y.Text`; anything else under `texts` is not text.
+      if (!(text instanceof Y.Text)) {
         widgets.push(widget);
         return;
       }
@@ -155,26 +163,30 @@ export class BoardDocument {
 
     const kanbanStates: Record<string, KanbanState> = {};
     this.kanbans.forEach((kanban, kanbanId) => {
-      kanbanStates[kanbanId] = readKanban(kanban);
+      if (kanban instanceof Y.Map) kanbanStates[kanbanId] = readKanban(kanban);
     });
 
     const groupNames: Record<string, string> = {};
     this.groupNames.forEach((name, groupId) => {
-      groupNames[groupId] = name;
+      if (typeof name === "string") groupNames[groupId] = name;
     });
 
     const tags: Record<string, Tag> = {};
-    this.tags.forEach((tag, id) => {
-      tags[id] = tag;
+    this.tags.forEach((raw, id) => {
+      const tag = readTag(raw, id);
+      if (tag) tags[id] = tag;
     });
 
+    const title = this.meta.get("title");
     this.cache = {
       widgets,
       kanbanStates,
-      title: this.meta.get("title") ?? "",
+      title: typeof title === "string" ? title : "",
       groupNames,
       tags,
-      presentation: this.presentation.toArray(),
+      presentation: this.presentation
+        .toArray()
+        .filter((id): id is string => typeof id === "string"),
       allowBringEveryone: this.meta.get("allow_bring_everyone") === "1",
     };
     return this.cache;

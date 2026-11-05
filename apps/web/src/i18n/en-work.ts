@@ -355,6 +355,15 @@ export const enWork = {
   "apps.hello.name": "Hello",
   "apps.hello.description": "Greets whoever opens the panel.",
   "apps.hello.greeting": "Hello, {username}!",
-  "apps.hello.say": "Say hello"
+  "apps.hello.say": "Say hello",
+
+  // Render failures contained by <Contained> (ADR-171).
+  "contained.room.title": "This screen could not be shown",
+  "contained.room.body": "Something in the room could not be displayed. Your work is saved on the server; reloading usually helps.",
+  "contained.room.reload": "Reload",
+  "contained.room.home": "Go to the organisation home",
+  "contained.panel.title": "This panel could not be shown",
+  "contained.panel.body": "The rest of the room still works.",
+  "contained.panel.retry": "Try again"
 };
 

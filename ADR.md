@@ -7111,3 +7111,143 @@ identifiers when reading code or API examples.
 **Limits.** Historical ADRs and old URLs inside code examples keep the word “board” because
 they are history or identifiers. A future API rename would be a separate ADR and a breaking
 change.
+
+## ADR-171: A shared document is read defensively, and a failure stops at its boundary
+
+**Status:** accepted (2026-11-05).
+
+**Context.** The room's Yjs document is written by every client in it, by older builds, by
+the sync service's commands and by agents. Yjs validates nothing: a value under `widgets`
+is whatever the last writer put there. The snapshot cast those values to `Widget` and handed
+them to React and the painters. One malformed object — a string where a number belongs, a
+`style` that is an array, a `kanbans` entry that is not a `Y.Map` — threw during render or
+paint, and because the object is shared, the room went blank for everyone in it, on every
+reload. The app had no React error boundary, so a render failure unmounted the whole tree.
+
+The same gap was a security hole. `setWidgetLink` refuses a `javascript:` URL, but the
+inspector opened `link.url` exactly as it was stored, so an editor who wrote the document
+without the command could plant a link that ran script in another person's session.
+
+**Decision.**
+
+- **The snapshot reads through wire readers.** `readWidget` and `readTag` in
+  `packages/model/src/sanitize.ts` repair a value into the shape the app renders, and never
+  throw: a non-object is skipped; `id` is the map key; an unknown `type` becomes
+  `unsupported`; a non-finite coordinate becomes 0; an optional field of the wrong shape is
+  dropped, which is what an absent field already means; arrays are filtered rather than
+  discarded. Fields this build does not know are kept, so a newer client's data survives an
+  older reader. A valid widget is returned as the same object, so the snapshot keeps its
+  referential stability.
+- **Links are checked on read as well as on write.** `safeExternalUrl` moves to the model;
+  `readWidget` drops any URL link it refuses. `@remo/doc` re-exports it for existing callers.
+- **The rest of the snapshot is guarded too:** text that is not a `Y.Text`, a kanban that is
+  not a `Y.Map`, non-numeric kanban sizes, tags, the title and presentation entries.
+- **Painting is isolated per object.** `drawWidget` saves the canvas state, paints, and on
+  an exception restores it and logs once per object. The rest of the frame paints.
+- **Render failures stop at a boundary.** `<Contained scope="room">` wraps the screen and
+  offers reload and the organisation home instead of a blank page.
+  `<Contained scope="panel">` wraps the inspector, the side panels and the dialogs; the
+  canvas keeps working, and a new selection or another panel clears the failure.
+- **The reader does not write.** Repair happens on every read and never changes the shared
+  document: repairing on write would need every writer to cooperate, which is the
+  assumption that failed.
+
+**Consequences.** A malformed object costs that object, not the room. A planted
+`javascript:` link is inert in every client. The common path costs a few `typeof` checks
+per object per snapshot.
+
+**Limits.** Commands that read `board.widgets.get(id)` directly still see the raw value;
+the worst case is that one command fails for the person who runs it. The sync service reads
+the document without these readers (it cannot import the TypeScript model yet); a shared
+schema that both sides compile from is the follow-up. Nothing yet stops an editor from
+writing junk — this decision makes junk harmless to readers, it does not reject it at the
+socket.
+
+## ADR-172: Security headers at the edge
+
+**Status:** accepted (2026-11-05). Extends the boundary list of ADR-109.
+
+**Context.** The shipped proxy configurations sent no Content-Security-Policy, no HSTS, no
+framing rule and no `nosniff`. The app renders shared content with `contenteditable`, seeds
+an editor through `innerHTML`, and keeps its session in a cookie, so script injection and
+clickjacking had no second line of defence. The app shell also carried an inline script
+(the theme switch), which a strict policy would block.
+
+**Decision.**
+
+- **One snippet per site, included everywhere.** `deploy/nginx-security-headers.conf` (app)
+  and `deploy/nginx-security-headers-docs.conf` (guide) hold the headers. Every server and
+  every location that sets its own `add_header` includes the snippet, because nginx does not
+  inherit `add_header` into such a location. The container image installs both snippets;
+  Caddy passes them through and sets none of its own.
+- **App policy:** `default-src 'self'`, `script-src 'self'` with no inline script and no
+  eval, `style-src 'self' 'unsafe-inline'` (React style attributes), `img-src 'self' data:
+  blob:`, `connect-src 'self' wss://$host`, `object-src 'none'`, `base-uri 'self'`,
+  `form-action 'self'`, `frame-ancestors 'none'`. Companions: HSTS for one year on this host
+  only, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`,
+  `Cross-Origin-Opener-Policy: same-origin` and a Permissions-Policy that turns off camera,
+  microphone, geolocation, payment and USB.
+- **The theme switch becomes a file.** `apps/web/public/theme-boot.js` replaces the inline
+  script, so the policy needs no hash or nonce for the app.
+- **The guide allows its one inline script by hash.** The hash is recomputed from
+  `scripts/guide-build.mjs` by a test, so changing the script without the policy fails the
+  gate.
+- **The sync service sets `nosniff` and `frame-ancestors 'none'` itself**, so the two hold
+  even when it is reached without the proxy.
+- **A test keeps the parts in step.** `scripts/security-headers.test.mjs` checks the policy,
+  that every location with its own header includes a snippet, that the image installs what
+  the container includes, the guide hash, and that the app shell has no inline script.
+
+**Consequences.** Injected script has nowhere to load from and nothing inline to run; the
+room cannot be framed; a deploy that drops the policy fails the gate.
+
+**Limits.** `style-src 'unsafe-inline'` stays while React writes style attributes. HSTS
+`includeSubDomains`/`preload` is left to the operator because it binds every sibling
+subdomain. A deployment that points `VITE_SYNC_URL` at another origin must add that origin
+to `connect-src`. The development server sends no policy; the policy is exercised in
+production configurations only.
+
+## ADR-173: Write budgets on the room socket
+
+**Status:** accepted (2026-11-05). remo is run as a shared service for many organisations.
+
+**Context.** The room socket applied every frame it received. Frames were capped at 16 MiB
+(ADR-160), but nothing capped how many: an editor, or a script with an editor's cookie,
+could push frames as fast as the network allowed. Each was applied in memory, broadcast to
+every peer and appended to the room's log. In a service shared by many organisations, one
+socket could exhaust the process for all of them, and one room could grow without bound.
+
+**Decision.**
+
+- **Three budgets, checked per inbound frame before y-websocket sees it**
+  (`apps/sync/ws-quota.mjs`, installed after the read-only guard so it counts every frame):
+  - *Room size.* Once a room's encoded document has passed `REMO_ROOM_MAX_BYTES`
+    (64 MiB), it accepts only content frames up to `REMO_ROOM_FULL_FRAME_BYTES` (16 KiB).
+    Typing and deletions still save, so a full room can always be cleaned up; a paste does not.
+  - *Socket rate.* A token bucket of `REMO_WS_RATE_BYTES` per second (256 KiB) with a burst
+    of `REMO_WS_BURST_BYTES` (16 MiB), never below the largest accepted frame, so a
+    legitimate large paste is never impossible.
+  - *Organisation rate.* One bucket per organisation, `REMO_ORG_WS_RATE_BYTES` (2 MiB/s) and
+    `REMO_ORG_WS_BURST_BYTES` (64 MiB), shared by all its sockets. A room without an
+    organisation is its own key. One tenant cannot starve the others.
+- **A refusal closes the socket with a code the client understands:** 4429 for rate, 4413
+  for a full room. The frame is dropped, not lost: the client still holds the edit, and the
+  next handshake's sync step sends what the server is missing.
+- **The client backs off instead of resending at once.** `connectBoard` stops y-websocket's
+  100 ms reconnect on these codes and waits 5 s doubling to 60 s (rate) or 30 s doubling to
+  5 min (room full), and the room shows why. A minute connected resets the backoff.
+- **Room size is measured rarely.** Encoding a document is O(size), so the quota measures a
+  room only when a large content frame arrives, keeps a running upper bound, and measures
+  again before it refuses anything.
+- **A malformed setting never disables a budget**: a value that is not a positive integer
+  is ignored and the default stays.
+- **Metric:** `remo_ws_quota_closed_total{reason}`.
+
+**Consequences.** A runaway or hostile writer is cut off within one frame of its budget,
+without affecting other organisations; the room's log and memory have a ceiling.
+
+**Limits.** Budgets are per process, like the sign-in limiter; several instances behind a
+proxy need them in PostgreSQL (review stage 4). The room ceiling is soft: many small frames
+can still pass it, bounded by the rate budgets. Edits are not yet audited per session on
+the socket path; that belongs to the server-side guard (review stage 2). Defaults are
+starting values for a team-sized room and should be revisited with production metrics.

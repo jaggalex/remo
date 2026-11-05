@@ -17,6 +17,7 @@ import {
   ObjectNameField,
   TagsPanel,
 } from "./BoardObjectPanels";
+import { Contained } from "./ErrorBoundary";
 
 /**
  * The board overview panel.
@@ -50,7 +51,19 @@ export interface BoardInspectorProps {
   onOpenObject: (boardId: string, widgetId: string) => void;
 }
 
+/**
+ * The inspector inside its own failure boundary (ADR-171): an object the panel cannot
+ * show closes the panel, not the room, and selecting something else retries.
+ */
 export function BoardInspector(props: BoardInspectorProps) {
+  return (
+    <Contained scope="panel" resetKey={props.selectedIds.join(",")}>
+      <InspectorBody {...props} />
+    </Contained>
+  );
+}
+
+function InspectorBody(props: BoardInspectorProps) {
   const { t, count, typeName, statusName } = useI18n();
   const {
     toggleInspector, selectedIds, setSelectedIds, writeBlocked,

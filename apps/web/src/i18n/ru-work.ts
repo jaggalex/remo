@@ -355,6 +355,15 @@ export const ruWork = {
   "apps.hello.name": "Приветствие",
   "apps.hello.description": "Здоровается с тем, кто открыл панель.",
   "apps.hello.greeting": "Привет, {username}!",
-  "apps.hello.say": "Поздороваться"
+  "apps.hello.say": "Поздороваться",
+
+  // Сбои отрисовки, которые остановил <Contained> (ADR-171).
+  "contained.room.title": "Не удалось показать экран",
+  "contained.room.body": "Часть комнаты не получилось отобразить. Ваша работа сохранена на сервере; обычно помогает перезагрузка.",
+  "contained.room.reload": "Перезагрузить",
+  "contained.room.home": "На главную организации",
+  "contained.panel.title": "Не удалось показать панель",
+  "contained.panel.body": "Остальная комната работает.",
+  "contained.panel.retry": "Повторить"
 };
 

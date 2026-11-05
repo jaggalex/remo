@@ -18,6 +18,8 @@ CMD ["node", "server.mjs"]
 
 FROM nginx:1.28-alpine AS web
 COPY deploy/nginx.container.conf /etc/nginx/conf.d/default.conf
+COPY deploy/nginx-security-headers.conf /etc/nginx/snippets/remo-security-headers.conf
+COPY deploy/nginx-security-headers-docs.conf /etc/nginx/snippets/remo-security-headers-docs.conf
 COPY --from=build /src/apps/web/dist /srv/app
 COPY --from=build /src/docs-site /srv/docs
 EXPOSE 8080 8081

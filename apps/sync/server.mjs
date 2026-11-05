@@ -79,6 +79,10 @@ metrics.describe(
 );
 metrics.describe("remo_ws_protocol_errors_total", "WebSocket frames the protocol refused");
 metrics.describe(
+  "remo_ws_quota_closed_total",
+  "Sockets closed for a write budget, by reason (rate, room-full); ADR-173",
+);
+metrics.describe(
   "remo_background_failures_total",
   "Failures no caller handled; any non-zero rate is a bug (ADR-160)",
 );
@@ -256,6 +260,11 @@ async function handleRequest(request, response) {
     return;
   }
   for (const [name, value] of Object.entries(corsHeaders)) response.setHeader(name, value);
+  // The service answers with data, never with a page: nothing it returns may be sniffed
+  // into HTML or framed. The proxies add the full policy for the app (ADR-172); these
+  // two hold even when the service is reached directly.
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
 
   // Every browser gets a CSRF cookie before it mutates anything; `/auth/me` hands the
   // same value to the app so it can echo it back in `X-CSRF-Token` (ADR-062).

@@ -1,0 +1,36 @@
+/*
+ * Fallbacks for a render failure (ADR-171).
+ *
+ * The room fallback replaces the whole screen, so it brings its own background; the
+ * panel fallback floats where a toast would, above the canvas, so the room behind it
+ * stays usable.
+ */
+
+.contained-room {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  box-sizing: border-box;
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.contained-room-home {
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+.contained-panel {
+  position: fixed;
+  z-index: var(--z-toast);
+  left: 50%;
+  top: var(--space-12);
+  transform: translateX(-50%);
+  width: min(480px, calc(100% - 2 * var(--space-4)));
+  box-shadow: var(--shadow-pop);
+  border-radius: var(--radius-md);
+}

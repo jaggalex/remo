@@ -47,6 +47,25 @@ during the build.
 Put the reverse proxy in front of `remo-web:8080` (app) and `remo-web:8081` (guide).
 `deploy/Caddyfile.snippet` and `deploy/nginx-remo.conf` are starting points.
 
+## Security headers
+
+The web container sends the security headers itself (ADR-172): a Content-Security-Policy,
+HSTS, `X-Frame-Options`, `nosniff`, a referrer policy and a permissions policy. They live in
+`deploy/nginx-security-headers.conf` (app) and `deploy/nginx-security-headers-docs.conf`
+(guide), and Caddy passes them through. Do not set the same headers in Caddy as well.
+
+With `deploy/nginx-remo.conf` on the host, the configuration includes the same two files
+from `/srv/remo/deploy/`; adjust the path if the tree lives elsewhere.
+
+Things to change for your setup:
+
+- If `VITE_SYNC_URL` points the live socket at another origin, add that origin to
+  `connect-src` in the app snippet.
+- HSTS is sent for this host only. Add `includeSubDomains` or `preload` only when every
+  subdomain of your domain serves HTTPS.
+
+Check a running deployment with `curl -sI https://<your-host>/ | grep -i -E 'content-security|strict-transport'`.
+
 ## Releases
 
 `deploy/release.sh` verifies the tree, uploads the exact commit and switches the

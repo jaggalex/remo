@@ -12,10 +12,15 @@ import { addSticky, agentBoard, openBoard, openMore } from "./helpers";
 
 const BUDGET = { maxTokens: 6_000, maxActions: 60, maxCostUsd: 1 };
 
-async function openAgents(page: Page): Promise<void> {
+/** Choose "Ask AI…"; what the dialog shows first depends on the room's tasks. */
+async function clickAskAi(page: Page): Promise<void> {
   // Scoped to the header: a selected object adds its own "More" to the arrange bar.
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("menuitem", { name: "Ask AI…" }).click();
+}
+
+async function openAgents(page: Page): Promise<void> {
+  await clickAskAi(page);
   await expect(
     page.getByRole("dialog", { name: "AI agents on this room" }),
   ).toBeVisible();
@@ -169,7 +174,9 @@ test("a plan applied in one tab is not written again from a second tab", async (
   // applied. Both dialogs hold a proposed plan; only one may write it.
   const second = await context.newPage();
   await openBoard(second, board.boardId);
-  await openAgents(second);
+  // The task already awaits approval, so the dialog opens its plan as soon as the task
+  // list loads (ADR-142); the list itself may never be on screen long enough to assert.
+  await clickAskAi(second);
   const secondPlan = second.getByRole("dialog", { name: "Agent plan" });
   await expect(secondPlan).toBeVisible({ timeout: 20_000 });
 

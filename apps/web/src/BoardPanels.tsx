@@ -9,6 +9,7 @@ import { BoardDeleteDialog } from "./BoardDeleteDialog";
 import { OrganisationDialog } from "./OrganisationDialog";
 import { SettingsPanel } from "./SettingsPanel";
 import { useI18n } from "./i18n";
+import { Contained } from "./ErrorBoundary";
 import type { BoardSettings } from "./settings";
 
 /**
@@ -18,7 +19,17 @@ import type { BoardSettings } from "./settings";
  * itself is the organisation home (ADR-168), not an overlay. Keeping these here means
  * `BoardApp` composes and the file stays inside the Q4 size ratchet.
  */
-export function BoardPanels({
+export function BoardPanels(props: Parameters<typeof PanelsBody>[0]) {
+  // Opening another panel is a fresh attempt after a failure (ADR-171).
+  const open = [props.accountOpen, props.agentOpen, props.settingsOpen, props.trashOpen];
+  return (
+    <Contained scope="panel" resetKey={open.map(Number).join("")}>
+      <PanelsBody {...props} />
+    </Contained>
+  );
+}
+
+function PanelsBody({
   accountOpen,
   me,
   onCloseAccount,

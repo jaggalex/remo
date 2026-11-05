@@ -1,4 +1,4 @@
-import type { WidgetLink } from "@remo/model";
+import { safeExternalUrl, type WidgetLink } from "@remo/model";
 import type { BoardDocument } from "./board";
 
 /**
@@ -8,23 +8,9 @@ import type { BoardDocument } from "./board";
  * product already understands, and opening it still runs the normal access check.
  */
 
-const MAX_URL = 2048;
-
-/** A safe external URL, or null. Only http, https and mailto; no credentials. */
-export function safeExternalUrl(value: string): string | null {
-  const text = value.trim();
-  if (!text || text.length > MAX_URL || /[\u0000-\u001f\u007f]/.test(text)) return null;
-  let url: URL;
-  try {
-    url = new URL(text);
-  } catch {
-    return null;
-  }
-  if (!["http:", "https:", "mailto:"].includes(url.protocol)) return null;
-  if (url.username || url.password) return null;
-  if (url.protocol !== "mailto:" && !url.hostname) return null;
-  return url.toString();
-}
+// The rule moved to the model so the document reader can apply it too (ADR-171); the
+// re-export keeps every existing import of `safeExternalUrl` from `@remo/doc` working.
+export { safeExternalUrl };
 
 export function setWidgetLink(
   board: BoardDocument,

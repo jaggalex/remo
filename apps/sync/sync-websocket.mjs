@@ -9,6 +9,7 @@
  */
 import { WebSocketServer } from "ws";
 import { guardReadOnly } from "./readonly.mjs";
+import { createWsQuota, guardQuota, quotaSettings } from "./ws-quota.mjs";
 import { decodeSaveAck, isSyncStep1, isSyncStep2, SAVE_ACK_MESSAGE } from "./save-ack.mjs";
 import { Y, encoding, websocketUtils } from "./y.mjs";
 import { failUpgrade, roomFromRequestUrl } from "./http-boundary.mjs";
@@ -58,6 +59,13 @@ export function attachWebSocket({
 
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_FRAME_BYTES });
 
+  // Write budgets per socket, per organisation and per room (ADR-173). Measuring a room
+  // encodes its document; the quota does that only on first use and near the ceiling.
+  const quota = createWsQuota({
+    settings: quotaSettings(process.env, { maxFrameBytes: MAX_FRAME_BYTES }),
+    measure: (doc) => Y.encodeStateAsUpdate(doc).length,
+  });
+
   wss.on("connection", (socket, request) => {
     // An invalid or oversized frame makes ws emit `error`, and neither this file nor
     // y-websocket listened: one frame was an uncaught exception for every room (ADR-160).
@@ -77,6 +85,20 @@ export function attachWebSocket({
     if (readOnly) {
       const state = { readOnly: true, initialRequestUsed: false };
       guardReadOnly(socket, state, () => metrics.inc("remo_ws_readonly_write_attempt"));
+    }
+
+    // Installed after the read-only guard so it sees every frame first (ADR-173).
+    if (auth?.boardId) {
+      const room = auth.boardId;
+      guardQuota(socket, {
+        quota,
+        state: quota.open({ orgKey: auth.orgId ?? `room:${room}` }),
+        room: () => getYDoc(room),
+        onLimit: (reason) => {
+          metrics.inc("remo_ws_quota_closed_total", { reason });
+          log.warn?.(`[sync] closed a socket on ${room}: ${reason}`);
+        },
+      });
     }
 
     if (auth?.boardId) {
@@ -146,6 +168,7 @@ export function attachWebSocket({
 
     let session = null;
     let upgradeAccess = null;
+    let orgId = null;
     let docName = "";
 
     try {
@@ -191,6 +214,7 @@ export function attachWebSocket({
             unlockToken: linkUnlockToken(request),
           });
           upgradeAccess = resolved?.access ?? null;
+          orgId = resolved?.facts?.board?.orgId ?? null;
           if (!resolved?.access.allowed) {
             // 4403 is the app's "no access" close code; the socket never reaches Yjs.
             socket.write(
@@ -213,6 +237,7 @@ export function attachWebSocket({
         authBySocket.set(websocket, {
           boardId: docName,
           access: upgradeAccess,
+          orgId,
           session,
           unlockToken: linkUnlockToken(request),
         });

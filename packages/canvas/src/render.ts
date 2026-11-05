@@ -314,11 +314,42 @@ function drawTextInBox(
   ctx.restore();
 }
 
+/** Widgets whose paint already failed once; logged once each, not every frame. */
+const failedPaints = new Set<string>();
+
+/**
+ * Paint one widget, isolated from every other (ADR-171).
+ *
+ * The board is painted in one loop on one frame. Without this boundary, one object the
+ * painter cannot handle threw out of the loop and left the canvas empty for every
+ * client in the room, on every frame, because the object is shared. Now the failure
+ * costs that object only: the canvas state is restored, the rest of the board paints,
+ * and the error is reported once per object so it reaches a bug report.
+ */
 export function drawWidget(
   ctx: CanvasRenderingContext2D,
   widget: Widget,
   zoom: number,
   options: DrawWidgetOptions = {},
+): void {
+  ctx.save();
+  try {
+    paintWidget(ctx, widget, zoom, options);
+  } catch (error) {
+    if (!failedPaints.has(widget.id)) {
+      failedPaints.add(widget.id);
+      console.error(`[canvas] could not paint ${widget.type} ${widget.id}`, error);
+    }
+  } finally {
+    ctx.restore();
+  }
+}
+
+function paintWidget(
+  ctx: CanvasRenderingContext2D,
+  widget: Widget,
+  zoom: number,
+  options: DrawWidgetOptions,
 ): void {
   const left = widget.x - widget.width / 2;
   const top = widget.y - widget.height / 2;

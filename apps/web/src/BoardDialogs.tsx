@@ -14,6 +14,7 @@ import { VoteSurface } from "./VoteSurface";
 import { ShareLinkDialog } from "./ShareLinkDialog";
 import { ShareDialog } from "./ShareDialog";
 import { InviteDialog } from "./InviteDialog";
+import { Contained } from "./ErrorBoundary";
 import type { TimerPhase } from "@remo/model";
 
 /**
@@ -22,7 +23,16 @@ import type { TimerPhase } from "@remo/model";
  * They are forms over the board, not parts of it: one file keeps the two surfaces of
  * `App` — the canvas and its forms — apart, and keeps `App` inside the Q4 size ratchet.
  */
-export function BoardDialogs({
+export function BoardDialogs(props: Parameters<typeof DialogsBody>[0]) {
+  // One failure boundary for the dialogs (ADR-171): a broken dialog never takes the room.
+  return (
+    <Contained scope="panel">
+      <DialogsBody {...props} />
+    </Contained>
+  );
+}
+
+function DialogsBody({
   board,
   widgets,
   kanbanStates,
