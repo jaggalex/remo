@@ -178,9 +178,9 @@ try {
   }
 
   const anchorPage = await open("/guide/ru/concepts/glossary.html");
-  await anchorPage.goto(`${base}/guide/ru/concepts/glossary.html#obekty-i-doska`);
+  await anchorPage.goto(`${base}/guide/ru/concepts/glossary.html#obekty-i-komnata`);
   const anchor = await anchorPage.evaluate(() => {
-    const heading = document.getElementById("obekty-i-doska");
+    const heading = document.getElementById("obekty-i-komnata");
     const header = document.querySelector(".top");
     return {
       top: heading.getBoundingClientRect().top,

@@ -4,12 +4,12 @@
   "status": "available",
   "order": 20,
   "title": {
-    "ru": "Доступ: организация, команда, доска, роль",
-    "en": "Access: organisation, team, board, role"
+    "ru": "Доступ: организация, команда, комната, роль",
+    "en": "Access: organisation, team, room, role"
   },
   "summary": {
-    "ru": "Почему права выдаются на доску, откуда берётся роль и что происходит при отзыве доступа.",
-    "en": "Why permissions are granted on a board, where a role comes from, and what happens when access is revoked."
+    "ru": "Почему права выдаются на комнату, откуда берётся роль и что происходит при отзыве доступа.",
+    "en": "Why permissions are granted on a room, where a role comes from, and what happens when access is revoked."
   },
   "related": [
     "capabilities/access",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:5dcd32320ad02340cb3fd472fbdd22a2a0feedba45cb5f957f130a9b74199fcb",
-      "targetHash": "sha256:3f6295305abdc6616dd786d0cb43b38d077cebc19786cde5fc5d0f5c5146a8f2"
+      "sourceHash": "sha256:01487d02abd5d1745a930e15734fb8f913617709515a69dd4bfb5d85c8bfeebe",
+      "targetHash": "sha256:324fed1b9701aff21710ab8d06bad7b60589bdbac0ecc533bf4ca928034e6551"
     }
   }
 }

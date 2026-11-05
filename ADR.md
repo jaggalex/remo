@@ -7079,3 +7079,35 @@ one click, then typing.
 **Limits.** Only `ru` and `en` are authored today. Template copy is duplicated per locale;
 a missing locale falls back to English. Existing boards cannot be converted by changing the
 profile, because their text is document content, not a live translation.
+
+## ADR-170: The product noun is “room”, not “board”
+
+**Status:** accepted (2026-11-04). Supersedes the mixed vocabulary of ADR-064…168.
+
+**Context.** The interface said “доска/board”, the address said `?room=`, and some documents
+used “desk”. These were three names for one object: the shared canvas with its objects,
+comments, access and presentation. A person had to learn that a board and a room are the
+same thing.
+
+**Decision.**
+
+- **The user-facing noun is “комната” in Russian and “room” in English.** It is used for the
+  object, its list, its settings, its menu, its title and all product documentation.
+- **The URL already agrees:** `?room=<id>` is a room; there is no second address form.
+- **“Desk” is not a product term.** It is not used.
+- **Technical identifiers keep their historical names.** The database table `boards`, the
+  HTTP paths `/boards`, the commands `board.item.*`, the capabilities `board.edit` and the
+  source modules `BoardDocument`/`BoardApp` are stable identifiers, not interface copy.
+  Documentation names them as code and explains that the product noun is “room”; renaming
+  them would be a separate, breaking migration with no user-visible benefit.
+- **Documentation prose is room-first.** Help, guide, README and acceptance text say room;
+  only code spans, paths and identifiers keep “board”.
+- **Template copy is room-first too:** “Room”, “Kanban room” and their Russian equivalents.
+
+**Consequences.** A person sees one noun everywhere: the room in the header, the room list,
+the room menu, the address and the guide. Engineers can still follow the stable `board.*`
+identifiers when reading code or API examples.
+
+**Limits.** Historical ADRs and old URLs inside code examples keep the word “board” because
+they are history or identifiers. A future API rename would be a separate ADR and a breaking
+change.

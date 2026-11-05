@@ -211,8 +211,8 @@
     {
       "id": "board-create",
       "title": {
-        "ru": "Создать доску",
-        "en": "Create a board"
+        "ru": "Создать комнату",
+        "en": "Create a room"
       },
       "capability": "how-to/create-board",
       "concept": "concepts/board",
@@ -316,8 +316,8 @@
     {
       "id": "board-chrome",
       "title": {
-        "ru": "Экран доски",
-        "en": "The board screen"
+        "ru": "Экран комнаты",
+        "en": "The room screen"
       },
       "capability": "capabilities/canvas",
       "concept": "concepts/board-chrome",

@@ -5,10 +5,10 @@
 | Sign-in appears to succeed, but there is no session | no HTTPS at `NODE_ENV=production` | the `Secure` cookie is not stored without TLS |
 | `401 AUTH_REQUIRED` with an account present | the cookie is lost or has expired | session lifetime 30 days, the domain and `SameSite` |
 | `403 FORBIDDEN` on an action | the role does not give the capability | the role table and role sources |
-| `404` on a board that exists | another account or organisation | access and `?org=<slug>` in the address |
+| `404` on a room that exists | another account or organisation | access and `?org=<slug>` in the address |
 | The link does not open | disabled, expired, or the password changed | the **Public link** block |
-| No discussion is visible | you opened a link without an account, or the role is below **Commenter** | the account and the board role |
-| A lock cannot be released | another person locked the object | ask the author or a board manager |
+| No discussion is visible | you opened a link without an account, or the role is below **Commenter** | the account and the room role |
+| A lock cannot be released | another person locked the object | ask the author or a room manager |
 
 ## Socket and saving
 
@@ -27,7 +27,7 @@
 | "Nothing to export in this scope" | nothing is selected for the chosen scope | select objects or a frame |
 | No backup option | the role lacks `board.backup` | an editor role and above |
 | Import refused | a damaged file or a wrong checksum | the integrity of the JSON and `manifest` |
-| The PDF is empty | rendering happens in the browser | disabled extensions, board size |
+| The PDF is empty | rendering happens in the browser | disabled extensions, room size |
 
 ## Events and integrations
 

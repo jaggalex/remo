@@ -2,12 +2,12 @@
   "id": "agents.task",
   "type": "how-to",
   "title": {
-    "ru": "Попросить агента изменить доску",
-    "en": "Ask an agent to change the board"
+    "ru": "Попросить агента изменить комнату",
+    "en": "Ask an agent to change the room"
   },
   "summary": {
-    "ru": "Четыре сценария — план с превью, диаграмма сразу на доске, карточки пакетом и упорядочивание колонками; что уходит в модель и что делать без ключа.",
-    "en": "Four scenarios — a plan with a preview, a diagram straight onto the board, cards as a package and tidying into columns; what goes to the model and what happens without a key."
+    "ru": "Четыре сценария — план с превью, диаграмма сразу на комнате, карточки пакетом и упорядочивание колонками; что уходит в модель и что делать без ключа.",
+    "en": "Four scenarios — a plan with a preview, a diagram straight onto the room, cards as a package and tidying into columns; what goes to the model and what happens without a key."
   },
   "related": [
     "agents.budget",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:8beddb328b4146f16d3662f42a1c13acb0b0f74a0c2872a620644dd25c3cbdbc",
-      "targetHash": "sha256:6f6676d4b35960858128673262cc58900482bed87212979fb43c1d785471a70a"
+      "sourceHash": "sha256:96dee1033e586d91f0687acecabf5ccdeaf7ef496f6912bc083e194532814d34",
+      "targetHash": "sha256:268a58e11613f00874469daa07fff6d8571427c2976d27848e7aa8e407e87848"
     }
   }
 }

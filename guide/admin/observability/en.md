@@ -25,7 +25,7 @@
 
 ## Product metrics
 
-When `REMO_METRICS_DATABASE_URL` is set, product events are written to a separate database (not the board database). Without it the instrumentation is a no-op; `REMO_METRICS=off` switches it off explicitly.
+When `REMO_METRICS_DATABASE_URL` is set, product events are written to a separate database (not the room database). Without it the instrumentation is a no-op; `REMO_METRICS=off` switches it off explicitly.
 
 ## What to look at for a complaint
 

@@ -4,10 +4,10 @@ A card keeps a status, one assignee and a date range. These fields appear on the
 
 ## Steps
 
-1. Select a card on the board, or click **+** in an empty kanban cell: the card is created in that column and swimlane and its text editor opens immediately.
+1. Select a card on the room, or click **+** in an empty kanban cell: the card is created in that column and swimlane and its text editor opens immediately.
 2. On the **Properties** panel, open Card fields.
 3. Choose a status: To do, In progress or Done. The empty value removes the status.
-4. Choose an assignee from the board's people, or leave it Unassigned.
+4. Choose an assignee from the room's people, or leave it Unassigned.
 5. Set a start and a due date. Either can be empty; the card then shows one date.
 6. To clear a date, remove its value.
 
@@ -23,5 +23,5 @@ A card keeps a status, one assignee and a date range. These fields appear on the
 - Status and column are independent: moving a card to another column does not change its status.
 - One assignee; multiple assignees are not in v1.
 - The assignee's email is not shown on the card.
-- The picker lists people with access to the board; a link visitor is not included.
-- Tags are a separate board vocabulary; add them to a card in the **Tags** block (up to 10 per object).
+- The picker lists people with access to the room; a link visitor is not included.
+- Tags are a separate room vocabulary; add them to a card in the **Tags** block (up to 10 per object).

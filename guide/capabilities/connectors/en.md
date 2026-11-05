@@ -57,7 +57,7 @@ The walk covers fixed waypoints only: connector ends and automatic midpoints are
 
 ## Practical instructions
 
-[Assemble a planning board](/guide/start/first-scenario) — connectors in a working scenario.
+[Assemble a planning room](/guide/start/first-scenario) — connectors in a working scenario.
 
 ## Related capabilities
 

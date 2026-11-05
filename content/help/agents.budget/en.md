@@ -11,7 +11,7 @@ You set the limits before the run, and the agent cannot exceed them. When a limi
 
 ## The rule
 
-A task without a budget is not created. That is not paperwork: the budget is your consent to spend money and change the board. The server fills in the token and time defaults only once a budget exists.
+A task without a budget is not created. That is not paperwork: the budget is your consent to spend money and change the room. The server fills in the token and time defaults only once a budget exists.
 
 ## Steps
 
@@ -23,4 +23,4 @@ A task without a budget is not created. That is not paperwork: the budget is you
 
 - **"Set a limit".** The changes field is empty or zero; the task was not created.
 - **`BUDGET_EXCEEDED` or `BUDGET_ACTIONS`.** The agent stopped; a partial result is not applied. Raise the limit and run again.
-- **`TOO_MANY_TASKS`.** The board already has a queue; wait for it or cancel a task.
+- **`TOO_MANY_TASKS`.** The room already has a queue; wait for it or cancel a task.

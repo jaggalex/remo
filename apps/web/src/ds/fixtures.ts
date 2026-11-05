@@ -12,15 +12,15 @@ export function fixtures(lang: Lang) {
     agent: ru ? "Аналитик ретро" : "Retro analyst",
     team: ru ? "Команда PM · 8 участников" : "PM team · 8 members",
     sources: ru
-      ? { owner: "Владелец доски", direct: "Выдано напрямую · Александр Костылев, 12.10.2026", team: "Команда · роль задаёт админ организации", inherited: "Через команду PM — изменить можно у команды", agent: "Агент · область: эта доска · бюджет 20 $" }
-      : { owner: "Board owner", direct: "Granted directly · Alexander Kostylev, 12.10.2026", team: "Team · the organisation admin sets the role", inherited: "Through team PM — change it on the team", agent: "Agent · scope: this board · budget $20" },
+      ? { owner: "Владелец комнаты", direct: "Выдано напрямую · Александр Костылев, 12.10.2026", team: "Команда · роль задаёт админ организации", inherited: "Через команду PM — изменить можно у команды", agent: "Агент · область: эта комната · бюджет 20 $" }
+      : { owner: "Room owner", direct: "Granted directly · Alexander Kostylev, 12.10.2026", team: "Team · the organisation admin sets the role", inherited: "Through team PM — change it on the team", agent: "Agent · scope: this room · budget $20" },
     frames: ru ? ["Что мешало", "Что помогло", "Идеи", "Черновик"] : ["What got in the way", "What helped", "Ideas", "Draft"],
     stickers: ru
-      ? ["Долго ждали ревью дизайна", "Тесты падали на CI", "Не было доступа к доске заказчика", "Много встреч", "Ретро раз в две недели", "Парное программирование", "Релиз по плану", "Добавить офлайн-статус"]
-      : ["Waited too long for design review", "Tests kept failing on CI", "No access to the client's board", "Too many meetings", "Retro every two weeks", "Pair programming", "Release on schedule", "Add an offline status"],
+      ? ["Долго ждали ревью дизайна", "Тесты падали на CI", "Не было доступа к комнате заказчика", "Много встреч", "Ретро раз в две недели", "Парное программирование", "Релиз по плану", "Добавить офлайн-статус"]
+      : ["Waited too long for design review", "Tests kept failing on CI", "No access to the client's room", "Too many meetings", "Retro every two weeks", "Pair programming", "Release on schedule", "Add an offline status"],
     task: ru ? "Сгруппируй стикеры во фрейме «Что мешало» по темам и подпиши кластеры." : "Group the stickers in “What got in the way” by theme and label the clusters.",
     budgetError: ru ? "Не больше 20 $ — лимит организации." : "At most $20 — the organisation limit.",
-    agentRights: ru ? "комментатор на этой доске · выдал Александр Костылев. Агент не видит другие доски." : "commenter on this board · granted by Alexander Kostylev. The agent cannot see other boards.",
+    agentRights: ru ? "комментатор на этой доске · выдал Александр Костылев. Агент не видит другие доски." : "commenter on this room · granted by Alexander Kostylev. The agent cannot see other rooms.",
     journal: ru
       ? ["Сгруппировал 42 стикера в 6 кластеров", "Написал резюме фрейма «Что мешало»", "Попытка изменить доску вне области задачи"]
       : ["Grouped 42 stickers into 6 clusters", "Summarised the “What got in the way” frame", "Tried to change the board outside the task scope"],

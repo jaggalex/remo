@@ -6,8 +6,8 @@
     "en": "Turn the public link on and off"
   },
   "summary": {
-    "ru": "Одна ссылка на доску: кто угодно с ней может читать; выключение закрывает доступ для всех.",
-    "en": "One link per board: anyone with it can read; turning it off closes access for everyone."
+    "ru": "Одна ссылка на комнату: кто угодно с ней может читать; выключение закрывает доступ для всех.",
+    "en": "One link per room: anyone with it can read; turning it off closes access for everyone."
   },
   "related": [
     "access.share",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:f9f8eaea8dc2a7b4a750e2e5b4be20de2c8ad58f6f129c6905212b641c44d1be",
-      "targetHash": "sha256:887ade1663f4ee16039f067a162dd8fe8f06f0b2cb00a3b85196f09dd7ba5bb4"
+      "sourceHash": "sha256:35a7051fcf9100ac70ac3ad93800b82602a53584c27b53c212955bfa93bf3252",
+      "targetHash": "sha256:907ecf37b6bd85eb79dd9026d32f23d7dc5efc341ca6764b8ec7ce238c9a1aff"
     }
   }
 }

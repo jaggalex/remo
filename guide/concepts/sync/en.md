@@ -4,7 +4,7 @@ A change is applied locally at once: you see it in the same frame. Then it goes 
 
 | What you see | Meaning |
 |---|---|
-| connecting | the connection is being established, the board is not synced yet |
+| connecting | the connection is being established, the room is not synced yet |
 | saving | there are changes the server has not accepted yet |
 | saved | the server confirmed the write |
 | offline (N) | no connection, N changes wait in the queue |
@@ -12,7 +12,7 @@ A change is applied locally at once: you see it in the same frame. Then it goes 
 
 ## Conflicts
 
-Two people can change one board at the same time. Changes merge rather than overwrite each other: the order of operations is preserved, and the last one in time does not "win" entirely. Practical consequence: edits to different objects do not conflict, and edits to one object are applied in the order in which the server saw them.
+Two people can change one room at the same time. Changes merge rather than overwrite each other: the order of operations is preserved, and the last one in time does not "win" entirely. Practical consequence: edits to different objects do not conflict, and edits to one object are applied in the order in which the server saw them.
 
 ## Offline
 

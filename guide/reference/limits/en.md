@@ -1,4 +1,4 @@
-## Board and objects
+## Room and objects
 
 | What | Value |
 |---|---|
@@ -6,12 +6,12 @@
 | Connectors between one pair of objects | 1 |
 | Cards per agent task | 500, processed in batches of 50 |
 | Offline queue in a tab | 1000 unacknowledged changes |
-| Tags per board | 50 |
+| Tags per room | 50 |
 | Tags per object | 10 |
 | Tag name length | 32 characters |
 | Comment body | 4000 characters |
 | Object name | 120 characters; optional and not unique |
-| Board emoji | 16 code points |
+| Room emoji | 16 code points |
 | Tiles per home page | 24 |
 | Organisation or team name | 120 characters |
 | Account name | 1 to 80 characters |
@@ -21,11 +21,11 @@
 
 | What | Value |
 |---|---|
-| Time in the bin | 90 days is shown; no automatic purge |
+| Time in the bin | no automatic purge; restore while the room is in the trash |
 | Integration token lifetime | 1–365 days, 90 by default |
 | Tokens per agent | 5 active |
 | Link password | at least 8 characters, no upper limit; checked on the server |
-| Comments | account with board access only; a link visitor does not see them |
+| Comments | account with room access only; a link visitor does not see them |
 
 ## Agents
 
@@ -43,7 +43,7 @@
 | Connectors in one plan | 100 |
 | Columns and stories in a plan | 12 columns of 50 stories; 6 swimlanes of 4 rows |
 | Plan coordinates | ±1 000 000 |
-| Board snapshot for the model | 200 objects |
+| Room snapshot for the model | 200 objects |
 | Selection text for a task | 50 objects and 20 000 characters; truncation is recorded on the task |
 | Tidying | 50 objects after groups and frames are expanded; a larger set is refused before a plan is stored |
 | Brief file | 100 000 bytes; the model sees the first 20 000 characters |
@@ -64,7 +64,7 @@
 | What | Value |
 |---|---|
 | Vote quota | 1–100, 3 by default |
-| Open voting sessions per board | 1 |
+| Open voting sessions per room | 1 |
 
 ## Service
 
@@ -80,7 +80,7 @@
 |---|---|
 | Offline queue, 1000 | the tab stops accepting edits; the queue survives until the connection returns |
 | 32 waypoints per connector | a new point is not added until an existing one is removed |
-| 500 objects per task | the change set is refused with an explanation; the board is untouched |
+| 500 objects per task | the change set is refused with an explanation; the room is untouched |
 | 300 objects in a plan | the plan is refused before it is stored as `PLAN_TOO_LARGE`; there is no preview |
 | 10 operations in a plan | the reply is refused as `TOO_MANY_OPERATIONS`; there is no preview |
 | 200 objects in a plan | a `PLAN_LARGE` warning; the plan can still be applied |

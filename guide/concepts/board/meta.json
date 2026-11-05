@@ -4,12 +4,12 @@
   "status": "available",
   "order": 10,
   "title": {
-    "ru": "Доска и объекты: слои, координаты, выделение",
-    "en": "Board and objects: layers, coordinates, selection"
+    "ru": "Комната и объекты: слои, координаты, выделение",
+    "en": "Room and objects: layers, coordinates, selection"
   },
   "summary": {
-    "ru": "Из чего состоит доска, как объекты располагаются и почему одни перемещаются свободно, а другие живут в ячейке.",
-    "en": "What a board is made of, how objects are placed, and why some move freely while others live in a cell."
+    "ru": "Из чего состоит комната, как объекты располагаются и почему одни перемещаются свободно, а другие живут в ячейке.",
+    "en": "What a room is made of, how objects are placed, and why some move freely while others live in a cell."
   },
   "related": [
     "capabilities/canvas",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:d89608752b78c4c57873d12dda0f2a367e2478944f26affdf3105fede21a9766",
-      "targetHash": "sha256:0809c73a4a88564cc130f06fa08ddb8ab20a57338ba9f8dd961dc732d1dce9a0"
+      "sourceHash": "sha256:440bd8206ad8954bfb9a423d4db98915f09626530b2da356573acdb4d9325316",
+      "targetHash": "sha256:fdf6b1a09cde507f644ee79618e3873d85be3d59c147f2bee6f5d8b9709a39e1"
     }
   }
 }

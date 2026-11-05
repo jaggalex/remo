@@ -3,7 +3,7 @@
   "type": "how-to",
   "title": {
     "ru": "Провести презентацию",
-    "en": "Present the board"
+    "en": "Present the room"
   },
   "summary": {
     "ru": "Порядок слайдов из любых объектов, ведущий и ведомые, возврат к ведущему и завершение.",
@@ -11,15 +11,15 @@
   },
   "related": [
     "facilitation.follow",
-    "boards.create"
+    "rooms.create"
   ],
   "verifiedAgainst": "2026-11-04",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:e22e0dd5fb8e2fd3e1f59c290ee685aa141bd611bd17069798f1cf8ddd769d77",
-      "targetHash": "sha256:a79effda1ab9ca5840cd90bc44e08f38b2213ce027e73dc394888bf32c373955"
+      "sourceHash": "sha256:d04132dc774180725dc527c486090bc0f11fb90b6d9d801c3bf23e610a6d2aba",
+      "targetHash": "sha256:f0e29728e06291c9448e90260837675474d51fa1566a282ba7a61820508efb04"
     }
   }
 }

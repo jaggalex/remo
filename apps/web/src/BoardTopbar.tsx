@@ -23,7 +23,7 @@ type MenuView = "board" | "facilitation" | "more" | "templates" | "account" | nu
 /**
  * The board's header (ADR-119, ADR-119).
  *
- * Left: the remo mark, "All boards", the path and the board's name with its menu. Centre:
+ * Left: the remo mark, "All rooms", the path and the room's name with its menu. Centre:
  * empty. Right, in the order the mockup fixes: facilitation, more, saving, presence,
  * properties, presentation, discussion, share. The header describes the board; creation
  * lives on the rail, and every dialog is opened from one of the four menus.

@@ -2,7 +2,7 @@
 
 | Variable | What it sets | Without it |
 |---|---|---|
-| `DATABASE_URL` | Postgres with boards, IAM and the journal | the service refuses to start if a database is set but unreachable; without the variable disk mode works |
+| `DATABASE_URL` | Postgres with rooms, IAM and the journal | the service refuses to start if a database is set but unreachable; without the variable disk mode works |
 | `PORT` | port of the sync service | 1234 |
 | `REMO_DATA_DIR` | directory for disk mode | `apps/sync/.data` |
 
@@ -40,7 +40,7 @@ Without `REMO_KEK` a provider key cannot be added and a webhook cannot be set up
 | `REMO_METRICS` | `off` disables instrumentation explicitly |
 | `REMO_METRICS_TOKEN` | token for `/metrics`; required in production |
 
-Metrics are never written to the boards database.
+Metrics are never written to the rooms database.
 
 ## Agents
 

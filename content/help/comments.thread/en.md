@@ -1,6 +1,6 @@
 ## Result
 
-A discussion is anchored to an object or a point on the board. A thread survives object deletion, a reply reopens a resolved thread, and unread threads are visible in the panel.
+A discussion is anchored to an object or a point on the room. A thread survives object deletion, a reply reopens a resolved thread, and unread threads are visible in the panel.
 
 ## Steps
 
@@ -8,7 +8,7 @@ A discussion is anchored to an object or a point on the board. A thread survives
 2. Click **New comment**. If an object is selected, the thread is anchored to it; otherwise to the centre of the view.
 3. Enter the text and send it.
 4. Open a thread to read replies. **Resolve** closes it; a reply opens it again.
-5. The author may delete their own comment; a board manager may delete any.
+5. The author may delete their own comment; a room manager may delete any.
 
 ## Check
 
@@ -22,4 +22,4 @@ A discussion is anchored to an object or a point on the board. A thread survives
 - Comments work online; a reply draft is kept, sending waits for a connection and says so.
 - One thread has one anchor, object or point; no nested threads.
 - Mentions and notifications are not in v1.
-- PNG/PDF can include open threads: numbered pins and a list below the board; resolved threads are not printed.
+- PNG/PDF can include open threads: numbered pins and a list below the room; resolved threads are not printed.

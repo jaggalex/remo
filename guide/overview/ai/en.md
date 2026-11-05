@@ -2,7 +2,7 @@
 
 The public remo documentation as text for LLMs and AI agents. Copy a link, give it to an agent and ask in plain words: it reads the material and answers.
 
-This is **not** an API token and **not** access to a board. The files contain the public guide only: they cannot open a board, read its content or change anything. The in-app help (`/help`) is a separate short reference and is not part of these files.
+This is **not** an API token and **not** access to a room. The files contain the public guide only: they cannot open a room, read its content or change anything. The in-app help (`/help`) is a separate short reference and is not part of these files.
 
 ## Links
 
@@ -24,17 +24,17 @@ Click **Copy** above the link you need and paste it into the chat with the agent
 
 Give the agent the link first, then ask the question. Examples:
 
-- "Read the remo documentation at this link and explain how to give a colleague access to a board."
+- "Read the remo documentation at this link and explain how to give a colleague access to a room."
 - "Which roles does remo have, and what can each one do?"
 - "How do agents, change sets and budgets work?"
-- "How is a public link different from a role on a board?"
+- "How is a public link different from a role on a room?"
 
-The agent answers from the documentation. Acting on a board needs a normal account with rights; see the [API reference](/guide/reference/api) for sign-in and the [Agents](/guide/capabilities/agents) section for the agent surface.
+The agent answers from the documentation. Acting on a room needs a normal account with rights; see the [API reference](/guide/reference/api) for sign-in and the [Agents](/guide/capabilities/agents) section for the agent surface.
 
 ## What is inside
 
 - the product overview and capability map;
-- boards, objects, access, export and integrations;
+- rooms, objects, access, export and integrations;
 - the organisation home and the personal organisation;
 - presentation of any object, object names and the `@handle`;
 - step-by-step scenarios and limits;

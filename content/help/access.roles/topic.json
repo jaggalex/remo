@@ -2,8 +2,8 @@
   "id": "access.roles",
   "type": "reference",
   "title": {
-    "ru": "Роли и права на доске",
-    "en": "Board roles and permissions"
+    "ru": "Роли и права на комнате",
+    "en": "Room roles and permissions"
   },
   "summary": {
     "ru": "Владелец, со-владелец, редактор, комментатор и читатель: что каждый может делать и откуда берётся роль.",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:8c5b32d80fd94ac9550df0fcea64bf1ace547a9e015a2b2b818bd31458f0188d",
-      "targetHash": "sha256:90a9a8b08a48365764584612f74aff4582dd36ca2e8e4003bdaaed0a177d2cbe"
+      "sourceHash": "sha256:68ed84b3d49bbe4adfef4bfde330b5a0f0dac0ef4a490f6806af179b0710fbe1",
+      "targetHash": "sha256:39100da2832c41c0d87ac07c898aa0d265a61eb03c8e9e35ef38257b2266f77b"
     }
   }
 }

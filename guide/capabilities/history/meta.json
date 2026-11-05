@@ -8,8 +8,8 @@
     "en": "History, trash and copies"
   },
   "summary": {
-    "ru": "Отменить правку, убрать доску в корзину и вернуть её, сделать копию для эксперимента.",
-    "en": "Undo a change, move a board to the trash and restore it, make a copy for an experiment."
+    "ru": "Отменить правку, убрать комнату в корзину и вернуть её, сделать копию для эксперимента.",
+    "en": "Undo a change, move a room to the trash and restore it, make a copy for an experiment."
   },
   "related": [
     "concepts/board",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:3487da7d6162f8c3976ba95f8c613d82f4a666ed15a77c9cf5863c42e1bc0b1a",
-      "targetHash": "sha256:b86482a4ba3ae86602292971285b708195af8f88e7058a96b77475a245fcbd86"
+      "sourceHash": "sha256:092875811219929502ae10086fc11f0dad4c3217e0426df1bd91e443379e5200",
+      "targetHash": "sha256:36a9e9f1270719413b4a514c1913c4aeb6f3a677456c560ce56688b8d33199ba"
     }
   }
 }

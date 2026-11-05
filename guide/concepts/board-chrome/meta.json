@@ -4,12 +4,12 @@
   "status": "available",
   "order": 11,
   "title": {
-    "ru": "Экран доски: шапка, меню, рельс, низ",
-    "en": "The board screen: header, menus, rail, bottom"
+    "ru": "Экран комнаты: шапка, меню, рельс, низ",
+    "en": "The room screen: header, menus, rail, bottom"
   },
   "summary": {
-    "ru": "Где создать объект, где свойства и презентация, где тема и язык, где голосование — карта экрана доски.",
-    "en": "Where to create an object, where properties and presentation live, where the theme and language are, where voting is: a map of the board screen."
+    "ru": "Где создать объект, где свойства и презентация, где тема и язык, где голосование — карта экрана комнаты.",
+    "en": "Where to create an object, where properties and presentation live, where the theme and language are, where voting is: a map of the room screen."
   },
   "related": [
     "concepts/colors",
@@ -19,8 +19,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:a1130859e1f3259be47959a09825e2df509cbf15f4eabc04ebcae21774194a6f",
-      "targetHash": "sha256:ea9a98fc72b86e8da917d42a97342330996b2d50c956ccd6f0c9d90f34b8515b"
+      "sourceHash": "sha256:1d21fe922c9bc7c61c5764572f92c9aae39740297582df40c72110bfd3bd997f",
+      "targetHash": "sha256:73ad27ecd1700e8f4c6df33e76400b15991e0e76d162878cd6ab10ccb1cb2e65"
     }
   }
 }

@@ -1,13 +1,13 @@
 # remo
 
-**A local-first visual canvas for a small team.** Boards, frames, sticky notes, cards,
+**A local-first visual canvas for a small team.** Rooms, frames, sticky notes, cards,
 kanban, connectors, presentation, comments, access and AI agents — in one self-hosted
 product.
 
 [![CI](https://github.com/jaggalex/remo/actions/workflows/ci.yml/badge.svg)](https://github.com/jaggalex/remo/actions/workflows/ci.yml)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](LICENSE)
 
-![remo board](docs/screenshots/board.png)
+![remo room](docs/screenshots/room.png)
 
 > **Status: 0.1.0 alpha.** The product is usable and self-hosted, but interfaces and
 > formats may still change. It is provided **as is**, without warranty — see the
@@ -15,8 +15,8 @@ product.
 
 ## What it is
 
-remo is a collaborative workspace for teams of roughly ten people. A board is both the
-unit of work and the unit of access: a role is granted on a board, and everything on it
+remo is a collaborative workspace for teams of roughly ten people. A room is both the
+unit of work and the unit of access: a role is granted on a room, and everything on it
 follows that role.
 
 - **Canvas:** sticky notes, shapes, text, frames, connectors and groups.
@@ -24,9 +24,9 @@ follows that role.
 - **Real-time collaboration:** cursors, presence, follow, shared selection and offline save state.
 - **Facilitation:** shared timer, voting on objects, presentation of any object.
 - **Discussion:** server-side threads on an object or a point, pins and live reactions.
-- **Access:** personal and shared organisations, teams, five board roles, public links with password and expiry. Every account has a unique `@handle`; boards and objects can carry names.
+- **Access:** personal and shared organisations, teams, five room roles, public links with password and expiry. Every account has a unique `@handle`; rooms and objects can carry names.
 - **AI agents:** person-owned agents, plans with preview, tidy-up, cards, budgets and an evidential journal.
-- **Export and backup:** PNG, PDF and a plain JSON backup that restores the whole board.
+- **Export and backup:** PNG, PDF and a plain JSON backup that restores the whole room.
 - **Extensions:** domain events, signed webhooks, integration tokens and first-party app panels.
 
 The technical model is in [docs/architecture](docs/architecture), the decisions are in
@@ -46,9 +46,9 @@ pnpm sync           # API and websocket rooms on :1234
 pnpm dev:web        # product on http://localhost:5173
 ```
 
-Register an account and land on the organisation home: `?org=<slug>` shows board tiles,
-search, sorting and trash, while `?room=<id>` opens a specific board. Every account gets a
-personal organisation; shared organisations are additional. Open a board in two browser
+Register an account and land on the organisation home: `?org=<slug>` shows room tiles,
+search, sorting and trash, while `?room=<id>` opens a specific room. Every account gets a
+personal organisation; shared organisations are additional. Open a room in two browser
 windows to see collaboration; `?user=<name>` gives a tab a separate cursor identity for
 testing.
 
@@ -87,7 +87,7 @@ first with `pnpm test:db:up`. The gate is what CI runs; a change is ready when i
   [docs.remo.letii.ru](https://docs.remo.letii.ru/guide/ru/overview/index.html).
 - [Testing](TESTING.md) — how to run the stack and the acceptance checks.
 - [AI entry point](https://docs.remo.letii.ru/guide/llms.txt) — a documentation map for
-  LLMs and AI agents; no account or board access is granted.
+  LLMs and AI agents; no account or room access is granted.
 
 ## Contributing
 

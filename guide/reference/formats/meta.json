@@ -8,8 +8,8 @@
     "en": "Data formats"
   },
   "summary": {
-    "ru": "Бэкап доски, манифест приложения и конверт события: точные поля и проверки.",
-    "en": "The board backup, the app manifest and the event envelope: exact fields and checks."
+    "ru": "Бэкап комнаты, манифест приложения и конверт события: точные поля и проверки.",
+    "en": "The room backup, the app manifest and the event envelope: exact fields and checks."
   },
   "related": [
     "capabilities/export",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:73dedc71c9b27068026f76a868a3a3f60eea513d3a449651d2158d08443fe194",
-      "targetHash": "sha256:e930bfaac9b20eb01df76b84de15b261b0ee8b48de96089d72aaef0ffe5d44da"
+      "sourceHash": "sha256:289e7c5562e42578f76d57938a55b82f53a744a439b3a571d193148462411779",
+      "targetHash": "sha256:87c59641e0ab6b7807cd61ac730e48965b35414314a9a7ac40ca9fc6ef63fcbe"
     }
   }
 }

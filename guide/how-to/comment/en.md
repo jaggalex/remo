@@ -1,10 +1,10 @@
 ## When you need it
 
-You need to discuss an object or a point on the board without moving the conversation to a chat. The comment stays next to the place it belongs to.
+You need to discuss an object or a point on the room without moving the conversation to a chat. The comment stays next to the place it belongs to.
 
 ## Prerequisites
 
-- You are signed in and have access to the board.
+- You are signed in and have access to the room.
 - Your role is **Commenter**, **Editor**, **Co-owner** or **Owner**.
 
 ## Steps
@@ -13,7 +13,7 @@ You need to discuss an object or a point on the board without moving the convers
 2. Click **New comment**. If an object is selected, the thread is anchored to it; otherwise to the centre of the view.
 3. Enter the text and send it.
 4. Open a thread to read replies. **Resolve** closes it; a reply opens it again.
-5. The author may delete their own comment; a board manager may delete any.
+5. The author may delete their own comment; a room manager may delete any.
 
 ## Check
 
@@ -25,7 +25,7 @@ You need to discuss an object or a point on the board without moving the convers
 ## In presentation and export
 
 - In presentation mode the pins show comments of the current slide; the panel opens as usual.
-- When exporting PNG/PDF, enable **Include comments**: a thread list appears below the board and numbered pins on the objects. Resolved threads are not printed.
+- When exporting PNG/PDF, enable **Include comments**: a thread list appears below the room and numbered pins on the objects. Resolved threads are not printed.
 
 ## Limits
 

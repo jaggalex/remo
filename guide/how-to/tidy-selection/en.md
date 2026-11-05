@@ -8,18 +8,18 @@ The sticky notes are written but scattered: stories `US-1`…`US-12`, ideas by t
 
 ## Before you start
 
-- You have edit permission on the board.
-- Agents are enabled in the organisation and on the board, and you have at least one active agent. Tidying is an agent task even when no model is called.
+- You have edit permission on the room.
+- Agents are enabled in the organisation and on the room, and you have at least one active agent. Tidying is an agent task even when no model is called.
 - The set being laid out holds at most 50 objects. The limit is counted after expansion: a selected group brings all its members, and a selected frame brings all its contents. A larger set is refused before a plan is stored.
 - Something in the selection can move: the objects are free on the canvas or sit inside a selected frame.
 
 ## Steps
 
-1. Select objects on the board. Result: the selection bar shows their count and types.
+1. Select objects on the room. Result: the selection bar shows their count and types.
 2. Open the command in one of two ways: right-click → **Tidy up**, or the **Tidy up** button on the selection bar. A viewer has no such command, and with an empty selection it is unavailable.
 3. Choose a layout. **Auto** is selected by default; you can change it later in the preview.
 4. Click **Tidy up**. Result: the agent prepares a plan and the button reads "Preparing the layout…".
-5. Wait for the "Before and after" preview. Result: you can see where each object will move, which blocks will appear and what stays in place; the board has not changed yet.
+5. Wait for the "Before and after" preview. Result: you can see where each object will move, which blocks will appear and what stays in place; the room has not changed yet.
 6. Read the warnings. If the layout does not fit, choose another one in the preview: the coordinates are recomputed and the block labels are kept.
 7. Click **Apply**. Result: the objects have moved, the block frames exist, and the dialog shows "One ⌘Z puts all objects back".
 
@@ -44,7 +44,7 @@ A selected frame is laid out inside itself: its contents stand in columns, the f
 
 ## What goes to the model
 
-Only the selection text: object ids, types and texts, at most 50 objects and 20 000 characters. Coordinates, board titles, comments and people are not sent. The model may return only block labels and a layout choice; the engine always computes the coordinates.
+Only the selection text: object ids, types and texts, at most 50 objects and 20 000 characters. Coordinates, room titles, comments and people are not sent. The model may return only block labels and a layout choice; the engine always computes the coordinates.
 
 Tidying works without a provider key: the layout is deterministic, and no warning about the model appears. A warning appears only when the model is configured but did not answer or returned an unusable reply.
 
@@ -70,7 +70,7 @@ Tidying works without a provider key: the layout is deterministic, and no warnin
 |---|---|
 | No Tidy up command | a viewer has no such command; with an empty selection it is unavailable |
 | "Create an agent first" | you have no active agent; create one in Organisation → Agents |
-| "AI agents are off on this board" | an organisation administrator or the board owner turned agents off |
+| "AI agents are off on this room" | an organisation administrator or the room owner turned agents off |
 | "Tidying works on at most 50 objects" | the selection is above the limit; select fewer |
 | "The selection does not fit inside the frame" | the objects do not fit at their current size; enlarge the frame or select fewer |
 | "There is no free space beside the selection" | objects outside the selection are in the way; move them and try again |

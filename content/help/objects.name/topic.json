@@ -11,7 +11,7 @@
   },
   "related": [
     "presentation.mode",
-    "boards.home",
+    "rooms.home",
     "tags.links"
   ],
   "verifiedAgainst": "2026-11-04",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:f40bb9ec7268947d38a45b0827f971ad607986928ab1a39144876bfdcc4e163c",
-      "targetHash": "sha256:aa28fff26050707ef9fc2ccf942c432a2356d16cf4025d4e7a4d50444f0661e5"
+      "sourceHash": "sha256:f1de0f6b300eeb6bad5634a803224f5bfd6ad71e30b4a6012334429ecf754c39",
+      "targetHash": "sha256:9b8aa9f0ec1a2fd0cc3f1a4c3838858a1f2fb5b70175c4c3ef7d503ba021cc5a"
     }
   }
 }

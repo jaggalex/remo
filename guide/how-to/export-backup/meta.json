@@ -4,12 +4,12 @@
   "status": "available",
   "order": 20,
   "title": {
-    "ru": "Вынести результат и восстановить доску из бэкапа",
-    "en": "Export a result and restore a board from a backup"
+    "ru": "Вынести результат и восстановить комнату из бэкапа",
+    "en": "Export a result and restore a room from a backup"
   },
   "summary": {
-    "ru": "PNG или PDF по скоупу, полный JSON-бэкап, импорт с заменой доски — с проверкой результата.",
-    "en": "PNG or PDF by scope, a full JSON backup, import with board replacement — with a result check."
+    "ru": "PNG или PDF по скоупу, полный JSON-бэкап, импорт с заменой комнаты — с проверкой результата.",
+    "en": "PNG or PDF by scope, a full JSON backup, import with room replacement — with a result check."
   },
   "related": [
     "capabilities/export",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:8ccbaa2a60524525310762ca2ec50feac907548cd22067e193ac65c3749c1184",
-      "targetHash": "sha256:cc9fd49aea590b8ce66f315658ff61ac4dbe22e91a62c28182c52ad3a32aa90e"
+      "sourceHash": "sha256:e57d77e20ac4cfe5c44fbd171d353bcb7c0ade2d871e5b63bca53c7a6f0f5e74",
+      "targetHash": "sha256:c57608d735f4987279315066cae820e0ca7104752274dfa688f3c4d4592c26f2"
     }
   }
 }

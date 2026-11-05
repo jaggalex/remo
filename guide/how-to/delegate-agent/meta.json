@@ -8,8 +8,8 @@
     "en": "Set a task for an agent"
   },
   "summary": {
-    "ru": "Выбрать агента, источник и скилл, задать бюджет и понять, что произойдёт с доской: четыре сценария и где искать результат.",
-    "en": "Choose an agent, a source and a skill, set a budget and know what will happen to the board: four scenarios and where to find the result."
+    "ru": "Выбрать агента, источник и скилл, задать бюджет и понять, что произойдёт с комнатой: четыре сценария и где искать результат.",
+    "en": "Choose an agent, a source and a skill, set a budget and know what will happen to the room: four scenarios and where to find the result."
   },
   "related": [
     "how-to/agent-plan",
@@ -21,8 +21,8 @@
   "updated": "2026-11-02",
   "translations": {
     "en": {
-      "sourceHash": "sha256:2faa0a730906353787abff98e665213bc865a1fd64c1328d0c128f92c62daf87",
-      "targetHash": "sha256:cb013e1f14995239cf21f8227225b02d67961b59c51ff311273e209b0cf5d43e"
+      "sourceHash": "sha256:465b92d8424deb5fe5ae0218048ec7bd153dda08820a9e2dac44332d271e9bbb",
+      "targetHash": "sha256:a3dfd9dda6c39d92f448ec321f4cc5d72c4940416d169aa0c8706899d9c7df3a"
     }
   }
 }

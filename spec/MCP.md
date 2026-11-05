@@ -7,11 +7,11 @@ with OAuth is not implemented.
 ## What it exposes
 
 An external agent can prepare and follow **deterministic bulk work**. It cannot read
-board text, run SQL, call arbitrary URLs or act outside a change set.
+room text, run SQL, call arbitrary URLs or act outside a change set.
 
 | Tool | What it does |
 |---|---|
-| `list_boards` | Boards the agent's owner can open in the agent's organisation, with `agentsEnabled` |
+| `list_boards` | Rooms the agent's owner can open in the agent's organisation, with `agentsEnabled` |
 | `list_skills` | Published skills |
 | `create_cards_change_set` | Queue a job: selection → cards; `preview` returns an estimate and a draft |
 | `create_connector_change_set` | Queue a job: join two objects with a connector (`straight`/`elbow`/`curved`) |
@@ -22,7 +22,7 @@ board text, run SQL, call arbitrary URLs or act outside a change set.
 | `resume_change_set` | Resume a failed/cancelled job from the processed sources |
 
 Selection ids come from the caller (for example, a person tells the agent which objects
-to use). There is deliberately no "read the whole board" tool: content access still
+to use). There is deliberately no "read the whole room" tool: content access still
 requires a task the server authorises.
 
 ## Configuration
@@ -48,9 +48,9 @@ script:
 - `REMO_API_URL` is the base the browser uses (`/api` through nginx), without a
   trailing slash.
 - `REMO_AGENT_TOKEN` is the secret shown once when the key is created. It is not a
-  session cookie and cannot read boards.
+  session cookie and cannot read rooms.
 - The agent must be active, its owner must have an active seat, the organisation must
-  allow agents and the board must allow them.
+  allow agents and the room must allow them.
 
 Local invocation for a smoke test:
 
@@ -64,7 +64,7 @@ printf '%s\n' \
 ## Security model
 
 - Bearer token identifies one agent and its owner; every call runs `agentEffective()`
-  against the owner's current access, the board switch and the organisation policy.
+  against the owner's current access, the room switch and the organisation policy.
 - The token can only see its own change sets.
 - A change set is an explicit package with an estimate and a budget; execution is
   chunked and re-checks permissions before writing.
@@ -78,5 +78,5 @@ printf '%s\n' \
   per-tool scopes and rate limits (OWASP MCP guidance).
 - One operation type (`create_cards`). Other operations join the same contract later.
 - No approval UI; preview + execute is the approval step for now.
-- No board content reads. An external agent that needs to choose objects needs their ids
+- No room content reads. An external agent that needs to choose objects needs their ids
   from the human or another authorised source.

@@ -4,14 +4,14 @@ A card should carry more than text: it has a status, an assignee and a date. The
 
 ## Prerequisites
 
-- A card on the board or in a kanban.
-- Edit rights on the board.
+- A card on the room or in a kanban.
+- Edit rights on the room.
 
 ## Steps
 
 1. Select a card. Result: the **Card fields** block appears on the **Properties** panel.
 2. Choose a status: **To do**, **In progress** or **Done**. Result: the card shows a coloured indicator and a label.
-3. Choose an assignee from the board's people. Result: the card shows the name; the email is not shown.
+3. Choose an assignee from the room's people. Result: the card shows the name; the email is not shown.
 4. Set **Start** and **Due**. Result: the card shows a date range; either field can stay empty.
 5. To clear a value, choose the empty status, Unassigned, or clear the date.
 
@@ -19,7 +19,7 @@ A card should carry more than text: it has a status, an assignee and a date. The
 
 1. Open the **Properties** panel and the **Card filter** block.
 2. Click **+** in an empty kanban cell when the card does not exist yet: it is created in that column and swimlane and its text editor opens immediately. Then choose an assignee and a due state: any, overdue or no due date.
-3. Click **Select cards**. Result: matching cards are selected, the others stay on the board.
+3. Click **Select cards**. Result: matching cards are selected, the others stay on the room.
 
 ## Check
 
@@ -31,9 +31,9 @@ A card should carry more than text: it has a status, an assignee and a date. The
 ## Limits
 
 - One assignee; multiple assignees are not in v1.
-- Tags are a separate board vocabulary; up to 10 per object.
+- Tags are a separate room vocabulary; up to 10 per object.
 - A column's WIP limit is a warning, not a block.
-- The picker lists people with access to the board; a link visitor is not included.
+- The picker lists people with access to the room; a link visitor is not included.
 
 ## Where to go next
 

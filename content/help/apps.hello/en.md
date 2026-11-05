@@ -1,10 +1,10 @@
 ## What it is
 
-Apps are the board's first extension point. An app is described by a **schema**: the server sends a panel and the board draws it with its own components. No foreign code runs in the browser — no JavaScript, no HTML, no iframe.
+Apps are the room's first extension point. An app is described by a **schema**: the server sends a panel and the room draws it with its own components. No foreign code runs in the browser — no JavaScript, no HTML, no iframe.
 
 ## How to open it
 
-**More ▾ → Apps** in the board header. The panel lists the apps installed in the organisation that owns the board. A board without an organisation says so.
+**More ▾ → Apps** in the room header. The panel lists the apps installed in the organisation that owns the room. A room without an organisation says so.
 
 ## “Hello”
 

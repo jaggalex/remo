@@ -1,10 +1,10 @@
 ## Result
 
-You present the board slide by slide: a slide can be a frame or any object, slides follow a chosen order, participants see the current slide, and when you stop the presenter returns to their previous view.
+You present the room slide by slide: a slide can be a frame or any object, slides follow a chosen order, participants see the current slide, and when you stop the presenter returns to their previous view.
 
 ## Before you start
 
-- The board has objects. A slide can be a frame, a sticky note, a card, a shape or another object.
+- The room has objects. A slide can be a frame, a sticky note, a card, a shape or another object.
 - You are a facilitator (editor, co-owner or owner).
 - The frame's size is the slide's size: if a section needs more room, resize the frame by a corner before presenting. The contents are not scaled. For other objects the camera fits their rectangle, and for a connector it fits both ends.
 
@@ -15,7 +15,7 @@ You present the board slide by slide: a slide can be a frame or any object, slid
 3. Name objects in advance in the inspector: select an object and fill in **Name**. The name is not painted on the canvas, does not have to be unique, and the ID beside it is read-only.
 4. Click **Start presentation** in the panel. Result: the first slide appears with a counter.
 5. Move with **‹** and **›**: the arrow keys pan the canvas, not the slides.
-6. Participants see "{name} is showing the board" and click **Watch**; they join the current slide.
+6. Participants see "{name} is showing the room" and click **Watch**; they join the current slide.
 7. **Stop** closes the mode. The presenter returns to the previous view; followers stay on the last slide.
 
 ## Check
@@ -30,5 +30,5 @@ You present the board slide by slide: a slide can be a frame or any object, slid
 - Any object can be a slide; there is no separate "slide" object type.
 - Object names are not unique: two objects may share a name, and the id remains their identity.
 - One presenter; followers cannot advance. If a presentation is already running, a second one cannot start: the product names the presenter and offers Watch.
-- The presentation is not recorded and does not enter board history.
+- The presentation is not recorded and does not enter room history.
 - A link visitor may watch but cannot start a presentation.

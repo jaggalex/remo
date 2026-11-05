@@ -1,16 +1,16 @@
 ## What it gives
 
-A token lets an integration read a board and run commands without a browser. It does not create new rights: **the effective right is the access of its owner on the board, intersected with the token scope**.
+A token lets an integration read a room and run commands without a browser. It does not create new rights: **the effective right is the access of its owner on the room, intersected with the token scope**.
 
 ## When to use
 
-- A script or CI has to create objects on a board.
-- An external system reads board content on a schedule.
-- A webhook receiver wants to confirm a change by reading the board.
+- A script or CI has to create objects on a room.
+- An external system reads room content on a schedule.
+- A webhook receiver wants to confirm a change by reading the room.
 
 ## How it works
 
-An organisation administrator issues a token: the secret of the form `remo_it_…` is shown once, only a hash stays in the database. A request with the `Authorization: Bearer remo_it_…` header resolves to the token owner; the server checks the owner's board access, and the scope additionally narrows the set of actions.
+An organisation administrator issues a token: the secret of the form `remo_it_…` is shown once, only a hash stays in the database. A request with the `Authorization: Bearer remo_it_…` header resolves to the token owner; the server checks the owner's room access, and the scope additionally narrows the set of actions.
 
 | What it does | What is needed |
 |---|---|
@@ -19,7 +19,7 @@ An organisation administrator issues a token: the secret of the form `remo_it_�
 
 ## Example
 
-Input: a token with the `board.read` scope and a board the owner can see. Action: `GET /boards/<id>/widgets` with `Authorization: Bearer …`. Result: `200` and the board objects. The same token on `POST /commands` gets `403 SCOPE_REQUIRED`.
+Input: a token with the `board.read` scope and a room the owner can see. Action: `GET /boards/<id>/widgets` with `Authorization: Bearer …`. Result: `200` and the room objects. The same token on `POST /commands` gets `403 SCOPE_REQUIRED`.
 
 ## What you can configure
 
@@ -27,8 +27,8 @@ A label, scopes (`board.read`, `board.edit`) and a lifetime: from 1 to 365 days,
 
 ## Limitations
 
-- A token is no wider than its owner: if the owner loses access to the board, the token loses force on the next request.
-- A token cannot read board metadata, export, manage access or invoke agents — those routes are for a session only.
+- A token is no wider than its owner: if the owner loses access to the room, the token loses force on the next request.
+- A token cannot read room metadata, export, manage access or invoke agents — those routes are for a session only.
 - The idempotency key acts in the token's space: two tokens do not replay each other's command.
 
 ## Practical instructions

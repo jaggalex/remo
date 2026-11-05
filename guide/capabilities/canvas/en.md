@@ -25,19 +25,19 @@ Input: three sticky notes and one frame. Action: drag the sticky notes inside th
 - grid and snapping to it;
 - the snap threshold to the edges and centers of neighbours;
 - camera scale and position;
-- board template on creation;
+- room template on creation;
 - an object's colour and size.
 
 ## Limitations
 
 - Group operations act on the selection; the selection is a set of identifiers, not a property of an object.
-- Objects have no permissions of their own: everything is decided on the board.
-- Comments exist, but live in a separate server thread anchored to an object, not in the board document.
+- Objects have no permissions of their own: everything is decided on the room.
+- Comments exist, but live in a separate server thread anchored to an object, not in the room document.
 
 ## Practical instructions
 
-- [/guide/start/first-scenario](/guide/start/first-scenario) — assemble a planning board.
-- [/guide/how-to/build-board](/guide/how-to/build-board) — build a board step by step.
+- [/guide/start/first-scenario](/guide/start/first-scenario) — assemble a planning room.
+- [/guide/how-to/build-board](/guide/how-to/build-board) — build a room step by step.
 - [/guide/concepts/colors](/guide/concepts/colors) — the palette and keys 1–7.
 - [/guide/how-to/export-backup](/guide/how-to/export-backup) — take the result out.
 

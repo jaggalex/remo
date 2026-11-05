@@ -4,8 +4,8 @@
   "status": "available",
   "order": 10,
   "title": {
-    "ru": "Открыть доступ к доске и поделиться ссылкой",
-    "en": "Grant access to a board and share a link"
+    "ru": "Открыть доступ к комнате и поделиться ссылкой",
+    "en": "Grant access to a room and share a link"
   },
   "summary": {
     "ru": "Выдать роль человеку или команде, включить ссылку с паролем и сроком, отозвать доступ.",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:49a9f675c8108d1e4be5cb8f3add832aefe22b5004860f0719991f0b92cc059d",
-      "targetHash": "sha256:c42ced4404d44742af5becfc87b421f82c3e993310b6facf8d4644cae48d27c3"
+      "sourceHash": "sha256:ecc60c246d5639fe54b2b717a70eec7901c1a86152db75a71a1bd25d2dc64276",
+      "targetHash": "sha256:09e8d1b2e84fbef78cc98d765d9239e20ca4e18f05805a656c8648fe9710fb9a"
     }
   }
 }

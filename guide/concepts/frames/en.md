@@ -26,7 +26,7 @@ A frame is a container. An object whose centre lands inside the frame becomes pa
 
 A frame is useful when there are several sections and each one is a finished thought: "Sprint", "Backlog", "Risks".
 
-A frame's size changes with the corner handles and means how much of the board a section covers. The contents are not scaled: objects keep their size, and after the boundary moves, membership is re-evaluated by the centre — an object may join the frame or leave it. The minimum size is 160 × 120.
+A frame's size changes with the corner handles and means how much of the room a section covers. The contents are not scaled: objects keep their size, and after the boundary moves, membership is re-evaluated by the centre — an object may join the frame or leave it. The minimum size is 160 × 120.
 
 ## Kanban
 

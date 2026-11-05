@@ -2,20 +2,20 @@
 
 | Limitation | What it means |
 |---|---|
-| No mentions or notifications | comments are read in the board; `@` and push are not in v1 |
+| No mentions or notifications | comments are read in the room; `@` and push are not in v1 |
 | Comments are online only | a reply draft is kept, sending waits for the network |
 | Reactions are not stored | a live burst, not a counter or a record |
 | A lock is coordination, not an ACL | a raw write client can bypass the UI |
 | PNG/PDF omit resolved threads and cap a thread at three messages | the full text stays in remo |
-| No permissions on an object | access is granted on the board only; an object cannot be closed separately |
+| No permissions on an object | access is granted on the room only; an object cannot be closed separately |
 | One connector per pair | a second line between the same objects cannot be created |
-| One open voting session | per board |
+| One open voting session | per room |
 | One webhook endpoint | per organisation |
 | No events about changes and deletions | only object creation, connectors and app actions |
 | A token is never wider than its owner | there is no separate "organisation token" |
 | Apps come only from the build | your own schema or third-party code cannot be installed |
 | There is no marketplace | this is a direction, not a forgotten feature |
-| Home search is title-only | there is no search across all board content |
+| Home search is title-only | there is no search across all room content |
 
 ## Synchronisation
 

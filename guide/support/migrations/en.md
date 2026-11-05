@@ -1,6 +1,6 @@
 ## How migrations work
 
-The service applies the schema itself at start: `schema.sql` is idempotent, the version is stored in `schema_meta`. There is no separate migration command — which means **the backup is taken before the upgrade, not after**. The current version is 16. Versions 12–16 added account interface preferences, an audit link to the session, idempotency indexes, the mandatory `@handle`, and the organisation model: `orgs.kind`, board emoji, creation date and author.
+The service applies the schema itself at start: `schema.sql` is idempotent, the version is stored in `schema_meta`. There is no separate migration command — which means **the backup is taken before the upgrade, not after**. The current version is 16. Versions 12–16 added account interface preferences, an audit link to the session, idempotency indexes, the mandatory `@handle`, and the organisation model: `orgs.kind`, room emoji, creation date and author.
 
 :::warning
 The schema is applied when the service starts. A backup taken after the upgrade leaves nothing to roll back to.
@@ -32,7 +32,7 @@ journalctl -u remo-sync -n 50 | grep -i 'schema\|error'
 ```
 
 - `health` answers `ok`, the schema version in the log matches the expected one.
-- Open a board and make an edit: the indicator must reach **сохранено** (saved).
+- Open a room and make an edit: the indicator must reach **сохранено** (saved).
 - Check one sign-in and one link.
 - Open the discussion: old threads are still there and a new comment is saved.
 

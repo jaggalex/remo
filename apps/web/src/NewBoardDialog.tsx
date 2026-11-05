@@ -116,7 +116,7 @@ export function NewBoardDialog({
         onSubmit={submit}
       >
         <h2>
-          {t("newBoard.title")} <HelpLink topicId="boards.create" />
+          {t("newBoard.title")} <HelpLink topicId="rooms.create" />
         </h2>
 
         <label className="auth-field">

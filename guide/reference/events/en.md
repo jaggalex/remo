@@ -7,7 +7,7 @@
 | `board.connector.updated` | a connector route or points changed | connector id | `{ "routing": "elbow" }` |
 | `app.invoked` | an app action was invoked | app id | `{ "action": "app.hello" }` |
 
-`payload` contains no board content: only identifiers and types.
+`payload` contains no room content: only identifiers and types.
 
 ## Envelope
 

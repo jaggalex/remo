@@ -1,10 +1,10 @@
 ## What it gives
 
-An organisation configures one HTTPS endpoint and receives events about what happened on its boards: an object was created, a connector was created or changed, an app action was invoked. The event arrives signed, so the receiver can prove that the request comes from us.
+An organisation configures one HTTPS endpoint and receives events about what happened on its rooms: an object was created, a connector was created or changed, an app action was invoked. The event arrives signed, so the receiver can prove that the request comes from us.
 
 ## When to use
 
-- Keep an external system up to date with board changes.
+- Keep an external system up to date with room changes.
 - Start automation on a fact, not on a schedule.
 - Collect an activity log of agents and people.
 
@@ -16,7 +16,7 @@ Delivery is **at-least-once**: one event can arrive twice. Deduplicate by the ev
 
 ## Example
 
-Input: a board, a configured webhook, the `board.item.create` command. Action: the integration creates a sticky note. Result: a POST arrives at the endpoint; a fragment of the body is `{"type":"board.item.created","subject":"item_…","payload":{"objectType":"sticky_note"}}`, the header is `X-Remo-Signature`.
+Input: a room, a configured webhook, the `board.item.create` command. Action: the integration creates a sticky note. Result: a POST arrives at the endpoint; a fragment of the body is `{"type":"board.item.created","subject":"item_…","payload":{"objectType":"sticky_note"}}`, the header is `X-Remo-Signature`.
 
 ## What you can configure
 
@@ -25,7 +25,7 @@ The endpoint URL, enabling and disabling, secret rotation, resending undelivered
 ## Limitations
 
 - One endpoint per organisation: delivery goes to it, not to "several subscribers".
-- The event has no board content: only identifiers, types and counters. Text is read through the API.
+- The event has no room content: only identifiers, types and counters. Text is read through the API.
 - If no endpoint is configured, events are created but marked as sent without a request.
 - Object changes, deletions and text edits produce no events — neither from a person nor from an agent.
 

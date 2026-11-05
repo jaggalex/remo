@@ -157,7 +157,7 @@ export async function agentBoard(page: Page, tag: string): Promise<AgentBoard> {
  * focus inside, Escape closes it and returns focus to the trigger.
  */
 export async function openBoardMenu(page: Page): Promise<void> {
-  await page.getByRole("button", { name: /^Board menu:/ }).click();
+  await page.getByRole("button", { name: /^Room menu:/ }).click();
 }
 
 export async function openFacilitation(page: Page): Promise<void> {

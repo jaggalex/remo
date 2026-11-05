@@ -37,7 +37,7 @@ request is ready only when it is green. Run `pnpm verify:fast` in the inner loop
 
 - **One job, one mechanism.** A second way to do the same thing is a defect. Propose an
   ADR if the second way is genuinely needed.
-- **Access is decided on a board.** A role is granted on a board; there are no per-object
+- **Access is decided on a room.** A role is granted on a room; there are no per-object
   permissions.
 - **UI in Russian and English.** Every user-visible string goes through `i18n.tsx`; a key
   without both languages fails `tsc`.

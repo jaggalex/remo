@@ -1,6 +1,6 @@
 ## What it gives
 
-An agent performs a task on the board from a short description: it builds a diagram, turns a selection into cards, tidies a selection into even columns, or proposes a plan for a structure. The model runs on the server; your tab applies the finished plan in one transaction.
+An agent performs a task on the room from a short description: it builds a diagram, turns a selection into cards, tidies a selection into even columns, or proposes a plan for a structure. The model runs on the server; your tab applies the finished plan in one transaction.
 
 ## When to use
 
@@ -14,13 +14,13 @@ An agent performs a task on the board from a short description: it builds a diag
 
 An agent is a separate principal owned by a person. It has no rights of its own: a task receives the owner's access at the moment it runs.
 
-The order: an organisation administrator enables agents, the owner or a co-owner allows them on the board, you create an agent, set a task with a description and a **budget**, and the server runs it.
+The order: an organisation administrator enables agents, the owner or a co-owner allows them on the room, you create an agent, set a task with a description and a **budget**, and the server runs it.
 
 A task has four ways to write:
 
-| Skill | What it does | When it reaches the board | Undo |
+| Skill | What it does | When it reaches the room | Undo |
 |---|---|---|---|
-| **[Brief to board](/guide/how-to/agent-plan)** | proposes a plan for a structure | after Apply | one ⌘Z |
+| **[Brief to room](/guide/how-to/agent-plan)** | proposes a plan for a structure | after Apply | one ⌘Z |
 | **Diagram from a description** | draws shapes and connectors | immediately | by hand: ⌘Z does not undo it |
 | **Cards from a selection** | turns the selection into cards (copies or moves) | after Run job | by hand; a package can be stopped and resumed |
 | **[Tidy up selection](/guide/how-to/tidy-selection)** | lays the selection out in even columns; blocks are frames | after Apply | one ⌘Z |
@@ -35,7 +35,7 @@ The budget is mandatory: a task without a limit on actions or cost is not create
 
 ## Example
 
-Input: a board and a selection of eight sticky notes. Action: the task "turn the selection into cards", a budget of 40 actions. Result: eight cards, an audit record and one `board.item.created` event per card.
+Input: a room and a selection of eight sticky notes. Action: the task "turn the selection into cards", a budget of 40 actions. Result: eight cards, an audit record and one `board.item.created` event per card.
 
 ## What you can configure
 
@@ -43,8 +43,8 @@ The agent (name, state), the task budget, the skill, the schedule. Provider keys
 
 ## Limitations
 
-- Agents are off by default; an organisation administrator enables them, and on a board the owner or a co-owner allows them.
-- A task can be set only from an account with edit permission on the board.
+- Agents are off by default; an organisation administrator enables them, and on a room the owner or a co-owner allows them.
+- A task can be set only from an account with edit permission on the room.
 - An agent cannot do more than the person on whose behalf it acts.
 - A plan and a diagram call the model; without a key such tasks wait in the queue. Tidying works without a model.
 - A card package produces one `board.item.created` event per card; applying a plan and a diagram leave audit records only.

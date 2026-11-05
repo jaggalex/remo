@@ -81,7 +81,7 @@ test("the server caps votes and publishes the tally", async ({ page }) => {
   await confirm.getByRole("button", { name: "End voting" }).click();
 
   await expect(page.locator(".vote-board-bar")).toContainText("Voting is over");
-  await panel.getByRole("button", { name: "Publish on the board" }).click();
+  await panel.getByRole("button", { name: "Publish on the room" }).click();
   await expect(panel.getByText("Published", { exact: true })).toBeVisible();
   // Publishing is a server command, and the result object arrives over the socket.
   await expect.poll(textCount, { timeout: 15_000 }).toBe(textBefore + 1);

@@ -8,8 +8,8 @@
     "en": "Export and backup"
   },
   "summary": {
-    "ru": "Вынести видимый результат файлом или сохранить доску целиком, чтобы восстановить её позже.",
-    "en": "Take a visible result as a file, or save the whole board so it can be restored later."
+    "ru": "Вынести видимый результат файлом или сохранить комнату целиком, чтобы восстановить её позже.",
+    "en": "Take a visible result as a file, or save the whole room so it can be restored later."
   },
   "related": [
     "how-to/export-backup",
@@ -20,8 +20,8 @@
   "updated": "2026-10-28",
   "translations": {
     "en": {
-      "sourceHash": "sha256:afb2c3b651ed2c320e9e317c1fb905599103b3428b5ce2d2a9f0cddbf03afb30",
-      "targetHash": "sha256:fbc79db4b041b7cdcbebcbfb1092660a97d4a016e980d4de96c2e1da74b24132"
+      "sourceHash": "sha256:46b1aaa326be692f7a1e3557b7d91c0ca2afc571f9691ba1d64b87aeba2dae26",
+      "targetHash": "sha256:03606a949d7cb270451afc4e61157a9b4152b046eaadffc1962e7d3392f98149"
     }
   }
 }

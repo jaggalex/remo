@@ -1,21 +1,21 @@
 ## What it gives
 
-Managed access to a board: a role for a person, a team or the whole organisation, a public link with a password and an expiry, and revocation in one step.
+Managed access to a room: a role for a person, a team or the whole organisation, a public link with a password and an expiry, and revocation in one step.
 
 ## When to use
 
 - Invite a colleague with edit permission.
-- Show the board to an external person without an account.
+- Show the room to an external person without an account.
 - Close access after the project ends.
-- Transfer the board to another owner.
+- Transfer the room to another owner.
 
 ## How it works
 
-A role is granted on the board and is combined from sources: a direct grant, a team, the organisation. The strongest role applies. The capabilities of the role define what a person can do: read, edit, share, export, make a backup, run facilitation, manage the board, transfer it, delete it.
+A role is granted on the room and is combined from sources: a direct grant, a team, the organisation. The strongest role applies. The capabilities of the role define what a person can do: read, edit, share, export, make a backup, run facilitation, manage the room, transfer it, delete it.
 
 ## Example
 
-Input: a board, a colleague without access. Action: **Share** → invite with the role **Editor**. Result: the colleague sees the board and can edit objects. A backup is available to them as an editor; PNG and PDF are available to the viewer role too.
+Input: a room, a colleague without access. Action: **Share** → invite with the role **Editor**. Result: the colleague sees the room and can edit objects. A backup is available to them as an editor; PNG and PDF are available to the viewer role too.
 
 ## What you can configure
 
@@ -26,8 +26,8 @@ Input: a board, a colleague without access. Action: **Share** → invite with th
 ## Limitations
 
 - A public link is view-only; export through it is forbidden.
-- The **Editor** role can share the board only if the organisation policy allows it.
-- A guest cannot manage access and does not inherit organisation access: the guest receives personal access to the board.
+- The **Editor** role can share the room only if the organisation policy allows it.
+- A guest cannot manage access and does not inherit organisation access: the guest receives personal access to the room.
 
 ## Practical instructions
 

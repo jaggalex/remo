@@ -2,7 +2,7 @@
 
 Presence is a separate stream that does not change the document. It shows:
 
-- who is on the board right now;
+- who is on the room right now;
 - where each person's cursor is;
 - which reaction a person sent, if they sent one.
 
@@ -14,7 +14,7 @@ A participant is represented by a name and a colour. In a browser without a sess
 
 Every tab or device is a separate **session**. If one account has two sessions, both appear in the participant list: `Alexander Kostylev`, `Alexander Kostylev (2)`. Follow targets a specific session, so you can follow the right laptop or phone. A vote still belongs to the account: a second session does not get another quota.
 
-Signing out restores the guest name. To test a two-person scenario inside one account, set a second name in the address: `/?room=<board>&user=Ann`.
+Signing out restores the guest name. To test a two-person scenario inside one account, set a second name in the address: `/?room=<room>&user=Ann`.
 
 ## Follow
 
@@ -25,15 +25,15 @@ Follow is a subscription to another person's camera, not to their permissions:
 3. you can leave at any moment;
 4. the person being followed can stop all followers at once.
 
-Follow **does not give access**: if the board is closed, you will see only what you could open anyway.
+Follow **does not give access**: if the room is closed, you will see only what you could open anyway.
 
 ## Calling everyone to you
 
-This is an invitation, not coercion: a person receives a request, agrees — and ends up in your part of the board with follow on. A refusal changes nothing. If automatic follow is enabled on the board, the invitation does not ask — the view moves immediately.
+This is an invitation, not coercion: a person receives a request, agrees — and ends up in your part of the room with follow on. A refusal changes nothing. If automatic follow is enabled on the room, the invitation does not ask — the view moves immediately.
 
 ## Practical consequence
 
-Two people can look at different parts of the board and not get in each other's way. A shared picture appears only with follow or with an explicit jump via a link to an object.
+Two people can look at different parts of the room and not get in each other's way. A shared picture appears only with follow or with an explicit jump via a link to an object.
 
 ## Where to go next
 

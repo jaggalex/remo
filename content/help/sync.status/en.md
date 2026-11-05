@@ -12,11 +12,11 @@ The header shows one of three states: **Saved**, **Saving** or **Offline (N)**.
 2. When the connection returns, the status changes to **Saving**, then **Saved**.
 3. Wait for **saved** before closing the tab.
 
-If too many edits accumulate, input stops: the indicator shows **Offline · input paused**, and a message appears above the board. This protects the queue from growing without bound. Reconnect and wait for **Saved** to continue.
+If too many edits accumulate, input stops: the indicator shows **Offline · input paused**, and a message appears above the room. This protects the queue from growing without bound. Reconnect and wait for **Saved** to continue.
 
 ## If access was revoked
 
-If the owner changes your role while you work, the server closes the connection. The board stays on screen but becomes read-only, with an "Access changed" message. Save what you need before the change or ask for access again.
+If the owner changes your role while you work, the server closes the connection. The room stays on screen but becomes read-only, with an "Access changed" message. Save what you need before the change or ask for access again.
 
 ## What to check
 

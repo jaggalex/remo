@@ -8,8 +8,8 @@
     "en": "Frames and kanban"
   },
   "summary": {
-    "ru": "Структурировать доску: фрейм как контейнер и канбан как сетка колонок и дорожек.",
-    "en": "Structure a board: a frame as a container and a kanban as a grid of columns and swimlanes."
+    "ru": "Структурировать комнату: фрейм как контейнер и канбан как сетка колонок и дорожек.",
+    "en": "Structure a room: a frame as a container and a kanban as a grid of columns and swimlanes."
   },
   "related": [
     "concepts/board",
@@ -20,8 +20,8 @@
   "updated": "2026-11-02",
   "translations": {
     "en": {
-      "sourceHash": "sha256:de231994199dd02672a13fe7a4efd82aa4046a68c20d9ee1412d6245962a280a",
-      "targetHash": "sha256:d0ce61af74954e0d37cd259df0f5a6f37074a387e641def6a8cb4d724d53e633"
+      "sourceHash": "sha256:62206fc50061bf40edd4359cc71c813b542b104eabeeb47abe18ce2dcd53cc62",
+      "targetHash": "sha256:290055a9d49f17a6c7454b09d999b56f04e164b0f0347b710e2ebe5964081f73"
     }
   }
 }

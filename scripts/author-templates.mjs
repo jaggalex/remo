@@ -60,10 +60,10 @@ const COPY = {
       ],
     },
     kanban: {
-      title: "Kanban board",
-      board: "Board",
+      title: "Kanban room",
+      board: "Room",
       notes: "Notes",
-      heading: "Kanban board",
+      heading: "Kanban room",
       notesHint: "Add notes here",
       cards: [
         "Define the scope",
@@ -106,10 +106,10 @@ const COPY = {
       ],
     },
     kanban: {
-      title: "Канбан-доска",
-      board: "Доска",
+      title: "Канбан-комната",
+      board: "Комната",
       notes: "Заметки",
-      heading: "Канбан-доска",
+      heading: "Канбан-комната",
       notesHint: "Добавьте заметки",
       cards: [
         "Определить объём",

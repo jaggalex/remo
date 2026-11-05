@@ -1,6 +1,6 @@
 ## Result
 
-One shared timer appears on the board. Everybody sees the same remaining time and who set it. A late joiner sees the current countdown, and reloading the page does not reset it.
+One shared timer appears on the room. Everybody sees the same remaining time and who set it. A late joiner sees the current countdown, and reloading the page does not reset it.
 
 ## Who may control it
 
@@ -23,11 +23,11 @@ While it runs, the Timer row in Facilitation ▾ shows the time left. Open the m
 
 ## Check the result
 
-- Open the board in a second tab: the countdown matches to the second.
+- Open the room in a second tab: the countdown matches to the second.
 - Pause: both tabs show one value and one name.
-- Let it reach zero: the timer says "Time is up" and stays on the board until reset.
+- Let it reach zero: the timer says "Time is up" and stays on the room until reset.
 
 ## Limits
 
-- The timer is a board object: it travels into a backup and an export as a card with a time.
-- There is no personal stopwatch in this version: the countdown on the board is always shared.
+- The timer is a room object: it travels into a backup and an export as a card with a time.
+- There is no personal stopwatch in this version: the countdown on the room is always shared.

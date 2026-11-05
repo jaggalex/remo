@@ -3,27 +3,29 @@
 | Who | With what | Where it is accepted |
 |---|---|---|
 | Person | session cookie | all product routes |
-| Integration | `Authorization: Bearer remo_it_…` | commands and board reads |
+| Integration | `Authorization: Bearer remo_it_…` | commands and room reads |
 | Agent | `Authorization: Bearer` agent token | only `/agent/**` routes |
 
 An integration token is not accepted on agent routes, and an agent token is not accepted on human ones.
 
-## Board
+## Room
+
+The prose says “room”. Paths, commands and capabilities keep the historical name `board`: they are technical identifiers, not a second product noun.
 
 | Method and path | What it does |
 |---|---|
-| `GET /boards?org=<slug>&q=&sort=&dir=&page=&trash=` | the home: board tiles, search, sorting and pages |
-| `GET /boards/:id` | board metadata and your role |
+| `GET /boards?org=<slug>&q=&sort=&dir=&page=&trash=` | the home: room tiles, search, sorting and pages |
+| `GET /boards/:id` | room metadata and your role |
 | `PATCH /boards/:id/icon` | the tile emoji: `{icon}`; an empty string clears it |
-| `DELETE /boards/:id` | move the board to the trash |
-| `POST /boards/:id/restore` | restore a board from the trash (owner) |
-| `POST /boards/:id/duplicate` | copy a board (owner or co-owner) |
+| `DELETE /boards/:id` | move the room to the trash |
+| `POST /boards/:id/restore` | restore a room from the trash (owner) |
+| `POST /boards/:id/duplicate` | copy a room (owner or co-owner) |
 | `GET /boards/:id/access` | the access decision for the current viewer |
-| `GET /boards/:id/widgets` | board objects (a token needs `board.read`) |
+| `GET /boards/:id/widgets` | room objects (a token needs `board.read`) |
 | `POST /boards/:id/commands` | run a command (a token needs `board.edit`) |
 | `GET /boards/:id/link` | public link state |
 | `PUT /boards/:id/link` | enable or disable the link, set a password and an expiry |
-| `GET /boards/:id/people` | board people for assignee; no email, account required |
+| `GET /boards/:id/people` | room people for assignee; no email, account required |
 | `GET /boards/:id/grants` | access list with names |
 | `POST/DELETE /boards/:id/grants` | grant or revoke a role; co-owner requires `board.manage` |
 | `GET /boards/:id/comments` | threads, messages and unread counts |

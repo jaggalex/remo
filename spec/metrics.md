@@ -8,7 +8,7 @@
 
 - События типизированы в `packages/metrics`; новое событие добавляется в
   `METRIC_CATALOG` один раз.
-- В событии нет текста доски, имён, email, IP и User-Agent. Только UUID и скалярные
+- В событии нет текста комнаты, имён, email, IP и User-Agent. Только UUID и скалярные
   свойства.
 - Sink по умолчанию выключен. Включается `REMO_METRICS_DATABASE_URL`; база
   `remo_metrics` отдельная, не продуктовая и не аудит.
@@ -25,7 +25,7 @@ activated_7d / new_orgs_with_complete_window * 100
 ```
 
 - Событие старта: `org.created` (`props.source`).
-- Активация: доска с ≥ 3 объектами и подтверждённым сохранением —
+- Активация: комната с ≥ 3 объектами и подтверждённым сохранением —
   `board.saved { objectCount >= 3 }`; событие `activation.first_value { kind: "solo" }`
   эмитится один раз на организацию. В metrics-БД это обеспечивает partial unique
   index по `org_id` для этого события, поэтому повторные сохранения не создают
@@ -55,7 +55,7 @@ activated_7d / new_orgs_with_complete_window * 100
 
 **Успешность сценариев.** `scenario.started` и `scenario.completed` с
 `scenarioId`, `outcome`, `durationMs`, `failureReason`. Ключевые сценарии: создать
-доску, добавить объект, связать объекты, пригласить, изменить роль, включить ссылку,
+комнату, добавить объект, связать объекты, пригласить, изменить роль, включить ссылку,
 запустить агента, экспорт (когда появится). Формула: completed / started по сценарию.
 
 **AI: качество и стоимость.** `agent.task.finished { status, skill, actions, costUsd,
@@ -76,7 +76,7 @@ LLM-судья в MVP не используется.
 |---|---|---|
 | `org.created` | регистрация | знаменатель активации и когорты |
 | `session.started` | вход/регистрация | DAU/MAU без подмены активностью |
-| `board.created` | создание доски | воронка |
+| `board.created` | создание комнаты | воронка |
 | `object.created` | создание объекта | воронка, value day |
 | `board.saved` | ack сохранения (сервер после записи) | активация, value day |
 | `connector.created` | создание связи | первый сценарий |
