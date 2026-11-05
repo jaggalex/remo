@@ -9,6 +9,7 @@ import { agentFailureText } from "./agentError";
 import { selectionPreview } from "./agentPayload";
 import { AgentSelectionSource } from "./AgentSelectionSource";
 import { AUTO_SKILL, compatibleSkills } from "./agentSkills";
+import { skillDescriptionKey } from "./skillText";
 import { formatMoment } from "./format";
 import { newIdempotencyKey } from "./idempotency";
 import { HelpLink } from "./help/HelpLink";
@@ -178,6 +179,7 @@ export function AgentDialog({
     () => compatibleSkills(data?.skills ?? [], { hasSelection }),
     [data?.skills, hasSelection],
   );
+  const selectedSkill = skills.find((s) => s.slug === skillSlug) ?? null, selectedDescriptionKey = selectedSkill && skillDescriptionKey(selectedSkill.slug);
 
   // A hidden skill cannot stay chosen: removing the selection must not leave the form
   // pointing at "cards" or "tidy" with nothing to act on.
@@ -429,9 +431,10 @@ export function AgentDialog({
                     />
 
                     <div className="agent-budget">
-                      <label className="agent-field">
+                      <div className="agent-field">
                         <span>{t("agents.skill")}</span>
                         <select
+                          aria-label={t("agents.skill")}
                           value={skillSlug}
                           onChange={(event) => {
                             setSkillSlug(event.target.value);
@@ -448,10 +451,17 @@ export function AgentDialog({
                             </option>
                           ))}
                         </select>
+                        {selectedSkill && (
+                          <span className="muted agent-field-hint">
+                            {selectedDescriptionKey
+                              ? t(selectedDescriptionKey)
+                              : selectedSkill.description}
+                          </span>
+                        )}
                         {skillSlug === AUTO_SKILL && (
                           <span className="muted agent-field-hint">{t("agents.skill.autoHint")}</span>
                         )}
-                      </label>
+                      </div>
                       {isCards && (
                         <>
                           <label className="agent-field">
