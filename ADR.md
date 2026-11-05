@@ -7039,3 +7039,43 @@ overlay board panel is removed: the home is the one board directory. The board h
 **Limits.** No cross-organisation "all boards" view and no board image upload. The home
 does not restore the last board automatically; a person chooses a tile. A guest sees only
 the boards and organisations their seat allows.
+
+## ADR-169: Templates speak the account language, and a cell plus starts typing
+
+**Status:** accepted (2026-11-04). Extends ADR-158 (authored templates) and ADR-167.
+
+**Context.** Every authored template shipped English copy: board title, frame names,
+sticky prompts, card titles and kanban columns. A person whose account language is Russian
+got an English board from a Russian interface. Separately, the `+` painted in an empty
+kanban cell was only an affordance: adding a card left it selected but did not open its
+text, so the first keystroke did nothing.
+
+**Decision.**
+
+- **One generated file per language.** `scripts/author-templates.mjs` writes
+  `spec/templates.json` (English, backward compatible) and `spec/templates.<locale>.json`;
+  `scripts/sync-templates.mjs` publishes each file. Adding a language means adding a copy
+  block, not branching the template builder.
+- **The account language chooses the file.** `useBoardTemplates` reads `lang` from the
+  interface, which follows `users.lang`; a guest or an account with no preference uses the
+  browser/interface language. Seeding waits for the account preference to settle, so a
+  board cannot be born in the wrong language during sign-in.
+- **The whole template is localized.** The board title, frame titles, sticky prompts,
+  card titles and the kanban recipe's column and swimlane names change. Geometry, ids,
+  colours and stacking stay identical across languages.
+- **Existing boards are not rewritten.** A board keeps the language it was created in;
+  changing the account language changes the next board, not old documents.
+- **Kanban recipes carry keys, not English titles.** `reconstructKanban` takes a language
+  and resolves `backlog`, `inProgress`, `done`, `now`, `next`, `later`, `notNow`, and the
+  swimlane names, so the default matrix is localized in one place.
+- **The empty-cell `+` is clickable.** A click on the painted plus creates the card in
+  that exact column/swimlane, selects it and opens the inline editor with the caret at the
+  end. A card left without text stays; an empty card is a valid kanban card.
+
+**Consequences.** A Russian account creates a Russian story map from a Russian interface
+and an English account creates the English one. The plus works as its picture promises:
+one click, then typing.
+
+**Limits.** Only `ru` and `en` are authored today. Template copy is duplicated per locale;
+a missing locale falls back to English. Existing boards cannot be converted by changing the
+profile, because their text is document content, not a live translation.

@@ -14,7 +14,7 @@ A new board is created in your organisation — in a team when one is chosen —
 2. Click **New board**. Result: a dialog with a name, organisation, team and template.
 3. Enter a name. Result: it becomes the title of the new board.
 4. If there are several organisations or teams, choose the right ones. Result: the board appears in the chosen organisation, and in the team when one is selected.
-5. Choose **Empty board** or a template. Result: an empty board has no objects; a template adds its starting structure.
+5. Choose **Empty board** or a template. Result: an empty board has no objects; a template adds its starting structure in the account language: Russian copy for a Russian profile, English copy for an English one.
 6. Click **Create**. Result: the board opens and its id is in the address.
 
 ## Organisation and team

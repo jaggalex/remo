@@ -1,7 +1,9 @@
 {
  "generatedBy": "scripts/author-templates.mjs",
+ "locale": "en",
  "templates": {
   "user-story-map-basic": {
+   "title": "Story map",
    "types": {
     "text": 1,
     "frame": 5,
@@ -265,6 +267,7 @@
    ]
   },
   "product-roadmap-basic": {
+   "title": "Roadmap",
    "types": {
     "text": 1,
     "kanban": 1
@@ -297,6 +300,7 @@
    ]
   },
   "product-roadmap-basic-prefilled": {
+   "title": "Roadmap example",
    "types": {
     "text": 1,
     "kanban": 1,
@@ -474,6 +478,7 @@
    ]
   },
   "kanban-framework": {
+   "title": "Kanban board",
    "types": {
     "frame": 2,
     "text": 2,

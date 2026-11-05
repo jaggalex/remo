@@ -32,6 +32,7 @@ export function useBoardCreation({
   camera,
   settings,
   setSelectedIds,
+  startEditing,
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -40,6 +41,8 @@ export function useBoardCreation({
   camera: Camera;
   settings: BoardSettings;
   setSelectedIds: (ids: string[]) => void;
+  /** Open the inline editor for a newly created card (ADR-169). */
+  startEditing?: (id: string) => void;
 }) {
   /** Cascade counter so consecutive additions do not land on one point. */
   const placedCount = useRef(0);
@@ -65,8 +68,9 @@ export function useBoardCreation({
         swimlaneId,
       );
       setSelectedIds([id]);
+      startEditing?.(id);
     },
-    [board],
+    [board, setSelectedIds, startEditing],
   );
 
   const onAddColumn = useCallback(

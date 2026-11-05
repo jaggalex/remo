@@ -158,6 +158,21 @@ describe("kanban reconstruction", () => {
     expect(kanbanWidth(state)).toBeCloseTo(1474.6, 5);
   });
 
+  it("localizes the recipe titles without touching placement", () => {
+    const cards = ["1", "2", "3", "4", "5"].map((id) => widget(id, "card"));
+    const kanban = widget("k", "kanban", { width: 1474.6, height: 947 });
+    const state = reconstructKanban("kanban-framework", kanban, cards, "ru");
+
+    expect(state.columns.map((column) => column.title)).toEqual([
+      "Бэклог",
+      "В работе",
+      "Готово",
+    ]);
+    expect(state.swimlanes.map((lane) => lane.title)).toEqual(["Продукт", "Платформа"]);
+    expect(countInColumn(state, "col0")).toBe(3);
+    expect(countInSwimlane(state, "lane1")).toBe(2);
+  });
+
   it("never loses a card, even when it must spread them out", () => {
     const cards = Array.from({ length: 70 }, (_, i) => widget(`c${i}`, "card"));
     const kanban = widget("k", "kanban", { width: 2988, height: 1286 });

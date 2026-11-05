@@ -1,0 +1,626 @@
+{
+ "generatedBy": "scripts/author-templates.mjs",
+ "locale": "ru",
+ "templates": {
+  "user-story-map-basic": {
+   "title": "Карта истории",
+   "types": {
+    "text": 1,
+    "frame": 5,
+    "sticky_note": 15
+   },
+   "widgets": [
+    {
+     "z": 0,
+     "id": "w0001",
+     "type": "text",
+     "x": 0,
+     "y": -430,
+     "width": 900,
+     "height": 70,
+     "parentId": null,
+     "content": "Карта истории",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 1,
+     "id": "w0002",
+     "type": "frame",
+     "x": -600,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Персона",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 2,
+     "id": "w0003",
+     "type": "sticky_note",
+     "x": -600,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0002",
+     "content": "Для кого это?",
+     "fillColor": "#efece8"
+    },
+    {
+     "z": 3,
+     "id": "w0004",
+     "type": "sticky_note",
+     "x": -600,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0002",
+     "content": "Что для них важно?",
+     "fillColor": "#efece8"
+    },
+    {
+     "z": 4,
+     "id": "w0005",
+     "type": "sticky_note",
+     "x": -600,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0002",
+     "content": "В каком они контексте?",
+     "fillColor": "#efece8"
+    },
+    {
+     "z": 5,
+     "id": "w0006",
+     "type": "frame",
+     "x": -300,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Цель",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 6,
+     "id": "w0007",
+     "type": "sticky_note",
+     "x": -300,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0006",
+     "content": "Какой результат?",
+     "fillColor": "#ffe07a"
+    },
+    {
+     "z": 7,
+     "id": "w0008",
+     "type": "sticky_note",
+     "x": -300,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0006",
+     "content": "Как мы это измерим?",
+     "fillColor": "#ffe07a"
+    },
+    {
+     "z": 8,
+     "id": "w0009",
+     "type": "sticky_note",
+     "x": -300,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0006",
+     "content": "Что вне рамок?",
+     "fillColor": "#ffe07a"
+    },
+    {
+     "z": 9,
+     "id": "w0010",
+     "type": "frame",
+     "x": 0,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Путь",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 10,
+     "id": "w0011",
+     "type": "sticky_note",
+     "x": 0,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0010",
+     "content": "Первый шаг",
+     "fillColor": "#ffcd9e"
+    },
+    {
+     "z": 11,
+     "id": "w0012",
+     "type": "sticky_note",
+     "x": 0,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0010",
+     "content": "Основной шаг",
+     "fillColor": "#ffcd9e"
+    },
+    {
+     "z": 12,
+     "id": "w0013",
+     "type": "sticky_note",
+     "x": 0,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0010",
+     "content": "Последний шаг",
+     "fillColor": "#ffcd9e"
+    },
+    {
+     "z": 13,
+     "id": "w0014",
+     "type": "frame",
+     "x": 300,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Истории",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 14,
+     "id": "w0015",
+     "type": "sticky_note",
+     "x": 300,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0014",
+     "content": "Как…",
+     "fillColor": "#ffc6d9"
+    },
+    {
+     "z": 15,
+     "id": "w0016",
+     "type": "sticky_note",
+     "x": 300,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0014",
+     "content": "Я хочу…",
+     "fillColor": "#ffc6d9"
+    },
+    {
+     "z": 16,
+     "id": "w0017",
+     "type": "sticky_note",
+     "x": 300,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0014",
+     "content": "Чтобы…",
+     "fillColor": "#ffc6d9"
+    },
+    {
+     "z": 17,
+     "id": "w0018",
+     "type": "frame",
+     "x": 600,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Релиз",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 18,
+     "id": "w0019",
+     "type": "sticky_note",
+     "x": 600,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0018",
+     "content": "Сейчас",
+     "fillColor": "#b9ecac"
+    },
+    {
+     "z": 19,
+     "id": "w0020",
+     "type": "sticky_note",
+     "x": 600,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0018",
+     "content": "Далее",
+     "fillColor": "#b9ecac"
+    },
+    {
+     "z": 20,
+     "id": "w0021",
+     "type": "sticky_note",
+     "x": 600,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0018",
+     "content": "Позже",
+     "fillColor": "#b9ecac"
+    }
+   ]
+  },
+  "product-roadmap-basic": {
+   "title": "Дорожная карта",
+   "types": {
+    "text": 1,
+    "kanban": 1
+   },
+   "widgets": [
+    {
+     "z": 32,
+     "id": "w0033",
+     "type": "text",
+     "x": 0,
+     "y": -400,
+     "width": 900,
+     "height": 60,
+     "parentId": null,
+     "content": "Дорожная карта",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 33,
+     "id": "w0034",
+     "type": "kanban",
+     "x": 0,
+     "y": 0,
+     "width": 1200,
+     "height": 590,
+     "parentId": null
+    }
+   ]
+  },
+  "product-roadmap-basic-prefilled": {
+   "title": "Пример дорожной карты",
+   "types": {
+    "text": 1,
+    "kanban": 1,
+    "card": 12
+   },
+   "widgets": [
+    {
+     "z": 34,
+     "id": "w0035",
+     "type": "text",
+     "x": 0,
+     "y": -400,
+     "width": 900,
+     "height": 60,
+     "parentId": null,
+     "content": "Дорожная карта",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 35,
+     "id": "w0036",
+     "type": "kanban",
+     "x": 0,
+     "y": 0,
+     "width": 1200,
+     "height": 590,
+     "parentId": null
+    },
+    {
+     "z": 36,
+     "id": "w0037",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Исследовать проблему",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 37,
+     "id": "w0038",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Собрать прототип",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 38,
+     "id": "w0039",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Бета с одной командой",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 39,
+     "id": "w0040",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Публичный запуск",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 40,
+     "id": "w0041",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Цены и оплата",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 41,
+     "id": "w0042",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Гайд по онбордингу",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 42,
+     "id": "w0043",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Регламент поддержки",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 43,
+     "id": "w0044",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Аналитика использования",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 44,
+     "id": "w0045",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Мобильная версия",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 45,
+     "id": "w0046",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Публичный API",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 46,
+     "id": "w0047",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Каталог партнёров",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 47,
+     "id": "w0048",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Проверка доступности",
+     "fillColor": "#ffffff"
+    }
+   ]
+  },
+  "kanban-framework": {
+   "title": "Канбан-доска",
+   "types": {
+    "frame": 2,
+    "text": 2,
+    "kanban": 1,
+    "card": 6
+   },
+   "widgets": [
+    {
+     "z": 21,
+     "id": "w0022",
+     "type": "frame",
+     "x": 0,
+     "y": 0,
+     "width": 1400,
+     "height": 700,
+     "parentId": null,
+     "title": "Доска",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 22,
+     "id": "w0023",
+     "type": "frame",
+     "x": 1600,
+     "y": 0,
+     "width": 620,
+     "height": 700,
+     "parentId": null,
+     "title": "Заметки",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 23,
+     "id": "w0024",
+     "type": "text",
+     "x": 0,
+     "y": -310,
+     "width": 800,
+     "height": 60,
+     "parentId": "w0022",
+     "content": "Канбан-доска",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 24,
+     "id": "w0025",
+     "type": "kanban",
+     "x": 0,
+     "y": 0,
+     "width": 1200,
+     "height": 480,
+     "parentId": "w0022"
+    },
+    {
+     "z": 25,
+     "id": "w0026",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Определить объём",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 26,
+     "id": "w0027",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Набросать дизайн",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 27,
+     "id": "w0028",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Собрать первый срез",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 28,
+     "id": "w0029",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Обсудить с командой",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 29,
+     "id": "w0030",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Выпустить в продакшен",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 30,
+     "id": "w0031",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Провести ретроспективу",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 31,
+     "id": "w0032",
+     "type": "text",
+     "x": 1600,
+     "y": 0,
+     "width": 320,
+     "height": 120,
+     "parentId": "w0023",
+     "content": "Добавьте заметки",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 20
+    }
+   ]
+  }
+ }
+}

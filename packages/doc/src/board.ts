@@ -2,7 +2,7 @@ import * as Y from "yjs";
 import { deltaOf, plainOf, runsOf, seedTextField, withMaterializedText } from "./text";
 import { readKanban, writeKanbanState } from "./kanbanState";
 import {
-  TEMPLATE_LABELS,
+  isTemplateTitle,
   type Board,
   type KanbanState,
   type Tag,
@@ -300,12 +300,12 @@ export function loadBoard(
     // itself a template name does not count as chosen, so switching templates
     // renames the board instead of leaving a name that describes the old one.
     const current = board.meta.get("title");
-    const templateTitles = new Set<string>(Object.values(TEMPLATE_LABELS));
+    const templateTitles = isTemplateTitle;
     // A board created with a name keeps that name when a template seeds it: the
     // template names the content, not the board (ADR-015/ADR-100).
     if (options.title?.trim()) {
       board.meta.set("title", options.title.trim());
-    } else if (template.title && (!current || templateTitles.has(current))) {
+    } else if (template.title && (!current || templateTitles(current))) {
       board.meta.set("title", template.title);
     }
   }, IMPORT_ORIGIN);

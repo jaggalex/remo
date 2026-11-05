@@ -30,6 +30,30 @@ export interface KanbanPaintOptions {
   cardStatus?: Record<CardStatus, string>;
 }
 
+/** The cell whose empty-cell `+` is under a world point, if any. */
+export function plusHit(
+  layout: KanbanLayout,
+  point: { x: number; y: number },
+  zoom: number,
+): { columnId: string; swimlaneId: string } | null {
+  const radius = 12 / Math.max(zoom, 0.01);
+  for (const column of layout.columns) {
+    for (const lane of layout.lanes) {
+      const occupied = layout.placements.some(
+        (placement) =>
+          placement.columnId === column.id && placement.swimlaneId === lane.id,
+      );
+      if (occupied) continue;
+      const cx = column.left + layout.padding + 16;
+      const cy = lane.centerY;
+      if (Math.abs(point.x - cx) <= radius && Math.abs(point.y - cy) <= radius) {
+        return { columnId: column.id, swimlaneId: lane.id };
+      }
+    }
+  }
+  return null;
+}
+
 /**
  * Transient cell highlight, painted on the overlay layer. Keeping it out of the
  * board layer means moving the pointer across a kanban does not repaint the board.

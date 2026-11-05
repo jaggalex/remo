@@ -75,8 +75,7 @@ export function BoardApp() {
   /** A counter, not a boolean: the rail asks the comments panel to start placement. */
   const [commentRequest, setCommentRequest] = useState(0);
   const {
-    me,
-    setMe,
+    me, setMe, sessionReady,
     orgs,
     refreshOrgs,
     access,
@@ -297,10 +296,10 @@ export function BoardApp() {
     widgets,
     access,
     boardTitle,
-    synced,
-    status,
+    synced, status,
     setSelectedIds,
     reframe: applyImportedCamera,
+    langReady: sessionReady && (!me || !me.preferences?.lang || me.preferences.lang === lang),
   });
 
   // Keyboard handling lives below the commands it invokes (see `onKeyDown`).

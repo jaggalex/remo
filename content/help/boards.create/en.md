@@ -7,7 +7,7 @@ A new board is created in your organisation — in a team when one is chosen —
 1. Open **All boards** in the header. If you belong to several organisations, choose one in the **Organisation** field — the previous board closes and the list shows the new organisation's boards.
 3. Enter a name.
 4. If there are several organisations or teams, choose the right ones. Create an organisation in the account menu under **Organisation and people** with **+ New organisation**; create a team in the **Teams** block (organisation admin).
-5. Choose Empty board or a template.
+5. Choose Empty board or a template. The template arrives in the account language: Russian copy for a Russian profile, English copy for an English one.
 6. Click Create.
 
 ## Check the result

@@ -1,13 +1,13 @@
 import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget } from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import type { ConnectDraft } from "./gestureTypes";
-import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, pick, pickConnector, placementAt, resolvedEndSide } from "@remo/canvas";
+import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, pick, pickConnector, placementAt, plusHit, resolvedEndSide } from "@remo/canvas";
 import { canConnect, expandGroups, kindOf } from "@remo/model";
 import type { ConnectorSide } from "@remo/model";
 import { capture } from "./gestureEnv";
 
 export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
-  const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
+  const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onAddCard, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
   const world = toWorld(event);
   const panRequested = event.button === 1 || event.button === 2 || event.altKey;
 
@@ -19,6 +19,17 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     };
     capture(event);
     return;
+  }
+
+  if (!readOnly) {
+    for (const [kanbanId, layout] of layouts) {
+      const cell = plusHit(layout, world, camera.zoom);
+      if (cell) {
+        event.preventDefault();
+        onAddCard(kanbanId, cell.columnId, cell.swimlaneId);
+        return;
+      }
+    }
   }
 
   // A pending click-connect: the next click either lands on a target or cancels.

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { insertTemplate, loadBoard, type BoardDocument } from "@remo/doc";
 import {
+  isTemplateTitle,
   reconstructKanban,
   TEMPLATE_KEYS,
-  TEMPLATE_LABELS,
   toBoard,
   type Board,
   type KanbanState,
@@ -12,8 +12,9 @@ import {
   type Widget,
 } from "@remo/model";
 import type { Access } from "./api";
+import { useI18n } from "./i18n";
 
-type TemplatesFile = { templates: Record<string, NormalizedTemplate> };
+type TemplatesFile = { locale?: string; templates: Record<string, NormalizedTemplate> };
 
 /**
  * Templates: the file, the active tab, and the two ways a template reaches the board.
@@ -32,6 +33,7 @@ export function useBoardTemplates({
   status,
   setSelectedIds,
   reframe,
+  langReady = true,
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -43,7 +45,10 @@ export function useBoardTemplates({
   setSelectedIds: (ids: string[]) => void;
   /** Imported content is re-framed; remote edits never move the camera. */
   reframe: () => void;
+  /** Wait for the account language before seeding a new board (ADR-169). */
+  langReady?: boolean;
 }) {
+  const { lang } = useI18n();
   const [templates, setTemplates] = useState<TemplatesFile | null>(null);
   /**
    * A newly created board asks for its starting point in the URL. `empty` means
@@ -67,14 +72,26 @@ export function useBoardTemplates({
   }, [requested]);
 
   useEffect(() => {
-    fetch("/templates.json")
-      .then((response) => response.json())
-      .then((data: TemplatesFile) => setTemplates(data))
-      .catch((error) => console.error("failed to load templates.json", error));
-  }, []);
+    let alive = true;
+    const path = lang === "en" ? "/templates.json" : `/templates.${lang}.json`;
+    const load = (target: string) =>
+      fetch(target).then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json() as Promise<TemplatesFile>;
+      });
+    load(path)
+      .catch(() => load("/templates.json"))
+      .then((data) => {
+        if (alive) setTemplates(data);
+      })
+      .catch((error) => console.error(`failed to load ${path}`, error));
+    return () => {
+      alive = false;
+    };
+  }, [lang]);
 
   /** Kanban matrices for a template, keyed by the captured widget ids. */
-  const kanbanStatesFor = useCallback((key: TemplateKey, model: Board) => {
+  const kanbanStatesFor = useCallback((key: TemplateKey, model: Board, locale: "en" | "ru") => {
     const states: Record<string, KanbanState> = {};
     for (const widget of model.widgets) {
       if (widget.type !== "kanban") continue;
@@ -82,10 +99,11 @@ export function useBoardTemplates({
         key,
         widget,
         model.widgets.filter((w) => w.parentId === widget.id),
+        locale,
       );
     }
     return states;
-  }, []);
+  }, [lang]);
 
   /**
    * Put a template into the document. One non-undoable transaction that replaces
@@ -95,13 +113,14 @@ export function useBoardTemplates({
     (key: TemplateKey, file: TemplatesFile) => {
       const template = file.templates[key];
       if (!template) return;
+      const locale = file.locale === "ru" ? "ru" : "en";
       const model = toBoard(key, template);
       // Keep a name a person chose; a template name is only a default for an
       // unnamed board (ADR-100).
       const current = board.title;
       const keep = requestedName ||
-        (current && !Object.values(TEMPLATE_LABELS).includes(current) ? current : boardTitle);
-      loadBoard(board, model, kanbanStatesFor(key, model), { title: keep });
+        (current && !isTemplateTitle(current) ? current : boardTitle);
+      loadBoard(board, model, kanbanStatesFor(key, model, locale), { title: keep });
       setSelectedIds([]);
       reframe();
     },
@@ -126,7 +145,10 @@ export function useBoardTemplates({
     Boolean(access?.capabilities.includes("board.edit")) && (synced || status === "disconnected");
 
   useEffect(() => {
-    if (!templates || !readyToSeed || seeded.current) return;
+    if (!templates || !readyToSeed || !langReady || seeded.current) return;
+    // The file may still be the English fallback while the profile language is
+    // settling; seeding now would make an English board for a Russian account.
+    if (templates.locale && templates.locale !== lang) return;
     seeded.current = true;
     if (seedEmpty || widgets.length > 0) return;
     // A named board opened without a template is a board someone already created;
@@ -135,7 +157,17 @@ export function useBoardTemplates({
     // always wins.
     if (!requested && boardTitle) return;
     loadTemplate(active, templates);
-  }, [active, boardTitle, loadTemplate, readyToSeed, seedEmpty, templates, widgets.length]);
+  }, [
+    active,
+    boardTitle,
+    lang,
+    langReady,
+    loadTemplate,
+    readyToSeed,
+    seedEmpty,
+    templates,
+    widgets.length,
+  ]);
 
   /** A tab adds its template beside what is already on the board. */
   const addTemplate = useCallback(
@@ -143,8 +175,9 @@ export function useBoardTemplates({
       setActive(key);
       const template = templates?.templates[key];
       if (!template) return;
+      const locale = templates.locale === "ru" ? "ru" : "en";
       const model = toBoard(key, template);
-      insertTemplate(board, model, kanbanStatesFor(key, model));
+      insertTemplate(board, model, kanbanStatesFor(key, model, locale));
       // Frame the new content: it was placed beside what was already there.
       reframe();
     },

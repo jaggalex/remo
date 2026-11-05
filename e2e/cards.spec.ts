@@ -53,3 +53,57 @@ test("selects cards by assignee and due state", async ({ page }) => {
   await page.locator(".card-filter").getByRole("button", { name: "Select cards" }).click();
   await expect(page.locator(".card-filter")).toContainText("Cards found: 1");
 });
+
+test("the empty-cell plus adds a card and focuses its editor", async ({ page }) => {
+  await freshBoard(page, "kanban-plus");
+  const point = await page.evaluate(() => {
+    const probe = window as unknown as {
+      __remo: {
+        camera: { x: number; y: number; zoom: number };
+        layouts: Array<{
+          padding: number;
+          columns: Array<{ id: string; left: number }>;
+          lanes: Array<{ id: string; centerY: number }>;
+          placements: Array<{ columnId: string; swimlaneId: string }>;
+        }>;
+      };
+    };
+    const layout = probe.__remo.layouts.find(
+      (entry) => entry.columns.length > 0 && entry.lanes.length > 0,
+    )!;
+    const occupied = new Set(
+      layout.placements.map((placement) => `${placement.columnId}|${placement.swimlaneId}`),
+    );
+    const column = layout.columns.find((candidate) =>
+      layout.lanes.some((lane) => !occupied.has(`${candidate.id}|${lane.id}`)),
+    )!;
+    const lane = layout.lanes.find((candidate) => !occupied.has(`${column.id}|${candidate.id}`))!;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    const x = column.left + layout.padding + 16;
+    const y = lane.centerY;
+    return {
+      x: rect.left + rect.width / 2 + (x - probe.__remo.camera.x) * probe.__remo.camera.zoom,
+      y: rect.top + rect.height / 2 + (y - probe.__remo.camera.y) * probe.__remo.camera.zoom,
+    };
+  });
+
+  await page.mouse.click(point.x, point.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await expect(editor).toBeFocused();
+  await page.keyboard.type("New card");
+  await page.keyboard.press("Escape");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as unknown as {
+            __remo: { widgets: Array<{ type: string; text: string }> };
+          }).__remo.widgets.some(
+            (widget) => widget.type === "card" && widget.text === "New card",
+          ),
+      ),
+    )
+    .toBe(true);
+});
