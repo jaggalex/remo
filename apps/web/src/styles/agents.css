@@ -736,6 +736,17 @@
   gap: 10px;
 }
 
+.org-skill-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.org-skill-main .muted {
+  line-height: 1.35;
+}
+
 @media (max-width: 560px) {
   .agent-budget {
     grid-template-columns: 1fr;

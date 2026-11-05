@@ -112,7 +112,7 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 | Help topics | 31 (RU + EN) |
 | Portal pages | 68 |
 | Baselines | 21 product + 12 DS |
-| Largest file | `apps/web/src/BoardApp.tsx` — 799 lines |
+| Largest file | `apps/web/src/AgentDialog.tsx` — 800 lines |
 <!-- generated:state:end -->
 
 A run owns its ports, its database and its report directories (ADR-130), so two runs can

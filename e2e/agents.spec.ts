@@ -47,6 +47,7 @@ test("the plan skill is the default and the diagram stays in the list", async ({
   await expect(skill.locator('option[value=""]')).toHaveCount(1);
   await expect(skill.locator('option[value="cards"]')).toHaveCount(0);
   await expect(skill.locator('option[value="tidy-selection"]')).toHaveCount(0);
+  await expect(page.locator(".agent-field-hint", { hasText: "preview first" })).toBeVisible();
 });
 
 test("the selection is the source, with its size in characters, and can be removed", async ({

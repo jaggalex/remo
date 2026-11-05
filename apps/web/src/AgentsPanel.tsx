@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, type Agent, type AgentSkill, type AgentToken } from "./api";
 import { formatMoment } from "./format";
 import { useI18n } from "./i18n";
+import { skillDescriptionKey } from "./skillText";
 import { AiCredentials } from "./AiCredentials";
 import { AiJournal } from "./AiJournal";
 
@@ -278,14 +279,22 @@ export function AgentsPanel({
             <strong>{t("agents.skills")}</strong>
             <p className="muted">{t("agents.skillsNote")}</p>
             <ul>
-              {skills.map((skill) => (
-                <li key={skill.id}>
-                  <span>{skill.name}</span>
-                  <span className="muted">
-                    {skill.slug}@{skill.version} · {t(`agents.risk.${skill.risk}` as "agents.risk.read")}
-                  </span>
-                </li>
-              ))}
+              {skills.map((skill) => {
+                const descriptionKey = skillDescriptionKey(skill.slug);
+                return (
+                  <li key={skill.id}>
+                    <div className="org-skill-main">
+                      <span>{skill.name}</span>
+                      <span className="muted">
+                        {descriptionKey ? t(descriptionKey) : skill.description}
+                      </span>
+                    </div>
+                    <span className="muted">
+                      {skill.slug}@{skill.version} · {t(`agents.risk.${skill.risk}` as "agents.risk.read")}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </>
