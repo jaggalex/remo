@@ -17,7 +17,7 @@ export function setWidgetLink(
   widgetId: string,
   link: WidgetLink | null,
 ): boolean {
-  const widget = board.widgets.get(widgetId);
+  const widget = board.readWidget(widgetId);
   if (!widget || widget.locked) return false;
 
   let next: WidgetLink | null = null;
@@ -46,7 +46,7 @@ export function internalLinkTarget(
   board: BoardDocument,
   widgetId: string,
 ): string | null {
-  const link = board.widgets.get(widgetId)?.link;
+  const link = board.readWidget(widgetId)?.link;
   if (link?.kind !== "widget") return null;
   return board.widgets.has(link.widgetId) ? link.widgetId : null;
 }

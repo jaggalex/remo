@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import * as encoding from "lib0/encoding";
 import { describe, expect, it } from "vitest";
+import * as Y from "yjs";
 import {
   CLOSE_RATE_LIMITED,
   CLOSE_ROOM_FULL,
@@ -8,6 +9,7 @@ import {
   TokenBucket,
   createWsQuota,
   guardQuota,
+  introducedWidgetIds,
   isContentFrame,
   quotaSettings,
 } from "./ws-quota.mjs";
@@ -21,6 +23,15 @@ function syncFrame(step, size = 8) {
   encoding.writeVarUint(encoder, 0);
   encoding.writeVarUint(encoder, step);
   encoding.writeVarUint8Array(encoder, new Uint8Array(size));
+  return encoding.toUint8Array(encoder);
+}
+
+/** A real sync update frame: message type 0, step 2, then the Yjs update. */
+function updateFrame(update) {
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, 0);
+  encoding.writeVarUint(encoder, 2);
+  encoding.writeVarUint8Array(encoder, update);
   return encoding.toUint8Array(encoder);
 }
 
@@ -127,6 +138,50 @@ describe("createWsQuota", () => {
     size = 100 * KiB;
     expect(quota.decide(state, { bytes: 4 * KiB, content: true, doc })).toBe("allow");
     expect(measured).toBeGreaterThanOrEqual(2);
+  });
+
+  it("refuses a new widget once the object ceiling is reached, but still edits old ones", () => {
+    const doc = new Y.Doc();
+    for (let index = 0; index < 3; index += 1) {
+      doc.getMap("widgets").set(`w${index}`, { id: `w${index}`, x: index });
+    }
+    const quota = createWsQuota({
+      settings: {
+        ...small,
+        maxObjects: 3,
+        socketBurst: 10 * MiB,
+        orgBurst: 10 * MiB,
+      },
+      measure: () => 0,
+    });
+    const state = quota.open({ orgKey: null });
+
+    const added = new Y.Doc();
+    Y.applyUpdate(added, Y.encodeStateAsUpdate(doc));
+    added.getMap("widgets").set("w3", { id: "w3", x: 3 });
+    const addUpdate = Y.encodeStateAsUpdate(added, Y.encodeStateVector(doc));
+    expect(introducedWidgetIds(addUpdate, doc.getMap("widgets"))).toEqual(["w3"]);
+    expect(
+      quota.decide(state, {
+        bytes: updateFrame(addUpdate).length,
+        content: true,
+        doc,
+        data: updateFrame(addUpdate),
+      }),
+    ).toBe("room-full");
+
+    const edited = new Y.Doc();
+    Y.applyUpdate(edited, Y.encodeStateAsUpdate(doc));
+    edited.getMap("widgets").set("w0", { id: "w0", x: 99 });
+    const editUpdate = Y.encodeStateAsUpdate(edited, Y.encodeStateVector(doc));
+    expect(
+      quota.decide(state, {
+        bytes: updateFrame(editUpdate).length,
+        content: true,
+        doc,
+        data: updateFrame(editUpdate),
+      }),
+    ).toBe("allow");
   });
 
   it("does not measure a room for small frames", () => {

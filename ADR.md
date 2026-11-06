@@ -7251,3 +7251,214 @@ proxy need them in PostgreSQL (review stage 4). The room ceiling is soft: many s
 can still pass it, bounded by the rate budgets. Edits are not yet audited per session on
 the socket path; that belongs to the server-side guard (review stage 2). Defaults are
 starting values for a team-sized room and should be revisited with production metrics.
+
+## ADR-174: An unowned room is closed, not open to whoever has the link
+
+**Status:** accepted (2026-11-06). Supersedes the legacy rule in ADR-064.
+
+**Context.** The first version had anonymous rooms: a board with `owner_id` null was
+readable and writable by anyone who knew its id, and signing in "claimed" it. The socket
+handshake reflected that: it asked for access only when `iam.owner_id` was set, so a board
+without an owner skipped the check entirely, and `readOnly` was false because there was no
+access object to inspect. `loadRoomState` could also create a `boards` row with no owner,
+and `refreshBoardAccess` deliberately did not re-check such rooms. The result was a room
+that anyone could edit while every audit and revocation path assumed an owner existed.
+
+**Decision.**
+
+- **`effective()` denies `UNCLAIMED` before any grant is considered.** An unowned board has
+  no access decision to make: it is closed, whatever the grants or the public link say.
+- **The socket requires a decision for every known board.** The `if (iam.owner_id)` branch is
+  gone; a room without an owner is refused with 403 before Yjs sees the handshake, and a
+  socket without an `access` object never reaches `wss.handleUpgrade`.
+- **`refreshBoardAccess` closes sockets of a room that lost its owner** instead of skipping
+  the check.
+- **`loadRoomState` no longer creates a board.** Creation is `createIamBoard`, and the owner
+  is mandatory there. A missing row is a load failure, not a new room.
+- **Existing rows are archived, not adopted.** `scripts/ownerless-boards.mjs --list` shows
+  them; `--archive` archives each with an audit row. `--assign` exists for the case where the
+  owner is actually known.
+- **Claim stays the recovery path.** `claimBoard` accepts the claim token (or no token when
+  the board never set one), clears `archived_at`, assigns the owner and bumps `acl_version`.
+  The access screen still reports `UNCLAIMED` and no capabilities, so the banner can offer a
+  claim without granting a read.
+
+**Consequences.** An unowned room is unreachable until it is claimed or assigned. The migration
+must run before the new build serves traffic; the list is read-only and safe to run first. A
+self-hosted instance that relied on anonymous rooms loses that mode, which is the point.
+
+**Limits.** Claim needs an organisation and a team, as before. An archived unowned board is
+visible only through the claim route and the operator script; it is not in anyone's trash
+because there is no owner to own the trash. A board that loses its owner by a direct database
+edit is closed until the script runs.
+
+## ADR-175: Edits on the room socket are audited as a session aggregate
+
+**Status:** accepted (2026-11-06). Extends ADR-061, ADR-092 and ADR-154.
+
+**Context.** Commands write an audit row, but a browser edits the Yjs document directly over
+the socket. That is the normal path for every drag, keystroke and paste, and it wrote no
+audit at all. A session could change a room and leave no record beyond the opaque update log.
+Per-frame rows are not the answer: one drag produces dozens of frames, and an audit table that
+grows with keystrokes is both expensive and unreadable.
+
+**Decision.**
+
+- **One row per editing session per window** (60 s by default), action
+  `board.document.edited`, with `board_id`, `org_id`, `actor_id` and `session_id` from the
+  connection, not from the frame.
+- **The row says how much, not what.** `after` holds `{ updates, bytes, objects, fields,
+  windowMs }`; object ids and field names are capped (50 and 20), and text, links and widget
+  content are never copied into the audit. The first touch of an object in a window records
+  `*`; later touches record the top-level keys that differ, because Yjs replaces a plain
+  object value rather than reporting the smaller change.
+- **The transaction origin names the session.** The room attaches one `afterTransaction`
+  listener; y-websocket applies a peer's update with the socket as origin, and the connection
+  table maps that socket to its session. No per-socket listeners on one document.
+- **A window with no edit writes nothing.** The buffer flushes on the timer and when the last
+  socket of the session closes.
+- **An audit failure never ends the room.** It is logged and counted, like the command path.
+- **Metric:** `remo_ws_edit_audit_rows_total`; dropped windows are counted separately.
+
+**Consequences.** Support and incident review can answer "who changed this room, from which
+session, and how much" without a row per keystroke. The audit grows with active sessions, not
+with typing speed.
+
+**Limits.** The aggregate loses exact per-object timing inside the window, and a crash loses
+the open window. Field names are a shallow diff of the touched objects; a change inside a
+plain object is reported as the field that holds it, not as its nested key. Per-process
+buffers need a shared store when several instances serve one room (ADR-178 stage 2).
+
+## ADR-176: The document has object and text ceilings, not only byte budgets
+
+**Status:** accepted (2026-11-06). Extends ADR-173.
+
+**Context.** ADR-173 bounds bytes per frame, bytes per second and the encoded size of a room.
+The room ceiling is deliberately soft: a full room still accepts small frames so typing and
+deleting work. That softness also lets a script add objects in 16 KiB frames, and a 64 MiB
+room made of tiny widgets is hundreds of thousands of objects. Painting and hit-testing walk
+the object list, so the byte ceiling does not bound the work a room can cause.
+
+**Decision.**
+
+- **An object ceiling in `ws-quota.mjs`** (`maxObjects`, 20 000, `REMO_ROOM_MAX_OBJECTS`):
+  a content frame that introduces a new widget id is refused once the map is full. Small
+  frames are decoded (`Y.decodeUpdate`) so the check is not bypassed by chunking one widget
+  per 16 KiB frame; edits to existing objects still pass.
+- **A refusal is `room-full` (4413),** the same close code the client already backs off on.
+- **The snapshot truncates text for painting** at `MAX_TEXT_CHARS` (200 000); the document
+  keeps the full value. A 10 MB note must not freeze text layout, even before the guard
+  rejects its write.
+- **A malformed setting never disables a ceiling**, as in ADR-173.
+
+**Consequences.** A room cannot trade bytes for object count. The 10 000-object performance
+target (review P6) is inside the ceiling with room to spare, and the ceiling is a deployment
+setting for a team that legitimately needs more.
+
+**Limits.** The per-object byte and text ceilings are the server guard's job: only a decoded
+update can measure one widget or one text exactly, and the guard can refuse the frame before
+it is applied. Until then, `MAX_TEXT_CHARS` bounds painting and `maxObjects` bounds the object
+count; the byte budgets of ADR-173 still bound the transfer. The ceilings are per process like
+the rest of ADR-173.
+
+## ADR-177: Third-party code never runs in the product origin
+
+**Status:** accepted (2026-11-06). Bounds the extension platform.
+
+**Context.** The extension design includes actions, declarative widget kinds and rich views.
+The tempting shortcut is a plugin bundle that runs in the app's origin with access to the
+session cookie and the room's Yjs document. That would undo the CSP (ADR-172), the room access
+model (ADR-061) and the read-only socket rule (ADR-062) in one step, for every install.
+
+**Decision.**
+
+- **No third-party JavaScript executes in the product origin.** Not for "trusted" publishers,
+  not behind a flag.
+- **Three surfaces, one rule:**
+  - actions and events run on the publisher's server and reach remo only through `/v1`;
+  - declarative widget kinds are data rendered by the host from a closed vocabulary, so they
+    work offline, in export, and without the app installed;
+  - rich views, when they exist, run in an iframe on a separate origin with `sandbox` and no
+    `allow-same-origin`, and only when the deployment configures that origin.
+- **Applications write only through commands**, never through the room socket or Yjs.
+- **An installation is a service account**, not a fourth grant subject: it reuses users,
+  grants and integration tokens instead of teaching `effective()` a new branch.
+- **Self-hosted stays first-class.** A second origin is opt-in and off by default; declarative
+  widgets are the whole platform for a deployment that cannot provide one.
+
+**Consequences.** The blast radius of a malicious app is its scopes, its budgets and the
+sandbox, not the product origin. The platform is slower to build, and that is the cost of not
+having to trust publishers.
+
+**Limits.** The manifest and the widget schema become a public contract and need their own
+versioning. Until three real applications exist, the platform is a contract and a renderer,
+not a marketplace.
+
+## ADR-178: Tenant isolation is enforced by PostgreSQL row-level security
+
+**Status:** accepted (2026-11-06). remo is run as a shared service for many organisations.
+
+**Context.** `org_id` is on most tables, but the application enforces it in queries: one
+missing `where org_id = $1` reads or writes another tenant's row. The service is meant to be
+sold as SaaS, so the database, not each call site, must be the last line.
+
+**Decision.**
+
+- **Every table that holds tenant data gets `org_id`** — by column, or by a policy that joins
+  `boards` when the row is board-scoped. The choice per table is recorded with the migration.
+- **`FORCE ROW LEVEL SECURITY` on every such table.** The table owner bypasses RLS by default;
+  without `FORCE`, the guarantee is decorative.
+- **The application connects as `remo_app`, a role without `BYPASSRLS` and without ownership.**
+  Migrations run as the owner in a separate connection.
+- **Every request sets `app.org_id` on its own connection** with
+  `set_config('app.org_id', $1, false)`. Session-level, not transaction-local: a store
+  method may open its own transaction on that connection, and a `SET LOCAL` would be gone
+  before its first query. The connection is reset before it returns to the pool; a failed
+  reset destroys it rather than risking another tenant.
+- **A missing setting returns zero rows, never all rows.** The policy uses
+  `nullif(current_setting('app.org_id', true), '')::uuid`; an unset value matches nothing.
+- **Tests prove it per table:** a second organisation sees 0 rows for every table, including
+  `board_updates`, `comments`, `audit_events`, `agents`, `app_installations` and the link tables.
+
+**Rollout.** RLS is switched on in stages; a half-enabled policy set is worse than none.
+
+- **Stage 1 — tenant key and context (done, schema 17).** The 12 board-scoped tables carry
+  `org_id`, backfilled from `boards`; a trigger fills it for new rows. `tenant.mjs` sets
+  `app.org_id` per request, the store's pool shim routes every `this.pool.query` and
+  `this.pool.connect` through that connection, and HTTP board/org routes plus room timers
+  run inside the context. Policies are still off, so this stage proves the plumbing without
+  changing what any query returns.
+- **Stage 2 — pilot role and policies (done).** `scripts/db-rls-setup.mjs` creates `remo_app`
+  with DML only, no ownership and no `BYPASSRLS`; `scripts/db-rls-enable.mjs` applies
+  `apps/sync/rls.sql` to eight tables whose every path is already in a tenant context:
+  `board_updates`, `kanban_*`, `comments`, `comment_threads`, `board_links`,
+  `board_link_unlocks`. The service uses `DATABASE_URL` as `remo_app`; schema work and the
+  legacy repair use `REMO_MIGRATION_DATABASE_URL`. Tests connect as `remo_app` through the
+  real pool and prove a foreign write is rejected.
+- **Stage 3 — core content (done).** `boards`, `widgets` and `board_grants` joined the
+  protected set, together with `command_runs`, `vote_sessions` and `agent_actions`. The directory wraps the
+  organisation resolved from `?org=`, and `remo_board_lookup(text)` is the one
+  security-definer read that resolves a board before the tenant is known; the socket and
+  ACL refresh use it. Agent tasks and room timers run detached (`withoutTenant`), so a
+  response cannot release the connection under a task that outlives it.
+- **Stage 4 — identity and background work (done).** `orgs`, `org_memberships`, `teams`,
+  `admin_roles`, `org_policies`, `org_apps`, `invitations`, `integration_tokens`, the
+  agent tables, `audit_events`, `ai_runs`/`ai_log_anchors` and `event_outbox`/`org_webhooks`
+  are protected. Registration and invitation acceptance set the tenant inside their own
+  transaction; token lookups and scheduler/outbox claims use the security-definer
+  functions in `schema.sql`; agent tasks and AI anchors run detached and then take the
+  row's organisation. `pnpm db:rls --check` is green for every tenant table.
+- **Global identity is outside tenant RLS.** `users`, `sessions`, `agent_tokens` and
+  `ai_credentials` are looked up before an organisation (or even an account) is known.
+  They stay a global auth boundary with their own token hashing, rate limits and secret
+  encryption; wrapping them in a tenant policy would break sign-in. `schema_meta` is
+  internal.
+
+**Consequences.** A forgotten predicate is contained by the database. The cost is a
+connection per request, a second role in deployment, and a wrapper every `pg/*` method must
+use. A query that forgets the wrapper fails closed (zero rows) instead of leaking.
+
+**Limits.** RLS does not protect a room document already loaded into memory: board access is
+still the first gate, and the sync process must not load a room for a caller who failed it.
+The policies need indexes on `org_id` to stay inside the query budget. Several sync instances
+and shared rate limits are a later stage; RLS is a prerequisite for both.

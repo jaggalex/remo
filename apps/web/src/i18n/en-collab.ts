@@ -483,7 +483,7 @@ export const enCollab = {
   "iam.linkExpired": "The public link has expired. Ask the owner for a new one.",
   "iam.unlockFailed": "Could not check the password. Try again.",
   "iam.retry": "Check again",
-  "iam.unclaimed": "This room has no owner yet: anyone with the link can edit it.",
+  "iam.unclaimed": "This room has no owner, so it is closed. Claim it to reopen it.",
   "iam.claim": "Claim this room",
   "iam.claimLogin": "Sign in and claim it",
   "share.inviteReady": "No account with that email yet — send them this link:",

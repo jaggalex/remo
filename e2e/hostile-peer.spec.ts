@@ -84,6 +84,8 @@ async function writeAsHostilePeer(page: Page, boardId: string): Promise<void> {
     doc.getMap<unknown>("texts").set("survivor", text);
 
     widgets.set("junk-string", "not a widget");
+    widgets.set("junk-null", null);
+    widgets.set("junk-number", 42);
     widgets.set("junk-rocket", {
       type: "rocket",
       x: "far",
@@ -156,6 +158,8 @@ test("a room survives junk written by another client", async ({ page }) => {
 
   expect(byId.get("survivor")?.text).toBe("I survived");
   expect(byId.has("junk-string")).toBe(false);
+  expect(byId.has("junk-null")).toBe(false);
+  expect(byId.has("junk-number")).toBe(false);
   expect(byId.get("junk-rocket")).toMatchObject({ type: "unsupported", x: 0 });
   expect(byId.get("junk-note")?.type).toBe("sticky_note");
 

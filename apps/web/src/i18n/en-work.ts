@@ -17,6 +17,8 @@ export const enWork = {
   "sync.blocked": "Offline limit reached: editing is paused so nothing is lost. Reconnect to continue.",
   "sync.accessChanged": "Access changed: the room is read-only now.",
   "sync.sessionEnded": "The session ended. Sign in again to continue.",
+  "sync.rateLimited": "Too many changes at once. Your edits are kept here and will be saved in a moment.",
+  "sync.roomFull": "The room has reached its size limit. Delete something to keep adding; small edits still save.",
   "follow.title": "Followers",
   "follow.body": "Following mirrors another person's view and zoom. It lives in the socket, not on the room: closing the room ends it.",
   "follow.close": "Close",

@@ -14,10 +14,10 @@ import {
   timerRemainingMs,
   type Widget,
 } from "@remo/model";
-import type { Camera } from "@remo/canvas";
 import type { Identity } from "./identity";
 import type { SessionUser } from "./api";
 import { useNow } from "./useNow";
+import { cameraStore } from "./cameraStore";
 
 /**
  * The shared timer (ADR-075).
@@ -29,7 +29,6 @@ import { useNow } from "./useNow";
 export function useSharedTimer({
   board,
   widgets,
-  camera,
   identity,
   me,
   setSelectedIds,
@@ -37,7 +36,6 @@ export function useSharedTimer({
 }: {
   board: BoardDocument;
   widgets: Widget[];
-  camera: Camera;
   identity: Identity;
   me: SessionUser | null;
   setSelectedIds: (ids: string[]) => void;
@@ -67,7 +65,9 @@ export function useSharedTimer({
         startTimer(board, timerWidget.id, minutes, timerActor);
         setSelectedIds([timerWidget.id]);
       } else {
-        // The timer starts where the person is looking, not at the board origin.
+        // The timer starts where the person is looking, not at the board origin. The
+        // camera lives outside React, so read it when the action happens (review P6).
+        const camera = cameraStore.get();
         const id = newId("timer");
         createTimer(board, id, { x: camera.x, y: camera.y }, timerActor);
         startTimer(board, id, minutes, timerActor);
@@ -75,7 +75,7 @@ export function useSharedTimer({
       }
       closePanel();
     },
-    [board, camera.x, camera.y, timerActor, timerWidget, setSelectedIds, closePanel],
+    [board, timerActor, timerWidget, setSelectedIds, closePanel],
   );
 
   const timerCommand = useCallback(

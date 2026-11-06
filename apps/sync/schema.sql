@@ -911,6 +911,266 @@ create table if not exists comment_reads (
   primary key (thread_id, subject_id)
 );
 
+/* ---------------------------------------------------------- tenant key -- */
+-- Row-level security needs a tenant key on every row the application can read
+-- (ADR-178). Board-scoped tables carry `board_id`; `org_id` is denormalised from
+-- `boards` once, and a trigger keeps it correct for new rows. The column is nullable
+-- because an unowned legacy board has no organisation; such rows are closed anyway
+-- (ADR-174) and never match a tenant policy.
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'agent_actions', 'board_grants', 'board_link_unlocks', 'board_links',
+    'board_updates', 'command_runs', 'comment_threads', 'comments',
+    'kanban_cards', 'kanban_columns', 'kanban_swimlanes', 'widgets'
+  ] loop
+    if not exists (
+      select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = t and column_name = 'org_id'
+    ) then
+      execute format('alter table %I add column org_id uuid', t);
+      execute format(
+        'update %I x set org_id = b.org_id from boards b
+          where x.board_id = b.id and x.org_id is null',
+        t
+      );
+      execute format('create index if not exists %I on %I (org_id)', t || '_org_idx', t);
+    end if;
+  end loop;
+end $$;
+
+create or replace function remo_fill_org_id()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.org_id is null then
+    select b.org_id into new.org_id from boards b where b.id = new.board_id;
+  end if;
+  return new;
+end
+$$;
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'agent_actions', 'board_grants', 'board_link_unlocks', 'board_links',
+    'board_updates', 'command_runs', 'comment_threads', 'comments',
+    'kanban_cards', 'kanban_columns', 'kanban_swimlanes', 'widgets'
+  ] loop
+    execute format('drop trigger if exists %I on %I', t || '_org_id', t);
+    execute format(
+      'create trigger %I before insert or update of board_id on %I
+         for each row execute function remo_fill_org_id()',
+      t || '_org_id', t
+    );
+  end loop;
+end $$;
+
+/* ------------------------------------------------------- tenant helpers -- */
+-- Security-definer lookups used before a tenant context exists, plus the scheduler and
+-- outbox claims that span organisations (ADR-178). The owner role must be able to bypass
+-- RLS (`BYPASSRLS` or superuser) for these to see every row.
+
+-- The one read that happens before the tenant is known: a board id becomes its
+-- organisation and owner. Without it `boards` cannot be protected. It runs as the
+-- owner, so that role must be able to bypass RLS (`BYPASSRLS` or superuser).
+create or replace function remo_board_lookup(board text)
+returns table (org_id uuid, owner_id uuid)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select b.org_id, b.owner_id from boards b where b.id = board
+$$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_board_lookup(text) to remo_app;
+  end if;
+end $$;
+
+-- Identity bootstraps. Registration and the org switcher need rows before an
+-- organisation context exists; these functions return only that answer.
+create or replace function remo_user_orgs(uid uuid)
+returns table (id uuid, name text, slug text, kind text, relation text, state text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select o.id, o.name, o.slug, o.kind, m.relation, m.state
+    from org_memberships m
+    join orgs o on o.id = m.org_id
+   where m.user_id = uid and m.state in ('active', 'invited')
+   order by o.created_at
+$$;
+
+create or replace function remo_org_by_slug(wanted text)
+returns table (id uuid, name text, slug text, kind text, created_at timestamptz)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select o.id, o.name, o.slug, o.kind, o.created_at from orgs o where o.slug = wanted
+$$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_user_orgs(uuid) to remo_app;
+    grant execute on function remo_org_by_slug(text) to remo_app;
+  end if;
+end $$;
+
+create or replace function remo_invitation_lookup(hashed bytea)
+returns table (
+  id uuid, org_id uuid, target_type text, target_id text, email text,
+  subject_kind text, role text, expires_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select i.id, i.org_id, i.target_type, i.target_id, i.email,
+         i.subject_kind, i.role, i.expires_at
+    from invitations i
+   where i.token_hash = hashed and i.state = 'pending'
+   for update
+$$;
+
+create or replace function remo_integration_lookup(hashed bytea)
+returns table (
+  id uuid, org_id uuid, owner_id uuid, label text, scopes text[],
+  revoked_at timestamptz, expires_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select t.id, t.org_id, t.owner_id, t.label, t.scopes, t.revoked_at, t.expires_at
+    from integration_tokens t
+   where t.token_hash = hashed
+$$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_invitation_lookup(bytea) to remo_app;
+    grant execute on function remo_integration_lookup(bytea) to remo_app;
+  end if;
+end $$;
+
+-- The scheduler claims work across organisations. It needs the next id and the
+-- organisation before a tenant connection exists; the row is then claimed and read
+-- inside `withTenant(org_id)` (ADR-178 stage 4).
+create or replace function remo_agent_task_org(task uuid)
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select org_id from agent_tasks where id = task
+$$;
+
+create or replace function remo_next_agent_task()
+returns table (id uuid, org_id uuid, skill_slug text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select t.id, t.org_id, t.skill_slug
+    from agent_tasks t
+   where t.status = 'queued'
+   order by t.created_at
+   limit 1
+$$;
+
+create or replace function remo_due_agent_schedules(batch integer)
+returns setof agent_schedules
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select * from agent_schedules
+   where enabled and next_run_at <= now()
+   order by next_run_at
+   limit least(greatest(batch, 1), 50)
+$$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_agent_task_org(uuid) to remo_app;
+    grant execute on function remo_next_agent_task() to remo_app;
+    grant execute on function remo_due_agent_schedules(integer) to remo_app;
+  end if;
+end $$;
+
+create or replace function remo_ai_orgs()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select distinct org_id from ai_runs
+$$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_ai_orgs() to remo_app;
+  end if;
+end $$;
+
+-- The outbox drain claims a batch across organisations. The claim marks the rows as
+-- taken for five minutes, so a crashed drain retries instead of double-delivering;
+-- processing and the final update then run under the row's organisation.
+create or replace function remo_claim_event_batch(batch integer)
+returns setof event_outbox
+language sql
+security definer
+set search_path = public
+as $$
+  with claimed as (
+    select id
+      from event_outbox
+     where published_at is null
+       and dead_at is null
+       and (next_attempt_at is null or next_attempt_at <= now())
+     order by occurred_at, id
+     limit least(greatest(batch, 1), 100)
+     for update skip locked
+  )
+  update event_outbox e
+     set next_attempt_at = now() + interval '5 minutes'
+    from claimed
+   where e.id = claimed.id
+  returning e.*
+$$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_claim_event_batch(integer) to remo_app;
+  end if;
+end $$;
+
 /* ---------------------------------------------------------- schema meta -- */-- The service reads this before applying the file, so a running suite or a second
 -- instance does not run DDL on every start (and cannot deadlock with live queries).
 
@@ -925,5 +1185,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 16)
+insert into schema_meta (id, version) values (1, 18)
 on conflict (id) do update set version = excluded.version, updated_at = now();

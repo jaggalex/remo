@@ -76,6 +76,11 @@ async loadRoom(docName, provided = null) {
 
 /** Read the snapshot and the log as one consistent state into a fresh document. */
 async loadRoomState(docName, ydoc) {
+  return this.withRoomTenant(docName, () => this.loadRoomStateInTenant(docName, ydoc));
+},
+
+/** The body of `loadRoomState`, already inside the room's tenant context. */
+async loadRoomStateInTenant(docName, ydoc) {
   const client = await this.pool.connect();
   try {
     // Snapshot and log must be read as one consistent state. A teardown of the previous
@@ -94,10 +99,10 @@ async loadRoomState(docName, ydoc) {
     );
 
     if (rows.length === 0) {
-      await client.query("insert into boards (id) values ($1) on conflict do nothing", [
-        docName,
-      ]);
-      this.log.log(`[sync] new room ${docName}`);
+      // A room is created by `createIamBoard`, with an owner (ADR-174). Creating a shell
+      // here produced an ownerless row that the socket then opened to anyone with the id.
+      // An unknown room is a load failure, and the socket has already answered 404.
+      throw new Error(`room ${docName} does not exist`);
     } else {
       const snapshot = rows[0].snapshot;
       if (snapshot?.length) Y.applyUpdate(ydoc, new Uint8Array(snapshot));
@@ -209,6 +214,10 @@ scheduleProjection(room) {
 },
 
 async flushLog(room) {
+  return this.withRoomTenant(room.docName, () => this.flushLogInTenant(room));
+},
+
+async flushLogInTenant(room) {
   if (this.isBusy(room) || room.logWriting) {
     // A projection or an earlier flush is in progress; try again rather than
     // leaving the log timer empty and the save indicator stuck on `pending`.
@@ -289,6 +298,10 @@ isBusy(room) {
 },
 
 async refreshProjection(room) {
+  return this.withRoomTenant(room.docName, () => this.refreshProjectionInTenant(room));
+},
+
+async refreshProjectionInTenant(room) {
   // A retired room (its reload replaced it) must not write the mirror: its document is
   // older than the one that owns the room now (ADR-148).
   if (!this.isCurrentRoom(room)) return;
@@ -581,6 +594,10 @@ async upsertKanbanCards(client, boardId, rows) {
 },
 
 async compact(room) {
+  return this.withRoomTenant(room.docName, () => this.compactInTenant(room));
+},
+
+async compactInTenant(room) {
   // A room that already lost the map is a retired document: its watermark would cover
   // updates that belong to the replacement room and delete them (ADR-128, ADR-148).
   if (!this.isCurrentRoom(room)) return;
@@ -630,6 +647,10 @@ async compact(room) {
  * no-op (ADR-128, ADR-148).
  */
 async writeState(docName, ydoc) {
+  return this.withRoomTenant(docName, () => this.writeStateInTenant(docName, ydoc));
+},
+
+async writeStateInTenant(docName, ydoc) {
   return this.withRoomLock(docName, async () => {
     const room = this.rooms.get(docName);
     if (!room) return;
@@ -664,8 +685,12 @@ async releaseRoom(room) {
       room.ydoc.off("update", room.handlers.update);
       room.ydoc.off("destroy", room.handlers.destroy);
     }
-    // Only remove the room this teardown owns; a replacement may already be in the map.
-    if (this.rooms.get(room.docName) === room) this.rooms.delete(room.docName);
+    // Only remove the room this teardown owns; a replacement may already be in the map,
+    // and it already carries the same organisation.
+    if (this.rooms.get(room.docName) === room) {
+      this.rooms.delete(room.docName);
+      this.roomTenants.delete(room.docName);
+    }
     this.log.log(`[sync] flushed ${room.docName}`);
   })();
 

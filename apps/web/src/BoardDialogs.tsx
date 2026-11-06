@@ -1,4 +1,3 @@
-import type { Camera } from "@remo/canvas";
 import type { KanbanState, Widget } from "@remo/model";
 import type { BoardDocument } from "@remo/doc";
 import type { Access, SessionUser } from "./api";
@@ -38,7 +37,6 @@ function DialogsBody({
   kanbanStates,
   selectedIds,
   settings,
-  camera,
   access,
   me,
   identity,
@@ -99,7 +97,6 @@ function DialogsBody({
   kanbanStates: Record<string, KanbanState>;
   selectedIds: string[];
   settings: BoardSettings;
-  camera: Camera;
   access: Access | null;
   me: SessionUser | null;
   identity: Identity;
@@ -226,7 +223,6 @@ function DialogsBody({
         timerEndsAt={voteTimerEndsAt}
         timerLeft={timerPhase === "running" ? timerLeft : null}
         boardId={boardId}
-        camera={camera}
         setSelectedIds={setSelectedIds}
         onReveal={onReveal}
         onClose={() => setVoteOpen(false)}

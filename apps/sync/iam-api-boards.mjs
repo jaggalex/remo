@@ -33,8 +33,9 @@ export async function handleBoardRoutes(ctx) {
     const board = await store.getIamBoard(boardId);
     if (!board) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found"), true;
 
-    // An unclaimed board is the legacy mode: whoever knows the name may read it, and
-    // claiming is how that stops being true (ADR-064).
+    // A board without an owner is closed (ADR-174). Claiming is the only way back:
+    // the claim token, or the absence of one on a board that never set it, is the
+    // credential. It also clears the archive flag the migration set.
     const unclaimed = !board.owner_id;
 
     if (parts[2] === "claim" && method === "POST") {
@@ -73,22 +74,23 @@ export async function handleBoardRoutes(ctx) {
       return true;
     }
 
-    // Reading a claimed board needs `board.read`; an unclaimed one is open by design.
+    // An unclaimed room is closed (ADR-174). The access route may still describe it,
+    // with no capabilities, so the banner can offer a claim; everything else is refused.
     if (unclaimed) {
       if (parts[2] === "access" && method === "GET") {
         json(response, 200, {
           access: {
-            allowed: true,
+            allowed: false,
             role: null,
-            capabilities: ["board.read", "board.edit"],
-            sources: ["unclaimed"],
+            capabilities: [],
+            sources: [],
             reason: "UNCLAIMED",
           },
           board: { id: board.id, title: board.title, claimed: false },
         });
         return true;
       }
-      return false; // let the read API serve the projection, as before
+      return fail(response, 403, "UNCLAIMED", "this room has no owner"), true;
     }
 
     const resolved = await accessForBoard({

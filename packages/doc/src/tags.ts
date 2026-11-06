@@ -72,7 +72,7 @@ export function setWidgetTags(
   widgetId: string,
   tagIds: readonly string[],
 ): void {
-  const widget = board.widgets.get(widgetId);
+  const widget = board.readWidget(widgetId);
   if (!widget || widget.locked) return;
   const kept = [...new Set(tagIds)].filter((id) => board.tags.has(id)).slice(0, 10);
   board.transact(() => {
@@ -88,7 +88,7 @@ export function toggleWidgetTag(
   widgetId: string,
   tagId: string,
 ): void {
-  const widget = board.widgets.get(widgetId);
+  const widget = board.readWidget(widgetId);
   if (!widget) return;
   const current = widget.tagIds ?? [];
   setWidgetTags(
@@ -100,7 +100,7 @@ export function toggleWidgetTag(
 
 /** Widget ids carrying a tag, in document order. */
 export function widgetsWithTag(board: BoardDocument, tagId: string): string[] {
-  return [...board.widgets.values()]
+  return board.readWidgets()
     .filter((widget) => widget.tagIds?.includes(tagId))
     .map((widget) => widget.id);
 }

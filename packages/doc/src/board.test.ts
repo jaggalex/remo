@@ -3,6 +3,7 @@ import * as Y from "yjs";
 import {
   bounds,
   DEFAULT_COLUMN_WIDTH,
+  MAX_TEXT_CHARS,
   type Board,
   type KanbanState,
   type Widget,
@@ -974,6 +975,8 @@ describe("snapshot of a document another client wrote (ADR-171)", () => {
         height: 200,
       });
       widgets.set("junk", "not a widget");
+      widgets.set("junk-null", null);
+      widgets.set("junk-number", 42);
       widgets.set("bad", { type: "rocket", x: "far", style: ["red"], link: { kind: "url", url: "javascript:alert(1)" } });
       doc.getMap<unknown>("texts").set("ok", "plain string instead of Y.Text");
       doc.getMap<unknown>("kanbans").set("k1", { columns: "nope" });
@@ -999,5 +1002,27 @@ describe("snapshot of a document another client wrote (ADR-171)", () => {
     expect(snapshot.tags).toEqual({ t1: { id: "t1", name: "Risk", color: "gray" } });
     expect(snapshot.title).toBe("");
     expect(snapshot.presentation).toEqual(["frame-1"]);
+  });
+
+  it("caps a hostile note before layout without touching the document", () => {
+    const board = fromPeer((doc) => {
+      doc.getMap("widgets").set("big", {
+        id: "big",
+        type: "sticky_note",
+        parentId: null,
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+      });
+      const text = new Y.Text();
+      text.insert(0, "x".repeat(MAX_TEXT_CHARS + 50_000));
+      doc.getMap("texts").set("big", text);
+    });
+
+    const widget = board.snapshot().widgets.find((entry) => entry.id === "big");
+    expect(widget?.content).toHaveLength(MAX_TEXT_CHARS);
+    // The document keeps the full value; only painting is capped (ADR-176).
+    expect(board.texts.get("big")?.toString()).toHaveLength(MAX_TEXT_CHARS + 50_000);
   });
 });

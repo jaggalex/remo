@@ -58,12 +58,12 @@ export function createConnector(
   let created: string | null = null;
 
   board.transact(() => {
-    const from = board.widgets.get(fromId);
-    const to = board.widgets.get(toId);
+    const from = board.readWidget(fromId);
+    const to = board.readWidget(toId);
     if (!from || !to) return;
     if (!canConnect(from) || !canConnect(to)) return;
     // A connector between two objects that already have one is noise.
-    for (const widget of board.widgets.values()) {
+    for (const widget of board.readWidgets()) {
       if (widget.type !== "connector") continue;
       const pair = [widget.start?.item, widget.end?.item];
       if (pair.includes(fromId) && pair.includes(toId)) return;
@@ -128,7 +128,7 @@ export function setConnectorProps(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.type !== "connector") continue;
       if (widget.locked) continue;
       let next: Widget = { ...widget, style: { ...widget.style } };
@@ -152,7 +152,7 @@ export function setConnectorRouting(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.type !== "connector" || widget.locked) continue;
       board.widgets.set(id, withRouting(widget, routing));
     }
@@ -181,7 +181,7 @@ export function addConnectorWaypoint(
   waypointId = newId("wp"),
   index?: number,
 ): string | null {
-  const current = board.widgets.get(id);
+  const current = board.readWidget(id);
   if (!current || current.type !== "connector" || current.locked) return null;
   if (rigidWaypoints(current).length >= MAX_WAYPOINTS) return null;
 
@@ -206,7 +206,7 @@ export function moveConnectorWaypoint(
   y: number,
 ): void {
   board.transact(() => {
-    const current = board.widgets.get(id);
+    const current = board.readWidget(id);
     if (!current || current.type !== "connector" || current.locked) return;
     const connector = connectorWithRoute(current);
     const waypoints = rigidWaypoints(connector).map((point) =>
@@ -223,7 +223,7 @@ export function deleteConnectorWaypoint(
   waypointId: string,
 ): void {
   board.transact(() => {
-    const current = board.widgets.get(id);
+    const current = board.readWidget(id);
     if (!current || current.type !== "connector" || current.locked) return;
     const connector = connectorWithRoute(current);
     const waypoints = rigidWaypoints(connector).filter((point) => point.id !== waypointId);
@@ -241,11 +241,11 @@ export function reattachConnectorEnd(
 ): boolean {
   let ok = false;
   board.transact(() => {
-    const current = board.widgets.get(id);
+    const current = board.readWidget(id);
     if (!current || current.type !== "connector" || current.locked) return;
     const other = end === "start" ? current.end?.item : current.start?.item;
     if (!item || item === other) return;
-    const target = board.widgets.get(item);
+    const target = board.readWidget(item);
     if (!target || !canConnect(target)) return;
     const next: Widget = { ...current };
     next[end] = { item, ...(side ? { side } : {}) };
@@ -264,7 +264,7 @@ export function reattachConnectorEnd(
 export function swapConnectorEnds(board: BoardDocument, ids: readonly string[]): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.type !== "connector") continue;
       if (widget.locked || !widget.start || !widget.end) continue;
       const arrow =
@@ -285,7 +285,7 @@ export function swapConnectorEnds(board: BoardDocument, ids: readonly string[]):
 export function connectorsTo(board: BoardDocument, ids: string[]): string[] {
   const wanted = new Set(ids);
   const found: string[] = [];
-  for (const widget of board.widgets.values()) {
+  for (const widget of board.readWidgets()) {
     if (widget.type !== "connector") continue;
     const start = widget.start?.item;
     const end = widget.end?.item;
@@ -296,6 +296,6 @@ export function connectorsTo(board: BoardDocument, ids: string[]): string[] {
 
 /** Rigid waypoints of a connector, for callers that need the stored intent. */
 export function connectorWaypoints(board: BoardDocument, id: string): ConnectorWaypoint[] {
-  const widget = board.widgets.get(id);
+  const widget = board.readWidget(id);
   return widget?.type === "connector" ? rigidWaypoints(widget) : [];
 }

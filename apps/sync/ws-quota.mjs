@@ -24,6 +24,7 @@
  * part of running several instances (review stage 4).
  */
 import * as decoding from "lib0/decoding";
+import * as Y from "yjs";
 
 export const CLOSE_RATE_LIMITED = 4429;
 export const CLOSE_ROOM_FULL = 4413;
@@ -39,6 +40,9 @@ export const QUOTA_DEFAULTS = Object.freeze({
   orgBurst: 64 * MiB,
   roomMaxBytes: 64 * MiB,
   smallFrame: 16 * KiB,
+  // A byte ceiling does not bound work: 64 MiB of tiny widgets is hundreds of
+  // thousands of objects, and painting and hit-testing walk the list (ADR-176).
+  maxObjects: 20_000,
 });
 
 const ENV = {
@@ -48,6 +52,7 @@ const ENV = {
   orgBurst: "REMO_ORG_WS_BURST_BYTES",
   roomMaxBytes: "REMO_ROOM_MAX_BYTES",
   smallFrame: "REMO_ROOM_FULL_FRAME_BYTES",
+  maxObjects: "REMO_ROOM_MAX_OBJECTS",
 };
 
 /**
@@ -122,6 +127,42 @@ export function isContentFrame(bytes) {
   }
 }
 
+/**
+ * Widget ids a content frame would add, or an empty list when it only edits existing
+ * ones. Yjs encodes a map entry as an Item whose parent is the root map name and whose
+ * `parentSub` is the key, so this is a cheap structural check, not a full apply.
+ */
+export function introducedWidgetIds(data, widgets) {
+  if (!data) return [];
+  try {
+    // `data` is the whole sync frame in production and the bare update in tests;
+    // accept both so the check does not depend on who calls it.
+    let payload = data;
+    const decoder = decoding.createDecoder(data);
+    if (decoding.readVarUint(decoder) === MESSAGE_SYNC) {
+      const step = decoding.readVarUint(decoder);
+      if (step === SYNC_STEP_2 || step === SYNC_UPDATE) {
+        payload = decoding.readVarUint8Array(decoder);
+      }
+    }
+    const { structs } = Y.decodeUpdate(payload);
+    const ids = [];
+    for (const struct of structs) {
+      if (
+        struct?.parent === "widgets" &&
+        typeof struct.parentSub === "string" &&
+        !widgets.has(struct.parentSub)
+      ) {
+        ids.push(struct.parentSub);
+      }
+    }
+    return ids;
+  } catch {
+    // A frame the decoder cannot read is not a widget write; y-websocket rejects it.
+    return [];
+  }
+}
+
 /** Beyond this many organisation buckets, forget the ones that are full again. */
 const MAX_ORG_BUCKETS = 10_000;
 
@@ -182,8 +223,17 @@ export function createWsQuota({ settings = quotaSettings(), now = Date.now, meas
      *
      * `doc` is the room's live document; it is only needed for content frames.
      */
-    decide(state, { bytes, content, doc }) {
+    decide(state, { bytes, content, doc, data }) {
       if (content && bytes > settings.smallFrame && roomIsFull(doc)) return "room-full";
+      // The object ceiling is checked on every content frame, not only a large one:
+      // a script can add one widget per 16 KiB frame. Existing widgets still edit.
+      if (content && doc?.getMap) {
+        const widgets = doc.getMap("widgets");
+        const maxObjects = settings.maxObjects ?? Number.POSITIVE_INFINITY;
+        if (widgets && widgets.size >= maxObjects) {
+          if (introducedWidgetIds(data, widgets).length) return "room-full";
+        }
+      }
       const t = now();
       if (!state.bucket.take(bytes, t)) return "rate";
       if (state.orgKey !== null && !orgBucket(state.orgKey).take(bytes, t)) {
@@ -229,6 +279,7 @@ export function guardQuota(socket, { quota, state, room, onLimit }) {
           bytes: bytes.length,
           content,
           doc: content ? room() : null,
+          data: content ? bytes : null,
         });
         if (decision !== "allow") {
           closed = true;

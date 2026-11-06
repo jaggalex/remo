@@ -37,7 +37,9 @@ export function BoardAccessGate({
             ? t("iam.linkInactive")
             : reason === "AUTH_REQUIRED"
               ? t("iam.signInToOpen")
-              : t("iam.noAccessHint")}
+              : reason === "UNCLAIMED"
+                ? t("iam.unclaimed")
+                : t("iam.noAccessHint")}
       </p>
       {reason === "PASSWORD_REQUIRED" ? (
         <LinkPasswordGate boardId={boardId} onUnlocked={() => window.location.reload()} />

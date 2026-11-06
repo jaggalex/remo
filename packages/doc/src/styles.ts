@@ -27,7 +27,7 @@ import { holdsText, noteMarksOf, setWidgetDelta } from "./text";
 export function setStickyColor(board: BoardDocument, ids: string[], color: string): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.type !== "sticky_note") continue;
       if (widget.locked) continue;
       board.widgets.set(id, { ...widget, style: { ...widget.style, fillColor: color } });
@@ -57,7 +57,7 @@ export function setShapeStyle(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.type !== "shape") continue;
       if (widget.locked) continue;
       board.widgets.set(id, { ...widget, style: { ...widget.style, ...patch } });
@@ -69,7 +69,7 @@ export function setShapeStyle(
 export function setFillColor(board: BoardDocument, ids: readonly string[], color: string): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || (widget.type !== "sticky_note" && widget.type !== "shape")) continue;
       if (widget.locked) continue;
       board.widgets.set(id, { ...widget, style: { ...widget.style, fillColor: color } });
@@ -92,7 +92,7 @@ export function setTextColor(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget) continue;
       const holdsInk =
         widget.type === "sticky_note" ||
@@ -118,7 +118,7 @@ export function setStickySize(board: BoardDocument, ids: string[], size: StickyS
   const preset = STICKY_SIZES[size];
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.type !== "sticky_note") continue;
       if (widget.locked) continue;
       board.widgets.set(id, {
@@ -152,7 +152,7 @@ export interface StyleSnapshot {
  * a connector's shape, dashes and colour travel. Text, geometry and links do not.
  */
 export function styleSnapshotOf(board: BoardDocument, id: string): StyleSnapshot | null {
-  const widget = board.widgets.get(id);
+  const widget = board.readWidget(id);
   if (!widget) return null;
   const snapshot: StyleSnapshot = { type: widget.type, style: { ...widget.style } };
   if (widget.type === "connector") {
@@ -174,7 +174,7 @@ export function applyStyleSnapshot(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.locked) continue;
 
       if (widget.type === "connector" && snapshot.type === "connector") {

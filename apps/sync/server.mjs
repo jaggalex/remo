@@ -82,6 +82,8 @@ metrics.describe(
   "remo_ws_quota_closed_total",
   "Sockets closed for a write budget, by reason (rate, room-full); ADR-173",
 );
+metrics.describe("remo_ws_edit_audit_rows_total", "Socket edit windows written to audit; ADR-175");
+metrics.describe("remo_ws_edit_audit_dropped_total", "Socket edit windows whose audit write failed");
 metrics.describe(
   "remo_background_failures_total",
   "Failures no caller handled; any non-zero rate is a bug (ADR-160)",
@@ -113,7 +115,13 @@ let store = diskStore;
 const ai = fakeModelEnabled() ? fakePlanClient() : new AiClient();
 
 if (databaseUrl) {
-  const postgres = new PostgresStore({ connectionString: databaseUrl, metrics });
+  // The app role is subject to RLS; migrations and the legacy repair need the owner
+  // (ADR-178 stage 2). Without a second URL the old single-role behaviour stays.
+  const postgres = new PostgresStore({
+    connectionString: databaseUrl,
+    migrationConnectionString: process.env.REMO_MIGRATION_DATABASE_URL ?? databaseUrl,
+    metrics,
+  });
   try {
     await connectWithRetry({ connect: () => postgres.connect() });
     store = postgres;
@@ -123,7 +131,11 @@ if (databaseUrl) {
     // sees the empty shell while the widgets sit under the encoded id (ADR-148). The
     // repair is idempotent, moves rows before deleting and logs what it left alone.
     try {
-      const { merged, skipped } = await postgres.mergeLegacyRoomIds();
+      // The repair moves rows in RLS-protected tables and no single tenant covers it;
+      // the owner connection is the only role allowed to see all of them (ADR-178).
+      const { merged, skipped } = await postgres.withOwnerClient((client) =>
+        postgres.mergeLegacyRoomIds({ client }),
+      );
       if (merged.length || skipped.length) {
         console.log(
           `[sync] duplicate rooms: ${merged.length} merged, ${skipped.length} left alone`,
@@ -246,9 +258,61 @@ const corsHeaders =
           "Content-Type, If-Match, Idempotency-Key, Authorization, X-CSRF-Token",
       };
 
+/**
+ * The organisation a request belongs to, resolved before any tenant query (ADR-178).
+ *
+ * Board routes need one bootstrap read of `boards` to learn the org; that read happens
+ * outside the tenant context and is the only query allowed to do so. When policies are
+ * switched on it moves behind a `security definer` lookup, not into the app role.
+ */
+async function tenantOrgForRequest(store, url) {
+  const board = /^\/boards\/([^/]+)/.exec(url.pathname);
+  if (board) {
+    if (!store.getIamBoard) return null;
+    let id;
+    try {
+      id = decodeURIComponent(board[1]);
+    } catch {
+      return null;
+    }
+    // A security-definer lookup: `boards` is protected once stage 3 is on, and this is
+    // the one read that must happen before the tenant is known.
+    if (store.boardOrg) {
+      const orgId = await store.boardOrg(id).catch(() => null);
+      if (orgId) return orgId;
+    }
+    const iam = await store.getIamBoard(id).catch(() => null);
+    return iam?.org_id ?? null;
+  }
+  if (
+    (url.pathname === "/boards" || url.pathname === "/search") &&
+    url.searchParams.get("org") &&
+    store.getOrgBySlug
+  ) {
+    const org = await store.getOrgBySlug(url.searchParams.get("org")).catch(() => null);
+    return org?.id ?? null;
+  }
+  const org = /^\/orgs\/([^/]+)/.exec(url.pathname);
+  if (org) {
+    try {
+      return decodeURIComponent(org[1]);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 async function handleRequest(request, response) {
   const url = new URL(request.url, "http://localhost");
+  const orgId = await tenantOrgForRequest(store, url);
+  if (orgId && store.withTenant) {
+    return store.withTenant(orgId, () => routeRequest(request, response, url));
+  }
+  return routeRequest(request, response, url);
+}
 
+async function routeRequest(request, response, url) {
   // A fixed label per route family: a label per path would let an anonymous client
   // grow the in-memory registry without bound (the protected /metrics endpoint does
   // not stop the accumulation).

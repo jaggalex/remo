@@ -123,6 +123,11 @@ export function effective({ board, viewer, grants = [], policy = {}, link = null
 
   if (!board) return deny("NOT_FOUND");
 
+  // An unowned board has no access decision to make (ADR-174). The legacy rule opened
+  // it to whoever knew the id; that also let the socket skip the check entirely, because
+  // there was no owner to derive a viewer from. Claiming is the only way back.
+  if (!board.ownerId) return deny("UNCLAIMED");
+
   // Suspension is deny-overrides: it closes direct grants, team grants and links alike
   // for someone inside the organisation (spec/IAM-v1.md §4).
   if (viewer?.org?.state === "suspended") return deny("ORG_SUSPENDED");

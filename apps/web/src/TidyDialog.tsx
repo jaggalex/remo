@@ -4,6 +4,7 @@ import type { Widget } from "@remo/model";
 import { Banner, Button, Dialog } from "@remo/ui";
 import { AgentPlanDialog } from "./AgentPlanDialog";
 import { api, type BoardAgents } from "./api";
+import { cameraStore } from "./cameraStore";
 import { agentFailureText } from "./agentError";
 import { planFailureText } from "./agentPlanText";
 import { HelpLink } from "./help/HelpLink";
@@ -27,7 +28,6 @@ export function TidyDialog({
   selectionIds,
   widgets,
   canEdit,
-  origin,
   onApplyPlan,
   onClose,
   onOpenAgents,
@@ -37,7 +37,6 @@ export function TidyDialog({
   selectionIds: string[];
   widgets: Widget[];
   canEdit: boolean;
-  origin: { x: number; y: number };
   onApplyPlan: (
     plan: AgentPlan,
     provenance: Widget["agent"],
@@ -147,6 +146,8 @@ export function TidyDialog({
     if (!agentId || !selectionCount || busy) return;
     setBusy(true);
     setError(null);
+    const camera = cameraStore.get();
+    const origin = { x: camera.x, y: camera.y };
     const fingerprint = `${agentId}:${strategy}:${selectionIds.join(",")}:${origin.x}:${origin.y}`;
     if (pendingKey.current?.fingerprint !== fingerprint) {
       pendingKey.current = { fingerprint, key: newIdempotencyKey() };

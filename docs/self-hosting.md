@@ -29,6 +29,10 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_DB_HOST` | host used by the `db-tools` container |
 | `REMO_DOCS_ORIGIN`, `REMO_METRICS` | optional docs origin and metrics switch |
 | `REMO_HASH_CONCURRENCY` | parallel password hashes (default 4) |
+| `REMO_WS_RATE_BYTES`, `REMO_WS_BURST_BYTES` | optional write budget per socket (defaults: 256 KiB/s, 16 MiB burst; ADR-173) |
+| `REMO_ORG_WS_RATE_BYTES`, `REMO_ORG_WS_BURST_BYTES` | optional write budget shared by an organisation's sockets (defaults: 2 MiB/s, 64 MiB burst) |
+| `REMO_ROOM_MAX_BYTES`, `REMO_ROOM_FULL_FRAME_BYTES` | optional room size ceiling and the largest edit a full room still takes (defaults: 64 MiB, 16 KiB) |
+| `REMO_ROOM_MAX_OBJECTS` | optional object ceiling for one room (default: 20 000; ADR-176) |
 
 `REMO_KEK` is not stored in PostgreSQL. Losing it makes saved provider keys unreadable.
 Keep a copy outside the server.
@@ -46,6 +50,54 @@ during the build.
 
 Put the reverse proxy in front of `remo-web:8080` (app) and `remo-web:8081` (guide).
 `deploy/Caddyfile.snippet` and `deploy/nginx-remo.conf` are starting points.
+
+## Rooms without an owner
+
+Earlier versions let a room exist without an owner, and anyone with the link could edit it.
+That mode is closed (ADR-174): such a room answers 403 until it is claimed. Before upgrading,
+list what is affected and archive it:
+
+```sh
+pnpm db:orphans --list
+pnpm db:orphans --archive --yes
+```
+
+`--assign <roomId> --user <email>` adopts one room when the owner is actually known. A person
+with the link can also claim an archived room from the room screen; claiming clears the
+archive flag and assigns the room to their organisation.
+
+## Tenant isolation (RLS)
+
+PostgreSQL row-level security is rolled out in stages (ADR-178). The application connects
+as a DML-only role and sets `app.org_id` on its own connection for every request; schema
+work and the legacy room repair use the owner. Two URLs make that explicit:
+
+| Variable | Used by |
+|---|---|
+| `DATABASE_URL` | the sync service (`remo_app`): no table ownership, no `BYPASSRLS` |
+| `REMO_MIGRATION_DATABASE_URL` | schema migration, `db:check`, `db:orphans`, `db:rls` (owner) |
+
+Create the role once, then apply the pilot policies:
+
+```sh
+REMO_MIGRATION_DATABASE_URL=postgres://owner:... \
+REMO_APP_DB_PASSWORD=... \
+pnpm db:rls:setup
+
+REMO_MIGRATION_DATABASE_URL=postgres://owner:... pnpm db:rls:enable
+pnpm db:rls --check          # owner URL; shows what is still unprotected
+```
+
+Every tenant table is protected: the room's content and access tables, organisations and
+seats, teams, invitations, integration tokens, agents, audit, AI logs and the event
+outbox. `pnpm db:rls --check` is the gate. `users`, `sessions`, `agent_tokens`,
+`ai_credentials` and `schema_meta` are global identity/secrets and stay outside tenant
+RLS: they are read before an organisation exists, and sign-in cannot depend on a tenant
+policy. They keep their own token hashing, rate limits and secret encryption.
+
+If `REMO_MIGRATION_DATABASE_URL` is not set, the service keeps the old single-role
+behaviour; do not apply `rls.sql` in that mode. `pnpm db:rls:enable --check` reports the
+RLS state without changing anything.
 
 ## Security headers
 

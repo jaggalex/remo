@@ -50,10 +50,12 @@ const TEST_PREFIXES = [
 ];
 
 function databaseUrl() {
+  // Prefer the owner/migration URL: schema work and inventory need to see every tenant.
+  if (process.env.REMO_MIGRATION_DATABASE_URL) return process.env.REMO_MIGRATION_DATABASE_URL;
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   try {
     const env = readFileSync(join(HERE, "..", ".env"), "utf8");
-    const match = env.match(/^DATABASE_URL=(.*)$/m);
+    const match = env.match(/^(?:REMO_MIGRATION_)?DATABASE_URL=(.*)$/m);
     if (match) return match[1].trim();
   } catch {
     /* no .env */

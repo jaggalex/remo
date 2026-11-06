@@ -1,4 +1,3 @@
-import type { Camera } from "@remo/canvas";
 import type { AgentPlan, AppliedAgentPlan } from "@remo/doc";
 import type { Widget } from "@remo/model";
 import type { Access, SessionUser } from "./api";
@@ -39,7 +38,6 @@ function PanelsBody({
   boardId,
   boardTitle,
   access,
-  camera,
   selectedIds,
   widgets,
   onApplyPlan,
@@ -64,7 +62,6 @@ function PanelsBody({
   boardId: string;
   boardTitle: string;
   access: Access | null;
-  camera: Camera;
   selectedIds: string[];
   widgets: Widget[];
   onApplyPlan: (
@@ -113,7 +110,6 @@ function PanelsBody({
         boardTitle={boardTitle}
         canManage={Boolean(access?.capabilities.includes("board.manage"))}
         canEdit={Boolean(access?.capabilities.includes("board.edit"))}
-        origin={{ x: camera.x, y: camera.y }}
         selectionIds={selectedIds}
         widgets={widgets}
         onApplyPlan={onApplyPlan}
@@ -126,7 +122,6 @@ function PanelsBody({
         selectionIds={tidy.ids}
         widgets={widgets}
         canEdit={Boolean(access?.capabilities.includes("board.edit"))}
-        origin={{ x: camera.x, y: camera.y }}
         onApplyPlan={onApplyPlan}
         onClose={tidy.close}
         onOpenAgents={tidy.openAgents}
