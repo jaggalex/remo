@@ -431,8 +431,8 @@ async function routeRequest(request, response, url) {
   }
 
   if (url.pathname === "/health") {
-    // A probe needs one bit, not an inventory: the store version, board and room
-    // counts and a raw driver error are for the operator's metrics, not the internet.
+    // A probe answers one bit, plus which build answered it. The store version, board
+    // and room counts and a raw driver error stay in metrics, not on the internet.
     const storage = await store.health();
     response.writeHead(storage.ok ? 200 : 503, { "Content-Type": "application/json" });
     response.end(JSON.stringify({ ok: storage.ok, ...BUILD }));
