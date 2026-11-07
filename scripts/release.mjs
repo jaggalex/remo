@@ -81,6 +81,8 @@ writeFileSync(changelogPath, changelog);
 console.log(`release: ${previous} → ${version} (${date})`);
 if (notes) console.log(`release: ${notes}`);
 
+// The guide embeds the package version in its generated pages.
+if (!noVerify) run("pnpm", ["guide:build"]);
 if (!noVerify) run("pnpm", ["verify"]);
 if (!commit) {
   console.log("release: files prepared; review, commit and tag when ready");
