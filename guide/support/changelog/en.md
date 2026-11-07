@@ -21,6 +21,8 @@ ship together with a schema version; there is no separate "documentation release
 | 14 | idempotency indexes for commands and tasks |
 | 15 | the mandatory unique `@handle`: `users.handle` |
 | 16 | personal organisations and the home: `orgs.kind`, `boards.icon`, `boards.created_at`, `boards.created_by` |
+| 17 | `org_id` on the tables tied to a room: existing rows filled from their rooms, and a trigger for new rows |
+| 18 | organisation row-level isolation (RLS): policies on every table that holds tenant data, the `remo_app` application role, functions for the organisation lookup, agent tasks and the event queue |
 
 Versions 1–3 are the early line: rooms, access and the command journal. Databases created
 earlier are upgraded by the same `schema.sql` at start.
@@ -29,6 +31,7 @@ earlier are upgraded by the same `schema.sql` at start.
 
 | Date | What |
 |---|---|
+| 06.11.2026 | Rooms without an owner are closed: the API and the socket refuse, and the room is not in the room list; a claim returns the room and clears the archive. Organisation row-level isolation (RLS). Write quotas: `4429` when the rate is exceeded, `4413` when the room is full. Edits over the socket are audited as one row per session per 60 s window. |
 | 04.11.2026 | Templates arrive in the profile language: Russian names, copy and kanban columns for a Russian account. The plus in an empty kanban cell creates a card and opens its editor immediately. |
 | 04.11.2026 | The product says “room”: one noun in the interface and documentation; the technical `board.*` names remain identifiers. |
 | 04.11.2026 | Every account has a personal organisation; the home shows room tiles with name search, sorting, 24-per-page, trash and emoji; switching organisation leaves the room. |

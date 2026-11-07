@@ -17,11 +17,11 @@
     "how-to/share",
     "concepts/board"
   ],
-  "updated": "2026-11-04",
+  "updated": "2026-11-06",
   "translations": {
     "en": {
-      "sourceHash": "sha256:01487d02abd5d1745a930e15734fb8f913617709515a69dd4bfb5d85c8bfeebe",
-      "targetHash": "sha256:324fed1b9701aff21710ab8d06bad7b60589bdbac0ecc533bf4ca928034e6551"
+      "sourceHash": "sha256:19afd7b921b354f2b1a333ad8ddb483ff7e8165d66a3dc2bfca841d75db4c5f7",
+      "targetHash": "sha256:e8dc8d5976249c052f057b0737285fa792aebc4fe5dc25af059161f99ba8c512"
     }
   }
 }

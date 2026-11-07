@@ -28,11 +28,15 @@ A role is a set of capabilities: `board.read`, `board.comment`, `board.edit`, `b
 
 ## A room without an owner
 
-A room nobody has claimed yet follows the old rule: anyone with the link can change it. This state is temporary and exists for moving from rooms without accounts. As soon as somebody presses **Закрепить комнату за собой** (claim the room), the room gets an owner, and roles and the link take over.
+A room without an owner is closed. Its page refuses, the room is not in the room list, and the connection does not open: the content is neither visible nor editable.
+
+Recovery is a claim. A signed-in person with the link presses **Claim this room**: the room gets an owner, joins their organisation and team, and loses the archive mark if it had one. After that, roles and the public link decide access. A claim needs an account with an organisation and a team. It happens once: after that, the owner changes only by transferring ownership.
+
+When the version is upgraded, existing rooms without an owner do not open: the installation operator archives them. If the owner is known, the operator can assign them. Without a claim or an assignment the room stays closed; there is no automatic deletion.
 
 ## Public link
 
-A link is not a role and not a grant: it is a property of the room. It gives **view only** and never gives export or backup. A password and an expiry are additional restrictions: changing the password closes all open browsers at once.
+A link is not a role and not a grant: it is a property of the room. It gives **view only** and never gives export or backup. A room without an owner is not opened by a link: the link shows the claim screen, not the content. A password and an expiry are additional restrictions: changing the password closes all open browsers at once.
 
 ## Revocation and consequences
 
@@ -44,7 +48,7 @@ Revoking access does not undo edits already made: the tab stops accepting new on
 
 ## What is visible from outside
 
-A person without access receives "resource unavailable" without the room name: the existence of the room is not disclosed.
+A person without access to a room that has an owner receives "resource unavailable" without the room name: the existence of the room is not disclosed. A room without an owner is the exception: the page says there is no owner, because the link is the only way to claim it.
 
 ## Where to go next
 

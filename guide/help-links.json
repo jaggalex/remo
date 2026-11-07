@@ -1,4 +1,5 @@
 {
+  "access.claim": "concepts/access",
   "access.lifecycle": "concepts/history",
   "access.link": "concepts/access",
   "access.roles": "reference/roles",

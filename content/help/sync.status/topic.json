@@ -13,13 +13,13 @@
     "connectors.create",
     "connectors.waypoints"
   ],
-  "verifiedAgainst": "2026-10-27",
+  "verifiedAgainst": "2026-11-06",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:91d899e1592801abbe01e1488a7520dbfb0b9876d45e2387fc2c2f36b37fedfe",
-      "targetHash": "sha256:aa6aaed44e88e668e579a00b17ae2cf6222203e2feda03df2aa538469a7046d8"
+      "sourceHash": "sha256:59d25395491a521bf88eba801b02998c8e06db5838762c9bd3a93858e8f6d941",
+      "targetHash": "sha256:9155fd3befa1218199a81a78a6b5fe9ef74274830c14fcd63769f0b0a947f5f8"
     }
   }
 }

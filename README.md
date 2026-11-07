@@ -55,12 +55,17 @@ testing.
 ## Verify
 
 ```sh
-pnpm verify           # types, unit and database tests, build, docs, design system
+pnpm verify           # types, lint, unit and database tests, build, docs, design system
 pnpm verify --e2e     # the full gate, including browser acceptance and the guide audit
+pnpm lint             # Biome; verify runs it too
+pnpm audit:prod       # high/critical production advisories with a fix (separate CI step)
+pnpm db:rls --check   # tenant-policy inventory; exits 1 on a gap
 ```
 
-Both commands check the dedicated test PostgreSQL from `docker-compose.test.yml`; start it
-first with `pnpm test:db:up`. The gate is what CI runs; a change is ready when it is green.
+Both verify commands check the dedicated test PostgreSQL from `docker-compose.test.yml`;
+start it first with `pnpm test:db:up`. The gate is what CI runs; a change is ready when it
+is green. The RLS inventory is not part of the gate: run it after a schema change, with the
+owner URL from [self-hosting](docs/self-hosting.md).
 
 ## Repository
 

@@ -6,8 +6,8 @@
     "en": "Turn the public link on and off"
   },
   "summary": {
-    "ru": "Одна ссылка на комнату: кто угодно с ней может читать; выключение закрывает доступ для всех.",
-    "en": "One link per room: anyone with it can read; turning it off closes access for everyone."
+    "ru": "Одна ссылка на комнату: у комнаты с владельцем кто угодно с ней может читать; у комнаты без владельца она приводит к закреплению. Выключение закрывает доступ для всех.",
+    "en": "One link per room: for a room with an owner anyone with it can read; for a room without an owner it leads to the claim screen. Turning it off closes access for everyone."
   },
   "related": [
     "access.share",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:35a7051fcf9100ac70ac3ad93800b82602a53584c27b53c212955bfa93bf3252",
-      "targetHash": "sha256:907ecf37b6bd85eb79dd9026d32f23d7dc5efc341ca6764b8ec7ce238c9a1aff"
+      "sourceHash": "sha256:fecbaee967326b24a799dcb85a4d3768d41e5f10aec99354bb5c066e533af172",
+      "targetHash": "sha256:ddeafb208936f8a4f5d022effffa99f2ddc4aa76f9ecce3e16049df4430ec645"
     }
   }
 }

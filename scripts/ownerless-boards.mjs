@@ -12,8 +12,8 @@
  *   node scripts/ownerless-boards.mjs --assign <boardId> --user <email>
  *
  * The `--assign` path is the exception for a board whose owner is actually known. It
- * uses the person's first active organisation and team, creates a team when there is
- * none, and writes an audit row.
+ * uses the person's personal organisation when there is one (otherwise the earliest
+ * active one), the earliest team, creates a team when there is none, and writes an audit row.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";

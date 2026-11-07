@@ -17,11 +17,11 @@
     "concepts/sync",
     "capabilities/agents"
   ],
-  "updated": "2026-11-04",
+  "updated": "2026-11-06",
   "translations": {
     "en": {
-      "sourceHash": "sha256:51f0d39b8cbd7a76ce91638967c6c4c825b16b8fe9ebe867e4691acb356ff258",
-      "targetHash": "sha256:3df149a82f26469ea9de5326c80036efa0e99f3be35955f55c7a0ee649d39ec0"
+      "sourceHash": "sha256:76c7857798108518b278214b1c2adc08b872a1cb8debe40af169ca8c9008b2f2",
+      "targetHash": "sha256:ed734f398f84a37891e0fd2b39e383c4c2a07e63e45fd56b2713e8fe4bd7422b"
     }
   }
 }

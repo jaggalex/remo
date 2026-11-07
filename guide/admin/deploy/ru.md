@@ -18,12 +18,21 @@ install -d -o remo -g remo /srv/remo
 ## Шаги
 
 1. Код: `sudo -u remo git clone <repo> /srv/remo && cd /srv/remo && sudo -u remo pnpm install --frozen-lockfile`.
-2. База: `POSTGRES_PASSWORD='<сильный>' POSTGRES_PORT=127.0.0.1:5432 pnpm db:up`, затем `pnpm db:check`. Порт с хостом обязателен: без него Postgres слушает все интерфейсы.
-3. Окружение: создайте `/srv/remo/.env` с `DATABASE_URL`, `NODE_ENV=production`, `PORT=1234`, `REMO_APP_ORIGIN`, `REMO_CORS_ORIGIN`, `REMO_METRICS_TOKEN`, `REMO_KEK`, `REMO_KEK_ID`; `chmod 600`.
-4. Сборка: `sudo -u remo pnpm build`. Статика окажется в `apps/web/dist`.
-5. Сервис: скопируйте `deploy/remo-sync.service` в `/etc/systemd/system/`, включите и запустите.
-6. nginx: скопируйте `deploy/nginx-remo.conf`, замените домен, включите сайт, `nginx -t && systemctl reload nginx`, затем `certbot --nginx -d <домен>`.
-7. Портал документации: `pnpm guide:build` и `rsync -a --delete docs-site/ /srv/remo/docs-site/`; nginx отдаёт его по `/guide/`.
+2. База: `POSTGRES_PASSWORD='<сильный>' POSTGRES_PORT=127.0.0.1:5432 pnpm db:up`, затем примените схему от owner-роли: `REMO_MIGRATION_DATABASE_URL=postgres://<owner>:<пароль>@127.0.0.1:5432/remo pnpm db:check`. Порт с хостом обязателен: без него Postgres слушает все интерфейсы. `db:check` применяет схему, но не включает политики RLS.
+3. Роли и RLS: owner-роль должна быть superuser или иметь `BYPASSRLS`. Создайте роль приложения и включите политики:
+   ```sh
+   export REMO_MIGRATION_DATABASE_URL=postgres://<owner>:<пароль>@127.0.0.1:5432/remo
+   REMO_APP_DB_PASSWORD='<пароль приложения>' pnpm db:rls:setup
+   pnpm db:rls:enable
+   pnpm db:rls --check
+   pnpm db:rls:enable --check
+   ```
+   `remo_app` получает только DML, без владения таблицами и без `BYPASSRLS`; сервис работает от неё. `db:rls --check` проверяет все таблицы с данными организаций, `db:rls:enable --check` — применённый набор.
+4. Окружение: создайте `/srv/remo/.env` с `DATABASE_URL` (роль `remo_app`), `REMO_MIGRATION_DATABASE_URL` (owner), `NODE_ENV=production`, `PORT=1234`, `REMO_APP_ORIGIN`, `REMO_CORS_ORIGIN`, `REMO_METRICS_TOKEN`, `REMO_KEK`, `REMO_KEK_ID`; `chmod 600`.
+5. Сборка: `sudo -u remo pnpm build`. Статика окажется в `apps/web/dist`.
+6. Сервис: скопируйте `deploy/remo-sync.service` в `/etc/systemd/system/`, включите и запустите.
+7. nginx: скопируйте `deploy/nginx-remo.conf`, замените домен, включите сайт, `nginx -t && systemctl reload nginx`, затем `certbot --nginx -d <домен>`.
+8. Портал документации: `pnpm guide:build` и `rsync -a --delete docs-site/ /srv/remo/docs-site/`; nginx отдаёт его по `/guide/`.
 
 ## Проверка
 

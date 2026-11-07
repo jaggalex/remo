@@ -17,11 +17,11 @@
     "reference/roles",
     "capabilities/export"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-06",
   "translations": {
     "en": {
-      "sourceHash": "sha256:bc5643f9d4b30fdc06449838f36cae5c359d1febcbd404916339f52901dc1d97",
-      "targetHash": "sha256:6457ebef86450a3ac447a89abbeb33568f1c372a68ed445ddd988c7ed8a78af0"
+      "sourceHash": "sha256:c9d2140d5d8e601c1e3954922b7580b39fc3c9c2bcdc26e1c1285afd14717055",
+      "targetHash": "sha256:de466c76b83e3c9f95d7e5f4c4abfdb6b14950ea1b9e93aaa1e3089da0ee27cb"
     }
   }
 }

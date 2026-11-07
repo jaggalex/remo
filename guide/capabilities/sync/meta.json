@@ -17,11 +17,11 @@
     "start/quickstart",
     "capabilities/access"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-06",
   "translations": {
     "en": {
-      "sourceHash": "sha256:12974bdeafff51657030b2b339e8bbffed532e0221488e30e925c530e17098b0",
-      "targetHash": "sha256:b182ff0e918aef9b2fc09f2bec69eb0162e0a761c254f8833574edf34fdf3743"
+      "sourceHash": "sha256:794ebb1b5d7deae7f10737212fb295423a30ecbbd3c18e89ad8987d58eddc51d",
+      "targetHash": "sha256:3a28570317ffa064d26458475311a5d1ed6dd98c27e42431dff473e4d6d9f56f"
     }
   }
 }
