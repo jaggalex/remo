@@ -1,6 +1,6 @@
 ## The main rule
 
-**The room is the unit of authorization.** No object has permissions of its own. Everything a person can do, they can do on a specific room — and it follows from their role on that room.
+A person can have different roles in different rooms. For example, they might edit materials in their project room and only view another team’s room. The role applies throughout the room, including its sticky notes, cards and other objects.
 
 ## Hierarchy
 
@@ -43,7 +43,7 @@ A link is not a role and not a grant: it is a property of the room. It gives **v
 After access is revoked, an open tab switches to read-only: the room stays on screen, but edits are not accepted. No reload is needed.
 
 :::warning
-Revoking access does not undo edits already made: the tab stops accepting new ones, but what was saved stays on the room.
+Revoking access does not undo edits already made: the tab stops accepting new ones, but what was saved stays in the room.
 :::
 
 ## What is visible from outside

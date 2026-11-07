@@ -1,6 +1,6 @@
 ## Result
 
-You present the room slide by slide: a slide can be a frame or any object, slides follow a chosen order, participants see the current slide, and when you stop the presenter returns to their previous view.
+Show the room one slide at a time. You can use a frame or another object as a slide and choose the order. Participants see the current slide. When you stop presenting, your previous view returns.
 
 ## Before you start
 

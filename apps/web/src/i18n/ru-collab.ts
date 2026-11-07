@@ -208,7 +208,7 @@ export const ruCollab = {
   "agents.aiCredentialProblem": "Ключ модели не подходит: проверьте провайдера, модель и срок ключа в настройках AI.",
   "agents.keys": "ключей агента: {n}",
   "agents.failed": "Не удалось выполнить запрос агента.",
-  "agents.dialogTitle": "AI-агенты на комнате",
+  "agents.dialogTitle": "AI-агенты в комнате",
   "agents.close": "Закрыть",
   "agents.boardSwitch": "Разрешить агентам менять эту комнату",
   "agents.orgOff": "Агенты выключены для всей организации.",
@@ -250,12 +250,12 @@ export const ruCollab = {
   "agents.loading": "Загружаю…",
   "agents.skill": "Скилл",
   "agents.cardTarget": "Куда карточки",
-  "agents.standalone": "Рядом на комнате",
+  "agents.standalone": "Рядом в комнате",
   "agents.kanban": "В колонку Kanban",
   "agents.mode": "С источником",
   "agents.keep": "Оставить",
   "agents.move": "Перенести",
-  "agents.selectForCards": "Сначала выделите объекты на комнате: карточки делаются из выделения.",
+  "agents.selectForCards": "Сначала выделите объекты в комнате: карточки делаются из выделения.",
   "agents.modelInput": "Что уйдёт в модель",
   "agents.modelIntent": "Задача",
   "agents.modelCards": "Скилл карточек работает на сервере без вызова модели: он копирует или переносит ровно выделенные объекты.",
@@ -330,7 +330,7 @@ export const ruCollab = {
   "agents.plan.phase.write": "Записываю объекты на комнату…",
   "agents.plan.phase.record": "Отмечаю план как применённый…",
   "agents.plan.undoHint": "⌘Z отменит план",
-  "agents.plan.showOnBoard": "Показать на комнате",
+  "agents.plan.showOnBoard": "Показать в комнате",
   "agents.plan.noWarnings": "Предупреждений нет.",
   "agents.plan.file": "Файл: {name} ({kind}), символов: {chars}.",
   "agents.plan.truncatedTitle": "Файл обрезан",
@@ -340,10 +340,10 @@ export const ruCollab = {
   "agents.plan.reject": "Отклонить",
   "agents.plan.close": "Закрыть",
   "agents.plan.appliedTitle": "Применён",
-  "agents.plan.applied": "Объекты на комнате. Один ⌘Z уберёт всю структуру.",
+  "agents.plan.applied": "Объекты в комнате. Один ⌘Z уберёт всю структуру.",
   "agents.plan.appliedElsewhereTitle": "Уже применён",
   "agents.plan.appliedElsewhere":
-    "План уже применили в другой вкладке. Здесь ничего не записано: объекты на комнате уже есть, отменять нечего.",
+    "План уже применили в другой вкладке. Здесь ничего не записано: объекты в комнате уже есть, отменять нечего.",
   "agents.plan.rejectedTitle": "Отклонён",
   "agents.plan.rejected": "План отклонён, задача закрыта.",
   "agents.plan.failedTitle": "План не применён",
@@ -351,7 +351,7 @@ export const ruCollab = {
     "План ещё не готов. Дождитесь статуса «план готов» и откройте его снова.",
   "agents.plan.err.rejected": "Этот план отклонён. Попросите агента собрать новый.",
   "agents.plan.err.alreadyApproved":
-    "План уже одобрен, его объекты уже на комнате.",
+    "План уже одобрен, его объекты уже в комнате.",
   "agents.plan.err.notApproved": "Сначала план нужно одобрить, потом применять.",
   "agents.plan.err.parentMissing":
     "Фрейм, на который ссылается план, исчез с комнаты. Попросите новый план.",
@@ -360,7 +360,7 @@ export const ruCollab = {
   "agents.plan.err.parentLocked":
     "Целевой фрейм заблокирован. Разблокируйте его или попросите новый план.",
   "agents.plan.err.connectorMissing":
-    "Связь указывает на объект, которого больше нет на комнате. Попросите новый план.",
+    "Связь указывает на объект, которого больше нет в комнате. Попросите новый план.",
   "agents.plan.err.connectorInvalid":
     "Связь соединяет объект, к которому нельзя провести линию. Попросите новый план.",
   "agents.plan.err.connectorLocked":
@@ -533,7 +533,7 @@ export const ruCollab = {
   "tidy.strategyHint": "Метки блоков может предложить модель; координаты всегда считает движок.",
   "tidy.run": "Упорядочить",
   "tidy.needAgent": "Сначала создайте агента: упорядочивание — задача агента.",
-  "tidy.agentsOff": "AI-агенты выключены на комнате. Включите их, чтобы упорядочить.",
+  "tidy.agentsOff": "AI-агенты выключены в комнате. Включите их, чтобы упорядочить.",
   "tidy.openAgents": "Открыть AI",
   "tidy.loading": "Готовлю раскладку…",
   "tidy.failed": "Не удалось упорядочить: {reason}",

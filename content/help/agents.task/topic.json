@@ -6,7 +6,7 @@
     "en": "Ask an agent to change the room"
   },
   "summary": {
-    "ru": "Четыре сценария — план с превью, диаграмма сразу на комнате, карточки пакетом и упорядочивание колонками; что уходит в модель и что делать без ключа.",
+    "ru": "Четыре сценария — план с превью, диаграмма сразу в комнате, карточки пакетом и упорядочивание колонками; что уходит в модель и что делать без ключа.",
     "en": "Four scenarios — a plan with a preview, a diagram straight onto the room, cards as a package and tidying into columns; what goes to the model and what happens without a key."
   },
   "related": [
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:96dee1033e586d91f0687acecabf5ccdeaf7ef496f6912bc083e194532814d34",
-      "targetHash": "sha256:268a58e11613f00874469daa07fff6d8571427c2976d27848e7aa8e407e87848"
+      "sourceHash": "sha256:61ba3a654ba730db0570808dd07d5c1c4095e7d62642c38b7d4b89d2c7e06aaa",
+      "targetHash": "sha256:f997784233138e7b7cde6536f2c9c111f61a95ab0503934f5c208efae1e827d6"
     }
   }
 }

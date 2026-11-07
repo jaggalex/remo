@@ -31,7 +31,7 @@ Input: three sticky notes and one frame. Action: drag the sticky notes inside th
 ## Limitations
 
 - Group operations act on the selection; the selection is a set of identifiers, not a property of an object.
-- Objects have no permissions of their own: everything is decided on the room.
+- Objects have no permissions of their own: everything is decided in the room.
 - Comments exist, but live in a separate server thread anchored to an object, not in the room document.
 
 ## Practical instructions

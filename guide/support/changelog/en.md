@@ -45,7 +45,7 @@ earlier are upgraded by the same `schema.sql` at start.
 | 02.11.2026 | A new room screen: a header with menus, a creation rail, a bottom zoom bar; a frame and a shape resize with the corner handles. |
 | 02.11.2026 | A connector joins a selection and an export only with both ends; an object has four ports, and a port click joins or creates a copy. |
 | 02.11.2026 | An open voting session names who voted for what after it ends; the published result is ordinary text without markup. |
-| 29.10.2026 | Voting happens on the room: a "+1"/"−1" counter on every object, a bar with the remaining votes and the clock; a session ends with the timer or its own deadline and closes by itself. |
+| 29.10.2026 | Voting happens in the room: a "+1"/"−1" counter on every object, a bar with the remaining votes and the clock; a session ends with the timer or its own deadline and closes by itself. |
 | 29.10.2026 | "Delete?" and "replace?" questions belong to the app: no browser windows remain, and the link is shown in a normal field when the clipboard is refused. |
 | 29.10.2026 | Security pass: the read-only socket decodes varints, co-owner requires `board.manage`, the invitation email is checked in the transaction, network boundaries answer 400/500, AI outbound checks every address and refuses redirects, `/access` returns no metadata. |
 | 29.10.2026 | Current-slide comments in presentation; PNG/PDF with pins and a thread list |

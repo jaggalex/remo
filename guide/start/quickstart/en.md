@@ -1,40 +1,21 @@
-## What you get
+Create a room, add two notes and send a teammate a view-only link. Sign in and choose your personal organisation for this example.
 
-A working room with sticky notes and a connector, shared with a colleague, with saving confirmed by the server.
+## Create a room
 
-## Before you start
+1. On the home page, select **New room**. If you have a room open, select **All rooms** at the top of the screen first.
+2. Enter a name, choose **Empty room** and select **Create**. The canvas opens with your room’s name.
 
-- You need an account to claim the room. A room without an owner is closed: the page says so, the room is not in the room list, and a public link shows only the claim screen, not the content.
-- If `demo` already has an owner and you cannot edit it, create your own room: [Create a room](/guide/how-to/create-board).
-- A room opens at `/?room=<id>`. Without `room`, the organisation home opens (`?org=<slug>`), not a hidden `board-main` room.
+## Add and connect two notes
 
-## Steps
+1. Select **Sticky note** on the left toolbar. Type your note and press **Esc** to finish editing.
+2. Add a second sticky note and drag it a little to the side.
+3. Select the first sticky note. Connector points appear at its edges. Drag from one of these points to the second sticky note.
 
-1. Open `/?room=demo` and sign in. If the room has no owner, press **Claim this room**. Result: the room is claimed by you, belongs to your organisation and team, and the tools appear in the header and on the rail.
-2. Press **Sticky note** on the tool rail three times (or `N`). Result: three sticky notes on the canvas.
-3. Select the first sticky note with a single click, then drag from its edge to the second. Result: a connector anchored at both ends. Anchors are visible only on the selected object — without a selection the same gesture moves the sticky note.
-4. Open the room menu (the room’s name) in the header and choose **Rename**. Result: everyone who has the room open sees the new name.
-5. Press **Share**, enable **Public link** and copy it. Result: the dialog warns that the link is read-only.
-6. Open the link in a private window. Result: the room is visible, the editing tools are not.
+Wait for **Saved** at the top of the room. It means the server has stored your changes.
 
-## Check
+## Share the result
 
-The indicator in the header shows **Сохранено** (the code calls this state `saved`). If it shows **Сохраняется** (`pending`), the changes are not yet confirmed by the server; if it shows **Офлайн (N)**, the connection is gone and the queue is waiting.
+1. Select **Share**. In the **Public link** section, select **Turn on**, then copy the address.
+2. Open the address in a private browser window. You’ll see the room with both notes and the line between them. Your teammate can use this link to view the work.
 
-After a claim, the message that the room has no owner disappears and the room appears in your organisation's room list.
-
-## What to keep in mind
-
-- The first save may take a second: confirmation arrives after the server writes.
-- A public link does not grant export: that is a separate room permission.
-- A claim clears the archive mark: if the room was archived, it becomes available again after the claim.
-- You can undo and redo until you reload the page. The undo history lives in the tab and starts fresh after a reload.
-- The theme switches in the account menu: **System**, **Light** or **Dark**. The choice is remembered and applies to help as well.
-
-## Where to go next
-
-[The room screen](/guide/concepts/board-chrome) — where the header, rail, bottom and menus are.
-
-[Create a room](/guide/how-to/create-board) — if you do not have one yet.
-
-[First complete scenario](/guide/start/first-scenario) — the same path, taken to a finished result.
+If your teammate needs to make changes with you, [invite them as an editor](/guide/how-to/share).

@@ -72,8 +72,8 @@ account; without an organisation or a team the answer is `409 ORG_REQUIRED` or
 | `LOCKED_BY_OTHER` | 409 | the lock belongs to somebody else | ask the author or a manager to release it |
 | `COMMENT_FORBIDDEN` | 403 | the role cannot write in the discussion | request `board.comment` |
 | `COMMENT_BODY_REQUIRED` | 422 | the comment is empty or too long | enter 1 to 4000 characters |
-| `COMMENT_ANCHOR_REQUIRED` | 422 | the thread has no object or point | select an object or a place on the room |
-| `THREAD_NOT_FOUND` | 404 | the thread is missing or on another room | reload the list |
+| `COMMENT_ANCHOR_REQUIRED` | 422 | the thread has no object or point | select an object or a place in the room |
+| `THREAD_NOT_FOUND` | 404 | the thread is missing or in another room | reload the list |
 | `COMMENT_NOT_FOUND` | 404 | the message is missing | reload the thread |
 
 ## Profile, organisation and room

@@ -12,7 +12,7 @@ It answers "what can this product do at all" and shows which capabilities combin
 | The room screen | Start | find a command on screen | header, menus, rail and bottom | canvas, presentation | [The room screen](/guide/concepts/board-chrome) |
 | Canvas and objects | Canvas | assemble visual material | a room with sticky notes, shapes and text | frames, connectors, export | [Canvas: what it does and where it stops](/guide/capabilities/canvas) |
 | Palette and colours | Canvas | set an object's colour | seven tones at three levels, white, black, transparent | canvas, shapes, connectors | [Palette](/guide/concepts/colors) |
-| Access and roles | People | set permissions apart | a role on the room | link, export, agents | [Access: roles and granting](/guide/capabilities/access) |
+| Access and roles | People | set permissions apart | a role in the room | link, export, agents | [Access: roles and granting](/guide/capabilities/access) |
 | Public link | People | show the room to people outside the team | a link with a password and an expiry | access, export | [Grant access and share a link](/guide/how-to/share) |
 | Saving and offline | Data | not lose work | server confirmation, an offline queue | collaboration | [Saving and offline](/guide/capabilities/sync) |
 | Export and backup | Data | take out and restore | PNG/PDF, a JSON backup, import | access, connectors | [Export and backup](/guide/capabilities/export) |

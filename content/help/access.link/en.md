@@ -4,7 +4,7 @@ A room has one public link, and it is the same URL that was copied earlier. For 
 
 ## Steps
 
-1. Open Share on the room.
+1. Open Share in the room.
 2. In the Public link block, click Turn on.
 3. Copy the link and send it to people who need read access.
 4. To close access, click Turn off. The link stops working for everyone immediately.

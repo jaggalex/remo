@@ -8,7 +8,7 @@
     "en": "Get a plan from an agent and apply it"
   },
   "summary": {
-    "ru": "Текст, файл или выделение → план → превью → «Применить» → один ⌘Z: что появится на комнате, что уйдёт в модель и где предел.",
+    "ru": "Текст, файл или выделение → план → превью → «Применить» → один ⌘Z: что появится в комнате, что уйдёт в модель и где предел.",
     "en": "Text, file or selection → a plan → a preview → Apply → one ⌘Z: what will appear on the room, what goes to the model and where the limit is."
   },
   "related": [
@@ -20,8 +20,8 @@
   "updated": "2026-11-02",
   "translations": {
     "en": {
-      "sourceHash": "sha256:2d00956464e5517b26e1737de74625726b42f0906d64cebad8c5932af44d6a8e",
-      "targetHash": "sha256:c2815a440ad91d5c3af6204bd2865faee73cf344e4df997eb48b24ad49e104ff"
+      "sourceHash": "sha256:24fa948d7734173709f23339ef48079e74ad479140ba4a8968448a00e83a9250",
+      "targetHash": "sha256:b6ec0f58baa651a75f7e6b63df291e1b405c8f1f620533ed3f6c5c0f4b34e242"
     }
   }
 }

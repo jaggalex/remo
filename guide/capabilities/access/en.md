@@ -12,7 +12,7 @@ Managed access to a room: a role for a person, a team or the whole organisation,
 
 ## How it works
 
-A role is granted on the room and is combined from sources: a direct grant, a team, the organisation. The strongest role applies. The capabilities of the role define what a person can do: read, edit, share, export, make a backup, run facilitation, manage the room, transfer it, delete it.
+A role is granted in the room and is combined from sources: a direct grant, a team, the organisation. The strongest role applies. The capabilities of the role define what a person can do: read, edit, share, export, make a backup, run facilitation, manage the room, transfer it, delete it.
 
 A room without an owner is closed: roles and the public link give no access until it has an owner. A claim assigns an owner, puts the room in an organisation and a team, and clears the archive mark; after that, ordinary roles and the link apply.
 

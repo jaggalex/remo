@@ -1,6 +1,6 @@
 ## What it is
 
-Apps are the room's first extension point. An app is described by a **schema**: the server sends a panel and the room draws it with its own components. No foreign code runs in the browser — no JavaScript, no HTML, no iframe.
+An app adds a panel to the room. An app is described by a **schema**: the server sends a panel and the room draws it with its own components. No foreign code runs in the browser — no JavaScript, no HTML, no iframe.
 
 ## How to open it
 

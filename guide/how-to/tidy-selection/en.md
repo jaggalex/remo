@@ -8,14 +8,14 @@ The sticky notes are written but scattered: stories `US-1`…`US-12`, ideas by t
 
 ## Before you start
 
-- You have edit permission on the room.
-- Agents are enabled in the organisation and on the room, and you have at least one active agent. Tidying is an agent task even when no model is called.
+- You have edit permission in the room.
+- Agents are enabled in the organisation and in the room, and you have at least one active agent. Tidying is an agent task even when no model is called.
 - The set being laid out holds at most 50 objects. The limit is counted after expansion: a selected group brings all its members, and a selected frame brings all its contents. A larger set is refused before a plan is stored.
 - Something in the selection can move: the objects are free on the canvas or sit inside a selected frame.
 
 ## Steps
 
-1. Select objects on the room. Result: the selection bar shows their count and types.
+1. Select objects in the room. Result: the selection bar shows their count and types.
 2. Open the command in one of two ways: right-click → **Tidy up**, or the **Tidy up** button on the selection bar. A viewer has no such command, and with an empty selection it is unavailable.
 3. Choose a layout. **Auto** is selected by default; you can change it later in the preview.
 4. Click **Tidy up**. Result: the agent prepares a plan and the button reads "Preparing the layout…".
@@ -70,7 +70,7 @@ Tidying works without a provider key: the layout is deterministic, and no warnin
 |---|---|
 | No Tidy up command | a viewer has no such command; with an empty selection it is unavailable |
 | "Create an agent first" | you have no active agent; create one in Organisation → Agents |
-| "AI agents are off on this room" | an organisation administrator or the room owner turned agents off |
+| "AI agents are off in this room" | an organisation administrator or the room owner turned agents off |
 | "Tidying works on at most 50 objects" | the selection is above the limit; select fewer |
 | "The selection does not fit inside the frame" | the objects do not fit at their current size; enlarge the frame or select fewer |
 | "There is no free space beside the selection" | objects outside the selection are in the way; move them and try again |

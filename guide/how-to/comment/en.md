@@ -1,6 +1,6 @@
 ## When you need it
 
-You need to discuss an object or a point on the room without moving the conversation to a chat. The comment stays next to the place it belongs to.
+You need to discuss an object or a point in the room without moving the conversation to a chat. The comment stays next to the place it belongs to.
 
 ## Prerequisites
 

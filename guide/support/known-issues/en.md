@@ -7,7 +7,7 @@
 | Reactions are not stored | a live burst, not a counter or a record |
 | A lock is coordination, not an ACL | a raw write client can bypass the UI |
 | PNG/PDF omit resolved threads and cap a thread at three messages | the full text stays in remo |
-| No permissions on an object | access is granted on the room only; an object cannot be closed separately |
+| No permissions on an object | access is granted in the room only; an object cannot be closed separately |
 | A room without an owner is closed | the page refuses, the room is not in the room list, and only a claim or an owner assignment opens it |
 | A public link does not open a room without an owner | until it is claimed, the link shows only the claim screen, not the content |
 | A public link is read-only | the link itself does not grant export or backup: those are separate room permissions |

@@ -1,10 +1,10 @@
 ## What it gives
 
-A token lets an integration read a room and run commands without a browser. It does not create new rights: **the effective right is the access of its owner on the room, intersected with the token scope**.
+A token lets an integration read a room and run commands without a browser. It does not create new rights: **the effective right is the access of its owner in the room, intersected with the token scope**.
 
 ## When to use
 
-- A script or CI has to create objects on a room.
+- A script or CI has to create objects in a room.
 - An external system reads room content on a schedule.
 - A webhook receiver wants to confirm a change by reading the room.
 

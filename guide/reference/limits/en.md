@@ -12,7 +12,7 @@
 | Connectors between one pair of objects | 1 |
 | Cards per agent task | 500, processed in batches of 50 |
 | Offline queue in a tab | 1000 unacknowledged changes |
-| Tags per room | 50 |
+| Tags you can create in one room | 50 |
 | Tags per object | 10 |
 | Tag name length | 32 characters |
 | Comment body | 4000 characters |

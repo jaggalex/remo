@@ -5,12 +5,12 @@ The selected objects stand in even columns, and free groups are covered by label
 ## Who can
 
 - **Start it** — an editor of the room and above.
-- Agents are enabled in the organisation and on the room, and you have an active agent. Tidying is an agent task even when no model is called.
-- **An editor can open the preview and apply the plan**: reading a plan requires edit permission on the room. A viewer has no Tidy up command: it is hidden.
+- Agents are enabled in the organisation and in the room, and you have an active agent. Tidying is an agent task even when no model is called.
+- **An editor can open the preview and apply the plan**: reading a plan requires edit permission in the room. A viewer has no Tidy up command: it is hidden.
 
 ## Before you start
 
-- Select objects on the room: the set being laid out holds up to 50. The limit is counted after expansion: a selected group brings all its members, and a selected frame brings all its contents.
+- Select objects in the room: the set being laid out holds up to 50. The limit is counted after expansion: a selected group brings all its members, and a selected frame brings all its contents.
 - Something in the selection must be able to move: the objects are free on the canvas or sit inside a selected frame. Locked objects and objects from unselected frames stay where they are.
 - Kanban cards stay in place: their cell decides where they stand. When a card is in the selection, the plan still applies to the remaining objects, and the preview warns about the card.
 

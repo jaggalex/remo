@@ -1,6 +1,6 @@
 ## When you need it
 
-The team needs a button or a short panel on the room, and you do not have to write an extension.
+The team needs a button or a short panel in the room, and you do not have to write an extension.
 
 ## Before you start
 

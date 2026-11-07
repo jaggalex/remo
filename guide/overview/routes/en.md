@@ -25,4 +25,4 @@ Every page has a table of contents and a "Related pages" block. At the end of a 
 
 ## Where to go next
 
-[Quick start](/guide/start/quickstart) — a working room in ten minutes.
+[Quick start](/guide/start/quickstart) shows you how to create a room and share its link.

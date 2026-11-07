@@ -4,8 +4,8 @@ A card should carry more than text: it has a status, an assignee and a date. The
 
 ## Prerequisites
 
-- A card on the room or in a kanban.
-- Edit rights on the room.
+- A card in the room or in a kanban.
+- Edit rights in the room.
 
 ## Steps
 
@@ -19,7 +19,7 @@ A card should carry more than text: it has a status, an assignee and a date. The
 
 1. Open the **Properties** panel and the **Card filter** block.
 2. Click **+** in an empty kanban cell when the card does not exist yet: it is created in that column and swimlane and its text editor opens immediately. Then choose an assignee and a due state: any, overdue or no due date.
-3. Click **Select cards**. Result: matching cards are selected, the others stay on the room.
+3. Click **Select cards**. Result: matching cards are selected, the others stay in the room.
 
 ## Check
 

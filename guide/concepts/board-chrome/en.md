@@ -14,7 +14,7 @@ On the right, in order from left to right:
 | **More** | templates, an AI task, apps |
 | Saving indicator | the save state and the "Saving and offline" help |
 | Avatar | the account name and `@handle`, cursor name, theme, language, organisation, sign in and out |
-| Participants | who is on the room; clicking a face follows that person |
+| Participants | who is in the room; clicking a face follows that person |
 | **Properties** | the right panel with object or room properties |
 | **Start presentation** | the slide-order panel |
 | **Discussion** | the comments panel; the counter shows unread comments |

@@ -4,7 +4,7 @@ Extending the interface without foreign code. An app declares a panel — text, 
 
 ## When to use
 
-- A single button or a short form is needed on the room.
+- A single button or a short form is needed in the room.
 - You want to show the result of an action without taking the person out of the product.
 - An integration needs an entry point that the team can see.
 

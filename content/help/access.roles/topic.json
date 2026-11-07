@@ -2,7 +2,7 @@
   "id": "access.roles",
   "type": "reference",
   "title": {
-    "ru": "Роли и права на комнате",
+    "ru": "Роли и права в комнате",
     "en": "Room roles and permissions"
   },
   "summary": {
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:68ed84b3d49bbe4adfef4bfde330b5a0f0dac0ef4a490f6806af179b0710fbe1",
-      "targetHash": "sha256:39100da2832c41c0d87ac07c898aa0d265a61eb03c8e9e35ef38257b2266f77b"
+      "sourceHash": "sha256:869094333e3190e3ac986ac37f4d90495cf723d13e5849132e52af1e839fda86",
+      "targetHash": "sha256:20f5efb46ddf61525ee2b21fef869d3915990d4e5310064cf698cc64827439f2"
     }
   }
 }

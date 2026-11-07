@@ -5,7 +5,7 @@ An external system must read the room, change it and receive events about change
 ## Before you start
 
 - You are an organisation administrator: only an administrator can issue a token and configure a webhook.
-- Your account has edit permission on the room the integration will work with.
+- Your account has edit permission in the room the integration will work with.
 - The endpoint is reachable over HTTPS, even on the internal network. `REMO_WEBHOOK_ALLOW_PRIVATE=1` allows an internal address but does not waive HTTPS.
 
 ## Steps: a token
