@@ -60,6 +60,19 @@ On a fresh database, apply the schema first (`pnpm db:check` with
 Put the reverse proxy in front of `remo-web:8080` (app) and `remo-web:8081` (guide).
 `deploy/Caddyfile.snippet` and `deploy/nginx-remo.conf` are starting points.
 
+## Version and build
+
+`GET /api/health` answers with the product identity as well as the probe bit:
+
+```json
+{ "ok": true, "version": "0.2.0", "build": "1247", "commit": "a1b2c3d", "schema": 18 }
+```
+
+The account menu and the help footer show the same product version and build; `/metrics`
+exposes `remo_build_info{version,build,commit,schema} 1`. The deploy passes `REMO_VERSION`,
+`REMO_BUILD` and `REMO_COMMIT` as build args and runtime variables, so an image can always
+be traced to a commit. `schema` comes from the service code and is not a release number.
+
 ## Rooms without an owner
 
 Every room gets an owner when it is created. A row without one is closed (ADR-174): write

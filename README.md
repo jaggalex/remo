@@ -58,7 +58,10 @@ pnpm verify --e2e     # the full gate, including browser acceptance and the guid
 pnpm lint             # Biome; verify runs it too
 pnpm audit:prod       # high/critical production advisories with a fix (separate CI step)
 pnpm db:rls --check   # tenant-policy inventory; exits 1 on a gap
+pnpm version:show     # version, build, commit, schema
 ```
+
+Releases are semver plus an automatic build counter; see [CONTRIBUTING.md](CONTRIBUTING.md#versioning-and-releases).
 
 Both verify commands check the dedicated test PostgreSQL from `docker-compose.test.yml`;
 start it first with `pnpm test:db:up`. The gate is what CI runs; a change is ready when it

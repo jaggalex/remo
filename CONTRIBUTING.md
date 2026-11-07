@@ -56,6 +56,21 @@ Run these with `REMO_MIGRATION_DATABASE_URL`; the owner must be a superuser or h
 database on the test server (`pnpm test:db:up`) because `FORCE` takes an exclusive lock. The
 inventory is not part of `pnpm verify`: run it after a schema change.
 
+## Versioning and releases
+
+Three numbers, never mixed: `version` is the semver release in `package.json`, `build` is
+the git commit count, `schema` is the database compatibility version. The app, `/api/health`
+and `remo_build_info` report all three.
+
+```sh
+pnpm version:show
+pnpm release:minor --notes "what changed for a user" --commit
+```
+
+Ordinary commits do not change the version; `build` grows with git history. A release
+updates `package.json`, `README.md` and `CHANGELOG.md`, runs `pnpm verify`, commits and
+creates an annotated tag — it does not push. The deploy passes the same values to Docker.
+
 ## Rules that reviewers enforce
 
 - **One job, one mechanism.** A second way to do the same thing is a defect. Propose an

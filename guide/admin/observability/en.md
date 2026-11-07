@@ -8,6 +8,7 @@
 
 | Metric | What it shows |
 |---|---|
+| `remo_build_info` | version, build number, commit and schema of the running service |
 | `remo_http_requests_total` | requests by route |
 | `remo_ws_connections_total`, `_active` | accepted and open sockets |
 | `remo_ws_rejected_total` | refused upgrades |

@@ -41,6 +41,7 @@ import { CSRF_COOKIE, csrfCookie, csrfProblem } from "./csrf.mjs";
 import { newToken } from "./iam.mjs";
 import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
+import { buildInfo } from "./build-info.mjs";
 
 import { websocketUtils } from "./y.mjs";
 
@@ -63,12 +64,20 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.REMO_DATA_DIR ?? join(HERE, ".data");
 const PORT = Number(process.env.PORT ?? 1234);
 const STARTED_AT = Date.now();
+const BUILD = buildInfo();
 
 await mkdir(DATA_DIR, { recursive: true });
 
 /* --------------------------------------------------------------- metrics --- */
 
 const metrics = new Metrics();
+metrics.describe("remo_build_info", "Build identity: version, build, commit and schema", "gauge");
+metrics.set("remo_build_info", 1, {
+  version: BUILD.version,
+  build: BUILD.build,
+  commit: BUILD.commit,
+  schema: String(BUILD.schema),
+});
 metrics.describe("remo_http_requests_total", "HTTP requests served, by route");
 metrics.describe("remo_ws_connections_total", "WebSocket connections accepted");
 metrics.describe("remo_ws_disconnections_total", "WebSocket connections closed");
@@ -206,7 +215,7 @@ if (metricsUrl && process.env.REMO_METRICS !== "off") {
     await metricsStore.connect();
     configureMetrics((event) => metricsStore.record(event), {
       enabled: true,
-      version: process.env.REMO_VERSION ?? "0.1.0",
+      version: BUILD.version,
     });
     console.log("[metrics] product metrics enabled");
   } catch (error) {
@@ -426,7 +435,7 @@ async function routeRequest(request, response, url) {
     // counts and a raw driver error are for the operator's metrics, not the internet.
     const storage = await store.health();
     response.writeHead(storage.ok ? 200 : 503, { "Content-Type": "application/json" });
-    response.end(JSON.stringify({ ok: storage.ok }));
+    response.end(JSON.stringify({ ok: storage.ok, ...BUILD }));
     return;
   }
 
@@ -544,7 +553,9 @@ const { wss } = attachWebSocket({
 });
 
 server.listen(PORT, () => {
-  console.log(`[sync] listening on ws://localhost:${PORT} (store: ${store.kind})`);
+  console.log(
+    `[sync] listening on ws://localhost:${PORT} (store: ${store.kind}, remo ${BUILD.version} build ${BUILD.build} schema ${BUILD.schema})`,
+  );
   agents.start();
   events.start();
 });

@@ -8,6 +8,7 @@
 
 | Метрика | Что показывает |
 |---|---|
+| `remo_build_info` | версия, номер сборки, commit и версия схемы работающего сервиса |
 | `remo_http_requests_total` | запросы по маршрутам |
 | `remo_ws_connections_total`, `_active` | принятые и открытые сокеты |
 | `remo_ws_rejected_total` | отказы в апгрейде |

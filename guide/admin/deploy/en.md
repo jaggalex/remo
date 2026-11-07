@@ -37,7 +37,7 @@ install -d -o remo -g remo /srv/remo
 ## Check
 
 ```sh
-curl -s https://<domain>/api/health          # {"ok":true,…}
+curl -s https://<domain>/api/health          # {"ok":true,"version":"0.2.0","build":"1247",…}
 curl -sI https://<domain>/                    # 200
 curl -sI https://<domain>/guide/              # 200, documentation
 ```

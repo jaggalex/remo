@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n, type Lang } from "../i18n";
 import { ThemeSwitch } from "../ThemeSwitch";
-import { ABOUT } from "../about";
+import { ABOUT, ABOUT_LABEL } from "../about";
 import generated from "./generated.json";
 import type { HelpLocale, HelpTopicId } from "./topics.generated";
 import { HELP_TOPIC_IDS } from "./topics.generated";
@@ -195,7 +195,7 @@ export function HelpPage() {
         )}
       </main>
       <footer className="help-about">
-        <span>{ABOUT.name} {ABOUT.version}</span>
+        <span>{ABOUT_LABEL}</span>
         <span>© {ABOUT.year} {ABOUT.author}</span>
         <a href={`/help/${lang}/about.remo`}>{ABOUT.license}</a>
         <a href={ABOUT.source} rel="noopener">{t("about.source")}</a>
