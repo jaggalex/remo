@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { deleteWidgets, type BoardDocument } from "@remo/doc";
+import { deleteWidgets, fitFrameToContents, type BoardDocument } from "@remo/doc";
 import type { Widget } from "@remo/model";
 import { api } from "./api";
 import { cameraStore } from "./cameraStore";
@@ -87,6 +87,7 @@ export function useRoomAgent({
   }, [board, widgets]);
 
   const undoFrame = useCallback((frameId: string) => deleteWidgets(board, [frameId]), [board]);
+  const fitFrame = useCallback((frameId: string) => fitFrameToContents(board, frameId), [board]);
 
   const showFrame = useCallback(
     (frameId: string) => {
@@ -139,6 +140,7 @@ export function useRoomAgent({
       onClose: close,
       onShowFrame: showFrame,
       onUndoFrame: undoFrame,
+      onFitFrame: fitFrame,
       onChanged: refresh,
       onOpenSettings: () => {
         close();

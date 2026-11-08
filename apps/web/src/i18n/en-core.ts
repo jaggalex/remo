@@ -304,6 +304,7 @@ export const enCore = {
   "roomAgent.send": "Send",
   "roomAgent.stop": "Stop",
   "roomAgent.show": "Show on canvas",
+  "roomAgent.fitFrame": "Fit frame",
   "roomAgent.undo": "Undo draft",
   "roomAgent.empty": "No tasks yet. The first one will create a draft in the room.",
   "roomAgent.readOnly":

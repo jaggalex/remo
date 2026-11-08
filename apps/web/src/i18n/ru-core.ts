@@ -303,6 +303,7 @@ export const ruCore = {
   "roomAgent.send": "Отправить",
   "roomAgent.stop": "Остановить",
   "roomAgent.show": "Показать на холсте",
+  "roomAgent.fitFrame": "Подогнать фрейм",
   "roomAgent.undo": "Отменить черновик",
   "roomAgent.empty": "Поручений пока нет. Первое создаст черновик в комнате.",
   "roomAgent.readOnly":

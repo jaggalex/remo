@@ -28,7 +28,7 @@ The first version has two scenarios: **a process map** and **a sprint or phase p
 
 ## Undo
 
-The server writes the draft, so it is not in the ordinary ⌘Z history. Right after the draft appears, **⌘Z** removes it as a whole when no newer local edit stands in front of it. If there were edits, they are undone first, then the draft. The panel has the same Undo draft button.
+The server writes the draft, so it is not in the ordinary ⌘Z history. Right after the draft appears, **⌘Z** removes it as a whole when no newer local edit stands in front of it. If there were edits, they are undone first, then the draft. The panel has the same Undo draft button. If an older draft sits outside its frame, Fit frame expands the frame to its objects.
 
 ## Public link and ownership
 

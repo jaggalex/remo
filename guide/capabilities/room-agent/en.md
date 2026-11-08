@@ -34,7 +34,7 @@ Only what you selected, the request text and the messages of this thread. A sele
 
 ## Undo and limits
 
-- **⌘Z** removes the latest draft as a whole when no newer local edit stands in front of it; otherwise the edits are undone first. The panel has the same Undo draft button.
+- **⌘Z** removes the latest draft as a whole when no newer local edit stands in front of it; otherwise the edits are undone first. The panel has the same Undo draft button and Fit frame, which expands an older draft frame to its objects.
 - One agent per room and one running task; further requests wait in the queue.
 - While the public link is on, assignment and new tasks are closed.
 - When the room changes owner, the assignment is cleared, unfinished tasks stop, and the history and written frames remain.

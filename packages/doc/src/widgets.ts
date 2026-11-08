@@ -100,6 +100,48 @@ export function moveSelection(
 }
 
 /**
+ * Expand a frame to contain the objects that belong to it.
+ *
+ * A frame is a container, not a group: a child can be dragged outside it. Agent drafts
+ * (ADR-189) are written inside their frame, and an older draft can be repaired with this
+ * one local action. The frame grows left/up when needed; the children do not move.
+ */
+export function fitFrameToContents(
+  board: BoardDocument,
+  frameId: string,
+  padding = 32,
+): boolean {
+  const frame = board.readWidget(frameId);
+  if (!frame || frame.type !== "frame" || frame.locked) return false;
+  const children = descendants(board, frameId)
+    .map((id) => board.readWidget(id))
+    .filter((child): child is Widget => Boolean(child) && child?.type !== "card");
+  if (!children.length) return false;
+  const left = Math.min(...children.map((child) => child.x)) - padding;
+  const top = Math.min(...children.map((child) => child.y)) - padding;
+  const right = Math.max(...children.map((child) => child.x + child.width)) + padding;
+  const bottom = Math.max(...children.map((child) => child.y + child.height)) + padding;
+  const next = {
+    x: Math.min(frame.x, left),
+    y: Math.min(frame.y, top),
+    width: Math.max(frame.x + frame.width, right) - Math.min(frame.x, left),
+    height: Math.max(frame.y + frame.height, bottom) - Math.min(frame.y, top),
+  };
+  if (
+    next.x === frame.x &&
+    next.y === frame.y &&
+    next.width === frame.width &&
+    next.height === frame.height
+  ) {
+    return false;
+  }
+  board.transact(() => {
+    board.widgets.set(frameId, { ...frame, ...next });
+  });
+  return true;
+}
+
+/**
  * Move several widgets to absolute positions in one transaction, so dragging a
  * multi-selection is a single undo step.
  */

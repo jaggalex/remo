@@ -32,6 +32,7 @@ export function RoomAgentPanel({
   onUndoFrame,
   onChanged,
   onOpenSettings,
+  onFitFrame,
 }: {
   open: boolean;
   boardId: string;
@@ -44,6 +45,7 @@ export function RoomAgentPanel({
   onUndoFrame: (frameId: string) => void;
   onChanged: () => void;
   onOpenSettings: () => void;
+  onFitFrame: (frameId: string) => void;
 }) {
   const { t, lang } = useI18n();
   const [state, setState] = useState<RoomAgentState | null>(null);
@@ -309,6 +311,13 @@ export function RoomAgentPanel({
                       onClick={() => onShowFrame(message.frame_ids[0]!)}
                     >
                       {t("roomAgent.show")}
+                    </button>
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => onFitFrame(message.frame_ids[0]!)}
+                    >
+                      {t("roomAgent.fitFrame")}
                     </button>
                   </div>
                 )}
