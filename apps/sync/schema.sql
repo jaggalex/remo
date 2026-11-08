@@ -1095,6 +1095,12 @@ as $$
   select t.id, t.org_id, t.skill_slug
     from agent_tasks t
    where t.status = 'queued'
+     -- ADR-189: one running task per room. A queued task behind a running one must
+     -- not be offered to the runner, or the queue would spin on the same row.
+     and not exists (
+       select 1 from agent_tasks running
+        where running.board_id = t.board_id and running.status = 'running'
+     )
    order by t.created_at
    limit 1
 $$;
@@ -1171,6 +1177,69 @@ begin
   end if;
 end $$;
 
+/* ------------------------------------------------- room agent (ADR-189) -- */
+
+-- One agent is assigned to a room by its owner. The row is the whole switch: no row
+-- means no agent, and a disabled row keeps the history readable while refusing new
+-- work.
+create table if not exists board_agents (
+  board_id text primary key references boards (id) on delete cascade,
+  org_id uuid not null references orgs (id) on delete cascade,
+  agent_id uuid not null references agents (id) on delete cascade,
+  assigned_by uuid references users (id) on delete set null,
+  assigned_at timestamptz not null default now(),
+  enabled boolean not null default true
+);
+
+create index if not exists board_agents_agent_idx on board_agents (agent_id);
+
+-- A thread is one conversation with the room agent: the original request, the attempts
+-- and the drafts they produced. It belongs to the room, not to the person who asked.
+create table if not exists agent_threads (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete cascade,
+  board_id text not null references boards (id) on delete cascade,
+  agent_id uuid not null references agents (id) on delete cascade,
+  -- The name at the time of the thread: renaming an agent does not rewrite history.
+  agent_name text not null,
+  created_by uuid references users (id) on delete set null,
+  title text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists agent_threads_board_idx
+  on agent_threads (board_id, updated_at desc);
+
+create table if not exists agent_thread_messages (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references agent_threads (id) on delete cascade,
+  org_id uuid not null references orgs (id) on delete cascade,
+  board_id text not null references boards (id) on delete cascade,
+  -- `user` is a request or a clarification, `agent` is a draft, `system` is a status.
+  role text not null check (role in ('user', 'agent', 'system')),
+  author_id uuid references users (id) on delete set null,
+  author_name text not null default '',
+  agent_name text,
+  text text not null default '',
+  status text check (status in ('queued', 'running', 'ready', 'stopped', 'error')),
+  task_id uuid references agent_tasks (id) on delete set null,
+  frame_ids text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists agent_thread_messages_thread_idx
+  on agent_thread_messages (thread_id, created_at);
+
+-- A task joins the thread it answers. Older tasks keep a null thread.
+alter table agent_tasks add column if not exists thread_id uuid
+  references agent_threads (id) on delete set null;
+
+-- One running task per room (ADR-189). Queued tasks may pile up and are visible; the
+-- index is what makes a second concurrent write impossible even with two processes.
+create unique index if not exists agent_tasks_running_board_idx
+  on agent_tasks (board_id) where status = 'running';
+
 /* ---------------------------------------------------------- schema meta -- */-- The service reads this before applying the file, so a running suite or a second
 -- instance does not run DDL on every start (and cannot deadlock with live queries).
 
@@ -1185,5 +1254,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 18)
+insert into schema_meta (id, version) values (1, 19)
 on conflict (id) do update set version = excluded.version, updated_at = now();

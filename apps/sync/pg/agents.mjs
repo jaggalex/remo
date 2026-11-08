@@ -236,13 +236,14 @@ async createAgentTask({
   model = null,
   idempotencyKey = null,
   changeSetId = null,
+  threadId = null,
 }) {
   const { rows } = await this.pool.query(
     `insert into agent_tasks
        (org_id, agent_id, board_id, mode, capabilities, intent, input,
         skill_id, skill_slug, skill_version, budget, created_by, schedule_id,
-        credential_id, model, idempotency_key, change_set_id)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        credential_id, model, idempotency_key, change_set_id, thread_id)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
      returning *`,
     [
       orgId,
@@ -262,6 +263,7 @@ async createAgentTask({
       model,
       idempotencyKey,
       changeSetId,
+      threadId,
     ],
   );
   return rows[0];
@@ -340,20 +342,33 @@ async listOrgAgentTasks(orgId, limit = 50) {
 
 async nextQueuedAgentTask() {
   const { rows } = await this.pool.query(
-    `select id, skill_slug from agent_tasks where status = 'queued' order by created_at limit 1`,
+    `select t.id, t.skill_slug from agent_tasks t
+      where t.status = 'queued'
+        and not exists (
+          select 1 from agent_tasks running
+           where running.board_id = t.board_id and running.status = 'running'
+        )
+      order by t.created_at limit 1`,
   );
   return rows[0] ?? null;
 },
 
 async claimAgentTask(id) {
-  const { rows } = await this.pool.query(
-    `update agent_tasks
-        set status = 'running', started_at = now()
-      where id = $1 and status = 'queued'
-      returning *`,
-    [id],
-  );
-  return rows[0] ?? null;
+  try {
+    const { rows } = await this.pool.query(
+      `update agent_tasks
+          set status = 'running', started_at = now()
+        where id = $1 and status = 'queued'
+        returning *`,
+      [id],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    // ADR-189: one running task per room. Another room's task may still start; a second
+    // task in the same room waits in the queue until the first finishes.
+    if (error?.code === "23505") return null;
+    throw error;
+  }
 },
 
 async updateAgentTaskProgress(id, progress) {

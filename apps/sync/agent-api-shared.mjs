@@ -9,6 +9,7 @@ export const SKILL_HANDLERS = new Set([
   "builtin:cards",
   "builtin:brief",
   "builtin:tidy",
+  "builtin:room-draft",
 ]);
 
 /** Manifest tools a skill may declare; a capability check is separate. */
@@ -17,6 +18,8 @@ export const SKILL_TOOLS = new Set([
   "read_selection",
   "write_diagram",
   "propose_plan",
+  "read_sources",
+  "write_draft",
 ]);
 
 export const RISKS = new Set(["read", "propose", "write", "destructive"]);

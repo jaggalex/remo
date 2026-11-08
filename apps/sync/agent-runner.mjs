@@ -12,6 +12,7 @@ import { agentLimitsFromEnv, audit, decide, finite, selectionTexts } from "./age
 import { callAgentModel } from "./agent-call.mjs";
 import { runBriefAuthoring } from "./agent-brief-runner.mjs";
 import { runTidyAuthoring } from "./agent-tidy-runner.mjs";
+import { runRoomDraft } from "./agent-room-draft-runner.mjs";
 import { CARD_LIMITS, convertToCards } from "./cards.mjs";
 import { executeChangeSet } from "./change-set.mjs";
 import { applyDiagram, diagramPrompt, parseDiagram } from "./diagram.mjs";
@@ -313,7 +314,13 @@ async function runClaimedAgentTask({
       resolveSkill(catalog, { slug: task.skill_slug, intent: task.intent });
     if (!skill || skill.state !== "published") return fail("SKILL_UNAVAILABLE", "no published skill");
     if (
-      !["builtin:diagram", "builtin:cards", "builtin:brief", "builtin:tidy"].includes(
+      ![
+        "builtin:diagram",
+        "builtin:cards",
+        "builtin:brief",
+        "builtin:tidy",
+        "builtin:room-draft",
+      ].includes(
         skill.handler,
       )
     ) {
@@ -485,6 +492,24 @@ async function runClaimedAgentTask({
       // The plan is the result: nothing is written until a person approves it and the
       // client applies it in one transaction (ADR-142).
       return runBriefAuthoring({
+        store,
+        task,
+        agent,
+        skill,
+        budget,
+        decision: { ...first.decision, board: first.board },
+        ai,
+        env,
+        log,
+        now,
+        started,
+        fail,
+        audit,
+      });
+    }
+
+    if (skill.handler === "builtin:room-draft") {
+      return runRoomDraft({
         store,
         task,
         agent,

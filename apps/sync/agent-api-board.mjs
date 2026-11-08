@@ -32,7 +32,11 @@ export async function handleBoardRoutes(ctx) {
         ),
         tasks: history ? await store.listBoardAgentTasks(boardId, 20) : [],
         schedules: history ? await store.listBoardAgentSchedules(boardId) : [],
-        skills: await store.listAgentSkills(board.org_id),
+        // The room draft is asked for through its own thread route (ADR-189); offering
+        // it in the generic task dialog would create a task without a thread.
+        skills: (await store.listAgentSkills(board.org_id)).filter(
+          (skill) => skill.slug !== "room-draft",
+        ),
       });
       return true;
     }

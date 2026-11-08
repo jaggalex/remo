@@ -22,6 +22,8 @@ import { currentRoom, loadIdentity, type Identity } from "./identity";
 import { useCursorIdentity } from "./useCursorIdentity";
 import { useI18n } from "./i18n";
 import { InfoCard } from "./InfoCard";
+import { RoomAgentPanel } from "./RoomAgentPanel";
+import { useRoomAgent } from "./useRoomAgent";
 import { useInfoCard } from "./useInfoCard";
 import { useApplyAgentPlan } from "./useApplyAgentPlan";
 import { useTidyCommand } from "./useTidyCommand";
@@ -67,6 +69,7 @@ export function BoardApp() {
   const [exportOpen, setExportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
+  const roomId = currentRoom();
   const tidy = useTidyCommand({ openAgents: () => setAgentOpen(true) });
   const [timerOpen, setTimerOpen] = useState(false);
   const [followOpen, setFollowOpen] = useState(false);
@@ -119,6 +122,12 @@ export function BoardApp() {
     saveTitle,
   } = useBoardSession({ board, identity, accountId: me?.id ?? null, accountHandle: me?.handle ?? null, access, refreshAccess,
     setNotice: showNotice, t });
+  const roomAgent = useRoomAgent({
+    board, widgets, selectedIds, roomId,
+    boardTitle: title || boardTitle || "",
+    canEdit: Boolean(access?.capabilities.includes("board.edit")),
+  });
+
   /** One voting session, shared by the panel and the chips on the board (ADR-115). */
   const { vote, open: voteOpen, setOpen: setVoteOpen, cast, withdraw } = useBoardVote({
     boardId: currentRoom(),
@@ -444,6 +453,7 @@ export function BoardApp() {
     writeBlocked,
     onTool: runTool,
     onTone: applyTone,
+    onAgentUndo: roomAgent.undoAgentDraft,
     editingId,
     selectedIds,
     widgets,
@@ -590,6 +600,7 @@ export function BoardApp() {
         onCloseTrash={() => setTrashOpen(false)}
         onConfirmTrash={() => void trashBoard()}
       />
+      <RoomAgentPanel {...roomAgent.panelProps} />
       <BoardTopbar
         title={title || boardTitle || ""}
         titleDraft={titleDraft}
@@ -628,6 +639,7 @@ export function BoardApp() {
         setTimerOpen={setTimerOpen}
         setFollowOpen={setFollowOpen}
         setAgentOpen={setAgentOpen}
+        {...roomAgent.barProps}
         setAppsOpen={setAppsOpen}
         onReact={react}
         follow={follow}

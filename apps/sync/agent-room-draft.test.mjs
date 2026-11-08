@@ -1,0 +1,228 @@
+import { describe, expect, it } from "vitest";
+import { Y } from "./y.mjs";
+import {
+  ROOM_DRAFT_LIMITS,
+  applyRoomDraft,
+  draftOrigin,
+  findDraftFrame,
+  parseRoomDraftReply,
+  roomDraftPlan,
+  roomDraftPrompt,
+  sourceExcerpts,
+  widgetText,
+} from "./agent-room-draft.mjs";
+import { PlanError } from "@remo/agent-plan";
+
+function boardWith(notes) {
+  const doc = new Y.Doc();
+  const widgets = doc.getMap("widgets");
+  const texts = doc.getMap("texts");
+  for (const note of notes) {
+    widgets.set(note.id, {
+      id: note.id,
+      type: "sticky_note",
+      parentId: null,
+      x: note.x ?? 0,
+      y: note.y ?? 0,
+      width: 160,
+      height: 120,
+    });
+    const text = new Y.Text();
+    text.insert(0, note.text);
+    texts.set(note.id, text);
+  }
+  return doc;
+}
+
+const reply = {
+  title: "Возврат",
+  objects: [
+    {
+      tempId: "frame",
+      type: "frame",
+      x: 0,
+      y: 0,
+      width: 900,
+      height: 600,
+      title: "Возврат",
+    },
+    {
+      tempId: "step",
+      type: "shape",
+      parentRef: "frame",
+      x: 40,
+      y: 60,
+      width: 200,
+      height: 80,
+      title: "Запрос",
+      shapeKind: "round_rectangle",
+    },
+    {
+      tempId: "decision",
+      type: "shape",
+      parentRef: "frame",
+      x: 300,
+      y: 60,
+      width: 160,
+      height: 120,
+      title: "Условия?",
+      shapeKind: "diamond",
+    },
+  ],
+  connectors: [
+    { from: "step", to: "decision", arrow: "end", routing: "elbow", label: "да" },
+  ],
+  citations: [{ tempId: "step", sourceId: "note-1" }],
+  questions: ["Кто согласует отказ?"],
+};
+
+describe("room draft prompt (ADR-189)", () => {
+  it("carries the request, the sources and the thread", () => {
+    const prompt = roomDraftPrompt({
+      kind: "process",
+      lang: "ru",
+      intent: "Собери процесс возврата",
+      sources: [{ id: "note-1", type: "sticky_note", title: "", text: "Клиент просит возврат" }],
+      thread: "person: добавь отказ",
+    });
+    expect(prompt.user).toContain("Собери процесс возврата");
+    expect(prompt.user).toContain("Клиент просит возврат");
+    expect(prompt.user).toContain("добавь отказ");
+    expect(prompt.system).toContain("Exactly one object has type \"frame\"");
+  });
+
+  it("reads the live text of a chosen object", () => {
+    const ydoc = boardWith([{ id: "note-1", text: "клиент ждёт неделю" }]);
+    expect(widgetText(ydoc, "note-1")).toBe("клиент ждёт неделю");
+    expect(sourceExcerpts(ydoc, ["note-1", "missing"])).toEqual([
+      { id: "note-1", type: "sticky_note", title: "", text: "клиент ждёт неделю" },
+    ]);
+  });
+
+  it("stops at the source budget", () => {
+    const long = "x".repeat(ROOM_DRAFT_LIMITS.perSourceChars + 100);
+    const ydoc = boardWith([{ id: "note-1", text: long }]);
+    expect(sourceExcerpts(ydoc, ["note-1"])[0].text.length).toBe(
+      ROOM_DRAFT_LIMITS.perSourceChars,
+    );
+  });
+});
+
+describe("room draft reply", () => {
+  it("keeps branch labels out of the plan contract", () => {
+    const parsed = parseRoomDraftReply(reply);
+    expect(parsed.labels).toEqual([{ from: "step", to: "decision", text: "да" }]);
+    expect(parsed.connectors).toEqual([
+      { from: "step", to: "decision", arrow: "end", routing: "elbow" },
+    ]);
+  });
+
+  it("refuses a reply without a title or objects", () => {
+    expect(() => parseRoomDraftReply({ objects: reply.objects })).toThrow(PlanError);
+    expect(() => parseRoomDraftReply({ title: "x", objects: [] })).toThrow(PlanError);
+  });
+});
+
+describe("room draft plan", () => {
+  const facts = { existingWidgets: [], existingConnectors: [] };
+
+  it("accepts one frame with its children", () => {
+    const { plan, frame } = roomDraftPlan(parseRoomDraftReply(reply), facts);
+    expect(frame.tempId).toBe("frame");
+    expect(plan.counts.objects).toBe(3);
+    expect(plan.counts.connectors).toBe(1);
+  });
+
+  it("refuses an object outside the frame", () => {
+    const parsed = parseRoomDraftReply({
+      ...reply,
+      objects: [...reply.objects, {
+        tempId: "loose",
+        type: "text",
+        x: 10,
+        y: 10,
+        width: 100,
+        height: 80,
+        text: "вне фрейма",
+      }],
+    });
+    expect(() => roomDraftPlan(parsed, facts)).toThrow(/child of the draft frame/);
+  });
+
+  it("refuses a second frame", () => {
+    const parsed = parseRoomDraftReply({
+      ...reply,
+      objects: [...reply.objects, {
+        tempId: "frame2",
+        type: "frame",
+        x: 0,
+        y: 0,
+        width: 400,
+        height: 300,
+      }],
+    });
+    expect(() => roomDraftPlan(parsed, facts)).toThrow(/exactly one frame/);
+  });
+
+  it("refuses a connector to an object outside the draft", () => {
+    const parsed = parseRoomDraftReply({
+      ...reply,
+      connectors: [{ from: "step", to: "note-1", arrow: "end" }],
+    });
+    expect(() => roomDraftPlan(parsed, facts)).toThrow();
+  });
+});
+
+describe("room draft write", () => {
+  it("writes the frame, its children, the label and the citation", () => {
+    const ydoc = boardWith([{ id: "note-1", text: "возврат", x: 2000, y: 0 }]);
+    const parsed = parseRoomDraftReply(reply);
+    const { plan } = roomDraftPlan(parsed, {
+      existingWidgets: [...ydoc.getMap("widgets").values()],
+      existingConnectors: [],
+    });
+    const placed = draftOrigin(ydoc, plan, { x: 0, y: 0 });
+    const applied = applyRoomDraft(ydoc, plan, {
+      placed,
+      title: "Черновик · Мира — Возврат",
+      agent: { id: "agent-1", name: "Мира" },
+      taskId: "task-1",
+      citations: parsed.citations,
+      labels: parsed.labels,
+      sourceIds: ["note-1"],
+    });
+
+    const widgets = ydoc.getMap("widgets");
+    const frame = widgets.get(applied.frameId);
+    expect(frame.type).toBe("frame");
+    expect(frame.title).toBe("Черновик · Мира — Возврат");
+    expect(frame.agent).toEqual({
+      id: "agent-1",
+      name: "Мира",
+      taskId: "task-1",
+      skill: "room-draft",
+    });
+
+    const children = [...widgets.values()].filter(
+      (widget) => widget.parentId === applied.frameId,
+    );
+    // two objects plus the branch label text
+    expect(children).toHaveLength(3);
+    const step = children.find((widget) => widget.title === "Запрос");
+    expect(step.link).toEqual({ kind: "widget", widgetId: "note-1" });
+    expect(applied.createdIds).toContain(applied.frameId);
+    expect(findDraftFrame(ydoc, "task-1")).toBe(applied.frameId);
+    expect(findDraftFrame(ydoc, "task-2")).toBeNull();
+  });
+
+  it("places a draft away from existing objects", () => {
+    const ydoc = boardWith([{ id: "note-1", text: "занято", x: 0, y: 0 }]);
+    const parsed = parseRoomDraftReply(reply);
+    const { plan } = roomDraftPlan(parsed, {
+      existingWidgets: [...ydoc.getMap("widgets").values()],
+      existingConnectors: [],
+    });
+    const placed = draftOrigin(ydoc, plan, { x: 0, y: 0 });
+    expect(placed.x).toBeGreaterThan(0);
+  });
+});

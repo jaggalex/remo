@@ -7757,3 +7757,68 @@ hull on the canvas and a task panel with the write path and the undo in words.
   the shape of the plan.
 - On a phone the panel is a bottom sheet with the same buttons (DESIGN.md).
 - Browser scenarios that read the miniature now read the overlay through the debug probe.
+
+## ADR-189: A room agent writes a first draft immediately, under shared history
+
+**Status:** accepted (2026-11-09). Extends ADR-066 (agent as a principal), ADR-142
+(plans), and ADR-188 (the task panel). Delegation is deliberately out of the first
+version.
+
+**Context.** The first version of the agent surface asks a person for a plan, previews it
+on the canvas and waits for an approval that applies it in the local tab. That is right
+for an exploratory structure, but it is the wrong shape for "give the agent a task and
+get a first working draft in the room". The draft has to exist when the author's tab is
+closed, the team has to see it appear and discuss it in place, and the request, the
+attempts and the result have to survive a reload. A modal or a plan preview also makes
+the draft a private proposal instead of a shared artefact.
+
+**Decision.**
+
+- **One assigned agent per room.** The room owner assigns one of their own active agents
+  (`board_agents`). There is no per-person allowlist in v1: only the agent's owner, who
+  is also the room owner at assignment time, can give it tasks. A public link blocks
+  assignment. Transferring the room clears the assignment and stops unfinished work.
+- **A task thread is the unit of history.** `agent_threads` and `agent_thread_messages`
+  live in the organisation and the room. A message keeps the author, the agent name at
+  the time of the attempt, the task, the status and the frames it produced. Members of
+  the organisation with access to the room read the history; a guest does not. Deleting a
+  frame keeps the thread and marks its link unavailable.
+- **The draft is written by the server, not applied by a tab.** The new `room-draft`
+  skill validates a plan, places it in the nearest free area, and writes a frame with its
+  children and connectors in one transaction. The result carries `frameId` and
+  `createdIds`; the thread message records them. The author's tab is not required.
+- **Undo is an agent step, not a Yjs step.** A remote write is not in the local
+  `UndoManager`. The client keeps the created ids of the latest draft by this person and
+  `⌘Z` deletes them as one local transaction when there is no newer local edit to undo
+  first. Redo therefore brings the draft back; a draft edited by a person is still
+  removed as a whole, which is the honest meaning of "undo the agent's action".
+- **One running task per room, queued tasks visible.** A partial unique index on
+  `agent_tasks(board_id) where status = 'running'` serialises the room; further requests
+  wait in the queue. The queue is shown in the thread, not hidden behind a spinner.
+- **The rights are re-checked before the write.** Assignment, agent state, room access,
+  `board.edit`, the public-link gate, the org policy, the budget and the skill
+  capabilities are all checked when the task is created and again immediately before the
+  document is touched. Revoking the assignment, disabling the agent or stopping the task
+  before the write leaves the canvas unchanged.
+- **The result is a normal frame.** It has the usual `agent {id, name, taskId, skill}`
+  provenance and a title `Draft by <agent> · <name>`; every object lives inside it.
+  Citations are ordinary widget links to the source, so a deleted source reads as
+  unavailable rather than disappearing silently.
+- **Only explicit material leaves the room.** The prompt carries the task text, the
+  thread's messages and the objects the author selected, with the selection named in the
+  panel before sending. Comments, other rooms and other threads are not sent.
+
+**Consequences.**
+
+- A draft is immediately editable like any other content; the author loses the all-or-
+  nothing undo of ADR-142 and receives an explicit agent undo instead.
+- The server becomes a writer for this skill, so the runner must flush the room and only
+  then mark the draft ready (the existing `flushApplied` contract).
+- History is content-adjacent metadata, so it needs the same tenant policies and a
+  retention rule on room deletion.
+- The preview flow of ADR-142 and ADR-188 stays for the existing skills; the two modes
+  coexist, with different contracts stated in the UI.
+
+**Limits.** One agent per room, one running task, no delegation, no public links, and no
+background work without a request. The model can still produce a plausible but wrong
+draft; the pilot measures rework, not only time to the first frame.

@@ -327,6 +327,150 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
     return { status: 201, schedule };
   }
 
+
+  /**
+   * A room task (ADR-189): one assigned agent, one thread, one immediate draft.
+   *
+   * Delegation is out of the first version, so the runner is the room owner and the
+   * owner of the assigned agent. The checks live here, next to the ordinary preflight,
+   * so there is still one place that decides whether an agent may act.
+   */
+  async function createRoomTask({ boardId, body }) {
+    const intent = String(body?.intent ?? "").trim();
+    if (intent.length < 3 || intent.length > 2000) {
+      return { status: 422, code: "BAD_INTENT", message: "describe the task in 3–2000 characters" };
+    }
+    const kind = body?.kind === "problem-map" ? "problem-map" : "process";
+    const lang = body?.lang === "en" ? "en" : "ru";
+    const sourceIds = selectionIds(body?.sourceIds).slice(0, 24);
+    const origin = originOf(body?.origin);
+
+    const { board, access } = await boardAndAccess(boardId);
+    if (!board || !access?.allowed) {
+      return { status: 404, code: "RESOURCE_NOT_AVAILABLE", message: "board not found" };
+    }
+    if (board.owner_id !== me.id) {
+      return { status: 403, code: "ONLY_OWNER", message: "only the room owner can ask the agent" };
+    }
+    if (board.visibility === "link") {
+      return {
+        status: 409,
+        code: "PUBLIC_LINK_ON",
+        message: "turn off the public link before asking the agent",
+      };
+    }
+    const assignment = typeof store.getBoardAgent === "function"
+      ? await store.getBoardAgent(boardId)
+      : null;
+    if (!assignment || !assignment.enabled) {
+      return { status: 409, code: "AGENT_NOT_ASSIGNED", message: "assign an agent to this room first" };
+    }
+
+    const ready = await preflight({
+      boardId,
+      agentId: assignment.agent_id,
+      skillSlug: "room-draft",
+    });
+    if (ready.status) return ready;
+
+    let thread = null;
+    if (body?.threadId) {
+      thread = typeof store.getAgentThread === "function"
+        ? await store.getAgentThread(String(body.threadId))
+        : null;
+      if (!thread || thread.board_id !== boardId || thread.agent_id !== assignment.agent_id) {
+        return { status: 404, code: "THREAD_NOT_FOUND", message: "no such task thread" };
+      }
+      if (thread.created_by && thread.created_by !== me.id) {
+        return { status: 403, code: "FORBIDDEN", message: "this thread belongs to somebody else" };
+      }
+    }
+
+    if ((await store.countQueuedAgentTasks(boardId)) >= MAX_QUEUED) {
+      return { status: 429, code: "TOO_MANY_TASKS", message: "too many tasks in this room" };
+    }
+
+    if (!thread) {
+      thread = await store.createAgentThread({
+        orgId: board.org_id,
+        boardId,
+        agentId: assignment.agent_id,
+        agentName: ready.agent.name,
+        createdBy: me.id,
+        title: intent.slice(0, 80),
+      });
+      if (!thread) return { status: 503, code: "THREAD_FAILED", message: "the thread was not created" };
+    }
+
+    let task;
+    try {
+      task = await store.createAgentTask({
+        orgId: board.org_id,
+        agentId: ready.agent.id,
+        boardId,
+        mode: "write",
+        capabilities: ready.decision.capabilities,
+        intent,
+        input: { kind, sourceIds, origin, lang, threadId: thread.id },
+        skillId: ready.skill.id,
+        skillSlug: ready.skill.slug,
+        skillVersion: ready.skill.version,
+        budget: normalizeBudget({}, agentLimitsFromEnv()),
+        createdBy: me.id,
+        threadId: thread.id,
+      });
+    } catch (error) {
+      if (error?.code === "23505") {
+        return {
+          status: 409,
+          code: "AGENT_BUSY",
+          message: "the agent is still working on this room",
+        };
+      }
+      throw error;
+    }
+    if (!task) return { status: 503, code: "TASK_FAILED", message: "the task was not created" };
+
+    await store.appendAgentThreadMessage({
+      threadId: thread.id,
+      orgId: board.org_id,
+      boardId,
+      role: "user",
+      authorId: me.id,
+      authorName: me.name,
+      text: intent,
+      taskId: task.id,
+    });
+    await store.appendAgentThreadMessage({
+      threadId: thread.id,
+      orgId: board.org_id,
+      boardId,
+      role: "agent",
+      agentName: ready.agent.name,
+      text: "",
+      status: "queued",
+      taskId: task.id,
+    });
+
+    await audit({
+      orgId: board.org_id,
+      boardId,
+      action: "agent.thread.task",
+      subject: intent.slice(0, 200),
+      agentId: ready.agent.id,
+      taskId: task.id,
+      skill: `${ready.skill.slug}@${ready.skill.version}`,
+      actorType: "user",
+      after: { threadId: thread.id, kind, sources: sourceIds.length },
+    });
+    try {
+      onTaskQueued?.();
+    } catch (error) {
+      log.error?.("[agents] could not wake the runner:", error.message);
+    }
+    return { status: 202, thread, task };
+  }
+
   return {
     me,
     audit,
@@ -336,6 +480,8 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
     boardAndAccess,
     preflight,
     createTask,
+    createRoomTask,
     createSchedule,
+    onTaskQueued,
   };
 }

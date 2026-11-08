@@ -64,6 +64,10 @@ export interface BoardTopbarProps {
   setTimerOpen: (value: boolean) => void;
   setFollowOpen: (value: boolean) => void;
   setAgentOpen: (value: boolean) => void;
+  /** The room agent assigned to this room (ADR-189), if any. */
+  roomAgent: { name: string; enabled: boolean; status: string | null } | null;
+  canAssignAgent: boolean;
+  onOpenRoomAgent: () => void;
   setAppsOpen: (value: boolean) => void;
   onReact: (emoji: string) => void;
   follow: FollowState;
@@ -109,6 +113,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
     setSettingsOpen, setExportOpen, onRestore, onDuplicate, onTrash, voteRunning, voteHint,
     timerRunning, timerHint, setVoteOpen, setTimerOpen, setFollowOpen, setAgentOpen,
     setAppsOpen, onReact, follow, toggleFollow, myFollowers, otherPeers, followOpen,
+    roomAgent, canAssignAgent, onOpenRoomAgent,
     visiblePresence, me, identity, roleLine, renameSelf, onAccountRenamed, theme, setTheme, lang, setLang,
     setAccountOpen, setAuthOpen, onSignOut, saveState, saveLabel, saveTitle, inspectorOpen,
     toggleInspector, presentOpen, setPresentOpen, commentsOpen, setCommentsOpen,
@@ -206,6 +211,33 @@ export function BoardTopbar(props: BoardTopbarProps) {
       <div className="topbar-spacer" />
 
       <div className="topbar-right">
+        {(roomAgent || canAssignAgent) && (
+          <button
+            type="button"
+            className={`agent-avatar${roomAgent ? "" : " empty"}`}
+            onClick={onOpenRoomAgent}
+            aria-label={
+              roomAgent
+                ? t("roomAgent.assigned", { name: roomAgent.name })
+                : t("roomAgent.assign")
+            }
+            title={
+              roomAgent
+                ? t("roomAgent.assigned", { name: roomAgent.name })
+                : t("roomAgent.assign")
+            }
+          >
+            <span className="agent-avatar-letter">
+              {roomAgent ? roomAgent.name.trim().slice(0, 1).toUpperCase() : "+"}
+            </span>
+            <span className="agent-avatar-ai" aria-hidden="true">
+              AI
+            </span>
+            {roomAgent?.status && (
+              <span className={`agent-avatar-dot ${roomAgent.status}`} aria-hidden="true" />
+            )}
+          </button>
+        )}
         <FacilitationMenu
           open={menu === "facilitation"}
           onOpen={(open) => setMenu(open ? "facilitation" : null)}
