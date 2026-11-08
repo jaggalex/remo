@@ -111,13 +111,6 @@ const PROCEDURES = {
 - Every decision is a diamond with a question inside; every outgoing line is labelled with its condition (yes/no or the actual rule).
 - The ordinary path and the refusal/exceptions path must both be visible.
 - Unknown owners or conditions become a separate question note, not a guess.`,
-  "delivery-plan": `Build a realistic delivery plan (a sprint or a project phase) from the request and the sources.
-- Read the tasks and separate the mandatory scope from the desirable scope.
-- Respect dependencies and order: a dependency is a labelled line ("blocks", "after"), not a guess about dates.
-- Compare the scope with the capacity you were actually given. If capacity, estimates or availability are missing, say they are unknown; never invent numbers, dates or people.
-- Use three labelled zones inside the frame: mandatory work, desirable work, and risks/assumptions/open questions. A zone header is a text object, not another frame: the draft has exactly one frame.
-- Mark a missing estimate or owner as "?" and leave assignments to the team.
-- The result is a proposal for the team to confirm, not a commitment.`,
   "problem-map": `Build a problem map from interview material.
 - Group observations into themes; keep every observation traceable to its source.
 - A theme is a text heading, not a claim: do not invent a summary the sources do not support.
@@ -126,9 +119,66 @@ const PROCEDURES = {
 - Cite the source object for every observation that comes from one.`,
 };
 
+const DELIVERY_SYSTEM = `You are a careful delivery lead working inside a shared canvas.
+You write a first draft that a team will confirm and edit. You never invent facts,
+numbers, dates or people.
+
+Return one JSON object and nothing else, in this shape:
+{
+  "title": "short name of the plan",
+  "summary": "one sentence about scope versus capacity, or that capacity is unknown",
+  "zones": [
+    {"key": "mandatory", "label": "Mandatory", "items": [
+      {"id": "t1", "text": "task", "meta": "5 SP · Anna · due 20 Nov", "sourceId": "source object id"}
+    ]},
+    {"key": "desirable", "label": "Desirable", "items": []},
+    {"key": "risks", "label": "Risks and questions", "items": []}
+  ],
+  "dependencies": [{"from": "t1", "to": "t2", "label": "blocks"}],
+  "questions": ["an open question the team must settle"]
+}
+
+Rules:
+- Exactly the three zone keys, each present; an empty zone is allowed.
+- Item ids start with a letter, use letters, digits, "_" or "-", and are unique in the plan.
+- "text" is at most 300 characters. "meta" is a short line for an estimate, owner or date;
+  leave it empty when the source does not say. Never invent a number or a person.
+- A dependency joins two item ids of this plan; its label says what the relationship is.
+- "sourceId" may only be one of the source object ids below.
+- A missing estimate or owner is written as "?" in "meta", not guessed.
+- Write the human-readable text in \${language}.
+- No markdown, no code fences, no commentary.
+
+Procedure for this request:
+Build a realistic delivery plan (a sprint or a project phase) from the request and the sources.
+- Read the tasks and separate the mandatory scope from the desirable scope.
+- Respect dependencies and order: a dependency is a labelled line ("blocks", "after"), not a guess about dates.
+- Compare the scope with the capacity you were actually given. If capacity, estimates or availability are missing, say they are unknown; never invent numbers, dates or people.
+- Use the three zones: mandatory work, desirable work, and risks/assumptions/open questions.
+- The result is a proposal for the team to confirm, not a commitment.`;
+
 export function roomDraftPrompt({ kind, lang = "ru", intent, sources, thread }) {
   const chosen = KINDS.has(kind) ? kind : "process";
   const language = lang === "en" ? "English" : "Russian";
+  if (chosen === "delivery-plan") {
+    return {
+      system: DELIVERY_SYSTEM.replace("${language}", language),
+      user: `Request: ${intent}\n${thread ? `\nConversation so far:\n${thread}\n` : ""}\nSelected material:\n${
+        sources.length
+          ? sources
+              .map(
+                (source, index) =>
+                  `[${index + 1}] id=${source.id} type=${source.type} title=${JSON.stringify(source.title)}` +
+                  (source.status ? ` status=${source.status}` : "") +
+                  (source.assignee ? ` assignee=${JSON.stringify(source.assignee)}` : "") +
+                  (source.due ? ` due=${source.due}` : "") +
+                  `\n${source.text}`,
+              )
+              .join("\n\n")
+          : "(no sources selected)"
+      }`,
+    };
+  }
   const system = `You are a careful product analyst working inside a shared canvas.
 You write a first draft that a team will edit. You never invent facts.
 

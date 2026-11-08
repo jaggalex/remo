@@ -20,6 +20,7 @@ import {
   roomDraftPrompt,
   sourceExcerpts,
 } from "./agent-room-draft.mjs";
+import { deliveryPlan, parseDeliveryReply } from "./agent-delivery-layout.mjs";
 
 function draftTitle(lang, agentName, title) {
   const prefix = lang === "en" ? `Draft · ${agentName}` : `Черновик · ${agentName}`;
@@ -160,39 +161,59 @@ export async function runRoomDraft({
     return failDraft("PUBLIC_LINK_ON", "the public link is on; ask the owner to turn it off");
   }
 
-  let reply;
-  try {
-    reply = parseRoomDraftReply(completion.json);
-  } catch (error) {
-    return failDraft(error?.code ?? "DRAFT_SCHEMA", error?.message ?? String(error));
-  }
+  const existingWidgets = [...ydoc.getMap("widgets").values()].map((widget) => ({
+    id: widget.id,
+    type: widget.type,
+    locked: widget.locked === true,
+    parentId: widget.parentId ?? null,
+    x: widget.x,
+    y: widget.y,
+    width: widget.width,
+    height: widget.height,
+  }));
+  const existingConnectors = [...ydoc.getMap("widgets").values()]
+    .filter((widget) => widget.type === "connector" && widget.start?.item && widget.end?.item)
+    .map((widget) => ({ from: widget.start.item, to: widget.end.item }));
+  const origin = {
+    x: Number(task.input?.origin?.x) || 0,
+    y: Number(task.input?.origin?.y) || 0,
+  };
 
-  let plan;
+  // Two result shapes, one writer: a process or problem map is a plan the model laid
+  // out; a delivery plan is zones and items, laid out deterministically here.
+  let draft;
   try {
-    plan = roomDraftPlan(reply, {
-      origin: {
-        x: Number(task.input?.origin?.x) || 0,
-        y: Number(task.input?.origin?.y) || 0,
-      },
-      existingWidgets: [...ydoc.getMap("widgets").values()].map((widget) => ({
-        id: widget.id,
-        type: widget.type,
-        locked: widget.locked === true,
-        parentId: widget.parentId ?? null,
-        x: widget.x,
-        y: widget.y,
-        width: widget.width,
-        height: widget.height,
-      })),
-      existingConnectors: [...ydoc.getMap("widgets").values()]
-        .filter((widget) => widget.type === "connector" && widget.start?.item && widget.end?.item)
-        .map((widget) => ({ from: widget.start.item, to: widget.end.item })),
-    });
+    if (task.input?.kind === "delivery-plan") {
+      const structured = parseDeliveryReply(completion.json);
+      const built = deliveryPlan(structured, {
+        lang: task.input?.lang,
+        sourceIds,
+        existingWidgets,
+        existingConnectors,
+      });
+      draft = {
+        plan: built.plan,
+        title: built.title,
+        labels: built.labels,
+        citations: built.citations,
+        questions: built.questions,
+      };
+    } else {
+      const reply = parseRoomDraftReply(completion.json);
+      const { plan } = roomDraftPlan(reply, { origin, existingWidgets, existingConnectors });
+      draft = {
+        plan,
+        title: reply.title,
+        labels: reply.labels ?? [],
+        citations: reply.citations,
+        questions: reply.questions ?? [],
+      };
+    }
   } catch (error) {
     return failDraft(error?.code ?? "DRAFT_INVALID", error?.message ?? String(error));
   }
 
-  if (plan.plan.counts.objects > budget.maxActions) {
+  if (draft.plan.counts.objects > budget.maxActions) {
     return failDraft("BUDGET_ACTIONS", `the task allows ${budget.maxActions} changes`);
   }
 
@@ -201,20 +222,17 @@ export async function runRoomDraft({
     return failDraft("APPLY_FAILED", "the room was replaced before the write");
   }
 
-  const placed = draftOrigin(ydoc, plan.plan, {
-    x: Number(task.input?.origin?.x) || 0,
-    y: Number(task.input?.origin?.y) || 0,
-  });
-  const title = draftTitle(task.input?.lang, agent.name, reply.title);
+  const placed = draftOrigin(ydoc, draft.plan, origin);
+  const title = draftTitle(task.input?.lang, agent.name, draft.title);
   let applied;
   try {
-    applied = applyRoomDraft(ydoc, plan.plan, {
+    applied = applyRoomDraft(ydoc, draft.plan, {
       placed,
       title,
       agent,
       taskId: task.id,
-      citations: reply.citations,
-      labels: reply.labels ?? [],
+      citations: draft.citations,
+      labels: draft.labels,
       sourceIds,
       now: now(),
     });
@@ -231,8 +249,8 @@ export async function runRoomDraft({
     frameId: applied.frameId,
     createdIds: applied.createdIds,
     title: applied.title,
-    questions: reply.questions ?? [],
-    counts: plan.plan.counts,
+    questions: draft.questions,
+    counts: draft.plan.counts,
     placedAt: placed,
     skill: skill.slug,
     skillVersion: skill.version,
@@ -273,7 +291,7 @@ export async function runRoomDraft({
     after: {
       frameId: applied.frameId,
       objects: applied.createdIds.length,
-      questions: (reply.questions ?? []).length,
+      questions: draft.questions.length,
     },
   });
   await audit(store, log, {
