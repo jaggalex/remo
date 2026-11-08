@@ -7,7 +7,6 @@ behaviour, the boundaries and the invariants; the numbered decisions behind them
 | Note | What it answers |
 |---|---|
 | [Design system](../../spec/design-system.md) | tokens, components, canvas chrome, keyboard model, grid |
-| [Design-system review](../../spec/design-system-review.md) | what was unverifiable in the first pass and how it was fixed |
 | [IAM v1](../../spec/IAM-v1.md) | organisations, teams, room roles, links, sessions, enforcement |
 | [AI agents v1](../../spec/AI-agents-v1.md) | principals, tasks, budgets, skills, the plan contract |
 | [AI agents architecture](../../spec/AI-agents-architecture.md) | provider keys, evidential log, change sets, MCP vs skills |
