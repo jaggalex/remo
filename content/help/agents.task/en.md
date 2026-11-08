@@ -41,8 +41,8 @@ A key is access to the provider budget. Create a separate key for remo with a sp
 3. Check the source: the Source block shows how many objects and characters of the selection will reach the model. Remove keeps the task without object text; Selection only makes the selection the task itself.
 4. Describe the task: what should exist afterwards. Brief to room also accepts a `.md`, `.txt` or `.csv` file in UTF-8.
 5. Check "What will go to the model" and set a budget. The dialog sets changes and money; tokens and time are server defaults. Money may be fractional: `0.1` is ten cents, `0.25` a quarter.
-6. Click "Ask the agent" and wait for the plan ready status. A preview opens: a plan map, objects grouped by kind with counts, bounds, and warnings with their codes.
-7. Read the plan and press Apply. Reject closes the task and writes nothing. After applying, the dialog shows "⌘Z undoes the plan" and "Show in room".
+6. Click "Ask the agent" and wait for the plan ready status. The plan appears in the room as dashed lines, with a task panel at the bottom: the object count, the bounds and the buttons. Objects grouped by kind and warnings with their codes are under Details.
+7. Read the plan and press Apply. Reject closes the task and writes nothing. Esc hides the panel but does not reject the plan. After applying, the panel shows "⌘Z undoes the plan" and "Show in room".
 
 ## Diagram: straight onto the room
 
@@ -64,8 +64,8 @@ A package can be stopped with Stop and resumed with Resume: progress is kept bet
 
 1. Select sticky notes in the room. Press Tidy up in the context menu or on the selection bar.
 2. Choose a layout: Auto, By prefix, By type, Grid or By meaning. Natural order puts `US-2` before `US-10`.
-3. Wait for the before/after preview: the map shows where objects move from and to, and warnings name locked objects and foreign frames that stay put.
-4. Change the layout in the preview if needed: block labels are kept and coordinates are recomputed.
+3. Wait for the preview: dashed lines in the room show where objects move and where blocks appear, and warnings name locked objects and foreign frames that stay put.
+4. Change the layout under Details if needed: block labels are kept and coordinates are recomputed.
 5. Press Apply. Sizes, texts and lines do not change; one ⌘Z puts everything back.
 
 If a frame is selected, its contents are laid out inside it and the frame itself does not move. Blocks are frames, never groups. The 50-object limit is counted after groups and the selected frame are expanded: a larger set is refused before a plan is stored. A kanban card stays in place with a warning: its cell decides where it stands, and the plan applies to the remaining objects.

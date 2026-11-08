@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Widget } from "@remo/model";
-import { drawWidget } from "./render";
+import { deviceScale, drawWidget } from "./render";
 
 /**
  * A 2D context stand-in: every method is a recorded no-op, every property is writable,
@@ -61,5 +61,16 @@ describe("drawWidget isolation (ADR-171)", () => {
       calls.filter((c) => c === "restore").length,
     );
     expect(calls).toContain("strokeRect");
+  });
+});
+
+describe("deviceScale (ADR-181 sticky shadow)", () => {
+  it("reads the canvas matrix, so the shadow follows zoom and device pixel ratio", () => {
+    const ctx = { getTransform: () => ({ a: 3, b: 0 }) } as unknown as CanvasRenderingContext2D;
+    expect(deviceScale(ctx, 1.5)).toBe(3);
+  });
+
+  it("falls back to the zoom when the context cannot report its matrix", () => {
+    expect(deviceScale({} as CanvasRenderingContext2D, 1.5)).toBe(1.5);
   });
 });

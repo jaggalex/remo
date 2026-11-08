@@ -1,0 +1,197 @@
+{
+ "default": {
+  "hotspot": {
+   "x": 6,
+   "y": 4
+  },
+  "hotspot2x": {
+   "x": 12,
+   "y": 8
+  },
+  "fallback": "default",
+  "when": "выбор, пустой холст",
+  "css": "url(\"remo-cursor-default.svg\") 6 4, default"
+ },
+ "move": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "move",
+  "when": "перетаскивание объекта",
+  "css": "url(\"remo-cursor-move.svg\") 16 16, move"
+ },
+ "grab": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "grab",
+  "when": "панорама, готовность",
+  "css": "url(\"remo-cursor-grab.svg\") 16 16, grab"
+ },
+ "grabbing": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "grabbing",
+  "when": "панорама, тянем",
+  "css": "url(\"remo-cursor-grabbing.svg\") 16 16, grabbing"
+ },
+ "marquee": {
+  "hotspot": {
+   "x": 6,
+   "y": 4
+  },
+  "hotspot2x": {
+   "x": 12,
+   "y": 8
+  },
+  "fallback": "default",
+  "when": "рамка выделения",
+  "css": "url(\"remo-cursor-marquee.svg\") 6 4, default"
+ },
+ "connect": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "crosshair",
+  "when": "инструмент связи",
+  "css": "url(\"remo-cursor-connect.svg\") 16 16, crosshair"
+ },
+ "connect-target": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "crosshair",
+  "when": "над допустимым якорем",
+  "css": "url(\"remo-cursor-connect-target.svg\") 16 16, crosshair"
+ },
+ "waypoint": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "move",
+  "when": "точка маршрута связи",
+  "css": "url(\"remo-cursor-waypoint.svg\") 16 16, move"
+ },
+ "comment": {
+  "hotspot": {
+   "x": 4,
+   "y": 28
+  },
+  "hotspot2x": {
+   "x": 8,
+   "y": 56
+  },
+  "fallback": "crosshair",
+  "when": "размещение комментария",
+  "css": "url(\"remo-cursor-comment.svg\") 4 28, crosshair"
+ },
+ "resize-ew": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "ew-resize",
+  "when": "маркер по горизонтали",
+  "css": "url(\"remo-cursor-resize-ew.svg\") 16 16, ew-resize"
+ },
+ "resize-ns": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "ns-resize",
+  "when": "маркер по вертикали",
+  "css": "url(\"remo-cursor-resize-ns.svg\") 16 16, ns-resize"
+ },
+ "resize-nwse": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "nwse-resize",
+  "when": "угловой маркер ↘",
+  "css": "url(\"remo-cursor-resize-nwse.svg\") 16 16, nwse-resize"
+ },
+ "resize-nesw": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "nesw-resize",
+  "when": "угловой маркер ↙",
+  "css": "url(\"remo-cursor-resize-nesw.svg\") 16 16, nesw-resize"
+ },
+ "not-allowed": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "not-allowed",
+  "when": "действие недоступно; рядом всегда текст причины",
+  "css": "url(\"remo-cursor-not-allowed.svg\") 16 16, not-allowed"
+ },
+ "rotate": {
+  "hotspot": {
+   "x": 16,
+   "y": 16
+  },
+  "hotspot2x": {
+   "x": 32,
+   "y": 32
+  },
+  "fallback": "grab",
+  "when": "поворот — только если появится в интерфейсе",
+  "css": "url(\"remo-cursor-rotate.svg\") 16 16, grab"
+ }
+}

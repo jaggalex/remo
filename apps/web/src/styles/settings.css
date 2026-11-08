@@ -15,7 +15,8 @@
   max-height: min(82vh, 820px);
   overflow: auto;
   padding: 20px 22px;
-  border-radius: 14px;
+  border: var(--panel-border-width) solid var(--border-panel);
+  border-radius: var(--radius-2xl);
   background: var(--bg-panel);
   box-shadow: var(--shadow-pop);
   font-family: var(--font-sans);
@@ -72,7 +73,7 @@
   width: 100%;
   padding: 4px 6px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   font: inherit;
   font-size: 13px;
 }
@@ -129,7 +130,7 @@
 .settings-footer button {
   padding: 6px 12px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   background: var(--bg-panel);
   font: inherit;
   font-size: 13px;

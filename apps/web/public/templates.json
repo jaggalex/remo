@@ -46,7 +46,7 @@
      "height": 150,
      "parentId": "w0002",
      "content": "Who is this for?",
-     "fillColor": "#efece8"
+     "fillColor": "#f3f1ec"
     },
     {
      "z": 3,
@@ -58,7 +58,7 @@
      "height": 150,
      "parentId": "w0002",
      "content": "What do they care about?",
-     "fillColor": "#efece8"
+     "fillColor": "#f3f1ec"
     },
     {
      "z": 4,
@@ -70,7 +70,7 @@
      "height": 150,
      "parentId": "w0002",
      "content": "What is their context?",
-     "fillColor": "#efece8"
+     "fillColor": "#f3f1ec"
     },
     {
      "z": 5,
@@ -94,7 +94,7 @@
      "height": 150,
      "parentId": "w0006",
      "content": "What outcome?",
-     "fillColor": "#ffe07a"
+     "fillColor": "#ece2c8"
     },
     {
      "z": 7,
@@ -106,7 +106,7 @@
      "height": 150,
      "parentId": "w0006",
      "content": "How do we measure it?",
-     "fillColor": "#ffe07a"
+     "fillColor": "#ece2c8"
     },
     {
      "z": 8,
@@ -118,7 +118,7 @@
      "height": 150,
      "parentId": "w0006",
      "content": "What is out of scope?",
-     "fillColor": "#ffe07a"
+     "fillColor": "#ece2c8"
     },
     {
      "z": 9,
@@ -142,7 +142,7 @@
      "height": 150,
      "parentId": "w0010",
      "content": "First step",
-     "fillColor": "#ffcd9e"
+     "fillColor": "#e2d2c4"
     },
     {
      "z": 11,
@@ -154,7 +154,7 @@
      "height": 150,
      "parentId": "w0010",
      "content": "Main step",
-     "fillColor": "#ffcd9e"
+     "fillColor": "#e2d2c4"
     },
     {
      "z": 12,
@@ -166,7 +166,7 @@
      "height": 150,
      "parentId": "w0010",
      "content": "Last step",
-     "fillColor": "#ffcd9e"
+     "fillColor": "#e2d2c4"
     },
     {
      "z": 13,
@@ -190,7 +190,7 @@
      "height": 150,
      "parentId": "w0014",
      "content": "As a…",
-     "fillColor": "#ffc6d9"
+     "fillColor": "#e8d6d3"
     },
     {
      "z": 15,
@@ -202,7 +202,7 @@
      "height": 150,
      "parentId": "w0014",
      "content": "I want…",
-     "fillColor": "#ffc6d9"
+     "fillColor": "#e8d6d3"
     },
     {
      "z": 16,
@@ -214,7 +214,7 @@
      "height": 150,
      "parentId": "w0014",
      "content": "So that…",
-     "fillColor": "#ffc6d9"
+     "fillColor": "#e8d6d3"
     },
     {
      "z": 17,
@@ -238,7 +238,7 @@
      "height": 150,
      "parentId": "w0018",
      "content": "Now",
-     "fillColor": "#b9ecac"
+     "fillColor": "#dedfd4"
     },
     {
      "z": 19,
@@ -250,7 +250,7 @@
      "height": 150,
      "parentId": "w0018",
      "content": "Next",
-     "fillColor": "#b9ecac"
+     "fillColor": "#dedfd4"
     },
     {
      "z": 20,
@@ -262,7 +262,7 @@
      "height": 150,
      "parentId": "w0018",
      "content": "Later",
-     "fillColor": "#b9ecac"
+     "fillColor": "#dedfd4"
     }
    ]
   },

@@ -16,6 +16,7 @@
     "db:bench": "node scripts/db-bench.mjs",
     "db:prune": "node scripts/db-prune.mjs",
     "db:orphans": "node scripts/ownerless-boards.mjs",
+    "db:repaint": "node scripts/repaint-paper.mjs",
     "db:rls": "node scripts/rls-inventory.mjs",
     "db:rls:setup": "node scripts/db-rls-setup.mjs",
     "db:rls:enable": "node scripts/db-rls-enable.mjs",

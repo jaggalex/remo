@@ -15,6 +15,7 @@ import {
   inkExtraIds,
   inkOption,
   namedColorWord,
+  markedColor,
   normalizeColor,
   TEXT_INKS,
 } from "./colorWindowData";
@@ -170,7 +171,7 @@ export function ColorGridSection({
   const { t } = useI18n();
   const named = role ? colorExtras(role) : [];
   const name = colorName(value, { mixed, auto, role });
-  const selected = mixed ? null : normalizeColor(value);
+  const selected = mixed ? null : markedColor(value);
   const colors = colorsForLevels(levels);
   const marked = colors.findIndex((color) => color.hex === selected);
   const tabStop = marked < 0 ? 0 : marked;

@@ -83,9 +83,6 @@ export function BoardApp() {
     boardTitle,
     authOpen,
     setAuthOpen,
-    inviteToken,
-    inviteDone,
-    setInviteDone,
     canShare,
     canExport,
     canBackup,
@@ -505,13 +502,6 @@ export function BoardApp() {
         boardId={currentRoom()}
         boardTitle={title}
         boardOrgId={boardOrgId ?? null}
-        inviteToken={inviteToken}
-        inviteDone={inviteDone}
-        onInviteDone={(boardId) => {
-          setInviteDone(true);
-          if (boardId) window.location.href = `/?room=${encodeURIComponent(boardId)}`;
-          else void refreshAccess();
-        }}
         onRefreshAccess={refreshAccess}
         onSignedIn={(user) => {
           setMe(user);

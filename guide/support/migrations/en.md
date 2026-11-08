@@ -91,6 +91,30 @@ pnpm db:orphans --assign <roomId> --user <email>
 can be returned by a claim or by assigning an owner.
 :::
 
+## Paper palette
+
+Since 2026-11-07 the 100 and 300 fills are paper tones. Rooms painted earlier stay bright until
+they are repainted. The command moves them to the new tones at once: every previous colour has a
+pair of the same tone and level.
+
+```sh
+pnpm db:repaint
+pnpm db:repaint --apply --yes
+pnpm db:repaint --room <roomId> --apply --yes
+```
+
+- Without flags the command only lists rooms and object counts and changes nothing.
+- `--apply --yes` repaints sticky notes, shapes, lines and kanban column accents. Each room gets
+  one ordinary change in its history and a `board.palette.repainted` audit row.
+- Colours from the even older 22-colour palette are not touched: they have no exact pair, and
+  the window keeps calling them Custom colour.
+- A second run finds nothing. A room restored from an older backup can be repainted again.
+
+:::warning
+Run it with the service stopped and after a backup. An open room keeps its document in memory
+and can overwrite the command's change.
+:::
+
 ## Check after start
 
 ```sh
@@ -114,6 +138,7 @@ journalctl -u remo-sync -n 50 | grep -i 'schema\|error'
 | A cookie name change | there is no migration: the cookie is the mechanism |
 | A new mandatory key (for example, `REMO_KEK`) | set it before start, otherwise features answer "locked" |
 | Organisation isolation (schema 18) | two roles: `remo_app` in `DATABASE_URL`, the owner in `REMO_MIGRATION_DATABASE_URL`; without `db:rls:setup` and `db:rls:enable` the policies do not work |
+| The paper palette (2026-11-07) | optional: `pnpm db:repaint`, then `--apply --yes` with the service stopped; without it older rooms stay bright |
 | A room without an owner is closed (2026-11-06) | before traffic starts: `pnpm db:orphans --list`, then `--archive --yes` or `--assign <room> --user <email>`; rooms left unhandled stay closed |
 
 ## If something went wrong

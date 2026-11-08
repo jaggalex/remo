@@ -11,7 +11,14 @@ import {
   type Widget,
 } from "@remo/model";
 import { drawCardMeta } from "./cardMeta";
-import { arrowHead, connectorPath, labelPoint, type ConnectorPath } from "./connectors";
+import {
+  connectorPath,
+  insetPath,
+  labelPoint,
+  roundedArrowHead,
+  type ArrowHead,
+  type ConnectorPath,
+} from "./connectors";
 import { DEFAULT_PALETTE, withAlpha, type CanvasPalette } from "./palette";
 import {
   DEFAULT_FONT_FAMILY,
@@ -141,6 +148,25 @@ export function drawGuide(
   ctx.restore();
 }
 
+/** The sticky sheet of ADR-181, in world units: radius, and the shadow under the bottom edge. */
+export const STICKY_RADIUS = 2;
+/**
+ * The sheet's cast shadow, in board units at zoom 1: a soft warm band under the bottom
+ * edge, a touch to the right, as if lit from the upper left (the ADR-181 concept).
+ */
+export const STICKY_SHADOW = { offset: 12, blur: 14, inset: 6, dx: 2 } as const;
+/** How much lighter the upper-left corner is and how much darker the lower-right one. */
+export const STICKY_SHEEN = { light: 0.3, dark: -0.03 } as const;
+
+/**
+ * Device pixels per world unit. Shadows are not transformed by the canvas matrix, so a
+ * shadow that belongs to an object is multiplied by this to follow the object.
+ */
+export function deviceScale(ctx: CanvasRenderingContext2D, zoom: number): number {
+  const matrix = typeof ctx.getTransform === "function" ? ctx.getTransform() : null;
+  return matrix ? Math.hypot(matrix.a, matrix.b) : zoom;
+}
+
 export function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -241,18 +267,23 @@ function drawPath(ctx: CanvasRenderingContext2D, path: ConnectorPath): void {
   }
 }
 
-function fillHead(
-  ctx: CanvasRenderingContext2D,
-  head: { x: number; y: number }[],
-  colour: string,
-): void {
+/** A head is filled and stroked with a round join, which rounds its three corners. */
+function fillHead(ctx: CanvasRenderingContext2D, head: ArrowHead, colour: string): void {
+  const [a, b, c] = head.points;
+  ctx.save();
   ctx.fillStyle = colour;
+  ctx.strokeStyle = colour;
+  ctx.lineJoin = "round";
+  ctx.lineWidth = head.radius * 2;
+  ctx.setLineDash([]);
   ctx.beginPath();
-  ctx.moveTo(head[0]!.x, head[0]!.y);
-  ctx.lineTo(head[1]!.x, head[1]!.y);
-  ctx.lineTo(head[2]!.x, head[2]!.y);
+  ctx.moveTo(a!.x, a!.y);
+  ctx.lineTo(b!.x, b!.y);
+  ctx.lineTo(c!.x, c!.y);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 /**
@@ -410,20 +441,36 @@ function paintWidget(
     }
     case "sticky_note": {
       const fill = stickyFill(widget.style?.fillColor);
+      // A paper sheet (ADR-181): the shadow sits only under the bottom edge. Canvas has no
+      // shadow spread, so a narrower sheet hidden behind the note casts it; the shadow is in
+      // device pixels, so it is scaled with the note to stay the same paper at any zoom.
+      const scale = deviceScale(ctx, zoom);
+      const inset = Math.min(STICKY_SHADOW.inset, widget.width / 4);
       ctx.save();
-      ctx.shadowColor = withAlpha(palette.textPrimary, 0.18);
-      ctx.shadowBlur = 6 / zoom;
-      ctx.shadowOffsetY = 2 / zoom;
+      ctx.shadowColor = palette.stickerCast;
+      ctx.shadowBlur = STICKY_SHADOW.blur * scale;
+      ctx.shadowOffsetX = STICKY_SHADOW.dx * scale;
+      ctx.shadowOffsetY = STICKY_SHADOW.offset * scale;
       ctx.fillStyle = fill;
-      roundRect(ctx, left, top, widget.width, widget.height, 3);
-      ctx.fill();
+      ctx.fillRect(left + inset, top + widget.height / 2, widget.width - inset * 2, widget.height / 2);
       ctx.restore();
 
+      // The sheet itself, lighter where the light falls (upper left) than at the far corner.
+      const sheen = ctx.createLinearGradient(left, top, left + widget.width, top + widget.height);
+      if (sheen) {
+        sheen.addColorStop(0, shade(fill, STICKY_SHEEN.light));
+        sheen.addColorStop(1, shade(fill, STICKY_SHEEN.dark));
+      }
+      ctx.fillStyle = sheen ?? fill;
+      roundRect(ctx, left, top, widget.width, widget.height, STICKY_RADIUS);
+      ctx.fill();
+
       // A note has an edge: without one a pale note on the board's pale background is
-      // a rectangle you have to guess at (ADR-030).
-      ctx.strokeStyle = shade(fill, -0.16);
+      // a rectangle you have to guess at (ADR-030). The edge is ink, not a darker fill, so
+      // every colour gets the same line (ADR-181).
+      ctx.strokeStyle = withAlpha(palette.textPrimary, 0.2);
       ctx.lineWidth = 1 / zoom;
-      roundRect(ctx, left + 0.5 / zoom, top + 0.5 / zoom, widget.width - 1 / zoom, widget.height - 1 / zoom, 3);
+      roundRect(ctx, left + 0.5 / zoom, top + 0.5 / zoom, widget.width - 1 / zoom, widget.height - 1 / zoom, STICKY_RADIUS);
       ctx.stroke();
 
       // The text colour follows the fill unless it was chosen: a deep note with dark
@@ -571,8 +618,10 @@ function paintWidget(
     case "connector": {
       // Derived from the endpoints, so it follows them without extra writes.
       const resolve = options.resolve;
-      const path = resolve ? connectorPath(widget, resolve) : null;
-      if (!path) break;
+      const attached = resolve ? connectorPath(widget, resolve) : null;
+      if (!attached) break;
+      // Drawn a little short of both objects (ADR-184); the label keeps the full path.
+      const path = insetPath(attached);
 
       // A line's thickness, its dashes and its arrow head are properties of the
       // *object*, not of the screen: zooming out must make the whole line smaller,
@@ -595,40 +644,45 @@ function paintWidget(
         ctx.restore();
       }
 
-      ctx.strokeStyle = stroke;
       // World units, with a one-device-pixel floor: a 2-unit line at 13% is 0.26px,
       // which all but disappears, and an invisible line is worse than a slightly
       // thick one (ADR-052).
-      ctx.lineWidth = Math.max(widget.style?.strokeWidth ?? 2, 1 / zoom);
-      ctx.lineJoin = "round";
-      ctx.lineCap = "round";
-      if (strokeStyle === "dashed") ctx.setLineDash([8, 6]);
-      else if (strokeStyle === "dotted") ctx.setLineDash([2, 5]);
-      drawPath(ctx, path);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      const size = 14;
+      const width = Math.max(widget.style?.strokeWidth ?? 2, 1 / zoom);
       const first = path.points[0]!;
       const last = path.points[path.points.length - 1]!;
       // The head points along the last segment, not along the chord: on an elbow
       // or a curve those are different directions.
       const beforeLast = path.points[path.points.length - 2] ?? first;
       const afterFirst = path.points[1] ?? last;
+      const endHead =
+        widget.arrow === "end" || widget.arrow === "both"
+          ? roundedArrowHead(last, beforeLast, width)
+          : null;
+      const startHead =
+        widget.arrow === "start" || widget.arrow === "both"
+          ? roundedArrowHead(first, afterFirst, width)
+          : null;
 
-      if (widget.arrow === "end" || widget.arrow === "both") {
-        fillHead(ctx, arrowHead(last, beforeLast, size), stroke);
-      }
-      if (widget.arrow === "start" || widget.arrow === "both") {
-        fillHead(ctx, arrowHead(first, afterFirst, size), stroke);
-      }
+      // The line stops inside each head, so its round cap never pokes past the point.
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      if (strokeStyle === "dashed") ctx.setLineDash([8, 6]);
+      else if (strokeStyle === "dotted") ctx.setLineDash([2, 5]);
+      drawPath(ctx, insetPath(path, startHead?.trim ?? 0, endHead?.trim ?? 0));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (endHead) fillHead(ctx, endHead, stroke);
+      if (startHead) fillHead(ctx, startHead, stroke);
 
       // A connector can carry text: a chip on its own path, so the label keeps its
       // place when either end moves. Its size and colour are the object's, like a
       // note's (ADR-041, ADR-043).
       const label = widget.content?.trim();
       if (label) {
-        const at = labelPoint(path, widget.labelAt);
+        const at = labelPoint(attached, widget.labelAt);
         const fontPx = widget.style?.fontSize ?? 13;
         ctx.font = `500 ${fontPx}px ${theme.fontFamily}`;
         const text = fitOneLine(ctx, label, 260);

@@ -105,16 +105,26 @@ test("a brief with a file becomes a plan, applies once and undoes in one step", 
   await expect(plan).toContainText("The file was cut");
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(0);
 
-  // The miniature is geometry only, and its description is the same sentence a person
-  // reads under it: the counts and the bounds of the plan.
-  const map = plan.getByRole("img", { name: /bounds/ });
-  await expect(map).toBeVisible();
-  const mapLabel = await map.getAttribute("aria-label");
-  expect(mapLabel).toContain("10 objects");
-  expect(mapLabel).toContain("0 connectors");
-  expect(mapLabel).toMatch(/bounds \d+ × \d+/);
-  await expect(plan.locator(".agent-plan-map-caption")).toHaveText(mapLabel!);
-  await expect(plan.locator(".agent-plan-map-svg rect")).toHaveCount(10);
+  // The room is the preview (ADR-188): the panel is not modal, nothing dims the room,
+  // and the overlay draws the plan — two frames as hulls, eight leaves as ghosts.
+  await expect(plan).not.toHaveAttribute("aria-modal", "true");
+  await expect(page.locator(".rm-dialog-scrim")).toHaveCount(0);
+  await expect(plan).toContainText(/Bounds: \d+ × \d+/);
+  const proposal = await page.evaluate(() => {
+    const drawn = window.__remo.proposal;
+    return drawn
+      ? {
+          blocks: drawn.blocks.length,
+          hulls: drawn.blocks.filter((item) => item.type === "frame").length,
+          bounds: drawn.bounds,
+        }
+      : null;
+  });
+  expect(proposal).toMatchObject({ blocks: 10, hulls: 2 });
+  // The camera was fitted to the plan: its centre is inside the plan's box.
+  const camera = await page.evaluate(() => window.__remo.camera);
+  expect(camera.x).toBeGreaterThan(proposal!.bounds!.x);
+  expect(camera.x).toBeLessThan(proposal!.bounds!.x + proposal!.bounds!.width);
 
   // Two clicks in one tick are one apply: the second is refused by the ref guard.
   await plan.getByRole("button", { name: "Apply" }).evaluate((element) => {
@@ -127,6 +137,8 @@ test("a brief with a file becomes a plan, applies once and undoes in one step", 
   await expect(plan.getByRole("button", { name: "Show in room" })).toBeVisible();
   await expect(plan.getByRole("button", { name: "Apply" })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(10);
+  // The objects exist now; the dashed picture of them is gone.
+  await expect.poll(() => page.evaluate(() => window.__remo.proposal)).toBeNull();
 
   // The result is selected as a frame.
   const frames = await page.evaluate(() =>
@@ -196,15 +208,15 @@ test("a plan applied in one tab is not written again from a second tab", async (
   await second.close();
 });
 
-test("a plan with a connector draws a line, applies it and undoes it in one step", async ({
+test("a plan with a connector previews a line, applies it and undoes it in one step", async ({
   page,
 }) => {
   await agentBoard(page, "agents-connector");
   await openAgents(page);
   await chooseBrief(page);
 
-  // The fixture in `apps/sync/ai-fake.mjs` returns two notes and one line; the map is
-  // geometry only, so a line appears only when both ends are planned objects.
+  // The fixture in `apps/sync/ai-fake.mjs` returns two notes and one line; the canvas
+  // draws a planned line only when both ends are planned objects.
   await page
     .getByLabel("What should it draw?")
     .fill("Соедини две заметки FAKE_PLAN_CONNECTED");
@@ -215,12 +227,10 @@ test("a plan with a connector draws a line, applies it and undoes it in one step
   await expect(plan).toContainText("Objects: 2 · connectors: 1 · actions: 3");
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(0);
 
-  await expect(plan.locator(".agent-plan-map-svg rect")).toHaveCount(2);
-  await expect(plan.locator(".agent-plan-map-svg line")).toHaveCount(1);
-  const line = plan.locator(".agent-plan-map-svg line");
-  const from = await line.getAttribute("x1");
-  const to = await line.getAttribute("x2");
-  expect(Number(to)).toBeGreaterThan(Number(from));
+  const drawn = await page.evaluate(() => window.__remo.proposal);
+  expect(drawn?.blocks).toHaveLength(2);
+  expect(drawn?.lines).toHaveLength(1);
+  expect(drawn!.lines[0]!.x2).toBeGreaterThan(drawn!.lines[0]!.x1);
 
   await plan.getByRole("button", { name: "Apply" }).click();
   await expect(plan).toContainText(

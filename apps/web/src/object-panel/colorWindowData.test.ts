@@ -13,6 +13,7 @@ import {
   inkOption,
   mainLevel,
   namedColorWord,
+  markedColor,
   normalizeColor,
   sharedFillLevel,
   TEXT_INKS,
@@ -86,9 +87,21 @@ describe("the named values' words (ADR-140)", () => {
 
 describe("the current value's name", () => {
   it("names a palette value by its hex", () => {
-    expect(colorName(TONE_LEVELS.yellow[100])).toEqual({ key: "color.ffe07a" });
+    expect(colorName(TONE_LEVELS.yellow[100])).toEqual({ key: "color.ece2c8" });
     expect(colorName("#1A6AD8")).toEqual({ key: "color.1a6ad8" });
-    expect(colorName(" #FFE07A ")).toEqual({ key: "color.ffe07a" });
+    expect(colorName(" #ECE2C8 ")).toEqual({ key: "color.ece2c8" });
+  });
+
+  it("names a fill painted before ADR-182 by the entry it stands for", () => {
+    // The stored hex stays; the word and the ringed swatch are the new entry's.
+    expect(colorName("#ffe07a")).toEqual({ key: "color.ece2c8" });
+    expect(colorName("#ff8a57")).toEqual({ key: "color.bca996" });
+    expect(markedColor("#FFE07A")).toBe(TONE_LEVELS.yellow[100]);
+    expect(markedColor("#f8d3af")).toBe("#f8d3af");
+    expect(markedColor("#ffffff")).toBe("#ffffff");
+    expect(markedColor(null)).toBeNull();
+    // A pre-ADR-182 300 fill keeps its row when only the hue changes.
+    expect(fillLevel("#85d965")).toBe(300);
   });
 
   it("keeps an old hex as Custom colour with the hex beside it", () => {
@@ -122,7 +135,7 @@ describe("the current value's name", () => {
   });
 
   it("says Mixed colours instead of pretending one value is common", () => {
-    expect(colorName("#ffe07a", { mixed: true }).key).toBe("color.mixed");
+    expect(colorName("#ece2c8", { mixed: true }).key).toBe("color.mixed");
     expect(colorName(null, { mixed: true }).key).toBe("color.mixed");
   });
 

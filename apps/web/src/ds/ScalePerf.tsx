@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { boxOf, drawWidget, visibleWorldRect } from "@remo/canvas";
+import { DEFAULT_FONT_FAMILY, boxOf, drawWidget, visibleWorldRect } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 import { canvasPaletteFromTokens } from "../canvasPalette";
 import { DEFAULT_INK } from "../objectDefaults";
@@ -76,7 +76,7 @@ export function ScalePerf() {
     const resolve = (id: string) => widgets.find((widget) => widget.id === id);
     const palette = canvasPaletteFromTokens();
     const theme = {
-      fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif',
+      fontFamily: DEFAULT_FONT_FAMILY,
       fontCap: { S: 13, M: 16, L: 20 },
       shapeStrokeWidth: 1,
       cardPlaceholder: "Type something",

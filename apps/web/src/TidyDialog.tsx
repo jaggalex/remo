@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentPlan, AppliedAgentPlan, TidyStrategy } from "@remo/doc";
 import type { Widget } from "@remo/model";
 import { Banner, Button, Dialog } from "@remo/ui";
-import { AgentPlanDialog } from "./AgentPlanDialog";
+import { AgentPlanPanel } from "./AgentPlanPanel";
 import { api, type BoardAgents } from "./api";
 import { cameraStore } from "./cameraStore";
 import { agentFailureText } from "./agentError";
@@ -118,10 +118,9 @@ export function TidyDialog({
 
   if (planTaskId) {
     return (
-      <AgentPlanDialog
+      <AgentPlanPanel
         taskId={planTaskId}
         canEdit={canEdit}
-        widgets={widgets}
         onApply={onApplyPlan}
         onClose={() => {
           setPlanTaskId(null);

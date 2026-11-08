@@ -29,7 +29,7 @@ You need to turn a brief into a structure, turn text into a diagram, turn a sele
 
 | Skill | What it does | Before writing | Undo |
 |---|---|---|---|
-| **Brief to room** | proposes a plan for a structure | a plan preview: map, objects by kind, warnings | one ⌘Z |
+| **Brief to room** | proposes a plan for a structure | a preview in the room: the dashed plan, a task panel, warnings | one ⌘Z |
 | **Diagram from a description** | draws shapes and connectors | no preview, written at once | by hand: ⌘Z does not undo it |
 | **Cards from a selection** | turns the selection into cards | Preview job shows the card count | by hand; the package can be stopped and resumed |
 | **Tidy up selection** | lays the selection out in even columns | a before-and-after preview with warnings | one ⌘Z |

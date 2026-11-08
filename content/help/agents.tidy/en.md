@@ -20,8 +20,8 @@ The selected objects stand in even columns, and free groups are covered by label
 2. Click **Tidy up** in the context menu or on the selection bar.
 3. Choose a layout. **Auto** is selected by default.
 4. Click **Tidy up** in the dialog. Result: the agent prepares a plan and the button reads "Preparing the layout…".
-5. Wait for the "Before and after" preview. Result: you can see which objects will move, which blocks will appear and what stays in place; the room has not changed yet.
-6. Change the layout in the preview when needed: the block labels are kept and the coordinates are recomputed.
+5. Wait for the preview. Result: dashed lines in the room show where objects will move and which blocks will appear; the objects have not moved yet, and a task panel sits at the bottom.
+6. When needed, open Details and change the layout: the block labels are kept and the coordinates are recomputed.
 7. Click **Apply**. Result: the objects have moved, the block frames exist, and one ⌘Z puts everything back.
 
 ## Layouts

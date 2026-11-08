@@ -8,7 +8,7 @@ import { cx } from "./util";
 export type SyncState = "saved" | "pending" | "offline" | "connecting";
 
 const SYNC: Record<SyncState, { icon: IconName; text: UiKey; short?: UiKey; tone: string }> = {
-  saved: { icon: "cloud-check", text: "saved", tone: "success" },
+  saved: { icon: "saved", text: "saved", tone: "success" },
   pending: { icon: "timer", text: "saving", tone: "muted" },
   offline: { icon: "offline", text: "offline", short: "offlineShort", tone: "warning" },
   connecting: { icon: "timer", text: "saving", tone: "muted" },
@@ -110,7 +110,7 @@ export function ZoomControls({ zoom = 100, onIn, onOut, onReset, onFit }: { zoom
       <button type="button" className="rm-zoom-value rm-num" aria-label={t("zoomValue", { zoom })} onClick={onReset}>{zoom} %</button>
       <IconButton icon="plus" label={t("zoomIn")} size="compact" onClick={onIn} />
       <span className="rm-floatbar-sep" />
-      <IconButton icon="zoom-fit" label={t("zoomFit")} size="compact" onClick={onFit} />
+      <IconButton icon="fit" label={t("zoomFit")} size="compact" onClick={onFit} />
     </div>
   );
 }

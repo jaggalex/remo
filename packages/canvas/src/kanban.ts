@@ -2,6 +2,7 @@ import type { CardStatus, Widget } from "@remo/model";
 import { drawCardMeta } from "./cardMeta";
 import type { KanbanLayout } from "./layout";
 import { DEFAULT_PALETTE, type CanvasPalette } from "./palette";
+import { DEFAULT_FONT_FAMILY } from "./textLayout";
 
 export interface KanbanPaintOptions {
   selectedIds?: readonly string[];
@@ -73,7 +74,7 @@ export function drawKanbanHover(
   ctx.fillRect(column.left, lane.top, column.width, lane.height);
 }
 
-const FONT = 'Inter, "Helvetica Neue", Arial, sans-serif';
+const FONT = DEFAULT_FONT_FAMILY;
 
 /**
  * Paints a kanban matrix: column headers with live counts, swimlane bands with

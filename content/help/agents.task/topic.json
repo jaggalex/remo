@@ -14,13 +14,13 @@
     "agents.journal",
     "access.roles"
   ],
-  "verifiedAgainst": "2026-11-02",
+  "verifiedAgainst": "2026-11-08",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:61ba3a654ba730db0570808dd07d5c1c4095e7d62642c38b7d4b89d2c7e06aaa",
-      "targetHash": "sha256:f997784233138e7b7cde6536f2c9c111f61a95ab0503934f5c208efae1e827d6"
+      "sourceHash": "sha256:16592d6da7edc8ff95af0aae427c5e2346348f5dc56535469b73ce57576063c7",
+      "targetHash": "sha256:b3ba40f2094cfa27fd4ed7a41e1a98fa9748d4980c7457d56f0e4372d3f8082b"
     }
   }
 }

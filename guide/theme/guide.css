@@ -252,7 +252,7 @@ h1 {
 }
 
 .status-experimental {
-  background: var(--yellow-100);
+  background: var(--sticker-yellow);
   color: var(--neutral-900);
 }
 

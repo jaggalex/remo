@@ -9,3 +9,4 @@ export * from "./render";
 export * from "./scene";
 export * from "./spatial";
 export * from "./textLayout";
+export * from "./proposal";

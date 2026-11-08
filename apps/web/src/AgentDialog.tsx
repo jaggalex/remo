@@ -4,7 +4,7 @@ import type { Widget } from "@remo/model";
 import { api, type BoardAgents, type ChangeSet } from "./api";
 import { cameraStore } from "./cameraStore";
 import { AgentFileField } from "./AgentFileField";
-import { AgentPlanDialog } from "./AgentPlanDialog";
+import { AgentPlanPanel } from "./AgentPlanPanel";
 import type { TaskFile } from "./agentFile";
 import { agentFailureText } from "./agentError";
 import { selectionPreview } from "./agentPayload";
@@ -197,10 +197,9 @@ export function AgentDialog({
 
   if (planTaskId) {
     return (
-      <AgentPlanDialog
+      <AgentPlanPanel
         taskId={planTaskId}
         canEdit={canEdit}
-        widgets={widgets}
         onApply={onApplyPlan}
         onClose={() => setPlanTaskId(null)}
         onShowOnBoard={() => {

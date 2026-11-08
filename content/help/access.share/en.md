@@ -15,6 +15,8 @@ The person gets access to the room with the chosen role. The access list shows w
 4. To change a role, choose another one in the row. A team role can only be changed by an owner or co-owner.
 5. To revoke access, click Remove in the row.
 
+If remo gives you an invitation link, send it to the recipient. They can use the link to sign in or create an account with the invited email address. Clicking Accept invitation opens the room.
+
 ## Check the result
 
 - The person can open the room after signing in; their resulting role is shown in Your role.

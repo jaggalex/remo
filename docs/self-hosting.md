@@ -92,6 +92,14 @@ it creates a team when there is none and writes an audit row. A person with the 
 claim an archived room from the room screen; claiming clears the archive flag and assigns the
 room to their organisation. If the room has a claim token, the token is required.
 
+Rooms painted before the paper palette (ADR-182) keep their saturated fills. To move them to
+the paper tones at once, stop the service, back up, list and then apply (ADR-183):
+
+```sh
+pnpm db:repaint
+pnpm db:repaint --apply --yes
+```
+
 ## Tenant isolation (RLS)
 
 Row-level security is complete for schema 18 (ADR-178). The service connects as `remo_app`,

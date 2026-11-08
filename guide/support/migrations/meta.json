@@ -17,11 +17,11 @@
     "admin/deploy",
     "support/troubleshooting"
   ],
-  "updated": "2026-11-06",
+  "updated": "2026-11-07",
   "translations": {
     "en": {
-      "sourceHash": "sha256:1bb604545b03bd619d0ec22fe7cde2247257d8b1df8c02b58df0f5be5a480a7a",
-      "targetHash": "sha256:8910505049c0ecf1e50271b54c397fe5a1536dcf30909e2190b89b0de2581cd0"
+      "sourceHash": "sha256:394ad00ede47c92a5dc229ac18cb46fe7b988a8b87453cf0fde209eb0f72ba79",
+      "targetHash": "sha256:d3e303bb280346bc9f56ffa96fdb31ee1906b0c42c791f8dd9ee68f1e4ee76e3"
     }
   }
 }

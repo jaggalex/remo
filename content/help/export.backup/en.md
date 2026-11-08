@@ -20,6 +20,8 @@ It is plain JSON: you can read, verify and keep it without remo.
 2. Choose the Room backup format.
 3. Click Export.
 
+The downloaded filename comes from the room title and preserves Cyrillic letters, for example `план-ёж.remo-backup.json`.
+
 You need the `board.backup` grant; editors, co-owners and owners have it. Every download is recorded in the audit log.
 
 ## Restore a room

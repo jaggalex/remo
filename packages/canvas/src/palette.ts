@@ -33,6 +33,10 @@ export interface CanvasPalette {
   success: string;
   /** Ink on a presence-coloured name plate (`text-on-presence`). */
   textOnPresence: string;
+  /** The shadow under a sticky note's bottom edge (`sticker-cast`); paper, so one for both themes. */
+  stickerCast: string;
+  /** The dashed hull and ghosts of a plan under review (`agent-proposal`, ADR-188). */
+  agentProposal: string;
 }
 
 export const DEFAULT_PALETTE: CanvasPalette = {
@@ -53,6 +57,8 @@ export const DEFAULT_PALETTE: CanvasPalette = {
   warning: "#f59e0b",
   success: "#12b76a",
   textOnPresence: "#ffffff",
+  stickerCast: "rgba(38,30,22,0.6)",
+  agentProposal: "#8a8781",
 };
 
 /** Apply an alpha channel to a hex colour, leaving other formats alone. */

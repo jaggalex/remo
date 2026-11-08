@@ -51,8 +51,8 @@
 }
 
 .ai-log-filters select {
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 5px 7px;
   font: inherit;
   font-size: 12px;
@@ -161,8 +161,8 @@
 
 .timer-custom input {
   width: 90px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 7px 9px;
   font: inherit;
   font-size: 13px;

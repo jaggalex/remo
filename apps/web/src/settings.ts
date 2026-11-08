@@ -3,6 +3,7 @@ import {
   DEFAULT_SHAPE_PRESET,
   type ConnectorShape,
 } from "@remo/model";
+import { DEFAULT_FONT_FAMILY, PREVIOUS_FONT_FAMILIES } from "@remo/canvas";
 
 /**
  * Tunable behaviour of the board.
@@ -89,7 +90,7 @@ export const DEFAULT_SETTINGS: BoardSettings = {
     stroke: DEFAULT_SHAPE_PRESET.stroke,
     strokeWidth: DEFAULT_SHAPE_PRESET.strokeWidth,
   },
-  text: { fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' },
+  text: { fontFamily: DEFAULT_FONT_FAMILY },
 };
 
 const STORAGE_KEY = "remo.settings";
@@ -190,11 +191,11 @@ export function normalizeSettings(input: unknown): BoardSettings {
       strokeWidth: num(shapes.strokeWidth, DEFAULT_SETTINGS.shapes.strokeWidth, "shapes.strokeWidth"),
     },
     text: {
-      // The old default stack is not a deliberate choice: move it to Inter once,
-      // so the canvas and the design-system chrome use the same typeface.
+      // A previous default stack is not a deliberate choice: move it to the current one,
+      // so the canvas and the design-system chrome use the same typeface (ADR-181).
       fontFamily:
         typeof text.fontFamily === "string" && text.fontFamily.trim()
-          ? text.fontFamily.trim() === '"Helvetica Neue", Arial, sans-serif'
+          ? PREVIOUS_FONT_FAMILIES.includes(text.fontFamily.trim())
             ? DEFAULT_SETTINGS.text.fontFamily
             : text.fontFamily.trim()
           : DEFAULT_SETTINGS.text.fontFamily,

@@ -27,8 +27,8 @@ pnpm baselines
 | `canvas-bottom.png` | The bottom edge: zoom with fit, and the one-time hint in its own slot |
 | `vote-chips.png` | Two counters on a note and its neighbour: «0 +» and «1 · ваш − +» |
 | `vote-chips-dark.png` | The same counters in the dark theme: plate, my accent, the muted disabled «+» |
-| `agent-plan.png` | The plan preview: two notes joined by one line, with counts, bounds and the map |
-| `agent-plan-tidy.png` | The tidy preview: five scattered notes, the before/after map, the strategy and the US block |
+| `agent-plan.png` | The plan preview in the room (ADR-188): two dashed notes joined by a dashed line, and the task panel with counts and bounds |
+| `agent-plan-tidy.png` | The tidy preview in the room: five notes, their dashed ghosts in one column, the US block hull and the task panel |
 
 The automatic gate is **not** a byte comparison (ADR-091): macOS and Linux rasterize
 text differently. `e2e/visual.spec.ts` samples pixels where the three routings must

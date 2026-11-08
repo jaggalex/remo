@@ -71,7 +71,7 @@
   flex: 1;
   border: 1px solid var(--line);
   background: var(--bg-panel);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   padding: 5px 0;
   font-size: 13px;
   line-height: 1.1;
@@ -96,8 +96,8 @@
   margin: 12px 12px 12px 0;
   padding: 16px 18px 36px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-bar);
   overflow-y: auto;
   scrollbar-width: thin;
@@ -256,7 +256,7 @@
 
 .chip {
   background: var(--bg-hover);
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   padding: 2px 7px;
   font-size: 11px;
   color: var(--text-secondary);
@@ -272,7 +272,7 @@
 .selection-actions button {
   border: 1px solid var(--line);
   background: var(--bg-panel);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   padding: 5px 9px;
   font: inherit;
   font-size: 12px;

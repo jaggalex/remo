@@ -4,6 +4,7 @@ import { DeleteConfirmation } from "./DeleteDialog";
 import { HelpLink } from "./help/HelpLink";
 import type { FollowEvent, FollowState } from "./follow";
 import { useI18n } from "./i18n";
+import { useProposal } from "./proposalStore";
 
 /**
  * The banners and pills that float over the canvas.
@@ -170,6 +171,8 @@ export function OfflineBlocked() {
 /** The empty board's first line: the room name, so a link can be pasted to a teammate. */
 export function EmptyBoard({ room }: { room: string }) {
   const { t } = useI18n();
+  // A plan under review is drawn where the room is empty; the card would cover it.
+  if (useProposal()) return null;
   return (
     <div className="empty-board">
       <b>{t("empty.title")}</b>

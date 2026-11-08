@@ -12,7 +12,6 @@ import { FollowDialog } from "./FollowDialog";
 import { VoteSurface } from "./VoteSurface";
 import { ShareLinkDialog } from "./ShareLinkDialog";
 import { ShareDialog } from "./ShareDialog";
-import { InviteDialog } from "./InviteDialog";
 import { Contained } from "./ErrorBoundary";
 import type { TimerPhase } from "@remo/model";
 
@@ -43,9 +42,6 @@ function DialogsBody({
   boardId,
   boardTitle,
   boardOrgId,
-  inviteToken,
-  inviteDone,
-  onInviteDone,
   onRefreshAccess,
   onSignedIn,
   authOpen,
@@ -103,9 +99,6 @@ function DialogsBody({
   boardId: string;
   boardTitle: string;
   boardOrgId: string | null;
-  inviteToken: string | null;
-  inviteDone: boolean;
-  onInviteDone: (boardId: string | null) => void;
   onRefreshAccess: () => Promise<void>;
   onSignedIn: (user: SessionUser) => void;
   authOpen: boolean;
@@ -154,14 +147,6 @@ function DialogsBody({
 }) {
   return (
     <>
-      {inviteToken && !inviteDone && (
-        <InviteDialog
-          token={inviteToken}
-          signedIn={Boolean(me)}
-          onSignIn={() => setAuthOpen(true)}
-          onDone={onInviteDone}
-        />
-      )}
       <AuthDialog
         open={authOpen}
         onClose={() => setAuthOpen(false)}

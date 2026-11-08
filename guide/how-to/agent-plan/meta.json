@@ -17,11 +17,11 @@
     "capabilities/agents",
     "concepts/agents"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-08",
   "translations": {
     "en": {
-      "sourceHash": "sha256:24fa948d7734173709f23339ef48079e74ad479140ba4a8968448a00e83a9250",
-      "targetHash": "sha256:b6ec0f58baa651a75f7e6b63df291e1b405c8f1f620533ed3f6c5c0f4b34e242"
+      "sourceHash": "sha256:8a36e2b6aa5eff08135752f5f19618d8dc98b78042a3535c503fee8dd1f943c1",
+      "targetHash": "sha256:8d70e264b5449004e72e5fc22c327c86c76baa836c09c10636a0257491670628"
     }
   }
 }

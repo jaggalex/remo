@@ -289,7 +289,7 @@ button.peer:disabled {
 
 .comments-panel {
   position: fixed;
-  top: 76px;
+  top: calc(var(--topbar-height) + var(--space-6));
   right: 12px;
   bottom: 12px;
   z-index: var(--z-bar);
@@ -348,7 +348,7 @@ button.peer:disabled {
   gap: 2px;
   padding: 6px 8px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-primary);
   font: inherit;
@@ -407,7 +407,7 @@ button.peer:disabled {
 .comments-panel button:not(.comments-list button),
 .comments-thread button {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   padding: 5px 8px;
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -520,7 +520,7 @@ button.peer:disabled {
 }
 
 [data-theme="dark"] .topbar-mark img {
-  filter: none;
+  filter: brightness(0) invert(1);
 }
 
 [data-theme="dark"] .help-brand img {
@@ -534,7 +534,7 @@ button.peer:disabled {
   height: 30px;
   flex: 0 0 auto;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   background: var(--bg-panel);
   color: var(--text-secondary);
   font: inherit;
@@ -571,8 +571,8 @@ button.peer:disabled {
 .org-create input {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 6px 8px;
   background: var(--bg-app);
   color: var(--text-primary);
