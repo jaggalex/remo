@@ -15,10 +15,10 @@ import {
   type ShapeKind,
   type Widget,
 } from "@remo/model";
-import type { Camera } from "@remo/canvas";
 import { cardTargetFor } from "./cardTarget";
 import { defaultStickerFill } from "./object-panel/palette";
 import type { BoardSettings } from "./settings";
+import { cameraStore } from "./cameraStore";
 
 /** A new card's box, matched to the template the matrix was captured from. */
 const CARD_WIDTH = 422.08;
@@ -29,7 +29,6 @@ export function useBoardCreation({
   widgets,
   selectedIds,
   kanbanStates,
-  camera,
   settings,
   setSelectedIds,
   startEditing,
@@ -38,7 +37,6 @@ export function useBoardCreation({
   widgets: Widget[];
   selectedIds: string[];
   kanbanStates: Record<string, KanbanState>;
-  camera: Camera;
   settings: BoardSettings;
   setSelectedIds: (ids: string[]) => void;
   /** Open the inline editor for a newly created card (ADR-169). */
@@ -82,8 +80,10 @@ export function useBoardCreation({
   const nextSpot = useCallback(() => {
     const step = placedCount.current % 6;
     placedCount.current += 1;
+    // Read the live viewport when the object is created, not a render-time copy.
+    const camera = cameraStore.get();
     return { x: camera.x - 200 + step * 40, y: camera.y - 150 + step * 40 };
-  }, [camera.x, camera.y]);
+  }, []);
 
   const addSticky = useCallback(
     (fill?: string): string => {

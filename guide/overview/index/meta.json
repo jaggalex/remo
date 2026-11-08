@@ -8,8 +8,8 @@
     "en": "What remo is"
   },
   "summary": {
-    "ru": "Локально-первый холст для небольшой команды: комнаты, объекты, доступ, экспорт и интеграции — в одном продукте.",
-    "en": "A local-first canvas for a small team: rooms, objects, access, export and integrations in one product."
+    "ru": "Визуальный холст для совместной работы команды.",
+    "en": "A shared visual canvas for teamwork."
   },
   "related": [
     "overview/map",
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:c9096e15d85bcf01b7abee9f5a1e9fef9d8a2a03e44ac3594ee2f532a05bcd88",
-      "targetHash": "sha256:276e0a261a9cb1fa493e6922c5a088a95fe107e171e815c778a6189092125ae7"
+      "sourceHash": "sha256:553c1748e9cc7689ac68aeb1dc850f5de1dd87065e98dbaa64544b72dd00f06e",
+      "targetHash": "sha256:47951b1026893a9db9e51a499c9c0d7e7b01391fddcdb9771fb0d6a02f28ec7b"
     }
   }
 }

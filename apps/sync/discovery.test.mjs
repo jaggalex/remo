@@ -29,15 +29,15 @@ describe("discovery", () => {
     expect(boards.map((board) => board.id)).toEqual(["one", "two"]);
   });
 
-  it("adds the current legacy room, and only to somebody who named it", async () => {
+  it("does not surface an unowned room, even when it is named", async () => {
     const fake = store({
       readable: [],
       iam: { legacy: { id: "legacy", owner_id: null } },
       rooms: { legacy: { id: "legacy", title: "Old room" } },
     });
     expect(await discoverableBoards(fake, {})).toEqual([]);
-    const boards = await discoverableBoards(fake, { room: "legacy" });
-    expect(boards).toEqual([{ id: "legacy", title: "Old room" }]);
+    // It is closed (ADR-174); listing it would only offer a door that answers 403.
+    expect(await discoverableBoards(fake, { room: "legacy" })).toEqual([]);
   });
 
   it("does not surface a claimed board through the room parameter", async () => {

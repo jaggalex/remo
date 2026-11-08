@@ -732,12 +732,20 @@ suite("IAM API", () => {
     expect(again.status).toBe(409);
   });
 
-  it("lets an unclaimed room stay readable without an account", async () => {
+  it("closes an unclaimed room until it is claimed", async () => {
     const room = `legacy-${stamp}`;
     await store.createIamBoard({ id: room, orgId: null, teamId: null, ownerId: null, title: "Legacy" });
+    // The access route still describes the state, so the client can offer a claim...
     const res = await client()("GET", `/boards/${room}/access`);
     expect(res.status).toBe(200);
-    expect(res.body.access).toMatchObject({ allowed: true, reason: "UNCLAIMED" });
+    expect(res.body.access).toMatchObject({
+      allowed: false,
+      reason: "UNCLAIMED",
+      capabilities: [],
+    });
+    // ...but the projection is closed, not a second door around the socket (ADR-174).
+    const projection = await client()("GET", `/boards/${room}`);
+    expect(projection.status).toBe(403);
   });
 
   it("treats a malformed session cookie as anonymous instead of crashing", async () => {
@@ -1535,7 +1543,7 @@ suite("board discovery", () => {
     expect(mine).toHaveLength(0);
   });
 
-  it("shows a legacy room to its visitor and hides a claimed board from everyone else", async () => {
+  it("hides a claimed board and a closed legacy room from discovery", async () => {
     const owner = client();
     const ownerReg = await owner("POST", "/auth/register", {
       email: email("discover-legacy"),
@@ -1552,13 +1560,13 @@ suite("board discovery", () => {
     const owned = await store.listReadableBoards(ownerReg.body.user.id);
     expect(owned.map((row) => row.id)).toContain(claimedId);
 
-    // A room with no owner is the legacy mode: visible only when named.
+    // A room with no owner is closed (ADR-174): not visible even when the address
+    // names it. Discovery must not offer a door that answers 403.
     const room = `test-legacy-${Date.now()}`;
     await store.pool.query("insert into boards (id, title) values ($1, $2)", [room, "Old room"]);
     try {
       expect(await discoverableBoards(store, {})).toEqual([]);
-      const legacy = await discoverableBoards(store, { room });
-      expect(legacy.map((row) => row.id)).toEqual([room]);
+      expect(await discoverableBoards(store, { room })).toEqual([]);
       expect(await store.listReadableBoards(ownerReg.body.user.id).then((rows) => rows.map((row) => row.id))).not.toContain(room);
     } finally {
       await store.pool.query("delete from boards where id = $1", [room]);

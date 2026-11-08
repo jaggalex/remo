@@ -3,6 +3,7 @@ import * as Y from "yjs";
 import {
   bounds,
   DEFAULT_COLUMN_WIDTH,
+  MAX_TEXT_CHARS,
   type Board,
   type KanbanState,
   type Widget,
@@ -948,5 +949,80 @@ describe("WIP limits", () => {
     setColumnWip(doc, "k1", "col0", 2);
     setColumnWip(doc, "k1", "col0", 0);
     expect(doc.snapshot().kanbanStates.k1!.columns[0]!.wipLimit).toBeUndefined();
+  });
+});
+
+describe("snapshot of a document another client wrote (ADR-171)", () => {
+  /** Write raw values on a second document and sync them, the way a peer would. */
+  function fromPeer(write: (doc: Y.Doc) => void): BoardDocument {
+    const peer = new Y.Doc();
+    write(peer);
+    const local = new Y.Doc();
+    Y.applyUpdate(local, Y.encodeStateAsUpdate(peer));
+    return new BoardDocument(local);
+  }
+
+  it("renders around malformed values instead of throwing", () => {
+    const board = fromPeer((doc) => {
+      const widgets = doc.getMap<unknown>("widgets");
+      widgets.set("ok", {
+        id: "ok",
+        type: "sticky_note",
+        parentId: null,
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+      });
+      widgets.set("junk", "not a widget");
+      widgets.set("junk-null", null);
+      widgets.set("junk-number", 42);
+      widgets.set("bad", { type: "rocket", x: "far", style: ["red"], link: { kind: "url", url: "javascript:alert(1)" } });
+      doc.getMap<unknown>("texts").set("ok", "plain string instead of Y.Text");
+      doc.getMap<unknown>("kanbans").set("k1", { columns: "nope" });
+      const nested = new Y.Map<unknown>();
+      nested.set("columns", "nope");
+      nested.set("headerHeight", "tall");
+      doc.getMap<unknown>("kanbans").set("k2", nested);
+      doc.getMap<unknown>("tags").set("t1", { name: "Risk", color: "neon" });
+      doc.getMap<unknown>("tags").set("t2", 5);
+      doc.getMap<unknown>("meta").set("title", { not: "a title" });
+      doc.getArray<unknown>("presentation").push(["frame-1", 7]);
+    });
+
+    const snapshot = board.snapshot();
+    expect(snapshot.widgets.map((w) => w.id).sort()).toEqual(["bad", "ok"]);
+    const bad = snapshot.widgets.find((w) => w.id === "bad");
+    expect(bad).toMatchObject({ type: "unsupported", x: 0 });
+    expect(bad).not.toHaveProperty("link");
+    expect(bad).not.toHaveProperty("style");
+    expect(Object.keys(snapshot.kanbanStates)).toEqual(["k2"]);
+    expect(snapshot.kanbanStates.k2?.columns).toEqual([]);
+    expect(Number.isFinite(snapshot.kanbanStates.k2?.headerHeight)).toBe(true);
+    expect(snapshot.tags).toEqual({ t1: { id: "t1", name: "Risk", color: "gray" } });
+    expect(snapshot.title).toBe("");
+    expect(snapshot.presentation).toEqual(["frame-1"]);
+  });
+
+  it("caps a hostile note before layout without touching the document", () => {
+    const board = fromPeer((doc) => {
+      doc.getMap("widgets").set("big", {
+        id: "big",
+        type: "sticky_note",
+        parentId: null,
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+      });
+      const text = new Y.Text();
+      text.insert(0, "x".repeat(MAX_TEXT_CHARS + 50_000));
+      doc.getMap("texts").set("big", text);
+    });
+
+    const widget = board.snapshot().widgets.find((entry) => entry.id === "big");
+    expect(widget?.content).toHaveLength(MAX_TEXT_CHARS);
+    // The document keeps the full value; only painting is capped (ADR-176).
+    expect(board.texts.get("big")?.toString()).toHaveLength(MAX_TEXT_CHARS + 50_000);
   });
 });

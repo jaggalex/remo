@@ -9,9 +9,9 @@ import {
   unionBox,
   visibleWorldRect,
   zoomAt,
-  type Camera,
   type KanbanLayout,
 } from "@remo/canvas";
+import { cameraStore, useCamera } from "./cameraStore";
 import type {
   BoardConnection,
   BoardDocument,
@@ -92,8 +92,6 @@ interface Props {
     toId: string,
     sides: { startSide: ConnectorSide; endSide: ConnectorSide },
   ) => string | null;
-  camera: Camera;
-  onCamera: (camera: Camera) => void;
   /** Who else is in the room; only their cursors are drawn (never our own). */
   presence: Presence[];
   onCursor: (cursor: { x: number; y: number } | null) => void;
@@ -197,8 +195,6 @@ export function BoardCanvas({
   onAddCard,
   onAddColumn,
   onConnect,
-  camera,
-  onCamera,
   presence,
   onCursor,
   onContextMenu,
@@ -241,6 +237,10 @@ export function BoardCanvas({
 }: Props) {
   const { t } = useI18n();
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
+  // The canvas owns the camera subscription: panning repaints this component, not the
+  // forty-four hooks above it in BoardApp (review P6).
+  const camera = useCamera();
+  const setCamera = cameraStore.set;
   const boardRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -281,6 +281,7 @@ export function BoardCanvas({
 
   const gestures = useGestures({
     camera,
+    onCamera: setCamera,
     viewport,
     settings,
     widgets,
@@ -305,8 +306,7 @@ export function BoardCanvas({
         y: (point.y - camera.y) * camera.zoom + rect.height / 2 + rect.top,
       };
     },
-    onCamera,
-    onSelect,
+      onSelect,
     onMoveMany,
     onResize,
     onMoveCard,
@@ -481,19 +481,19 @@ export function BoardCanvas({
       left + widget.width <= visible.x + visible.width - margin &&
       top + widget.height <= visible.y + visible.height - margin;
     centredFor.current = editingId;
-    if (!inside) onCamera({ ...camera, x: widget.x, y: widget.y });
-  }, [camera, editingId, onCamera, viewport, widgets]);
+    if (!inside) setCamera({ ...camera, x: widget.x, y: widget.y });
+  }, [camera, editingId, setCamera, viewport, widgets]);
 
   /**
    * Latest camera and setter, so the native wheel listener below can stay
    * registered for the life of the canvas instead of being torn down on every pan.
    */
   const cameraRef = useRef(camera);
-  const onCameraRef = useRef(onCamera);
+  // `cameraStore.set` is stable, so the native wheel listener does not need a ref.
+
   useEffect(() => {
     cameraRef.current = camera;
-    onCameraRef.current = onCamera;
-  }, [camera, onCamera]);
+  }, [camera]);
 
   /**
    * Wheel and pinch are handled by a native listener, not by React's `onWheel`.
@@ -530,7 +530,7 @@ export function BoardCanvas({
           y: current.y + dy / current.zoom,
         };
         cameraRef.current = next;
-        onCameraRef.current(next);
+        setCamera(next);
         return;
       }
 
@@ -544,7 +544,7 @@ export function BoardCanvas({
         factor,
       );
       cameraRef.current = next;
-      onCameraRef.current(next);
+      setCamera(next);
     };
 
     // Safari also reports a trackpad pinch as gesture events; cancelling them stops
@@ -572,13 +572,13 @@ export function BoardCanvas({
       .filter((widget): widget is Widget => Boolean(widget))
       .map((widget) => boxOf(widget));
     const target = unionBox(boxes);
-    if (target) onCamera(fitToBounds(target, { x: 0, y: 0, ...viewport }));
-  }, [onCamera, selectedIds, viewport, widgetById, widgets]);
+    if (target) setCamera(fitToBounds(target, { x: 0, y: 0, ...viewport }));
+  }, [setCamera, selectedIds, viewport, widgetById, widgets]);
 
   /** Zoom around the middle of the canvas, for the two HUD buttons. */
   const zoomBy = useCallback(
     (factor: number) => {
-      onCamera(
+      setCamera(
         zoomAt(
           camera,
           { x: 0, y: 0, width: viewport.width, height: viewport.height },
@@ -587,7 +587,7 @@ export function BoardCanvas({
         ),
       );
     },
-    [camera, onCamera, viewport.height, viewport.width],
+    [camera, setCamera, viewport.height, viewport.width],
   );
 
   const fittedFor = useRef<string | null>(null);
@@ -702,7 +702,7 @@ export function BoardCanvas({
         widgets={widgets}
         selectedIds={selectedIds}
         camera={camera}
-        setCamera={onCamera}
+        setCamera={setCamera}
         connection={connection}
         presence={presence}
         canFacilitate={canFacilitate}

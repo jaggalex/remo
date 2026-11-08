@@ -290,7 +290,9 @@ async aiRunsForVerify(orgId) {
 },
 
 async orgsWithAiRuns() {
-  const { rows } = await this.pool.query(`select distinct org_id from ai_runs`);
+  // The log verifier walks every organisation; the function is the one cross-tenant
+  // read, and each per-org read after it runs inside that tenant (ADR-178).
+  const { rows } = await this.pool.query("select * from remo_ai_orgs() as org_id");
   return rows.map((row) => row.org_id);
 },
 

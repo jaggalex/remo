@@ -14,7 +14,7 @@ A new room is created in your organisation — in a team when one is chosen — 
 
 - The new room opens and its id is in the address.
 - The name matches the one you entered.
-- If you chose a template, the room contains its objects; an empty room has none.
+- A room created from a template opens with the template’s objects. An empty room opens with a blank canvas.
 
 ## Limits
 

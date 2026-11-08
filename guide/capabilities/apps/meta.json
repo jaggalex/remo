@@ -8,7 +8,7 @@
     "en": "Apps"
   },
   "summary": {
-    "ru": "Декларативная панель на комнате: приложение описывает схему, продукт рисует её своими компонентами.",
+    "ru": "Декларативная панель в комнате: приложение описывает схему, продукт рисует её своими компонентами.",
     "en": "A declarative panel on the room: an app describes a schema, the product draws it with its own components."
   },
   "related": [
@@ -20,8 +20,8 @@
   "updated": "2026-10-28",
   "translations": {
     "en": {
-      "sourceHash": "sha256:0e4b2944bbb80893433b90fc8844a15bb63568b8dfdc6155cba44f8262916d12",
-      "targetHash": "sha256:fac3546c98018911ec96ec1903922f85e827c5f4fd43dbf82da2c81a274132dc"
+      "sourceHash": "sha256:7b52371e9dfcadfb50da90a6ff184ecb9d5010abafadde2039881121822d7fa6",
+      "targetHash": "sha256:088b0e2985b50cdba131540de4287ddaab9b9ed0a4ae7d351b58060d8f7c6a8a"
     }
   }
 }

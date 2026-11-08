@@ -10,7 +10,7 @@ export const CANVAS_TOKENS = [
   "selection-fill", "selection-stroke",
   "presence-1", "presence-2", "presence-3", "presence-4", "presence-5", "presence-6", "text-on-presence",
   "sticker-neutral", "sticker-yellow", "sticker-green", "sticker-blue", "sticker-pink", "sticker-violet", "sticker-orange",
-  "sticker-ink", "sticker-sheen", "sticker-shade", "sticker-chip",
+  "sticker-ink", "sticker-cast", "agent-proposal", "sticker-sheen", "sticker-shade", "sticker-chip",
   "shadow-sticker", "shadow-sticker-hover",
   "handle", "handle-hit", "grid-step", "pin",
 ] as const;

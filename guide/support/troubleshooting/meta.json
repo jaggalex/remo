@@ -17,11 +17,11 @@
     "capabilities/events",
     "support/known-issues"
   ],
-  "updated": "2026-11-04",
+  "updated": "2026-11-06",
   "translations": {
     "en": {
-      "sourceHash": "sha256:17fa4e4d377e055c35be0b79f5a11f53b2f42934726926684d2d2a2a50e1a175",
-      "targetHash": "sha256:551a49eaa7160dc262b86f6f57c55ce72845b52157a7478ad330075f60ebb53a"
+      "sourceHash": "sha256:6ed4d3156f3dcf5551ce4ad5afd57a864090872319303c49bf2932a88c3cc8d4",
+      "targetHash": "sha256:2e2cb23c9038728816da13d472b318f865a9cd3a15c3e5ef541ef02126598b2b"
     }
   }
 }

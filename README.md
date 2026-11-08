@@ -1,23 +1,21 @@
 # remo
 
-**A local-first visual canvas for a small team.** Rooms, frames, sticky notes, cards,
-kanban, connectors, presentation, comments, access and AI agents — in one self-hosted
-product.
+**A shared visual canvas for teamwork.** Plan projects, draw diagrams and track tasks in
+rooms you can host on your own server.
 
 [![CI](https://github.com/jaggalex/remo/actions/workflows/ci.yml/badge.svg)](https://github.com/jaggalex/remo/actions/workflows/ci.yml)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](LICENSE)
 
 ![remo room](docs/screenshots/room.png)
 
-> **Status: 0.1.0 alpha.** The product is usable and self-hosted, but interfaces and
+> **Status: 0.2.0 alpha.** The product is usable and self-hosted, but interfaces and
 > formats may still change. It is provided **as is**, without warranty — see the
 > [disclaimer](https://docs.remo.letii.ru/guide/en/support/disclaimer.html).
 
 ## What it is
 
-remo is a collaborative workspace for teams of roughly ten people. A room is both the
-unit of work and the unit of access: a role is granted on a room, and everything on it
-follows that role.
+Use a room to work on a project together. Each room has its own access settings, so
+people can have different roles in different rooms.
 
 - **Canvas:** sticky notes, shapes, text, frames, connectors and groups.
 - **Cards and kanban:** status, assignee, dates, WIP limits, tags and links.
@@ -55,12 +53,20 @@ testing.
 ## Verify
 
 ```sh
-pnpm verify           # types, unit and database tests, build, docs, design system
+pnpm verify           # types, lint, unit and database tests, build, docs, design system
 pnpm verify --e2e     # the full gate, including browser acceptance and the guide audit
+pnpm lint             # Biome; verify runs it too
+pnpm audit:prod       # high/critical production advisories with a fix (separate CI step)
+pnpm db:rls --check   # tenant-policy inventory; exits 1 on a gap
+pnpm version:show     # version, build, commit, schema
 ```
 
-Both commands check the dedicated test PostgreSQL from `docker-compose.test.yml`; start it
-first with `pnpm test:db:up`. The gate is what CI runs; a change is ready when it is green.
+Releases are semver plus an automatic build counter; see [CONTRIBUTING.md](CONTRIBUTING.md#versioning-and-releases).
+
+Both verify commands check the dedicated test PostgreSQL from `docker-compose.test.yml`;
+start it first with `pnpm test:db:up`. The gate is what CI runs; a change is ready when it
+is green. The RLS inventory is not part of the gate: run it after a schema change, with the
+owner URL from [self-hosting](docs/self-hosting.md).
 
 ## Repository
 

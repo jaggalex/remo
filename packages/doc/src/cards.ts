@@ -27,7 +27,7 @@ export function setCardFields(
   cardId: string,
   patch: CardFields,
 ): void {
-  const current = board.widgets.get(cardId);
+  const current = board.readWidget(cardId);
   if (!current || current.type !== "card" || current.locked) return;
 
   const next = { ...current };
@@ -72,7 +72,7 @@ export function setCardFields(
 
 /** The card's fields, or an empty object for anything that is not a card. */
 export function cardFieldsOf(board: BoardDocument, cardId: string): CardFields {
-  const widget = board.widgets.get(cardId);
+  const widget = board.readWidget(cardId);
   if (!widget || widget.type !== "card") return {};
   return {
     status: widget.status,

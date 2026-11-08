@@ -56,7 +56,6 @@ import {
   type TextMarks,
   type Widget,
 } from "@remo/model";
-import type { Camera } from "@remo/canvas";
 import type { ArrangeBarActions } from "./ArrangeBar";
 import type { ConnectorBarActions } from "./ConnectorBar";
 import { mainLevel, sharedFillLevel, toneColor } from "./object-panel/colorWindowData";
@@ -80,7 +79,6 @@ export interface BoardCommandDeps {
   selectedIds: string[];
   /** Kanban matrices, so a card can be created into a real cell from the rail. */
   kanbanStates: Record<string, KanbanState>;
-  camera: Camera;
   settings: BoardSettings;
   /** This tab's last copied fragment, for paste on plain HTTP. */
   clipboardFragment: MutableRefObject<BoardFragment | null>;
@@ -114,7 +112,6 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     widgets,
     selectedIds,
     kanbanStates,
-    camera,
     settings,
     clipboardFragment,
     lastConnector,
@@ -147,7 +144,6 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     widgets,
     selectedIds,
     kanbanStates,
-    camera,
     settings,
     setSelectedIds,
     startEditing: setEditingId,

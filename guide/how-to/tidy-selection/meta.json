@@ -17,11 +17,11 @@
     "concepts/agents",
     "concepts/frames"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-08",
   "translations": {
     "en": {
-      "sourceHash": "sha256:81ef49e60d3d7a899356b840b2397adee33a848155993586092978f7e6c36f8b",
-      "targetHash": "sha256:a697c1edcfbdfdc623cd87b6b44414e7fb8a863adec0f7d0504e6a811fd31e47"
+      "sourceHash": "sha256:c87db5759db81827fadb0ed6974a2eecc251fe286d5533c6749381da08699140",
+      "targetHash": "sha256:fafbe61a8307d36ce7ab55a06756014ee0e3c0cc9252f69c490450b215593c3e"
     }
   }
 }

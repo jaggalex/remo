@@ -106,13 +106,13 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 
 | Fact | Value |
 |---|---|
-| ADR | 170, latest ADR-170 |
-| Schema version | 16 |
-| Browser scenarios | 116 in 28 files |
-| Help topics | 31 (RU + EN) |
+| ADR | 188, latest ADR-188 |
+| Schema version | 18 |
+| Browser scenarios | 120 in 30 files |
+| Help topics | 32 (RU + EN) |
 | Portal pages | 68 |
 | Baselines | 21 product + 12 DS |
-| Largest file | `apps/web/src/AgentDialog.tsx` — 800 lines |
+| Largest file | `apps/web/src/AgentDialog.tsx` — 799 lines |
 <!-- generated:state:end -->
 
 A run owns its ports, its database and its report directories (ADR-130), so two runs can

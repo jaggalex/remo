@@ -1,10 +1,10 @@
 ## Result
 
-A room has one public link, and it is the same URL that was copied earlier. While it is on, anyone with the link can read the room without an account. After it is turned off, the link no longer opens the room for anyone.
+A room has one public link, and it is the same URL that was copied earlier. For a room with an owner, while the link is on, anyone with the link can read it without an account; for a room without an owner the link leads to the claim screen first. After it is turned off, the link no longer opens the room for anyone.
 
 ## Steps
 
-1. Open Share on the room.
+1. Open Share in the room.
 2. In the Public link block, click Turn on.
 3. Copy the link and send it to people who need read access.
 4. To close access, click Turn off. The link stops working for everyone immediately.
@@ -26,5 +26,6 @@ A room has one public link, and it is the same URL that was copied earlier. Whil
 ## Limits
 
 - The link never grants editing.
+- A room without an owner is not opened by the link: the claim screen appears instead of the content.
 - A link cannot be revoked for one person: to close it, turn it off for everyone.
 - Only an owner or co-owner can manage the link.

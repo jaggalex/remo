@@ -29,7 +29,7 @@ export function Avatar({ name, color, background, size, agent, ring }: { name: s
   return (
     <span className={cx("rm-avatar", size === "sm" && "rm-avatar-sm", agent && "rm-avatar-agent", ring && "rm-avatar-self")}
       style={{ "--av": background ?? `var(--presence-${color ?? colorFor(name)})` } as CSSProperties} title={name} role="img" aria-label={name}>
-      {agent ? <Icon name="agent" size={14} /> : initials(name)}
+      {agent ? null : initials(name)}
     </span>
   );
 }

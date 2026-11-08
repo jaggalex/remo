@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
-import { drawWidget } from "@remo/canvas";
-import type { Widget } from "@remo/model";
+import { useEffect, useRef, useState } from "react";
+import { DEFAULT_FONT_FAMILY, drawWidget } from "@remo/canvas";
+import { TONE_LEVELS, type Widget } from "@remo/model";
 import { canvasPaletteFromTokens } from "../canvasPalette";
 import { DEFAULT_INK } from "../objectDefaults";
 
@@ -24,7 +24,8 @@ function note(id: string, x: number, y: number, label: string): Widget {
     width: 130,
     height: 84,
     content: label,
-    style: { fillColor: "yellow" },
+    // A note made in the app stores yellow 100 (ADR-182), not an imported colour name.
+    style: { fillColor: TONE_LEVELS.yellow[100] },
   };
 }
 
@@ -54,51 +55,68 @@ function connector(
 
 export function ConnectorStates() {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const canvas = ref.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    const palette = canvasPaletteFromTokens();
-    const theme = {
-      fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif',
-      fontCap: { S: 13, M: 16, L: 20 },
-      shapeStrokeWidth: 2,
-      cardPlaceholder: "Type something",
-      timerExpired: "Time is up",
-      cardStatus: { todo: "To do", in_progress: "In progress", done: "Done" },
-      palette,
+    // Canvas text does not wait for a web font; paint once Golos Text is in, so the
+    // baseline shows the product's letters and not the fallback.
+    let alive = true;
+    const fonts = document.fonts;
+    const loaded = fonts ? fonts.load(`16px ${DEFAULT_FONT_FAMILY}`).catch(() => []) : Promise.resolve([]);
+    void loaded.then(() => {
+      if (!alive) return;
+      paint();
+      setReady(true);
+    });
+    function paint() {
+      const canvas = ref.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      const palette = canvasPaletteFromTokens();
+      const theme = {
+        fontFamily: DEFAULT_FONT_FAMILY,
+        fontCap: { S: 13, M: 16, L: 20 },
+        shapeStrokeWidth: 2,
+        cardPlaceholder: "Type something",
+        timerExpired: "Time is up",
+        cardStatus: { todo: "To do", in_progress: "In progress", done: "Done" },
+        palette,
+      };
+
+      const left = (y: number, id: string, label: string) => note(id, 120, y, label);
+      const right = (y: number, id: string, label: string) => note(id, 640, y, label);
+      const widgets: Widget[] = [];
+
+      const straightFrom = left(90, "s-from", "Straight");
+      const straightTo = right(90, "s-to", "A → B");
+      widgets.push(straightFrom, straightTo, connector("s-line", straightFrom, straightTo, "straight"));
+
+      const elbowFrom = left(210, "e-from", "Elbow");
+      const elbowTo = right(270, "e-to", "corner");
+      widgets.push(
+        elbowFrom,
+        elbowTo,
+        connector("e-line", elbowFrom, elbowTo, "elbow"),
+      );
+
+      const curvedFrom = left(350, "c-from", "Curved");
+      const curvedTo = right(400, "c-to", "bulge");
+      widgets.push(curvedFrom, curvedTo, connector("c-line", curvedFrom, curvedTo, "curved"));
+
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      ctx.fillStyle = palette.canvas;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      const resolve = (id: string) => widgets.find((widget) => widget.id === id);
+      for (const widget of widgets) drawWidget(ctx, widget, 1, { resolve, theme });
+    }
+    return () => {
+      alive = false;
     };
-
-    const left = (y: number, id: string, label: string) => note(id, 120, y, label);
-    const right = (y: number, id: string, label: string) => note(id, 640, y, label);
-    const widgets: Widget[] = [];
-
-    const straightFrom = left(90, "s-from", "Straight");
-    const straightTo = right(90, "s-to", "A → B");
-    widgets.push(straightFrom, straightTo, connector("s-line", straightFrom, straightTo, "straight"));
-
-    const elbowFrom = left(210, "e-from", "Elbow");
-    const elbowTo = right(270, "e-to", "corner");
-    widgets.push(
-      elbowFrom,
-      elbowTo,
-      connector("e-line", elbowFrom, elbowTo, "elbow"),
-    );
-
-    const curvedFrom = left(350, "c-from", "Curved");
-    const curvedTo = right(400, "c-to", "bulge");
-    widgets.push(curvedFrom, curvedTo, connector("c-line", curvedFrom, curvedTo, "curved"));
-
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    ctx.fillStyle = palette.canvas;
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    const resolve = (id: string) => widgets.find((widget) => widget.id === id);
-    for (const widget of widgets) drawWidget(ctx, widget, 1, { resolve, theme });
   }, []);
 
+
   return (
-    <div className="ds-connector-states" data-testid="connector-states">
+    <div className="ds-connector-states" data-testid="connector-states" data-ready={ready}>
       <canvas ref={ref} width={WIDTH} height={HEIGHT} aria-label="Three connector routings" />
     </div>
   );

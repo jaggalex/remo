@@ -8,9 +8,9 @@ An extension does not get access to the product's browser. Instead the product p
 
 | Part | What it gives | Who configures it |
 |---|---|---|
-| [Events and webhook](/guide/capabilities/events) | the server itself reports a change on the room | organisation administrator |
+| [Events and webhook](/guide/capabilities/events) | the server itself reports a change in the room | organisation administrator |
 | [Integration token](/guide/capabilities/tokens) | an action on behalf of a specific person, but only within their rights and scope | organisation administrator |
-| [App](/guide/capabilities/apps) | a panel on the room, drawn from a schema | organisation administrator |
+| [App](/guide/capabilities/apps) | a panel in the room, drawn from a schema | organisation administrator |
 
 The parts combine: the webhook reports an event, the integration verifies the signature, reads the room with a token and changes it with a command. The app shows the result to a person and can invoke its own action.
 

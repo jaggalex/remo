@@ -4,6 +4,6 @@
  * product's i18n adapter, then use the components. See README.md.
  */
 export * from "./components";
-export { ICONS, ICON_NAMES, type IconName } from "./icons";
+export { ICONS, ICONS_16, ICON_FILLS, ICON_FILLS_16, ICON_NAMES, type IconName } from "./icons";
 export { UiStringsProvider, useUiStrings, type UiKey, type UiCountKey, type UiStrings } from "./i18n";
 export { CANVAS_TOKENS, readCanvasTokens, type CanvasToken, type CanvasTokens } from "./canvasTokens";

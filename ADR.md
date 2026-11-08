@@ -7111,3 +7111,649 @@ identifiers when reading code or API examples.
 **Limits.** Historical ADRs and old URLs inside code examples keep the word “board” because
 they are history or identifiers. A future API rename would be a separate ADR and a breaking
 change.
+
+## ADR-171: A shared document is read defensively, and a failure stops at its boundary
+
+**Status:** accepted (2026-11-05).
+
+**Context.** The room's Yjs document is written by every client in it, by older builds, by
+the sync service's commands and by agents. Yjs validates nothing: a value under `widgets`
+is whatever the last writer put there. The snapshot cast those values to `Widget` and handed
+them to React and the painters. One malformed object — a string where a number belongs, a
+`style` that is an array, a `kanbans` entry that is not a `Y.Map` — threw during render or
+paint, and because the object is shared, the room went blank for everyone in it, on every
+reload. The app had no React error boundary, so a render failure unmounted the whole tree.
+
+The same gap was a security hole. `setWidgetLink` refuses a `javascript:` URL, but the
+inspector opened `link.url` exactly as it was stored, so an editor who wrote the document
+without the command could plant a link that ran script in another person's session.
+
+**Decision.**
+
+- **The snapshot reads through wire readers.** `readWidget` and `readTag` in
+  `packages/model/src/sanitize.ts` repair a value into the shape the app renders, and never
+  throw: a non-object is skipped; `id` is the map key; an unknown `type` becomes
+  `unsupported`; a non-finite coordinate becomes 0; an optional field of the wrong shape is
+  dropped, which is what an absent field already means; arrays are filtered rather than
+  discarded. Fields this build does not know are kept, so a newer client's data survives an
+  older reader. A valid widget is returned as the same object, so the snapshot keeps its
+  referential stability.
+- **Links are checked on read as well as on write.** `safeExternalUrl` moves to the model;
+  `readWidget` drops any URL link it refuses. `@remo/doc` re-exports it for existing callers.
+- **The rest of the snapshot is guarded too:** text that is not a `Y.Text`, a kanban that is
+  not a `Y.Map`, non-numeric kanban sizes, tags, the title and presentation entries.
+- **Painting is isolated per object.** `drawWidget` saves the canvas state, paints, and on
+  an exception restores it and logs once per object. The rest of the frame paints.
+- **Render failures stop at a boundary.** `<Contained scope="room">` wraps the screen and
+  offers reload and the organisation home instead of a blank page.
+  `<Contained scope="panel">` wraps the inspector, the side panels and the dialogs; the
+  canvas keeps working, and a new selection or another panel clears the failure.
+- **The reader does not write.** Repair happens on every read and never changes the shared
+  document: repairing on write would need every writer to cooperate, which is the
+  assumption that failed.
+
+**Consequences.** A malformed object costs that object, not the room. A planted
+`javascript:` link is inert in every client. The common path costs a few `typeof` checks
+per object per snapshot.
+
+**Limits.** Commands that read `board.widgets.get(id)` directly still see the raw value;
+the worst case is that one command fails for the person who runs it. The sync service reads
+the document without these readers (it cannot import the TypeScript model yet); a shared
+schema that both sides compile from is the follow-up. Nothing yet stops an editor from
+writing junk — this decision makes junk harmless to readers, it does not reject it at the
+socket.
+
+## ADR-172: Security headers at the edge
+
+**Status:** accepted (2026-11-05). Extends the boundary list of ADR-109.
+
+**Context.** The shipped proxy configurations sent no Content-Security-Policy, no HSTS, no
+framing rule and no `nosniff`. The app renders shared content with `contenteditable`, seeds
+an editor through `innerHTML`, and keeps its session in a cookie, so script injection and
+clickjacking had no second line of defence. The app shell also carried an inline script
+(the theme switch), which a strict policy would block.
+
+**Decision.**
+
+- **One snippet per site, included everywhere.** `deploy/nginx-security-headers.conf` (app)
+  and `deploy/nginx-security-headers-docs.conf` (guide) hold the headers. Every server and
+  every location that sets its own `add_header` includes the snippet, because nginx does not
+  inherit `add_header` into such a location. The container image installs both snippets;
+  Caddy passes them through and sets none of its own.
+- **App policy:** `default-src 'self'`, `script-src 'self'` with no inline script and no
+  eval, `style-src 'self' 'unsafe-inline'` (React style attributes), `img-src 'self' data:
+  blob:`, `connect-src 'self' wss://$host`, `object-src 'none'`, `base-uri 'self'`,
+  `form-action 'self'`, `frame-ancestors 'none'`. Companions: HSTS for one year on this host
+  only, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`,
+  `Cross-Origin-Opener-Policy: same-origin` and a Permissions-Policy that turns off camera,
+  microphone, geolocation, payment and USB.
+- **The theme switch becomes a file.** `apps/web/public/theme-boot.js` replaces the inline
+  script, so the policy needs no hash or nonce for the app.
+- **The guide allows its one inline script by hash.** The hash is recomputed from
+  `scripts/guide-build.mjs` by a test, so changing the script without the policy fails the
+  gate.
+- **The sync service sets `nosniff` and `frame-ancestors 'none'` itself**, so the two hold
+  even when it is reached without the proxy.
+- **A test keeps the parts in step.** `scripts/security-headers.test.mjs` checks the policy,
+  that every location with its own header includes a snippet, that the image installs what
+  the container includes, the guide hash, and that the app shell has no inline script.
+
+**Consequences.** Injected script has nowhere to load from and nothing inline to run; the
+room cannot be framed; a deploy that drops the policy fails the gate.
+
+**Limits.** `style-src 'unsafe-inline'` stays while React writes style attributes. HSTS
+`includeSubDomains`/`preload` is left to the operator because it binds every sibling
+subdomain. A deployment that points `VITE_SYNC_URL` at another origin must add that origin
+to `connect-src`. The development server sends no policy; the policy is exercised in
+production configurations only.
+
+## ADR-173: Write budgets on the room socket
+
+**Status:** accepted (2026-11-05). remo is run as a shared service for many organisations.
+
+**Context.** The room socket applied every frame it received. Frames were capped at 16 MiB
+(ADR-160), but nothing capped how many: an editor, or a script with an editor's cookie,
+could push frames as fast as the network allowed. Each was applied in memory, broadcast to
+every peer and appended to the room's log. In a service shared by many organisations, one
+socket could exhaust the process for all of them, and one room could grow without bound.
+
+**Decision.**
+
+- **Three budgets, checked per inbound frame before y-websocket sees it**
+  (`apps/sync/ws-quota.mjs`, installed after the read-only guard so it counts every frame):
+  - *Room size.* Once a room's encoded document has passed `REMO_ROOM_MAX_BYTES`
+    (64 MiB), it accepts only content frames up to `REMO_ROOM_FULL_FRAME_BYTES` (16 KiB).
+    Typing and deletions still save, so a full room can always be cleaned up; a paste does not.
+  - *Socket rate.* A token bucket of `REMO_WS_RATE_BYTES` per second (256 KiB) with a burst
+    of `REMO_WS_BURST_BYTES` (16 MiB), never below the largest accepted frame, so a
+    legitimate large paste is never impossible.
+  - *Organisation rate.* One bucket per organisation, `REMO_ORG_WS_RATE_BYTES` (2 MiB/s) and
+    `REMO_ORG_WS_BURST_BYTES` (64 MiB), shared by all its sockets. A room without an
+    organisation is its own key. One tenant cannot starve the others.
+- **A refusal closes the socket with a code the client understands:** 4429 for rate, 4413
+  for a full room. The frame is dropped, not lost: the client still holds the edit, and the
+  next handshake's sync step sends what the server is missing.
+- **The client backs off instead of resending at once.** `connectBoard` stops y-websocket's
+  100 ms reconnect on these codes and waits 5 s doubling to 60 s (rate) or 30 s doubling to
+  5 min (room full), and the room shows why. A minute connected resets the backoff.
+- **Room size is measured rarely.** Encoding a document is O(size), so the quota measures a
+  room only when a large content frame arrives, keeps a running upper bound, and measures
+  again before it refuses anything.
+- **A malformed setting never disables a budget**: a value that is not a positive integer
+  is ignored and the default stays.
+- **Metric:** `remo_ws_quota_closed_total{reason}`.
+
+**Consequences.** A runaway or hostile writer is cut off within one frame of its budget,
+without affecting other organisations; the room's log and memory have a ceiling.
+
+**Limits.** Budgets are per process, like the sign-in limiter; several instances behind a
+proxy need them in PostgreSQL (review stage 4). The room ceiling is soft: many small frames
+can still pass it, bounded by the rate budgets. Edits are not yet audited per session on
+the socket path; that belongs to the server-side guard (review stage 2). Defaults are
+starting values for a team-sized room and should be revisited with production metrics.
+
+## ADR-174: An unowned room is closed, not open to whoever has the link
+
+**Status:** accepted (2026-11-06). Supersedes the legacy rule in ADR-064.
+
+**Context.** The first version had anonymous rooms: a board with `owner_id` null was
+readable and writable by anyone who knew its id, and signing in "claimed" it. The socket
+handshake reflected that: it asked for access only when `iam.owner_id` was set, so a board
+without an owner skipped the check entirely, and `readOnly` was false because there was no
+access object to inspect. `loadRoomState` could also create a `boards` row with no owner,
+and `refreshBoardAccess` deliberately did not re-check such rooms. The result was a room
+that anyone could edit while every audit and revocation path assumed an owner existed.
+
+**Decision.**
+
+- **`effective()` denies `UNCLAIMED` before any grant is considered.** An unowned board has
+  no access decision to make: it is closed, whatever the grants or the public link say.
+- **The socket requires a decision for every known board.** The `if (iam.owner_id)` branch is
+  gone; a room without an owner is refused with 403 before Yjs sees the handshake, and a
+  socket without an `access` object never reaches `wss.handleUpgrade`.
+- **`refreshBoardAccess` closes sockets of a room that lost its owner** instead of skipping
+  the check.
+- **`loadRoomState` no longer creates a board.** Creation is `createIamBoard`, and the owner
+  is mandatory there. A missing row is a load failure, not a new room.
+- **Existing rows are archived, not adopted.** `scripts/ownerless-boards.mjs --list` shows
+  them; `--archive` archives each with an audit row. `--assign` exists for the case where the
+  owner is actually known.
+- **Claim stays the recovery path.** `claimBoard` accepts the claim token (or no token when
+  the board never set one), clears `archived_at`, assigns the owner and bumps `acl_version`.
+  The access screen still reports `UNCLAIMED` and no capabilities, so the banner can offer a
+  claim without granting a read.
+
+**Consequences.** An unowned room is unreachable until it is claimed or assigned. The migration
+must run before the new build serves traffic; the list is read-only and safe to run first. A
+self-hosted instance that relied on anonymous rooms loses that mode, which is the point.
+
+**Limits.** Claim needs an organisation and a team, as before. An archived unowned board is
+visible only through the claim route and the operator script; it is not in anyone's trash
+because there is no owner to own the trash. A board that loses its owner by a direct database
+edit is closed until the script runs.
+
+## ADR-175: Edits on the room socket are audited as a session aggregate
+
+**Status:** accepted (2026-11-06). Extends ADR-061, ADR-092 and ADR-154.
+
+**Context.** Commands write an audit row, but a browser edits the Yjs document directly over
+the socket. That is the normal path for every drag, keystroke and paste, and it wrote no
+audit at all. A session could change a room and leave no record beyond the opaque update log.
+Per-frame rows are not the answer: one drag produces dozens of frames, and an audit table that
+grows with keystrokes is both expensive and unreadable.
+
+**Decision.**
+
+- **One row per editing session per window** (60 s by default), action
+  `board.document.edited`, with `board_id`, `org_id`, `actor_id` and `session_id` from the
+  connection, not from the frame.
+- **The row says how much, not what.** `after` holds `{ updates, bytes, objects, fields,
+  windowMs }`; object ids and field names are capped (50 and 20), and text, links and widget
+  content are never copied into the audit. The first touch of an object in a window records
+  `*`; later touches record the top-level keys that differ, because Yjs replaces a plain
+  object value rather than reporting the smaller change.
+- **The transaction origin names the session.** The room attaches one `afterTransaction`
+  listener; y-websocket applies a peer's update with the socket as origin, and the connection
+  table maps that socket to its session. No per-socket listeners on one document.
+- **A window with no edit writes nothing.** The buffer flushes on the timer and when the last
+  socket of the session closes.
+- **An audit failure never ends the room.** It is logged and counted, like the command path.
+- **Metric:** `remo_ws_edit_audit_rows_total`; dropped windows are counted separately.
+
+**Consequences.** Support and incident review can answer "who changed this room, from which
+session, and how much" without a row per keystroke. The audit grows with active sessions, not
+with typing speed.
+
+**Limits.** The aggregate loses exact per-object timing inside the window, and a crash loses
+the open window. Field names are a shallow diff of the touched objects; a change inside a
+plain object is reported as the field that holds it, not as its nested key. Per-process
+buffers need a shared store when several instances serve one room (ADR-178 stage 2).
+
+## ADR-176: The document has object and text ceilings, not only byte budgets
+
+**Status:** accepted (2026-11-06). Extends ADR-173.
+
+**Context.** ADR-173 bounds bytes per frame, bytes per second and the encoded size of a room.
+The room ceiling is deliberately soft: a full room still accepts small frames so typing and
+deleting work. That softness also lets a script add objects in 16 KiB frames, and a 64 MiB
+room made of tiny widgets is hundreds of thousands of objects. Painting and hit-testing walk
+the object list, so the byte ceiling does not bound the work a room can cause.
+
+**Decision.**
+
+- **An object ceiling in `ws-quota.mjs`** (`maxObjects`, 20 000, `REMO_ROOM_MAX_OBJECTS`):
+  a content frame that introduces a new widget id is refused once the map is full. Small
+  frames are decoded (`Y.decodeUpdate`) so the check is not bypassed by chunking one widget
+  per 16 KiB frame; edits to existing objects still pass.
+- **A refusal is `room-full` (4413),** the same close code the client already backs off on.
+- **The snapshot truncates text for painting** at `MAX_TEXT_CHARS` (200 000); the document
+  keeps the full value. A 10 MB note must not freeze text layout, even before the guard
+  rejects its write.
+- **A malformed setting never disables a ceiling**, as in ADR-173.
+
+**Consequences.** A room cannot trade bytes for object count. The 10 000-object performance
+target (review P6) is inside the ceiling with room to spare, and the ceiling is a deployment
+setting for a team that legitimately needs more.
+
+**Limits.** The per-object byte and text ceilings are the server guard's job: only a decoded
+update can measure one widget or one text exactly, and the guard can refuse the frame before
+it is applied. Until then, `MAX_TEXT_CHARS` bounds painting and `maxObjects` bounds the object
+count; the byte budgets of ADR-173 still bound the transfer. The ceilings are per process like
+the rest of ADR-173.
+
+## ADR-177: Third-party code never runs in the product origin
+
+**Status:** accepted (2026-11-06). Bounds the extension platform.
+
+**Context.** The extension design includes actions, declarative widget kinds and rich views.
+The tempting shortcut is a plugin bundle that runs in the app's origin with access to the
+session cookie and the room's Yjs document. That would undo the CSP (ADR-172), the room access
+model (ADR-061) and the read-only socket rule (ADR-062) in one step, for every install.
+
+**Decision.**
+
+- **No third-party JavaScript executes in the product origin.** Not for "trusted" publishers,
+  not behind a flag.
+- **Three surfaces, one rule:**
+  - actions and events run on the publisher's server and reach remo only through `/v1`;
+  - declarative widget kinds are data rendered by the host from a closed vocabulary, so they
+    work offline, in export, and without the app installed;
+  - rich views, when they exist, run in an iframe on a separate origin with `sandbox` and no
+    `allow-same-origin`, and only when the deployment configures that origin.
+- **Applications write only through commands**, never through the room socket or Yjs.
+- **An installation is a service account**, not a fourth grant subject: it reuses users,
+  grants and integration tokens instead of teaching `effective()` a new branch.
+- **Self-hosted stays first-class.** A second origin is opt-in and off by default; declarative
+  widgets are the whole platform for a deployment that cannot provide one.
+
+**Consequences.** The blast radius of a malicious app is its scopes, its budgets and the
+sandbox, not the product origin. The platform is slower to build, and that is the cost of not
+having to trust publishers.
+
+**Limits.** The manifest and the widget schema become a public contract and need their own
+versioning. Until three real applications exist, the platform is a contract and a renderer,
+not a marketplace.
+
+## ADR-178: Tenant isolation is enforced by PostgreSQL row-level security
+
+**Status:** accepted (2026-11-06). remo is run as a shared service for many organisations.
+
+**Context.** `org_id` is on most tables, but the application enforces it in queries: one
+missing `where org_id = $1` reads or writes another tenant's row. The service is meant to be
+sold as SaaS, so the database, not each call site, must be the last line.
+
+**Decision.**
+
+- **Every table that holds tenant data gets `org_id`** — by column, or by a policy that joins
+  `boards` when the row is board-scoped. The choice per table is recorded with the migration.
+- **`FORCE ROW LEVEL SECURITY` on every such table.** The table owner bypasses RLS by default;
+  without `FORCE`, the guarantee is decorative.
+- **The application connects as `remo_app`, a role without `BYPASSRLS` and without ownership.**
+  Migrations run as the owner in a separate connection.
+- **Every request sets `app.org_id` on its own connection** with
+  `set_config('app.org_id', $1, false)`. Session-level, not transaction-local: a store
+  method may open its own transaction on that connection, and a `SET LOCAL` would be gone
+  before its first query. The connection is reset before it returns to the pool; a failed
+  reset destroys it rather than risking another tenant.
+- **A missing setting returns zero rows, never all rows.** The policy uses
+  `nullif(current_setting('app.org_id', true), '')::uuid`; an unset value matches nothing.
+- **Tests prove it per table:** a second organisation sees 0 rows for every table, including
+  `board_updates`, `comments`, `audit_events`, `agents`, `app_installations` and the link tables.
+
+**Rollout.** RLS is switched on in stages; a half-enabled policy set is worse than none.
+
+- **Stage 1 — tenant key and context (done, schema 17).** The 12 board-scoped tables carry
+  `org_id`, backfilled from `boards`; a trigger fills it for new rows. `tenant.mjs` sets
+  `app.org_id` per request, the store's pool shim routes every `this.pool.query` and
+  `this.pool.connect` through that connection, and HTTP board/org routes plus room timers
+  run inside the context. Policies are still off, so this stage proves the plumbing without
+  changing what any query returns.
+- **Stage 2 — pilot role and policies (done).** `scripts/db-rls-setup.mjs` creates `remo_app`
+  with DML only, no ownership and no `BYPASSRLS`; `scripts/db-rls-enable.mjs` applies
+  `apps/sync/rls.sql` to eight tables whose every path is already in a tenant context:
+  `board_updates`, `kanban_*`, `comments`, `comment_threads`, `board_links`,
+  `board_link_unlocks`. The service uses `DATABASE_URL` as `remo_app`; schema work and the
+  legacy repair use `REMO_MIGRATION_DATABASE_URL`. Tests connect as `remo_app` through the
+  real pool and prove a foreign write is rejected.
+- **Stage 3 — core content (done).** `boards`, `widgets` and `board_grants` joined the
+  protected set, together with `command_runs`, `vote_sessions` and `agent_actions`. The directory wraps the
+  organisation resolved from `?org=`, and `remo_board_lookup(text)` is the one
+  security-definer read that resolves a board before the tenant is known; the socket and
+  ACL refresh use it. Agent tasks and room timers run detached (`withoutTenant`), so a
+  response cannot release the connection under a task that outlives it.
+- **Stage 4 — identity and background work (done).** `orgs`, `org_memberships`, `teams`,
+  `admin_roles`, `org_policies`, `org_apps`, `invitations`, `integration_tokens`, the
+  agent tables, `audit_events`, `ai_runs`/`ai_log_anchors` and `event_outbox`/`org_webhooks`
+  are protected. Registration and invitation acceptance set the tenant inside their own
+  transaction; token lookups and scheduler/outbox claims use the security-definer
+  functions in `schema.sql`; agent tasks and AI anchors run detached and then take the
+  row's organisation. `pnpm db:rls --check` is green for every tenant table.
+- **Global identity is outside tenant RLS.** `users`, `sessions`, `agent_tokens` and
+  `ai_credentials` are looked up before an organisation (or even an account) is known.
+  They stay a global auth boundary with their own token hashing, rate limits and secret
+  encryption; wrapping them in a tenant policy would break sign-in. `schema_meta` is
+  internal.
+
+**Consequences.** A forgotten predicate is contained by the database. The cost is a
+connection per request, a second role in deployment, and a wrapper every `pg/*` method must
+use. A query that forgets the wrapper fails closed (zero rows) instead of leaking.
+
+**Limits.** RLS does not protect a room document already loaded into memory: board access is
+still the first gate, and the sync process must not load a room for a caller who failed it.
+The policies need indexes on `org_id` to stay inside the query budget. Several sync instances
+and shared rate limits are a later stage; RLS is a prerequisite for both.
+
+## ADR-179: Invitation links open on the home route
+
+**Context.** The server issues `/?invite=<token>` for both organisation and room
+invitations. After the organisation directory became the home route, the acceptance
+dialog was still mounted only inside a room.
+
+**Decision.** A URL with an invitation token enters through the organisation home
+and uses the existing sign-in and acceptance dialogs. On successful acceptance,
+replace the address with the invited room or organisation. Links that also include
+a room use the same flow and the server's accepted target determines the destination.
+
+**Consequences.** Previously issued links work without being regenerated. The
+server still checks the token and the signed-in email before granting access.
+
+## ADR-180: Backup filenames use UTF-8 Content-Disposition
+
+**Context.** The backup filename may contain Cyrillic. Passing it directly in the
+HTTP header makes Node reject the response before the backup can be downloaded.
+
+**Decision.** Keep the existing filename convention and send a quoted ASCII
+`filename` fallback with a percent-encoded UTF-8 `filename*` for names that need it.
+The web client prefers the decoded name and accepts the fallback if decoding fails.
+Hash PostgreSQL dates in the JSON form sent to the browser, so a backup with a
+resolved discussion passes the same checksum verification as any other backup.
+[RFC 6266, section 4.3](https://www.rfc-editor.org/rfc/rfc6266#section-4.3)
+
+**Consequences.** Cyrillic names survive the download. The JSON format, checksums,
+access checks and audit events keep the same contract.
+
+## ADR-181: Visual language v3 — ink, paper and outlined panels
+
+**Status:** accepted (2026-11-07); implemented in `@remo/ui` 2.0.0.
+Supersedes the visual values of ADR-078 (the font) and of the legacy token set; the token
+mechanism of ADR-078/ADR-079 is unchanged. Design record: `docs/design/DESIGN.md`;
+tokens `packages/ui/src/tokens/tokens.json`; icons, cursors and marks
+`docs/design/assets/`.
+
+**Context.** The owner declared the current design system legacy: it does not show who
+changed what, it reduces agents to a violet accent, and text inside objects is hard to
+work with in its different states. Three directions were compared on one scenario; the
+owner chose a hybrid and then a concept: the room's canvas and stickers as paper on a
+light desk, and outlined panels for menus, toolbars and dialogs.
+
+**Decision.**
+
+- **Ink and paper.** All chrome is one ink, `#1E2136`: icon lines, panel outlines, the
+  primary button, people and agent marks. Hue is left to content (stickers) and to a thin
+  participant ring. Focus rings and links stay blue, the only hue in chrome.
+- **Panels are outlined, not lifted.** Menus, the tool rail, the selection bar, the format
+  strip, threads, the passport, zoom and dialogs are white panels with a 1.5 px ink
+  outline and no shadow; radius 24, 28 for dialogs and the agent task panel, pills for
+  every control. `shadow-pop` and `shadow-bar` become `none`.
+- **No top bar.** Room path, save state and presence sit directly above the canvas.
+- **People and agents differ by shape and texture, not colour.** A person is a white
+  circle with an ink outline, ink initials and a thin inner ring in the participant
+  colour. An agent is a rounded square with ink hatching at 45°. The agent has no colour of
+  its own; the violet agent of the legacy set is removed.
+- **An agent proposal is a dashed hull.** The painter draws a smooth dashed outline around
+  the convex hull of each future group with a 24 px offset, objects at their future places;
+  locked objects stay in place with a caption. The task panel at the bottom names the
+  skill, who started it, the write path and how to undo it. One mechanism: the hull is the
+  only on-canvas sign of a proposal.
+- **Sticker form.** A square paper sheet, radius 2, a 1 px edge at 14 % ink, a light
+  vertical sheen and a shadow under the bottom edge only; the id is 22/600 in the centre in
+  overview and reading. The paper tones are ADR-182.
+- **Type** is Golos Text 400/500/600 (SIL OFL), self-hosted as latin and cyrillic woff2,
+  replacing Inter.
+- **Icons and cursors** are the set in `docs/design/assets/`: a 24 master with stroke 2,
+  a separate 16 grid with stroke 1.5, names compatible with `packages/ui/src/icons.ts`
+  (`cloud-check` → `saved`, `sparkle` → `agent`). The remote cursor is an ink arrow with a
+  white halo, a node and a person mark; its size does not depend on zoom.
+- **Contrast is a gate.** `lintTokens` 0 problems and `contrastReport` 154/154 in both
+  themes; the proposal hull is at least 3:1 against the canvas.
+
+**Consequences.**
+
+- The swap is by value: semantic token names are kept, so components change through
+  `tokens.json` and regenerated CSS, not renames. Painters read the new values through
+  `readCanvasTokens()`.
+- Visual baselines (`pnpm baselines`) and the DS catalogue must be regenerated in the same
+  change; help and guide screenshots follow.
+- Showing who is editing a note (a participant ring and caret on the object) needs a
+  presence field that does not exist; it is a separate ADR and is not part of this one.
+- The logo is not changed.
+
+## ADR-182: Paper tones for the tonal palette (amends ADR-127)
+
+**Status:** accepted (2026-11-07); implemented the same day (see Implementation).
+
+**Context.** ADR-181's concept paints stickers as muted paper: warm white, beige, sage,
+taupe. The tonal palette (`packages/model/src/colorLevels.ts`, 7 tones × levels 100/300/600)
+is model data: a widget stores the hex, so a shared board paints the same colour in a
+client that cannot read our stylesheet (ADR-140), and ADR-127 forbids migrating stored
+colours. The concept's taupe looked like an eighth tone.
+
+**Decision.**
+
+- **Same seven columns, new 100 and 300 rows.** Keys 1–7, the window grid and tone ids do
+  not change. New values:
+
+  | Tone | 100 | 300 |
+  |---|---|---|
+  | grey | `#f3f1ec` | `#cdc8c0` |
+  | yellow | `#ece2c8` | `#d8c79e` |
+  | orange | `#e2d2c4` | `#bca996` |
+  | pink | `#e8d6d3` | `#cdb0ab` |
+  | violet | `#dcd8e2` | `#b9b1c9` |
+  | blue | `#d8dde3` | `#aab7c5` |
+  | green | `#dedfd4` | `#bcbfa9` |
+
+  Ink `#1E2136` on every value is at least 6.98:1. The 600 row (lines, borders, text) is
+  unchanged.
+- **Taupe is orange 300**, not an eighth tone.
+- **Stored values are not rewritten** (ADR-127 holds). The previous 100/300 values become a
+  read-only alias table: `matchColor` names them by tone and level ("Yellow 100"), so the
+  window shows the swatch as selected instead of "Custom colour", and choosing any swatch
+  writes the new value. Nothing is repainted without a person's action.
+- Templates and style presets (ADR-129) switch to the new values in the same change.
+- `sticker-*` tokens are the new 100 row.
+
+**Consequences.**
+
+- A room created before the switch keeps its saturated stickers until someone repaints
+  them; a room can mix old and new tones for a while. This is the price of not rewriting
+  shared documents.
+- A sticker's edge against the canvas is below 3:1 by colour alone; the 1 px edge and the
+  bottom shadow carry the boundary, as ADR-181 specifies.
+- `colorLevels.test.ts` changes its expected values and gains the alias table cases.
+
+**Implementation (2026-11-07).** The new rows are primitives `paper-<tone>-100|300` in
+`tokens.json`; the saturated `*-100` primitives only stickers used are removed, the `-300`
+ones stay because dark-theme presence colours use them. The alias table is
+`PREVIOUS_FILL_LEVELS` in `colorLevels.ts`; `matchColor` reports such a value with
+`previous: true`, `paletteValue` gives the entry it stands for, and `isPaletteColor` stays
+false for it, so it is never offered. The 300-row words follow the new tones: Taupe, Dusty
+pink, Grey blue, Sage. Kanban column accents move to the paper 300 row with the presets.
+
+## ADR-183: Rooms are repainted to the paper tones once, by an operator command (amends ADR-127, ADR-182)
+
+**Status:** accepted (2026-11-07).
+
+**Context.** ADR-182 kept every colour stored before the switch: a room painted with the
+saturated 100/300 rows stays saturated, and the window only names those values by tone and
+level. Owners of existing installations asked for their rooms to look like the new palette
+without repainting each note by hand. Each previous value has an exact successor (same tone,
+same level), so the rewrite is a table lookup, not a guess. The older 22-colour palette
+(ADR-120) has no such pairs: its values only have a *nearest* tone.
+
+**Decision.**
+
+- **One operator command, `pnpm db:repaint`,** shaped like `db:orphans` (ADR-174). Without
+  flags it lists the rooms and how many objects each would change, and changes nothing.
+  `--apply --yes` rewrites them. It is not run on startup or on room open: a person decides,
+  after a backup, with the service stopped.
+- **What changes:** in widgets, the style fields `fillColor`, `strokeColor`, `textColor` and
+  `color`; in kanbans, the column `accent`. A value changes only when it is one of the
+  fourteen in `PREVIOUS_FILL_LEVELS`, and it becomes `TONE_LEVELS[tone][level]` of the same
+  pair. Locked objects are included: the lock guards against accidental edits by people
+  (ADR-040, ADR-107), and this is a palette change, not an edit of content.
+- **The 22 colours of ADR-120 are not touched.** Mapping them to a nearest tone would be the
+  command's opinion, not a fact; they stay "Custom colour" until someone picks a swatch.
+- **One Yjs update per room,** appended to `board_updates` like any edit, so history,
+  undo-less replay and backups see an ordinary change. The `widgets` projection's
+  `fill_color` is updated in the same transaction. Each repainted room writes one audit row,
+  `board.palette.repainted`, actor type `system`, with the counts.
+- **The read-only alias stays** (ADR-182): a backup made before the repaint, or a room
+  imported later, still opens with its swatches named and ringed.
+- The table lives in `apps/sync/paper-repaint.mjs` (plain `.mjs`, no build step); a test
+  compares it with the model's `PREVIOUS_FILL_LEVELS` and `TONE_LEVELS`, so the two cannot
+  drift.
+
+**Consequences.**
+
+- Running it while the service is up is unsafe: a room open in memory does not see the
+  appended update and may compact over it. The command says so, and the upgrade guide puts
+  it between `db:check` and starting the service.
+- A room repainted and then restored from an older backup comes back saturated; running the
+  command again repaints it. The command is idempotent: a second run finds nothing to do.
+
+## ADR-184: A line is drawn a little short of the objects it joins
+
+**Status:** accepted (2026-11-07).
+
+**Context.** A connector's end sits exactly on the object's edge (ADR-029). With paper
+notes (ADR-181) an arrow head pressed against the sheet reads as part of the note, and the
+note's shadow swallows the start of a line under its bottom edge. The concept leaves a small
+gap between the line and the sheet.
+
+**Decision.** The painter draws `insetPath(path, CONNECTOR_GAP)`: each end is pulled back
+along its own first segment by 8 board units, at most a third of that segment. The gap is
+part of the picture only. Anchors, end handles, hit-testing, the label position and the
+stored ends stay on the edge, so a person grabs a line where it attaches and nothing in the
+document changes. The gap is in board units, like the line width and the arrow head
+(ADR-052), so it scales with zoom and with exports.
+
+**Consequences.** Every existing line looks shorter by 8 units at each attached end; no
+data changes. A line hovered or selected shows its highlight along the drawn path.
+
+## ADR-185: A participant's mark has one ring (amends ADR-181)
+
+**Status:** accepted (2026-11-07).
+
+**Context.** ADR-181 drew a person's avatar as a white circle with an ink outline and a thin
+inner ring in their colour; one's own avatar added a third, outer ring. At 24–28 px the two
+or three concentric lines read as a double contour rather than as one mark.
+
+**Decision.** The mark is a white circle with ink initials and one 1.5 px ring in the
+person's `presence-*` colour. One's own avatar has the same ring at 2.5 px instead of an
+extra outline. The remote cursor's mark is the same circle (ADR-056 painter, screen pixels).
+The agent keeps its square with an ink outline and hatching: it has no colour to put in a
+ring.
+
+**Consequences.** People are told apart by initials first and colour second, so the
+difference never rests on colour alone. `.rm-avatar` loses its inset box-shadow rings.
+
+## ADR-186: A note with no stored fill is painted the default paper yellow (amends ADR-182)
+
+**Status:** accepted (2026-11-07).
+
+**Context.** A note created in the app always stores its fill (yellow 100). A note created
+through the API, an import or a seed may store none, and the painter then fell back to
+`#FFDD33`, the saturated yellow of the captured templates. After ADR-182 such a note is the
+only bright yellow on a paper board, and `db:repaint` (ADR-183) cannot fix it: there is no
+stored value to rewrite.
+
+**Decision.** An absent fill is painted, shown on the object bar and given to the editor as
+`TONE_LEVELS.yellow[100]` (`defaultNoteFill()` in `@remo/model`). Nothing is written to the
+document. A fill stored as an imported colour name (`"yellow"`, `"green"`, …) is a stored
+value and keeps its colour, like any custom colour (ADR-127).
+
+**Consequences.** Notes without a stored fill change appearance from saturated to paper
+yellow everywhere at once, with no data change. A note with no fill and a note painted
+yellow 100 look the same, but only the second has a stored value the window can ring.
+
+## ADR-187: An arrow head is a rounded point the line ends inside (amends ADR-052)
+
+**Status:** accepted (2026-11-08).
+
+**Context.** The head was a sharp 14-unit triangle at the line's end, and the line was
+stroked to the same point with a round cap. On anything thicker than a hairline the cap
+showed past the point as a small bump, and on a thick line the fixed head was smaller than
+the line could carry.
+
+**Decision.** `roundedArrowHead` in `@remo/canvas` builds the head: two converging sides
+with corners rounded by half the line width, its rounded apex exactly on the line's end.
+The line is drawn only to a point inside the head (60 % of its length back), so no cap
+shows past the point. The head length is `max(14, 10 + 2 × width)`: unchanged at the
+default width 2, longer on a thick line. Everything stays in board units (ADR-052).
+
+**Consequences.** Lines look the same at their ends in every routing. Hit-testing, handles
+and the stored ends are unchanged: only the picture moved.
+
+## ADR-188: A plan is previewed on the canvas, with a task panel instead of a modal (supersedes the preview dialog of ADR-142 M3 and ADR-143)
+
+**Status:** accepted (2026-11-08).
+
+**Context.** ADR-142 (M3) showed a proposed plan in a modal dialog with an SVG miniature;
+ADR-143 reused it for tidying. The modal dims the room, so a person checks a miniature of
+the room instead of the room itself, and cannot pan to see what the proposal sits next
+to. The approved concept (ADR-181, `docs/design/DESIGN.md`) shows a proposal as a dashed
+hull on the canvas and a task panel with the write path and the undo in words.
+
+**Decision.**
+
+- **The canvas is the preview.** While a plan is under review, the overlay layer draws it
+  over the live room: created frames as the proposal hull (rounded dashed outline,
+  `agent-proposal`, corner `0.18 × min(w, h)`, dash 6/5, 1.5 screen px), created leaves
+  as dashed ghost boxes, moved objects as ghosts at their target positions, and planned
+  connectors as dashed lines between planned objects. Nothing is written to the document;
+  the overlay is the same layer as cursors and the marquee (ADR-056).
+- **The geometry is one pure module,** `proposal.ts` in `@remo/canvas`, tested without a
+  browser. It replaces the two SVG miniatures (`AgentPlanMap`, `TidyPlanMap`) and
+  `agentPlanGeometry.ts`; a broken or partial plan still never throws.
+- **A task panel, not a modal.** The plan opens in a non-modal panel at the bottom of the
+  room (ink 1.5 `border-panel`, `radius-2xl`, collapsed height `panel-tasks-height`). The
+  room stays interactive: a person can pan, zoom and select while reading. The collapsed
+  panel carries the status, the counts, the blocked reason, the apply phase and the
+  buttons; "Details" expands the rest in place — warnings, the object list, the file and
+  selection notes, the tidy strategy switch. Escape or Close leaves the preview without
+  rejecting the plan, as the dialog did.
+- **The camera fits the proposal once** when the preview opens, above the panel. It does
+  not follow later changes; a person who moved the camera keeps it.
+- **The apply flow is unchanged** (ADR-142): approve on the server, one local transaction
+  as the only writer, then `applied`; a critical warning keeps Apply disabled; the result
+  stays in the panel with the undo hint and "Show in room"; a plan applied in another tab
+  shows the result and no undo.
+
+**Consequences.**
+
+- The plan has one picture, the room itself; the miniature and its caption are gone. The
+  counts and bounds sentence stays as text in the panel, so a screen reader still hears
+  the shape of the plan.
+- On a phone the panel is a bottom sheet with the same buttons (DESIGN.md).
+- Browser scenarios that read the miniature now read the overlay through the debug probe.

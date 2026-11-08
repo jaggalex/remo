@@ -17,11 +17,11 @@
     "capabilities/tokens",
     "capabilities/events"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-06",
   "translations": {
     "en": {
-      "sourceHash": "sha256:5a7f9fe1e857242208d111985a363c3ba4ab46a811da69f1e2f4c54a05175ed9",
-      "targetHash": "sha256:4946383ab8b7a15515ff159a970451f9a0b6558d44f4fd24c2728fe4fab68cc9"
+      "sourceHash": "sha256:201063228a2b3dcf70de0c78ab419f89a9ca6d1d7284972868278e2a8e9fbef3",
+      "targetHash": "sha256:712e6ebc78ea5dc2ef254ced792a5f57296fc3bcaf05a02d1d952dfabc0235d0"
     }
   }
 }

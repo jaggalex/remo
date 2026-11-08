@@ -63,14 +63,14 @@ export function createTimer(
 
 function update(board: BoardDocument, id: string, timer: TimerState): void {
   board.transact(() => {
-    const current = board.widgets.get(id);
+    const current = board.readWidget(id);
     if (!current || current.type !== "timer") return;
     board.widgets.set(id, { ...current, timer });
   }, LOCAL_ORIGIN);
 }
 
 function currentTimer(board: BoardDocument, id: string): { widget: Widget; timer: TimerState } | null {
-  const widget = board.widgets.get(id);
+  const widget = board.readWidget(id);
   if (!widget || widget.type !== "timer") return null;
   return {
     widget,

@@ -1,6 +1,6 @@
 ## The main rule
 
-**The room is the unit of authorization.** No object has permissions of its own. Everything a person can do, they can do on a specific room — and it follows from their role on that room.
+A person can have different roles in different rooms. For example, they might edit materials in their project room and only view another team’s room. The role applies throughout the room, including its sticky notes, cards and other objects.
 
 ## Hierarchy
 
@@ -28,23 +28,27 @@ A role is a set of capabilities: `board.read`, `board.comment`, `board.edit`, `b
 
 ## A room without an owner
 
-A room nobody has claimed yet follows the old rule: anyone with the link can change it. This state is temporary and exists for moving from rooms without accounts. As soon as somebody presses **Закрепить комнату за собой** (claim the room), the room gets an owner, and roles and the link take over.
+A room without an owner is closed. Its page refuses, the room is not in the room list, and the connection does not open: the content is neither visible nor editable.
+
+Recovery is a claim. A signed-in person with the link presses **Claim this room**: the room gets an owner, joins their organisation and team, and loses the archive mark if it had one. After that, roles and the public link decide access. A claim needs an account with an organisation and a team. It happens once: after that, the owner changes only by transferring ownership.
+
+When the version is upgraded, existing rooms without an owner do not open: the installation operator archives them. If the owner is known, the operator can assign them. Without a claim or an assignment the room stays closed; there is no automatic deletion.
 
 ## Public link
 
-A link is not a role and not a grant: it is a property of the room. It gives **view only** and never gives export or backup. A password and an expiry are additional restrictions: changing the password closes all open browsers at once.
+A link is not a role and not a grant: it is a property of the room. It gives **view only** and never gives export or backup. A room without an owner is not opened by a link: the link shows the claim screen, not the content. A password and an expiry are additional restrictions: changing the password closes all open browsers at once.
 
 ## Revocation and consequences
 
 After access is revoked, an open tab switches to read-only: the room stays on screen, but edits are not accepted. No reload is needed.
 
 :::warning
-Revoking access does not undo edits already made: the tab stops accepting new ones, but what was saved stays on the room.
+Revoking access does not undo edits already made: the tab stops accepting new ones, but what was saved stays in the room.
 :::
 
 ## What is visible from outside
 
-A person without access receives "resource unavailable" without the room name: the existence of the room is not disclosed.
+A person without access to a room that has an owner receives "resource unavailable" without the room name: the existence of the room is not disclosed. A room without an owner is the exception: the page says there is no owner, because the link is the only way to claim it.
 
 ## Where to go next
 

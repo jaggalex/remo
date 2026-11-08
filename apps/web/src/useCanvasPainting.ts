@@ -8,6 +8,7 @@ import {
 } from "./painters";
 import { canvasPaletteFromTokens } from "./canvasPalette";
 import { connectorResolver } from "./canvasGeometry";
+import { useProposalLayout } from "./proposalStore";
 import type { Camera, KanbanLayout } from "@remo/canvas";
 import type { Presence } from "@remo/doc";
 import type { KanbanState, Widget } from "@remo/model";
@@ -92,6 +93,9 @@ export function useCanvasPainting({
     [widgets, layouts],
   );
 
+  // A plan under review is painted over the room (ADR-188).
+  const proposal = useProposalLayout(resolveConnector, viewport);
+
   const paintStats = useRef({
     board: 0,
     overlay: 0,
@@ -119,7 +123,29 @@ export function useCanvasPainting({
     return () => observer.disconnect();
   }, []);
 
+  /**
+   * Canvas text does not wait for a web font: a note painted before Golos Text arrives is
+   * measured and drawn in the fallback. Repaint once each batch of faces finishes loading,
+   * so wraps and the auto-fitted size are computed with the real letters.
+   */
+  const [fontsLoaded, setFontsLoaded] = useState(0);
+  useEffect(() => {
+    const fonts = document.fonts;
+    if (!fonts) return;
+    let alive = true;
+    const bump = () => {
+      if (alive) setFontsLoaded((count) => count + 1);
+    };
+    void fonts.ready.then(bump);
+    fonts.addEventListener?.("loadingdone", bump);
+    return () => {
+      alive = false;
+      fonts.removeEventListener?.("loadingdone", bump);
+    };
+  }, []);
+
   /** Fonts, text caps, the card placeholder and the canvas palette. */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `fontsLoaded` only triggers a repaint.
   const paintTheme = useMemo(
     () => ({
       fontFamily: settings.text.fontFamily,
@@ -134,7 +160,8 @@ export function useCanvasPainting({
       },
       palette,
     }),
-    [settings, t, palette],
+    // `fontsLoaded` is not read: a new theme object is what makes both layers repaint.
+    [settings, t, palette, fontsLoaded],
   );
 
   const paintBoard = useCallback(() => {
@@ -211,6 +238,7 @@ export function useCanvasPainting({
       resolve: resolveConnector,
       theme: paintTheme,
       focusedWaypoint,
+      proposal,
     };
     paintOverlayLayer(input);
     paintStats.current.overlay += 1;
@@ -230,6 +258,7 @@ export function useCanvasPainting({
     paintTheme,
     presence,
     preview,
+    proposal,
     selectedIds,
     settings,
     viewport,

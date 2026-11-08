@@ -1,4 +1,3 @@
-import type { Camera } from "@remo/canvas";
 import type { KanbanState, Widget } from "@remo/model";
 import type { BoardDocument } from "@remo/doc";
 import type { Access, SessionUser } from "./api";
@@ -13,7 +12,7 @@ import { FollowDialog } from "./FollowDialog";
 import { VoteSurface } from "./VoteSurface";
 import { ShareLinkDialog } from "./ShareLinkDialog";
 import { ShareDialog } from "./ShareDialog";
-import { InviteDialog } from "./InviteDialog";
+import { Contained } from "./ErrorBoundary";
 import type { TimerPhase } from "@remo/model";
 
 /**
@@ -22,22 +21,27 @@ import type { TimerPhase } from "@remo/model";
  * They are forms over the board, not parts of it: one file keeps the two surfaces of
  * `App` — the canvas and its forms — apart, and keeps `App` inside the Q4 size ratchet.
  */
-export function BoardDialogs({
+export function BoardDialogs(props: Parameters<typeof DialogsBody>[0]) {
+  // One failure boundary for the dialogs (ADR-171): a broken dialog never takes the room.
+  return (
+    <Contained scope="panel">
+      <DialogsBody {...props} />
+    </Contained>
+  );
+}
+
+function DialogsBody({
   board,
   widgets,
   kanbanStates,
   selectedIds,
   settings,
-  camera,
   access,
   me,
   identity,
   boardId,
   boardTitle,
   boardOrgId,
-  inviteToken,
-  inviteDone,
-  onInviteDone,
   onRefreshAccess,
   onSignedIn,
   authOpen,
@@ -89,16 +93,12 @@ export function BoardDialogs({
   kanbanStates: Record<string, KanbanState>;
   selectedIds: string[];
   settings: BoardSettings;
-  camera: Camera;
   access: Access | null;
   me: SessionUser | null;
   identity: Identity;
   boardId: string;
   boardTitle: string;
   boardOrgId: string | null;
-  inviteToken: string | null;
-  inviteDone: boolean;
-  onInviteDone: (boardId: string | null) => void;
   onRefreshAccess: () => Promise<void>;
   onSignedIn: (user: SessionUser) => void;
   authOpen: boolean;
@@ -147,14 +147,6 @@ export function BoardDialogs({
 }) {
   return (
     <>
-      {inviteToken && !inviteDone && (
-        <InviteDialog
-          token={inviteToken}
-          signedIn={Boolean(me)}
-          onSignIn={() => setAuthOpen(true)}
-          onDone={onInviteDone}
-        />
-      )}
       <AuthDialog
         open={authOpen}
         onClose={() => setAuthOpen(false)}
@@ -216,7 +208,6 @@ export function BoardDialogs({
         timerEndsAt={voteTimerEndsAt}
         timerLeft={timerPhase === "running" ? timerLeft : null}
         boardId={boardId}
-        camera={camera}
         setSelectedIds={setSelectedIds}
         onReveal={onReveal}
         onClose={() => setVoteOpen(false)}

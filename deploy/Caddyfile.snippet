@@ -1,5 +1,7 @@
 # Add to the existing Caddy configuration, validate, then reload it.
 # The Caddy container and remo web must share REMO_EDGE_NETWORK.
+# Security headers (CSP, HSTS, framing) come from the web container's nginx and pass
+# through unchanged; do not set them here as well (ADR-172).
 boards.example.com {
     reverse_proxy remo-web:8080
 }

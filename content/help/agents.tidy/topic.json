@@ -13,13 +13,13 @@
     "agents.task",
     "access.roles"
   ],
-  "verifiedAgainst": "2026-11-02",
+  "verifiedAgainst": "2026-11-08",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:306b21707dffcd0364898f2d450b58dc8b7b81f502a979523b04c1b09d654fe5",
-      "targetHash": "sha256:f71462a494cc56e00a8d9d2849b794f023b3f7d9df23c2ef232554bc60179827"
+      "sourceHash": "sha256:fa345aa52a19e9f72ae9c70cb0198330917729c2cc1fec62960ed6c2d25fe560",
+      "targetHash": "sha256:04a83c8bbc0c2ebfff9defde378e00108e2519bd1c34136d4449a5f8015634cc"
     }
   }
 }

@@ -17,21 +17,37 @@ import { executeChangeSet } from "./change-set.mjs";
 import { applyDiagram, diagramPrompt, parseDiagram } from "./diagram.mjs";
 import { effective } from "./iam.mjs";
 import { emitMetric } from "./metrics-events.mjs";
+import { withoutTenant } from "./tenant.mjs";
 
-export async function runAgentTask({
+export async function runAgentTask(args) {
+  // A queued task may be started from an HTTP request; it must not keep that request's
+  // connection after the response. The task row is protected, so its organisation is
+  // looked up first and the claim happens inside that tenant (ADR-178 stage 4).
+  return withoutTenant(async () => {
+    const orgId = args.store.agentTaskOrg ? await args.store.agentTaskOrg(args.taskId) : null;
+    const run = () => runAgentTaskDetached(args);
+    return orgId && args.store.withTenant ? args.store.withTenant(orgId, run) : run();
+  });
+}
+
+async function runAgentTaskDetached(args) {
+  const claimed = await args.store.claimAgentTask(args.taskId);
+  if (!claimed) return { status: "skipped", reason: "not-queued" };
+
+  const task = await args.store.getAgentTask(args.taskId);
+  if (!task) return { status: "skipped", reason: "missing" };
+  return runClaimedAgentTask({ ...args, task });
+}
+
+async function runClaimedAgentTask({
   store,
-  taskId,
+  task,
   ai = null,
   log = console,
   limits = agentLimitsFromEnv(),
   now = Date.now,
   env = process.env,
 }) {
-  const claimed = await store.claimAgentTask(taskId);
-  if (!claimed) return { status: "skipped", reason: "not-queued" };
-
-  const task = await store.getAgentTask(taskId);
-  if (!task) return { status: "skipped", reason: "missing" };
   const agent = await store.getAgent(task.agent_id);
   const started = now();
   let usage = { promptTokens: 0, completionTokens: 0, costUsd: 0, actions: 0, seconds: 0 };
@@ -652,7 +668,13 @@ export async function runAgentTask({
  * Single-flight is the caller's job (the service has one process in v1), and tasks are
  * processed one at a time so a large diagram cannot starve the canvas.
  */
-export async function agentTick({
+export async function agentTick(args) {
+  // Called from a request (`onTaskQueued`) or a timer; either way it outlives the
+  // request, so it must not inherit its tenant connection.
+  return withoutTenant(() => agentTickBody(args));
+}
+
+async function agentTickBody({
   store,
   ai,
   log = console,
@@ -661,17 +683,21 @@ export async function agentTick({
   maxTasks = 2,
 }) {
   const created = [];
-  for (const schedule of await store.dueAgentSchedules(maxSchedules)) {
+  const schedules = store.dueAgentSchedulesAcrossTenants
+    ? await store.dueAgentSchedulesAcrossTenants(maxSchedules)
+    : await store.dueAgentSchedules(maxSchedules);
+
+  const runSchedule = async (schedule) => {
     // Moving the clock first makes a crash re-run the schedule rather than double-run
     // it: the task row is the durable record, and the next tick is a full interval away.
     const advanced = await store.advanceAgentSchedule(schedule.id);
-    if (!advanced) continue;
+    if (!advanced) return;
 
     const agent = await store.getAgent(schedule.agent_id);
-    if (!agent || agent.state !== "active") continue;
+    if (!agent || agent.state !== "active") return;
     const board = await store.getIamBoard(schedule.board_id);
     const policy = await store.getOrgPolicy(schedule.org_id);
-    if (!board || !board.agents_enabled || !policy.agentsEnabled) continue;
+    if (!board || !board.agents_enabled || !policy.agentsEnabled) return;
 
     // Do not queue work that will obviously be denied: a schedule whose owner lost
     // edit rights should stay quiet instead of producing a failed task every interval.
@@ -684,7 +710,7 @@ export async function agentTick({
           policy: facts.policy,
         })
       : null;
-    if (!access?.allowed || !access.capabilities.includes("board.edit")) continue;
+    if (!access?.allowed || !access.capabilities.includes("board.edit")) return;
 
     const task = await store.createAgentTask({
       orgId: schedule.org_id,
@@ -714,6 +740,13 @@ export async function agentTick({
         reason: "schedule",
       });
     }
+  };
+
+  for (const schedule of schedules) {
+    // The schedule row carries its organisation; the function that found it bypassed
+    // RLS for one row, and everything after runs under that tenant.
+    if (store.withTenant) await store.withTenant(schedule.org_id, () => runSchedule(schedule));
+    else await runSchedule(schedule);
   }
 
   // A task may be backed by an environment key or by a key stored for the org in the
@@ -722,7 +755,9 @@ export async function agentTick({
   // AI_NOT_CONFIGURED instead of leaving it silently queued (ADR-142).
   const ran = [];
   for (let index = 0; index < maxTasks; index += 1) {
-    const next = await store.nextQueuedAgentTask();
+    const next = store.nextAgentTask
+      ? await store.nextAgentTask()
+      : await store.nextQueuedAgentTask();
     if (!next) break;
     ran.push(await runAgentTask({ store, taskId: next.id, ai, log, limits }));
   }

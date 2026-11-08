@@ -19,17 +19,16 @@ export function InviteDialog({
   signedIn: boolean;
   /** Opens the sign-in dialog for a visitor who has no session yet. */
   onSignIn: () => void;
-  /** Called with the board id when the invitation was a board guest invite. */
-  onDone: (boardId: string | null) => void;
+  onDone: (target: { orgId: string; boardId: string | null }) => void;
 }) {
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accepted, setAccepted] = useState<string | null>(null);
+  const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
     setError(null);
-    setAccepted(null);
+    setAccepted(false);
   }, [token]);
 
   const accept = async () => {
@@ -37,8 +36,8 @@ export function InviteDialog({
     setError(null);
     try {
       const result = await api.acceptInvitation(token);
-      setAccepted(result.orgId);
-      onDone(result.boardId);
+      setAccepted(true);
+      onDone(result);
     } catch (failure) {
       const code = (failure as { code?: string }).code ?? "";
       setError(
@@ -55,14 +54,14 @@ export function InviteDialog({
 
   return (
     <div className="dialog-backdrop" role="presentation">
-      <section className="auth-dialog" role="dialog" aria-modal="true">
-        <h2 className="invite-title">{t("invite.title")}</h2>
+      <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="invite-title">
+        <h2 className="invite-title" id="invite-title">{t("invite.title")}</h2>
         <p className="muted">{t("invite.body")}</p>
         {error && <p className="auth-error">{error}</p>}
         {accepted && <p className="muted">{t("invite.accepted")}</p>}
         <div className="auth-actions">
           {signedIn ? (
-            <button type="button" className="primary-button" disabled={busy} onClick={() => void accept()}>
+            <button type="button" className="primary-button" disabled={busy || accepted} onClick={() => void accept()}>
               {busy ? t("auth.working") : t("invite.accept")}
             </button>
           ) : (

@@ -18,11 +18,11 @@
     "concepts/agents",
     "reference/limits"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-08",
   "translations": {
     "en": {
-      "sourceHash": "sha256:465b92d8424deb5fe5ae0218048ec7bd153dda08820a9e2dac44332d271e9bbb",
-      "targetHash": "sha256:a3dfd9dda6c39d92f448ec321f4cc5d72c4940416d169aa0c8706899d9c7df3a"
+      "sourceHash": "sha256:3b6857d8c3e6d65a9ab03002ae8acb483999cb63f889aa09f655a4dbe5001bb9",
+      "targetHash": "sha256:f997e7a4397404fc9316dc00892afaeb3c1ea246c0c5752b9bc3f6950ad960bf"
     }
   }
 }

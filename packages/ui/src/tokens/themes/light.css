@@ -1,6 +1,6 @@
 /* REMO theme “light” — generated from tokens.json by scripts/build-tokens.mjs. Do not edit. */
 :root, [data-theme="light"] {
-  --bg-canvas: var(--neutral-50);
+  --bg-canvas: var(--neutral-25);
   --bg-app: var(--neutral-25);
   --bg-panel: var(--neutral-0);
   --bg-raised: var(--neutral-0);
@@ -14,18 +14,18 @@
   --text-inverse: var(--neutral-0);
   --text-accent: var(--accent-700);
   --text-danger: var(--danger-700);
-  --text-agent: var(--violet-600);
+  --text-agent: var(--neutral-900);
   --border-subtle: var(--neutral-150);
   --border-strong: var(--neutral-400);
   --border-focus: var(--accent-600);
-  --accent: var(--accent-600);
-  --accent-hover: var(--accent-700);
-  --accent-soft: var(--accent-50);
+  --accent: var(--neutral-900);
+  --accent-hover: var(--neutral-700);
+  --accent-soft: var(--neutral-100);
   --text-on-accent: var(--neutral-0);
   --danger: var(--danger-600);
   --danger-hover: var(--danger-700);
   --danger-soft: var(--danger-50);
-  --agent-soft: var(--violet-50);
+  --agent-soft: var(--neutral-100);
   --text-on-danger: var(--neutral-0);
   --state-success: var(--success-700);
   --success-soft: var(--success-50);
@@ -33,18 +33,25 @@
   --warning-soft: var(--warning-50);
   --state-info: var(--neutral-600);
   --selection-fill: var(--alpha-accent-8);
-  --selection-stroke: var(--accent-600);
+  --selection-stroke: var(--neutral-900);
   --presence-1: var(--orange-600);
-  --presence-2: var(--violet-600);
+  --presence-2: var(--green-teal-600);
   --presence-3: var(--blue-600);
   --presence-4: var(--pink-600);
   --presence-5: var(--green-600);
   --presence-6: var(--ochre-600);
   --text-on-presence: var(--neutral-0);
+  --agent: var(--neutral-900);
+  --agent-hatch: var(--neutral-50);
+  --agent-proposal: var(--neutral-400);
+  --border-panel: var(--neutral-900);
+  --text-on-agent: var(--neutral-0);
+  --selection-edit: var(--neutral-900);
   --shadow-pop: var(--elev-pop-light);
   --shadow-bar: var(--elev-bar-light);
   --shadow-sticker: var(--elev-sticker-light);
   --shadow-sticker-hover: var(--elev-sticker-hover-light);
   --shadow-hover: var(--elev-hover-light);
+  --shadow-edit: var(--elev-edit-light);
 }
 :root { color-scheme: light; }

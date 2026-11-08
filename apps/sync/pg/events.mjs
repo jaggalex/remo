@@ -75,7 +75,7 @@ export const eventMethods = {
    * `handle` throws to ask for a retry. Nothing is thrown out of this method for a failed
    * delivery: a consumer outage must not lose the attempt count that proves it happened.
    */
-  async drainEvents({ limit = 20, handle, maxAttempts = 8, delayMs = () => 1000 }) {
+  async drainEventsLegacy({ limit = 20, handle, maxAttempts = 8, delayMs = () => 1000 }) {
     const client = await this.pool.connect();
     let delivered = 0;
     try {
@@ -135,6 +135,74 @@ export const eventMethods = {
     } finally {
       client.release();
     }
+  },
+
+  /**
+   * Claim a batch across organisations, then process each row in its own tenant.
+   *
+   * The old transaction held `for update` locks while the webhook ran; the claim
+   * function marks rows for five minutes instead, so a crash retries rather than
+   * double-delivering. A database from before the function falls back to the old path.
+   */
+  async drainEvents(options) {
+    try {
+      return await this.drainEventsClaimed(options);
+    } catch (error) {
+      if (String(error.message).includes("remo_claim_event_batch")) {
+        return this.drainEventsLegacy(options);
+      }
+      throw error;
+    }
+  },
+
+  async drainEventsClaimed({
+    limit = 20,
+    handle,
+    maxAttempts = 8,
+    delayMs = () => 1000,
+  }) {
+    const { rows } = await this.pool.query("select * from remo_claim_event_batch($1)", [limit]);
+    let delivered = 0;
+    for (const row of rows) {
+      let failure = null;
+      try {
+        await handle(row);
+      } catch (error) {
+        failure = error?.message ?? String(error);
+      }
+      const finalize = async () => {
+        if (!failure) {
+          await this.pool.query(
+            `update event_outbox
+                set published_at = now(), attempts = attempts + 1, last_error = null
+              where id = $1`,
+            [row.id],
+          );
+          delivered += 1;
+          return;
+        }
+        const attempts = row.attempts + 1;
+        if (attempts >= maxAttempts) {
+          await this.pool.query(
+            `update event_outbox
+                set attempts = $2, last_error = $3, dead_at = now(), next_attempt_at = null
+              where id = $1`,
+            [row.id, attempts, failure],
+          );
+        } else {
+          await this.pool.query(
+            `update event_outbox
+                set attempts = $2, last_error = $3,
+                    next_attempt_at = now() + ($4 || ' milliseconds')::interval
+              where id = $1`,
+            [row.id, attempts, failure, String(Math.max(0, delayMs(attempts)))],
+          );
+        }
+      };
+      // The row names its organisation; the claim function bypassed RLS for the batch.
+      await this.withTenant(row.org_id, finalize);
+    }
+    return { delivered, seen: rows.length };
   },
 
   /** A board's events for its own readers and tests; never includes board content. */

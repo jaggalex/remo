@@ -18,7 +18,9 @@ A colleague needs access to the room, someone outside the team needs to view it 
 3. Choose the role: **Viewer**, **Commenter**, **Editor**, **Co-owner**.
 4. Press **Добавить** (add).
 
-Result: the colleague sees the room in their list and gets the chosen permissions.
+If remo gives you an invitation link, send it to the recipient. They use it to sign in or create an account with the invited email address. Clicking **Accept invitation** opens the room.
+
+The colleague gets the selected permissions.
 
 ## Steps: a link for someone outside the team
 

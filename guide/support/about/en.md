@@ -1,6 +1,6 @@
 ## What it is
 
-remo is a local-first visual canvas for a small team: rooms, cards, connectors, presentation, comments, access and extensions. Version **0.1.0**.
+remo is a shared visual canvas for teamwork. Use rooms to make plans, track tasks and discuss ideas. The version and build number are in the account menu and at `/api/health`.
 
 ## Author and licence
 

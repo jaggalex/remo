@@ -14,6 +14,12 @@ use_release() {
   RELEASE="$ROOT/releases/$revision"
   [[ -f "$RELEASE/deploy/compose.production.yml" ]] || exit 1
   export REMO_RELEASE=$revision
+  export REMO_COMMIT=$revision
+  if [[ -z ${REMO_VERSION:-} ]]; then
+    REMO_VERSION=$(sed -n 's/^  "version": "\(.*\)",$/\1/p' "$RELEASE/package.json" | head -1)
+    export REMO_VERSION=${REMO_VERSION:-0.0.0}
+  fi
+  export REMO_BUILD=${REMO_BUILD:-0}
 }
 compose() {
   docker compose --env-file "$REMO_PRODUCTION_ENV" -f "$RELEASE/deploy/compose.production.yml" "$@"
@@ -38,7 +44,11 @@ case ${1:-status} in
   deploy)
     use_release "${2:?Usage: remo deploy COMMIT}"
     # The shared server belongs to infrastructure; app releases only use a client.
-    compose build sync web
+    compose build \
+      --build-arg REMO_VERSION="$REMO_VERSION" \
+      --build-arg REMO_BUILD="$REMO_BUILD" \
+      --build-arg REMO_COMMIT="$REMO_COMMIT" \
+      sync web
     compose pull db-tools
     compose run --rm -T --no-deps db-tools psql -v ON_ERROR_STOP=1 -Atc 'select 1' < /dev/null > /dev/null
     if [[ -f "$ROOT/current" ]]; then

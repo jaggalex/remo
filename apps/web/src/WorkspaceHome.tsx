@@ -9,6 +9,7 @@ import {
 } from "./boardDirectory";
 import { AuthDialog } from "./AuthDialog";
 import { BoardDeleteDialog } from "./BoardDeleteDialog";
+import { InviteDialog } from "./InviteDialog";
 import { NewBoardDialog } from "./NewBoardDialog";
 import { OrganisationDialog } from "./OrganisationDialog";
 import { SessionsDialog } from "./SessionsDialog";
@@ -74,7 +75,7 @@ function pageNumbers(current: number, total: number): Array<number | null> {
  * Every action is a server decision; the screen only offers what the read model says
  * the person may do.
  */
-export function WorkspaceHome() {
+export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
   const { t, lang, setLang } = useI18n();
   const { theme, setTheme } = useTheme();
   const { me, setMe, orgs, refreshOrgs, sessionReady } = useBoardAccess(null);
@@ -187,6 +188,19 @@ export function WorkspaceHome() {
 
   const openBoard = (boardId: string) => {
     window.location.assign(`${window.location.pathname}?room=${encodeURIComponent(boardId)}`);
+  };
+
+  const openInvitationTarget = async ({ orgId, boardId }: { orgId: string; boardId: string | null }) => {
+    const next = new URLSearchParams();
+    if (boardId) {
+      next.set("room", boardId);
+    } else {
+      const result = await api.orgs().catch(() => null);
+      const org = result?.orgs.find((item) => item.id === orgId);
+      if (org) next.set("org", org.slug);
+    }
+    if (params.has("lang")) next.set("lang", lang);
+    window.location.replace(next.size ? `/?${next}` : "/");
   };
 
   const createdBoard = (boardId: string, template: string, title: string) => {
@@ -369,7 +383,8 @@ export function WorkspaceHome() {
               <div className="home-views" role="group" aria-label={t("boards.title")}>
                 <Button
                   size="compact"
-                  variant={trash ? "secondary" : "primary"}
+                  variant="ghost"
+                  selected={!trash}
                   onClick={() => {
                     setTrash(false);
                     setPage(1);
@@ -379,7 +394,8 @@ export function WorkspaceHome() {
                 </Button>
                 <Button
                   size="compact"
-                  variant={trash ? "primary" : "secondary"}
+                  variant="ghost"
+                  selected={trash}
                   onClick={() => {
                     setTrash(true);
                     setPage(1);
@@ -503,7 +519,7 @@ export function WorkspaceHome() {
                         <>
                       <span className="home-emoji-anchor">
                         <IconButton
-                          icon="sparkle"
+                          icon="agent"
                           label={t("home.emoji")}
                           size="compact"
                           variant="ghost"
@@ -643,6 +659,14 @@ export function WorkspaceHome() {
         onCurrentRevoked={() => void signOut()}
       />
 
+      {inviteToken && sessionReady && !authOpen && (
+        <InviteDialog
+          token={inviteToken}
+          signedIn={Boolean(me)}
+          onSignIn={() => setAuthOpen(true)}
+          onDone={openInvitationTarget}
+        />
+      )}
       <AuthDialog
         open={authOpen}
         onClose={() => setAuthOpen(false)}

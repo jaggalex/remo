@@ -37,7 +37,7 @@ interface ArrangeUnit {
 function arrangeUnits(board: BoardDocument, ids: readonly string[]): ArrangeUnit[] {
   const units = new Map<string, Widget[]>();
   for (const id of ids) {
-    const widget = board.widgets.get(id);
+    const widget = board.readWidget(id);
     if (!widget) continue;
     if (!kindOf(widget.type).movable) continue;
     if (widget.parentId) continue;
@@ -69,7 +69,7 @@ export function alignWidgets(
   if (units.length < 2) return;
 
   const all = units.flatMap((unit) =>
-    unit.ids.map((id) => board.widgets.get(id)).filter((widget): widget is Widget => Boolean(widget)),
+    unit.ids.map((id) => board.readWidget(id)).filter((widget): widget is Widget => Boolean(widget)),
   );
   const whole = bounds(all);
   const moves: WidgetPosition[] = [];
@@ -100,7 +100,7 @@ export function alignWidgets(
     if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) continue;
 
     for (const id of unit.ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (widget) moves.push({ id, x: widget.x + dx, y: widget.y + dy });
     }
   }
@@ -143,7 +143,7 @@ export function distributeWidgets(
     const delta = cursor - (horizontal ? unit.box.x : unit.box.y);
     if (Math.abs(delta) > 0.001) {
       for (const id of unit.ids) {
-        const widget = board.widgets.get(id);
+        const widget = board.readWidget(id);
         if (widget) {
           moves.push({
             id,

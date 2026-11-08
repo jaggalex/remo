@@ -8,20 +8,20 @@ The sticky notes are written but scattered: stories `US-1`…`US-12`, ideas by t
 
 ## Before you start
 
-- You have edit permission on the room.
-- Agents are enabled in the organisation and on the room, and you have at least one active agent. Tidying is an agent task even when no model is called.
+- You have edit permission in the room.
+- Agents are enabled in the organisation and in the room, and you have at least one active agent. Tidying is an agent task even when no model is called.
 - The set being laid out holds at most 50 objects. The limit is counted after expansion: a selected group brings all its members, and a selected frame brings all its contents. A larger set is refused before a plan is stored.
 - Something in the selection can move: the objects are free on the canvas or sit inside a selected frame.
 
 ## Steps
 
-1. Select objects on the room. Result: the selection bar shows their count and types.
+1. Select objects in the room. Result: the selection bar shows their count and types.
 2. Open the command in one of two ways: right-click → **Tidy up**, or the **Tidy up** button on the selection bar. A viewer has no such command, and with an empty selection it is unavailable.
 3. Choose a layout. **Auto** is selected by default; you can change it later in the preview.
 4. Click **Tidy up**. Result: the agent prepares a plan and the button reads "Preparing the layout…".
-5. Wait for the "Before and after" preview. Result: you can see where each object will move, which blocks will appear and what stays in place; the room has not changed yet.
-6. Read the warnings. If the layout does not fit, choose another one in the preview: the coordinates are recomputed and the block labels are kept.
-7. Click **Apply**. Result: the objects have moved, the block frames exist, and the dialog shows "One ⌘Z puts all objects back".
+5. Wait for the preview. Result: the new places of the objects and the future blocks are drawn with dashed lines in the room, with a task panel at the bottom; the objects themselves have not moved yet.
+6. Read the warnings. If the layout does not fit, open **Details** and choose another one: the coordinates and the dashed lines are recomputed and the block labels are kept.
+7. Click **Apply**. Result: the objects have moved, the block frames exist, and the panel shows "One ⌘Z puts all objects back".
 
 ## Layouts
 
@@ -37,9 +37,9 @@ A selected frame is laid out inside itself: its contents stand in columns, the f
 
 ## What the preview shows
 
-- A "Before and after" map: frame outlines, objects by kind and the planned blocks.
-- The number of objects that move, the number of new blocks and the number of actions.
-- Block labels, when the layout creates blocks.
+- The room itself: future blocks have a rounded dashed outline, and the new places of the objects are dashed ghosts beside the objects in their current places. While the panel is open you can pan and select in the room.
+- In the task panel: the number of objects that move, of new blocks and of actions, the bounds, and block labels when the layout creates blocks.
+- Under **Details**: the layout choice, the object list and the warnings.
 - Warnings: locked objects stayed in place; objects from an unselected frame did not move; a block consists only of locked objects; the selection does not fit inside the frame; there is no free space beside it; the model was unavailable and the fallback layout was used.
 
 ## What goes to the model
@@ -70,7 +70,7 @@ Tidying works without a provider key: the layout is deterministic, and no warnin
 |---|---|
 | No Tidy up command | a viewer has no such command; with an empty selection it is unavailable |
 | "Create an agent first" | you have no active agent; create one in Organisation → Agents |
-| "AI agents are off on this room" | an organisation administrator or the room owner turned agents off |
+| "AI agents are off in this room" | an organisation administrator or the room owner turned agents off |
 | "Tidying works on at most 50 objects" | the selection is above the limit; select fewer |
 | "The selection does not fit inside the frame" | the objects do not fit at their current size; enlarge the frame or select fewer |
 | "There is no free space beside the selection" | objects outside the selection are in the way; move them and try again |

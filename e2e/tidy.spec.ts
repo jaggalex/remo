@@ -125,9 +125,36 @@ test("five scattered notes become one even column and ⌘Z returns them", async 
   const plan = page.getByRole("dialog", { name: "Agent plan" });
   await expect(plan).toContainText("Moves: 5");
   await expect(plan).toContainText("Blocks: US");
+
+  // The room is the preview (ADR-188): five ghosts at their targets and one hull for the
+  // block, drawn over the live notes, which have not moved.
+  const drawn = await page.evaluate(
+    () =>
+      (window as unknown as {
+        __remo: { proposal: { moves: unknown[]; blocks: Array<{ type: string }> } | null };
+      }).__remo.proposal,
+  );
+  expect(drawn?.moves).toHaveLength(5);
+  expect(drawn?.blocks.filter((block) => block.type === "frame")).toHaveLength(1);
+  expect(await widgets(page)).toEqual(before);
+
+  // The panel is not modal: the room still takes a click while the plan is open.
+  await expect(page.locator(".rm-dialog-scrim")).toHaveCount(0);
+  // An empty spot of the room, inside the fitted view: a click there clears the selection.
+  const empty = toClient(await geometry(page), { x: -600, y: -500 });
+  await page.mouse.click(empty.x, empty.y);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+      ),
+    )
+    .toEqual([]);
+  await expect(plan).toBeVisible();
+
   await plan.getByRole("button", { name: "Apply" }).click();
   await expect(plan).toContainText("One ⌘Z puts every object back.");
-  await plan.getByRole("button", { name: "Show on room" }).click();
+  await plan.getByRole("button", { name: "Show in room" }).click();
 
   const after = await widgets(page);
   expect(after).toHaveLength(6);
@@ -198,7 +225,7 @@ test("a selected frame is laid out inside itself and the frame does not move", a
   await expect(plan).toContainText("Moves: 3");
   await expect(plan).toContainText("new blocks: 0");
   await plan.getByRole("button", { name: "Apply" }).click();
-  await plan.getByRole("button", { name: "Show on room" }).click();
+  await plan.getByRole("button", { name: "Show in room" }).click();
 
   const after = await widgets(page);
   const frame = after.find((widget) => widget.id === frameId)!;
@@ -232,6 +259,8 @@ test("a model may name the blocks, and the person reads them before applying", a
   const plan = page.getByRole("dialog", { name: "Agent plan" });
   await expect(plan).toBeVisible({ timeout: 20_000 });
   await expect(plan).toContainText("Blocks: Billing, Flow");
+  // The strategy switch is a detail of the plan; the panel opens it in place.
+  await plan.getByRole("button", { name: "Details" }).click();
   await expect(plan.getByRole("button", { name: "By meaning" })).toHaveClass(
     /rm-btn-primary/,
   );

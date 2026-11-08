@@ -47,35 +47,62 @@ export function createConnections({ store, accessForBoard, log = console, sweepM
     const records = liveConnections.get(boardId);
     if (!records?.size || !store.getIamBoard) return;
 
-    const iam = await store.getIamBoard(boardId).catch(() => null);
-    if (!iam) return;
-    // Unclaimed rooms keep the legacy rule; there is no access decision to refresh.
-    if (!iam.owner_id) return;
-
-    for (const record of [...records]) {
-      try {
-        const resolved = await accessForBoard({
-          store,
-          boardId,
-          userId: record.userId,
-          unlockToken: record.unlockToken,
-        });
-        const allowed = resolved?.access.allowed ?? false;
-        const role = resolved?.access.role ?? null;
-        const capabilities = resolved?.access.capabilities ?? [];
-        const sameCapabilities =
-          capabilities.length === record.capabilities.length &&
-          capabilities.every((capability) => record.capabilities.includes(capability));
-        // A trashed board keeps the same role but loses every write capability, so a
-        // role-only check would leave an open editor socket alive (ADR-073).
-        if (!allowed || role !== record.role || !sameCapabilities) {
-          revokeSocket(record.socket, 4403, "access changed");
-        }
-      } catch (error) {
-        log.error(`[sync] access refresh failed for ${boardId}:`, error.message);
-        revokeSocket(record.socket, 1011, "access check failed");
-      }
+    // `boards` is protected in stage 3; resolve the owner and organisation through the
+    // security-definer lookup before opening a tenant context.
+    const lookup = store.boardLookup
+      ? await store.boardLookup(boardId).catch(() => null)
+      : null;
+    if (store.boardLookup && (!lookup || !lookup.owner_id || !lookup.org_id)) {
+      for (const record of [...records]) revokeSocket(record.socket, 4403, "room is not claimed");
+      return;
     }
+    const boardOrg = lookup?.org_id ?? null;
+    const load = async () => {
+      const iam = await store.getIamBoard(boardId).catch(() => null);
+      if (!iam) return null;
+      if (!iam.owner_id) return { unclaimed: true };
+      return { iam };
+    };
+    const loaded =
+      boardOrg && store.withTenant ? await store.withTenant(boardOrg, load) : await load();
+    if (!loaded) return;
+    // A room that lost its owner is closed, not left on the legacy rule (ADR-174).
+    if (loaded.unclaimed) {
+      for (const record of [...records]) revokeSocket(record.socket, 4403, "room is not claimed");
+      return;
+    }
+    const iam = loaded.iam;
+
+    const check = async () => {
+      for (const record of [...records]) {
+        try {
+          const resolved = await accessForBoard({
+            store,
+            boardId,
+            userId: record.userId,
+            unlockToken: record.unlockToken,
+          });
+          const allowed = resolved?.access.allowed ?? false;
+          const role = resolved?.access.role ?? null;
+          const capabilities = resolved?.access.capabilities ?? [];
+          const sameCapabilities =
+            capabilities.length === record.capabilities.length &&
+            capabilities.every((capability) => record.capabilities.includes(capability));
+          // A trashed board keeps the same role but loses every write capability, so a
+          // role-only check would leave an open editor socket alive (ADR-073).
+          if (!allowed || role !== record.role || !sameCapabilities) {
+            revokeSocket(record.socket, 4403, "access changed");
+          }
+        } catch (error) {
+          log.error(`[sync] access refresh failed for ${boardId}:`, error.message);
+          revokeSocket(record.socket, 1011, "access check failed");
+        }
+      }
+    };
+    // The link and grant tables are RLS-protected in stage 2; the refresh runs outside a
+    // request and needs the board's organisation (ADR-178).
+    if (store.withTenant) await store.withTenant(boardOrg ?? iam.org_id ?? null, check);
+    else await check();
   }
 
   /** Tell everyone in a board's room that its comments changed (ADR-104 amendment). */

@@ -67,7 +67,7 @@ test("the rail's colour and shape flyouts create the chosen sample", async ({ pa
   const swatches = page.locator(".tool-flyout-swatches .tool-swatch");
   // The rail is the window's fill grid: seven tonal columns × 100/300 (ADR-127, ADR-139).
   await expect(swatches).toHaveCount(14);
-  await expect(swatches.nth(1)).toHaveAttribute("data-hex", "#ffe07a");
+  await expect(swatches.nth(1)).toHaveAttribute("data-hex", "#ece2c8");
   await expect(swatches.nth(1)).toHaveClass(/is-default/);
   await swatches.nth(1).click();
 

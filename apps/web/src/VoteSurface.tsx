@@ -1,6 +1,6 @@
-import type { Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 import { api } from "./api";
+import { cameraStore } from "./cameraStore";
 import { VotePanel } from "./VotePanel";
 import type { VoteController } from "./useVoteSessions";
 
@@ -20,7 +20,6 @@ export function VoteSurface({
   timerEndsAt,
   timerLeft,
   boardId,
-  camera,
   setSelectedIds,
   onReveal,
   onClose,
@@ -33,7 +32,6 @@ export function VoteSurface({
   timerEndsAt: string | null;
   timerLeft: number | null;
   boardId: string;
-  camera: Camera;
   setSelectedIds: (ids: string[]) => void;
   onReveal: (objectId: string) => void;
   onClose: () => void;
@@ -53,6 +51,7 @@ export function VoteSurface({
         onClose();
       }}
       onPublish={async (sessionId, content) => {
+        const camera = cameraStore.get();
         const { result } = await api.runCommand(
           boardId,
           {

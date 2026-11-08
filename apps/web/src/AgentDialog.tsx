@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AgentPlan, AppliedAgentPlan } from "@remo/doc";
 import type { Widget } from "@remo/model";
 import { api, type BoardAgents, type ChangeSet } from "./api";
+import { cameraStore } from "./cameraStore";
 import { AgentFileField } from "./AgentFileField";
-import { AgentPlanDialog } from "./AgentPlanDialog";
+import { AgentPlanPanel } from "./AgentPlanPanel";
 import type { TaskFile } from "./agentFile";
 import { agentFailureText } from "./agentError";
 import { selectionPreview } from "./agentPayload";
@@ -28,7 +29,6 @@ export function AgentDialog({
   boardTitle,
   canManage,
   canEdit,
-  origin,
   selectionIds,
   widgets,
   onApplyPlan,
@@ -40,8 +40,6 @@ export function AgentDialog({
   boardTitle: string;
   canManage: boolean;
   canEdit: boolean;
-  /** World point at the middle of the current view. */
-  origin: { x: number; y: number };
   /** Objects selected on the board: the source for the cards skill and context for diagrams. */
   selectionIds: string[];
   /** The board snapshot, so the dialog can show exactly which fragments leave for the model. */
@@ -199,10 +197,9 @@ export function AgentDialog({
 
   if (planTaskId) {
     return (
-      <AgentPlanDialog
+      <AgentPlanPanel
         taskId={planTaskId}
         canEdit={canEdit}
-        widgets={widgets}
         onApply={onApplyPlan}
         onClose={() => setPlanTaskId(null)}
         onShowOnBoard={() => {
@@ -248,6 +245,8 @@ export function AgentDialog({
     }
     const idempotencyKey = pendingKey.current.key;
     void run(async () => {
+      const camera = cameraStore.get();
+      const origin = { x: camera.x, y: camera.y };
       if (repeat === "once") {
         if (isCards) {
           if (jobPreview) {

@@ -7,7 +7,7 @@
  * snapshots survive as a union.
  */
 import { describe, expect, it } from "vitest";
-import { testDatabaseStore } from "./test-db.mjs";
+import { ensureBoard, testDatabaseStore } from "./test-db.mjs";
 import { Y } from "./y.mjs";
 
 const database = await testDatabaseStore("legacy room ids");
@@ -23,6 +23,7 @@ function sticky(id, x = 0) {
 /** Give `room` a document with one sticky, written the way the store writes it. */
 async function seedRoom(room, label, widgetId = "w1", x = 0) {
   const seeded = new Y.Doc();
+  await ensureBoard(store, room);
   await store.bindState(room, seeded);
   seeded.getMap("meta").set("title", label);
   seeded.getMap("widgets").set(widgetId, sticky(widgetId, x));
@@ -39,6 +40,7 @@ suite("legacy room ids", () => {
     await store.pool.query("insert into boards (id, title) values ($1, '')", [board]);
     // The real board, claimed and with the document, under the wire form of the id.
     const live = new Y.Doc();
+    await ensureBoard(store, encoded);
     await store.bindState(encoded, live);
     live.getMap("meta").set("title", "Запуск продукта");
     live.getMap("widgets").set("w1", sticky("w1", 42));

@@ -3,6 +3,9 @@ import { deltaOf, plainOf, runsOf, seedTextField, withMaterializedText } from ".
 import { readKanban, writeKanbanState } from "./kanbanState";
 import {
   isTemplateTitle,
+  MAX_TEXT_CHARS,
+  readTag,
+  readWidget,
   type Board,
   type KanbanState,
   type Tag,
@@ -143,38 +146,55 @@ export class BoardDocument {
   /** Stable between changes — required by `useSyncExternalStore`. */
   snapshot = (): BoardSnapshot => {
     if (this.cache) return this.cache;
+    // Everything below is read through the wire readers (ADR-171): any client can write
+    // any value into the shared maps, and one malformed object must not blank the room
+    // for everyone who syncs it.
     const widgets: Widget[] = [];
-    this.widgets.forEach((widget, id) => {
+    this.widgets.forEach((raw, id) => {
+      const widget = readWidget(raw, id);
+      if (!widget) return;
       const text = this.texts.get(id);
-      if (!text) {
+      // `Y.XmlText` extends `Y.Text`; anything else under `texts` is not text.
+      if (!(text instanceof Y.Text)) {
         widgets.push(widget);
         return;
       }
-      widgets.push(withMaterializedText(widget, plainOf(text), runsOf(text)));
+      // A hostile note may hold megabytes of text; layout is per object and would
+      // stall every frame for every peer. Paint the first MAX_TEXT_CHARS and drop the
+      // formatting runs when the text was cut, so offsets cannot point past the end.
+      const plain = plainOf(text);
+      const capped = plain.length > MAX_TEXT_CHARS ? plain.slice(0, MAX_TEXT_CHARS) : plain;
+      widgets.push(
+        withMaterializedText(widget, capped, capped === plain ? runsOf(text) : undefined),
+      );
     });
 
     const kanbanStates: Record<string, KanbanState> = {};
     this.kanbans.forEach((kanban, kanbanId) => {
-      kanbanStates[kanbanId] = readKanban(kanban);
+      if (kanban instanceof Y.Map) kanbanStates[kanbanId] = readKanban(kanban);
     });
 
     const groupNames: Record<string, string> = {};
     this.groupNames.forEach((name, groupId) => {
-      groupNames[groupId] = name;
+      if (typeof name === "string") groupNames[groupId] = name;
     });
 
     const tags: Record<string, Tag> = {};
-    this.tags.forEach((tag, id) => {
-      tags[id] = tag;
+    this.tags.forEach((raw, id) => {
+      const tag = readTag(raw, id);
+      if (tag) tags[id] = tag;
     });
 
+    const title = this.meta.get("title");
     this.cache = {
       widgets,
       kanbanStates,
-      title: this.meta.get("title") ?? "",
+      title: typeof title === "string" ? title : "",
       groupNames,
       tags,
-      presentation: this.presentation.toArray(),
+      presentation: this.presentation
+        .toArray()
+        .filter((id): id is string => typeof id === "string"),
       allowBringEveryone: this.meta.get("allow_bring_everyone") === "1",
     };
     return this.cache;
@@ -211,6 +231,26 @@ export class BoardDocument {
     this.undo.stopCapturing();
   }
 
+  /**
+   * The widget under `id`, repaired for use (ADR-171), or null when the shared map holds
+   * something that is not an object. Operations must use this instead of `widgets.get`:
+   * the snapshot is not the only reader, and a peer can write `null` into the map.
+   */
+  readWidget(id: string): Widget | null {
+    const raw = this.widgets.get(id);
+    return raw === undefined ? null : readWidget(raw, id);
+  }
+
+  /** Every readable widget, skipping values that are not objects. */
+  readWidgets(): Widget[] {
+    const widgets: Widget[] = [];
+    this.widgets.forEach((raw, id) => {
+      const widget = readWidget(raw, id);
+      if (widget) widgets.push(widget);
+    });
+    return widgets;
+  }
+
   /** Board title, or an empty string when it has never been set. */
   get title(): string {
     return this.meta.get("title") ?? "";
@@ -226,7 +266,7 @@ export class BoardDocument {
   textOf(id: string): string {
     const shared = this.texts.get(id);
     if (shared) return plainOf(shared);
-    const widget = this.widgets.get(id);
+    const widget = this.readWidget(id);
     return widget?.title ?? widget?.content ?? "";
   }
 
@@ -240,7 +280,7 @@ export class BoardDocument {
   deltaOf(id: string): TextDeltaOp[] {
     const shared = this.texts.get(id);
     if (shared) return deltaOf(shared);
-    const widget = this.widgets.get(id);
+    const widget = this.readWidget(id);
     const fallback = widget?.title ?? widget?.content ?? "";
     return fallback ? [{ insert: fallback }] : [];
   }
@@ -277,7 +317,7 @@ export function loadBoard(
     }
 
     // A connector that lost an endpoint during remapping has nothing to join.
-    for (const widget of [...board.widgets.values()]) {
+    for (const widget of board.readWidgets()) {
       if (widget.type !== "connector") continue;
       if (!widget.start?.item || !widget.end?.item) board.widgets.delete(widget.id);
     }

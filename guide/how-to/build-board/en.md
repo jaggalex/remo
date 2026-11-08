@@ -9,7 +9,7 @@ You need to build a working room from scratch: sections, objects and connectors,
 
 ## Steps
 
-1. Open **More ▾ → Templates…** and choose **Kanban room**, **Roadmap**, **Story map** or **Roadmap example**. Result: the room gets a base structure; the template is added as a copy and does not touch existing objects.
+1. Open **More ▾ → Templates…** and choose **Kanban room**, **Roadmap**, **Story map** or **Roadmap example**. The template adds its own objects and leaves your existing work in place.
 2. If you do not need a template, start with a frame: click **Frame** on the rail and name it after the section it holds. Result: a container; a sticky whose centre lands inside becomes part of the frame.
 3. Add sticky notes with the **Sticky note** button on the tool rail and drag them into frames. Result: the sticky notes join the sections and move with them; a sticky note dragged out lives separately again.
 4. Select a sticky note and drag from its edge to another sticky note. Result: a connector with an anchor at both ends.

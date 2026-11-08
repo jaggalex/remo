@@ -74,7 +74,7 @@ function boardFacts(board: BoardDocument) {
     height: number;
   }> = [];
   const existingConnectors: Array<{ from: string; to: string }> = [];
-  board.widgets.forEach((widget, key) => {
+  board.readWidgets().forEach((widget, key) => {
     existingWidgets.push({
       id: widget.id ?? key,
       type: widget.type,
@@ -103,7 +103,7 @@ function preflight(
   for (const object of plan.objects) {
     if (!object.parentRef) continue;
     if (idMap.has(object.parentRef)) continue;
-    const parent = board.widgets.get(object.parentRef);
+    const parent = board.readWidget(object.parentRef);
     if (!parent) {
       throw new PlanError("PARENT_NOT_FOUND", `parent "${object.parentRef}" does not exist`);
     }
@@ -122,7 +122,7 @@ function preflight(
         `object "${placement.id}" is not in the selection this plan was built from`,
       );
     }
-    const widget = board.widgets.get(placement.id);
+    const widget = board.readWidget(placement.id);
     if (!widget) {
       throw new PlanError(
         "OBJECT_NOT_FOUND",
@@ -137,7 +137,7 @@ function preflight(
     }
     if (!placement.parentRef) continue;
     if (idMap.has(placement.parentRef)) continue;
-    const parent = board.widgets.get(placement.parentRef);
+    const parent = board.readWidget(placement.parentRef);
     if (!parent) {
       throw new PlanError("PARENT_NOT_FOUND", `parent "${placement.parentRef}" does not exist`);
     }
@@ -152,7 +152,7 @@ function preflight(
   if (!plan.connectors.length) return;
   const planned = new Map(plan.objects.map((object) => [object.tempId, object]));
   const taken = new Set<string>();
-  board.widgets.forEach((widget) => {
+  board.readWidgets().forEach((widget) => {
     if (widget.type !== "connector") return;
     const from = widget.start?.item;
     const to = widget.end?.item;
@@ -168,7 +168,7 @@ function preflight(
       }
       return;
     }
-    const widget = board.widgets.get(ref);
+    const widget = board.readWidget(ref);
     if (!widget) {
       throw new PlanError("CONNECTOR_TARGET_MISSING", `connector target "${ref}" does not exist`);
     }
@@ -328,7 +328,7 @@ export function applyAgentPlan(
     // created by this plan. Only x/y and membership change: sizes, texts and lines are
     // untouched (ADR-143), which also makes one ⌘Z enough for the whole arrangement.
     for (const placement of checked.placements ?? []) {
-      const current = board.widgets.get(placement.id);
+      const current = board.readWidget(placement.id);
       if (!current || current.locked) continue;
       const parentId = placement.parentRef
         ? (idMap.get(placement.parentRef) ?? placement.parentRef)
@@ -344,8 +344,8 @@ export function applyAgentPlan(
       const id = connectorIds.get(tempId)!;
       const fromId = idMap.get(connector.from) ?? connector.from;
       const toId = idMap.get(connector.to) ?? connector.to;
-      const from = board.widgets.get(fromId)!;
-      const to = board.widgets.get(toId)!;
+      const from = board.readWidget(fromId)!;
+      const to = board.readWidget(toId)!;
       board.widgets.set(
         id,
         plannedConnector(connector, id, from, to, author, options.provenance, createdAt),

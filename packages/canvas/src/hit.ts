@@ -1,6 +1,7 @@
 import type { Vec2, Widget } from "@remo/model";
 import { connectorPath, distanceToPath, pathPolyline } from "./connectors";
 import { layerKey } from "@remo/model";
+import { spatialIndex } from "./spatial";
 
 export function containsPoint(widget: Widget, point: Vec2): boolean {
   return (
@@ -44,7 +45,9 @@ export function pick(
   let best: Widget | null = null;
   let bestRank = -Infinity;
 
-  for (const widget of widgets) {
+  // The grid returns candidates in document order, but "topmost" is layer rank, so the
+  // loop is unchanged: only the set of widgets to check is smaller.
+  for (const widget of spatialIndex(widgets).queryPoint(point)) {
     if (widget.type === "connector") continue;
     if (isHandledElsewhere(widget)) continue;
     if (!containsPoint(widget, point)) continue;
@@ -99,7 +102,7 @@ export function pickInRect(
   rect: { x: number; y: number; width: number; height: number },
   isHandledElsewhere: (widget: Widget) => boolean,
 ): Widget[] {
-  return widgets.filter((widget) => {
+  return spatialIndex(widgets).query(rect).filter((widget) => {
     if (widget.type === "frame") return false;
     if (widget.type === "connector") return false;
     if (isHandledElsewhere(widget)) return false;

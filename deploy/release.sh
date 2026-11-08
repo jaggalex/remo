@@ -53,10 +53,12 @@ git diff --quiet && git diff --cached --quiet || {
 }
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+version=$(node -p "require('./package.json').version")
+build=$(git rev-list --count HEAD)
 git archive --format=tar.gz --output="$work/$revision.tar.gz" "$revision"
 ssh "$HOST" 'test -f /srv/remo/shared/production.env && test -x /srv/remo/remo'
 scp "$work/$revision.tar.gz" "$HOST:/srv/remo/releases/$revision.tar.gz"
-ssh "$HOST" bash -s -- "$revision" <<'REMOTE'
+ssh "$HOST" "REMO_VERSION='$version' REMO_BUILD='$build' bash -s -- '$revision'" <<'REMOTE'
 set -Eeuo pipefail
 revision=$1
 [[ $revision =~ ^[0-9a-f]{40}$ ]]

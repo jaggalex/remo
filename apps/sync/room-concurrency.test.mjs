@@ -11,7 +11,7 @@
  * JavaScript ordering accident. They skip when no test server is reachable (ADR-131).
  */
 import { afterAll, describe, expect, it } from "vitest";
-import { testDatabaseStore } from "./test-db.mjs";
+import { ensureBoard, testDatabaseStore } from "./test-db.mjs";
 import { Y } from "./y.mjs";
 
 const database = await testDatabaseStore("room concurrency");
@@ -68,6 +68,7 @@ suite("room lifecycle", () => {
     // persists, and both rooms project.
     const board = boardId("parallel");
     const seed = new Y.Doc();
+    await ensureBoard(store, board);
     await store.bindState(board, seed);
     seed.getMap("widgets").set("w1", sticky("w1"));
     await store.writeState(board, seed);
@@ -98,6 +99,7 @@ suite("room lifecycle", () => {
     // the row.
     const board = boardId("idempotent");
     const doc = new Y.Doc();
+    await ensureBoard(store, board);
     await store.bindState(board, doc);
     doc.getMap("widgets").set("w1", sticky("w1", 10));
 
@@ -168,6 +170,7 @@ suite("room lifecycle", () => {
     // write would put a stale row over the state the new room already committed.
     const board = boardId("retired");
     const oldDoc = new Y.Doc();
+    await ensureBoard(store, board);
     await store.bindState(board, oldDoc);
     const oldRoom = store.rooms.get(board);
     oldDoc.getMap("widgets").set("w1", sticky("w1", 10));
@@ -198,6 +201,7 @@ suite("room lifecycle", () => {
     // replacement: tearing *that* down would drop a live room with open sockets.
     const board = boardId("stale-teardown");
     const socketDoc = new Y.Doc();
+    await ensureBoard(store, board);
     await store.bindState(board, socketDoc);
 
     const replacement = new Y.Doc();

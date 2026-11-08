@@ -10,7 +10,7 @@ export const THEMES = ["light", "dark"];
 
 /** Name prefixes per layer: the layer is visible in the name (ТЗ §4). */
 export const LAYER_PREFIXES = {
-  primitive: ["neutral", "accent", "danger", "success", "warning", "orange", "violet", "blue", "pink", "green", "yellow", "ochre", "alpha", "elev", "space", "radius", "z", "dur", "ease", "font"],
+  primitive: ["neutral", "accent", "danger", "success", "warning", "orange", "violet", "blue", "pink", "green", "yellow", "ochre", "paper", "alpha", "elev", "space", "radius", "z", "dur", "ease", "font"],
   semantic: ["bg", "text", "border", "accent", "danger", "success", "warning", "state", "selection", "presence", "sticker", "shadow", "type", "agent"],
   component: ["control", "dialog", "panel", "topbar", "toolbar", "inspector", "icon", "label", "handle", "pin", "grid"],
 };

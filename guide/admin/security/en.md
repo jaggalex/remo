@@ -14,7 +14,16 @@
 | Room metadata | without access `/access` answers 404 and returns no title, organisation or visibility |
 | Outbound AI and webhooks | HTTPS only, every DNS address checked on each delivery, the socket pinned to the verified IP, redirects refused; `ALLOW_PRIVATE` is the explicit exception |
 | Comments | account with room access only; a link visitor does not see the discussion |
+| A room without an owner | closed for work: actions answer `403` until the room has an owner; the access screen says there is no owner; the link grants no editing |
+| Write quotas | the rate and room size are bounded; when exceeded, the connection closes with `4429` or `4413`, and edits stay in the current tab |
+| Edit audit | one record per session, room and 60 s window: edit and byte counts, object ids and fields; no content is written |
 | Lock | coordination of edits, not an ACL; a raw client with `board.edit` can bypass it |
+
+## Organisation isolation
+
+Every table with organisation data — room content, access, organisations and teams, invitations, integration tokens, agents, audit, the AI journal and the event queue — is protected by row-level isolation (RLS): a row is visible only in the context of its organisation. The service runs as `remo_app`: DML only, no table ownership and no `BYPASSRLS`; schema and maintenance use the owner role, which must be a superuser or have `BYPASSRLS`.
+
+Accounts, sessions, agent tokens, provider keys and schema metadata stay outside organisation isolation: this is the sign-in boundary, and they are read before an organisation is known. They keep their own hashing, expiry and encryption.
 
 ## What must not be left at the default
 
@@ -24,6 +33,7 @@
 4. **`REMO_CORS_ORIGIN`** — a specific origin, not `*`, if you use cookies.
 5. **Postgres on loopback** — `POSTGRES_PORT=127.0.0.1:5432` and `ufw`.
 6. **`REMO_WEBHOOK_ALLOW_PRIVATE`** — only if an internal endpoint is really needed.
+7. **Database roles** — the service runs as `remo_app` (DML only, no table ownership and no `BYPASSRLS`), the owner is for schema and maintenance only. Do not run the service as the owner role.
 
 ## Public link
 
@@ -34,6 +44,11 @@ The link is a property of the room, not a token: it grants read-only and never g
 - `/api/metrics` answers 404 from outside.
 - Ports 1234 and 5432 are not visible from the internet (`ss -ltnp`).
 - `.env` is available only to the service user.
+- `pnpm db:rls --check` confirms that every table with organisation data is protected.
+- `pnpm db:rls:enable --check` confirms the applied set; the owner role is a superuser or has `BYPASSRLS`.
+- The `remo_app` role owns no tables and has no `BYPASSRLS`.
+- `pnpm db:orphans --list` finds no rooms without an owner; before an upgrade they are archived (`--archive --yes`), and a known owner is assigned with `--assign <room> --user <email>`.
+- A room without an owner does not allow work: actions answer `403` until the room gets an owner; the access screen shows the reason.
 - A backup of the KEK is kept separately from the database.
 - A room without access answers 404 on `/api/boards/<id>/access`, with no title or organisation.
 - A crafted varint frame from a viewer does not change the document.

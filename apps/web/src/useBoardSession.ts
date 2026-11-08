@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  CLOSE_ROOM_FULL,
   connectBoard,
   usePresence,
   type BoardConnection,
@@ -110,6 +111,10 @@ export function useBoardSession({
       onAccessChanged: (code) => {
         setNotice(code === 4401 ? tRef.current("sync.sessionEnded") : tRef.current("sync.accessChanged"));
         void refreshAccess();
+      },
+      // A write budget closed the socket (ADR-173); the edits stay local until it reconnects.
+      onLimited: (code) => {
+        setNotice(tRef.current(code === CLOSE_ROOM_FULL ? "sync.roomFull" : "sync.rateLimited"));
       },
     });
     setConnection(connection);

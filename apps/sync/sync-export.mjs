@@ -51,14 +51,16 @@ export function createExportRoutes({
     };
   }
 
-  function exportFilename(title, format) {
+  function backupDisposition(title) {
     const slug =
       String(title || "board")
         .toLowerCase()
         .replace(/[^a-z0-9а-яё]+/gi, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 48) || "board";
-    return `${slug}.${format === "backup" ? "remo-backup.json" : format}`;
+    const filename = `${slug}.remo-backup.json`;
+    if (/^[a-z0-9-]+$/.test(slug)) return `attachment; filename="${filename}"`;
+    return `attachment; filename="board.remo-backup.json"; filename*=UTF-8''${encodeURIComponent(filename)}`;
   }
 
   async function handleExportRoutes({ request, response, url }) {
@@ -126,7 +128,7 @@ export function createExportRoutes({
       });
       response.writeHead(200, {
         "Content-Type": "application/json; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${exportFilename(title, "backup")}"`,
+        "Content-Disposition": backupDisposition(title),
       });
       response.end(body);
       return true;

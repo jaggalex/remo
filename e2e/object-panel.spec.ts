@@ -79,9 +79,9 @@ test("a note has one sheet sample and one tonal window with ink in the same plac
   await expect(panel).toContainText("Yellow");
   await expect(panel.locator(".cw-keys span")).toHaveCount(7);
 
-  await grid.getByRole("radio", { name: "Green" }).click();
-  await expect.poll(async () => (await styleOf(page, id)).fillColor).toBe("#b9ecac");
-  await expect(grid.getByRole("radio", { name: "Green" })).toHaveAttribute(
+  await grid.getByRole("radio", { name: "Green", exact: true }).click();
+  await expect.poll(async () => (await styleOf(page, id)).fillColor).toBe("#dedfd4");
+  await expect(grid.getByRole("radio", { name: "Green", exact: true })).toHaveAttribute(
     "aria-checked",
     "true",
   );
@@ -171,7 +171,7 @@ test("the rail and the colour window show the same fourteen fills in the same or
   // The marked swatch is exactly what the sticky tool creates (ADR-129).
   await expect(flyout.locator(".tool-swatch.is-default")).toHaveAttribute(
     "data-hex",
-    "#ffe07a",
+    "#ece2c8",
   );
   // White and Black are named swatches in a column to the left, in the model's order.
   const railExtras = flyout.locator(".tool-flyout-extras .cw-swatch");
@@ -229,7 +229,7 @@ test("keys 1–7 paint the main colour of the selection", async ({ page }) => {
   await expect(bar).toBeVisible();
   // 4 is the pink column of the 100 row; the window never opens.
   await page.keyboard.press("4");
-  await expect.poll(async () => (await styleOf(page, id)).fillColor).toBe("#ffc6d9");
+  await expect.poll(async () => (await styleOf(page, id)).fillColor).toBe("#e8d6d3");
   await expect(bar.getByRole("button", { name: "Sheet colour: Pink" })).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Sheet colour" })).toHaveCount(0);
 });
@@ -262,8 +262,8 @@ test("a shape's one sample opens presets, fill, border and text in that order", 
   // Fill is the 7 × 2 grid; White, Black and Transparent are named swatches to its left.
   const fill = panel.getByRole("radiogroup", { name: "Fill" });
   await expect(fill.getByRole("radio")).toHaveCount(14);
-  await fill.getByRole("radio", { name: "Orange" }).click();
-  await expect.poll(async () => (await styleOf(page, shape.id)).fillColor).toBe("#ffcd9e");
+  await fill.getByRole("radio", { name: "Orange", exact: true }).click();
+  await expect.poll(async () => (await styleOf(page, shape.id)).fillColor).toBe("#e2d2c4");
 
   const fillSection = panel.locator(".cw-section").nth(1);
   const fillExtras = fillSection.locator(".cw-extras");
@@ -472,8 +472,8 @@ test("a multi-selection shows the shared role, mixes with ≠ and narrows to a t
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label"))),
   ).toEqual(["White", "Black", "Transparent"]);
   expect((await multiExtras.boundingBox())!.x).toBeLessThan((await grid.boundingBox())!.x);
-  await grid.getByRole("radio", { name: "Blue" }).click();
-  const blue = "#b5dcff";
+  await grid.getByRole("radio", { name: "Blue", exact: true }).click();
+  const blue = "#d8dde3";
   await expect.poll(async () => (await styleOf(page, first.id)).fillColor).toBe(blue);
   await expect.poll(async () => (await styleOf(page, second.id)).fillColor).toBe(blue);
   await expect.poll(async () => (await styleOf(page, shape.id)).fillColor).toBe(blue);

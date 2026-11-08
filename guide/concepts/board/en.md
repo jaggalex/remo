@@ -24,7 +24,7 @@ The room world is infinite. The camera defines what is visible: position and sca
 
 ## Selection
 
-The selection is a temporary set of objects: it is not stored on the room and other participants do not see it. Therefore:
+The selection is a temporary set of objects: it is not stored in the room and other participants do not see it. Therefore:
 
 - the selection rectangle captures what falls inside it; when both ends of a connector fall inside, the connector joins the selection with them;
 - delete, move, and align act on the whole set;

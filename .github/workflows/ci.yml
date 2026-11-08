@@ -72,21 +72,11 @@ jobs:
           pnpm test:db:init
           pnpm test:db:check
 
-      # Report-only until the current findings are triaged: a transitive advisory must not
-      # block delivery on the day the gate is added (ADR-133).
-      - name: Dependency audit (report only)
-        continue-on-error: true
-        run: |
-          echo "## Dependency audit" >> "$GITHUB_STEP_SUMMARY"
-          pnpm audit --prod --audit-level high >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
-          pnpm audit --prod --audit-level high --json > audit.json 2>/dev/null || true
-          node -e '
-            const fs = require("node:fs");
-            let report = {};
-            try { report = JSON.parse(fs.readFileSync("audit.json", "utf8")); } catch {}
-            const counts = report.metadata?.vulnerabilities ?? {};
-            console.log(Object.entries(counts).map(([k, v]) => `${k}: ${v}`).join(", ") || "no report");
-          '
+      # Fails only on a high/critical production advisory with a fix (ADR-133). A
+      # registry outage warns instead of blocking delivery; an allowlist entry needs a
+      # reason and an expiry.
+      - name: Dependency audit
+        run: node scripts/dependency-audit.mjs
 
       # One gate: empty-database migration, file sizes, generated state, typecheck, all
       # tests (DB included), browser acceptance, guide audit, build, docs, design system
