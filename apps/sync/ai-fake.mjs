@@ -167,11 +167,13 @@ export function fakePlanReply(prompt = "") {
 function sourceHint(prompt) {
   const at = String(prompt).indexOf("Selected material:");
   if (at < 0) return "";
+  let best = "";
   for (const line of String(prompt).slice(at).split("\n").slice(1)) {
-    if (!line.trim() || line.startsWith("[") || line.startsWith("(")) continue;
-    return line.trim().slice(0, 80);
+    const value = line.trim();
+    if (!value || value.startsWith("[") || value.startsWith("(")) continue;
+    if (value.length > best.length) best = value;
   }
-  return "";
+  return best.slice(0, 80);
 }
 
 /** The demo shows that the selected material reached the prompt. */

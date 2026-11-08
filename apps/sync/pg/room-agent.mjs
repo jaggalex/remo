@@ -148,4 +148,41 @@ async updateAgentThreadMessageByTask({ taskId, status, text = "", frameIds = [] 
   return rows[0] ?? null;
 },
 
+/** Delete one conversation; unfinished work in it stops first (ADR-190). */
+async deleteAgentThread(threadId) {
+  const { rows } = await this.pool.query(
+    `select id, board_id from agent_threads where id = $1`,
+    [threadId],
+  );
+  const thread = rows[0];
+  if (!thread) return null;
+  await this.pool.query(
+    `update agent_tasks
+        set status = 'cancelled', finished_at = now(),
+            error = coalesce(error, 'history cleared')
+      where thread_id = $1 and status in ('queued', 'running')`,
+    [threadId],
+  );
+  await this.pool.query(`delete from agent_threads where id = $1`, [threadId]);
+  return thread;
+},
+
+/** Clear every conversation in one room; frames and task rows stay (ADR-190). */
+async deleteBoardAgentThreads(boardId) {
+  await this.pool.query(
+    `update agent_tasks t
+        set status = 'cancelled', finished_at = now(),
+            error = coalesce(t.error, 'history cleared')
+       from agent_threads th
+      where t.thread_id = th.id and th.board_id = $1
+        and t.status in ('queued', 'running')`,
+    [boardId],
+  );
+  const { rowCount } = await this.pool.query(
+    `delete from agent_threads where board_id = $1`,
+    [boardId],
+  );
+  return rowCount ?? 0;
+},
+
 };

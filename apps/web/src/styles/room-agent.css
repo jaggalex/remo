@@ -177,3 +177,10 @@
   align-items: center;
   gap: 10px;
 }
+
+.room-agent-threads-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}

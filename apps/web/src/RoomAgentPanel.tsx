@@ -58,6 +58,8 @@ export function RoomAgentPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
   const seenFrames = useRef(new Set<string>());
 
   const load = useCallback(async () => {
@@ -117,7 +119,8 @@ export function RoomAgentPanel({
       await action();
       if (message) setNotice(message);
       await load();
-      if (threadId) await loadDetail(threadId);
+      // A delete may remove the selected thread; a missing detail is not a failure.
+      if (threadId) await loadDetail(threadId).catch(() => setDetail(null));
       onChanged();
     } catch (failure) {
       setError((failure as Error)?.message ?? t("roomAgent.failed"));
@@ -260,7 +263,29 @@ export function RoomAgentPanel({
         )}
 
         <div className="agent-history">
-          <h3 className="muted">{t("roomAgent.threads")}</h3>
+          <div className="room-agent-threads-head">
+            <h3 className="muted">{t("roomAgent.threads")}</h3>
+            {state?.owner && threads.length > 0 && (
+              <button
+                type="button"
+                className="link-button danger"
+                onClick={() => {
+                  if (!confirmClear) {
+                    setConfirmClear(true);
+                    return;
+                  }
+                  setConfirmClear(false);
+                  void run(async () => {
+                    await api.clearRoomAgentThreads(boardId);
+                    setThreadId(null);
+                    setDetail(null);
+                  });
+                }}
+              >
+                {confirmClear ? t("roomAgent.confirmClear") : t("roomAgent.clearHistory")}
+              </button>
+            )}
+          </div>
           {threads.length === 0 && <p className="muted">{t("roomAgent.empty")}</p>}
           <ul className="room-agent-threads">
             {threads.map((thread) => (
@@ -339,6 +364,30 @@ export function RoomAgentPanel({
                   onClick={() => onUndoFrame(latestFrame.frame_ids[0]!)}
                 >
                   {t("roomAgent.undo")}
+                </button>
+              </div>
+            )}
+            {state?.owner && threadId && (
+              <div className="agent-actions">
+                <button
+                  type="button"
+                  className="link-button danger"
+                  onClick={() => {
+                    if (confirmDelete !== threadId) {
+                      setConfirmDelete(threadId);
+                      return;
+                    }
+                    setConfirmDelete(null);
+                    void run(async () => {
+                      await api.deleteRoomAgentThread(threadId);
+                      setThreadId(null);
+                      setDetail(null);
+                    });
+                  }}
+                >
+                  {confirmDelete === threadId
+                    ? t("roomAgent.confirmDelete")
+                    : t("roomAgent.deleteThread")}
                 </button>
               </div>
             )}

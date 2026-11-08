@@ -132,6 +132,59 @@ suite("room agent store", () => {
     expect(messages[1].frame_ids).toEqual(["frame-1"]);
   });
 
+  it("deletes one conversation and stops its unfinished task", async () => {
+    const thread = await store.createAgentThread({
+      orgId: ids.org,
+      boardId: ids.board,
+      agentId: ids.agent,
+      agentName: "Mira",
+      createdBy: ids.user,
+      title: "Delete me",
+    });
+    const task = await store.createAgentTask({
+      orgId: ids.org,
+      agentId: ids.agent,
+      boardId: ids.board,
+      intent: "delete me",
+      threadId: thread.id,
+      createdBy: ids.user,
+    });
+    await store.appendAgentThreadMessage({
+      threadId: thread.id,
+      orgId: ids.org,
+      boardId: ids.board,
+      role: "user",
+      authorId: ids.user,
+      authorName: "Anna",
+      text: "delete me",
+      taskId: task.id,
+    });
+    expect(await store.claimAgentTask(task.id)).not.toBeNull();
+
+    const deleted = await store.deleteAgentThread(thread.id);
+    expect(deleted?.id).toBe(thread.id);
+    expect(await store.getAgentThread(thread.id)).toBeNull();
+    expect(await store.listAgentThreadMessages(thread.id)).toEqual([]);
+    const stopped = await store.getAgentTask(task.id);
+    expect(stopped.status).toBe("cancelled");
+  });
+
+  it("clears every conversation in the room", async () => {
+    for (const title of ["one", "two"]) {
+      await store.createAgentThread({
+        orgId: ids.org,
+        boardId: ids.board,
+        agentId: ids.agent,
+        agentName: "Mira",
+        createdBy: ids.user,
+        title,
+      });
+    }
+    const deleted = await store.deleteBoardAgentThreads(ids.board);
+    expect(deleted).toBeGreaterThanOrEqual(2);
+    expect(await store.listAgentThreads(ids.board)).toEqual([]);
+  });
+
   it("runs one task per room and leaves the second in the queue", async () => {
     await store.pool.query(
       `update agent_tasks set status = 'cancelled', finished_at = now()

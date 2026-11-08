@@ -89,6 +89,14 @@ export const roomAgentApi = {
     ),
   roomAgentThread: (threadId: string) =>
     call<AgentThreadDetail>(`/agent-threads/${encodeURIComponent(threadId)}`),
+  deleteRoomAgentThread: (threadId: string) =>
+    call<{ deleted: true }>(`/agent-threads/${encodeURIComponent(threadId)}`, {
+      method: "DELETE",
+    }),
+  clearRoomAgentThreads: (boardId: string) =>
+    call<{ deleted: number }>(`/boards/${encodeURIComponent(boardId)}/agent-threads`, {
+      method: "DELETE",
+    }),
   sendRoomAgentMessage: (threadId: string, body: RoomTaskBody) =>
     call<{ thread: AgentThreadSummary; task: AgentTask }>(
       `/agent-threads/${encodeURIComponent(threadId)}/messages`,

@@ -148,6 +148,25 @@ export async function handleRoomAgentRoutes(ctx) {
       fail(response, 403, "HISTORY_FORBIDDEN", "task history belongs to the organisation");
       return true;
     }
+    if (method === "DELETE") {
+      if (board.owner_id !== me.id) {
+        fail(response, 403, "FORBIDDEN", "only the room owner can clear the history");
+        return true;
+      }
+      const deleted = typeof store.deleteBoardAgentThreads === "function"
+        ? await store.deleteBoardAgentThreads(boardId)
+        : 0;
+      await audit({
+        orgId: board.org_id,
+        boardId,
+        action: "agent.thread.clear",
+        subject: "all",
+        after: { threads: deleted },
+        actorType: "user",
+      });
+      json(response, 200, { deleted });
+      return true;
+    }
     if (method === "GET") {
       json(response, 200, {
         threads: typeof store.listAgentThreads === "function"
@@ -187,6 +206,28 @@ export async function handleRoomAgentRoutes(ctx) {
       return true;
     }
 
+    if (method === "DELETE" && parts.length === 2) {
+      if (board.owner_id !== me.id) {
+        fail(response, 403, "FORBIDDEN", "only the room owner can delete a conversation");
+        return true;
+      }
+      const deleted = typeof store.deleteAgentThread === "function"
+        ? await store.deleteAgentThread(threadId)
+        : null;
+      if (!deleted) {
+        fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
+        return true;
+      }
+      await audit({
+        orgId: board.org_id,
+        boardId: thread.board_id,
+        action: "agent.thread.delete",
+        subject: String(thread.title ?? "").slice(0, 200),
+        actorType: "user",
+      });
+      json(response, 200, { deleted: true });
+      return true;
+    }
     if (method === "GET" && parts.length === 2) {
       json(response, 200, {
         thread,

@@ -30,6 +30,10 @@ The first version has two scenarios: **a process map** and **a sprint or phase p
 
 The server writes the draft, so it is not in the ordinary ⌘Z history. Right after the draft appears, **⌘Z** removes it as a whole when no newer local edit stands in front of it. If there were edits, they are undone first, then the draft. The panel has the same Undo draft button. If an older draft sits outside its frame, Fit frame expands the frame to its objects.
 
+## History
+
+The room owner can delete one conversation or the whole agent history. Frames stay ordinary room objects, and an unfinished task in a deleted conversation is stopped. History deletion is not undone by ⌘Z; the deletion itself is recorded in the audit.
+
 ## Public link and ownership
 
 While the public link is on, an agent cannot be assigned and a new task cannot be created: a new draft would be visible to guests immediately. Task history is not available through the link.

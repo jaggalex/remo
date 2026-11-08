@@ -7822,3 +7822,41 @@ the draft a private proposal instead of a shared artefact.
 **Limits.** One agent per room, one running task, no delegation, no public links, and no
 background work without a request. The model can still produce a plausible but wrong
 draft; the pilot measures rework, not only time to the first frame.
+
+## ADR-190: The room owner can clear the agent history
+
+**Status:** accepted (2026-11-09). Extends ADR-189.
+
+**Context.** Room tasks keep a conversation: requests, attempts, statuses and links to
+the frames they produced. That history is useful evidence, but it also accumulates:
+a person tries several phrasings, the result is replaced, and the panel turns into a
+list of abandoned attempts. The team cannot remove a draft from the room without also
+removing the conversation, and the reverse was not possible: the history had no delete.
+
+**Decision.**
+
+- **Delete one thread or all threads of the room.** A thread is the unit: the request,
+  its clarifications, the statuses and the links to frames. There is no per-message
+  delete in v1; a conversation is edited by starting a new one, not by rewriting it.
+- **Only the room owner deletes.** This is the same person who can ask the agent
+  (ADR-189); a reader keeps the history, which is the shared record. The server checks
+  the owner again, not only the panel.
+- **Frames are content, history is a record.** Deleting a thread never deletes a frame
+  or any object; the frames stay ordinary room content. Deleting a frame never deletes
+  the thread (ADR-189 already marks the link unavailable).
+- **Unfinished work stops.** A queued or running task in the deleted thread is
+  cancelled before the rows go; the runner re-checks before writing, so a draft cannot
+  arrive after the history that explains it has disappeared.
+- **Audit is not erased.** The deletion writes `agent.thread.delete` or
+  `agent.thread.clear`; the AI journal and the task rows stay as the operational record.
+  The visible conversation is what a person cleans up, not the evidence of what the
+  server did.
+- **The public-link gate is unchanged.** History is never readable through a link; the
+  owner may delete it while the link is on, because deletion exposes nothing.
+
+**Consequences.** A room can be reset to a clean agent panel without touching its
+content. The only way back is the audit/AI journal, not an undo: history deletion is
+deliberate and is not in the document's undo stack.
+
+**Limits.** No per-message delete, no restore from the interface, and no bulk delete
+across rooms. A deleted conversation cannot be reconstructed into the panel.

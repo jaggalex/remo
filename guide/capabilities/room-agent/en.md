@@ -32,6 +32,10 @@ A sprint plan is laid out deterministically: three columns, one row per task, a 
 
 Only what you selected, the request text and the messages of this thread. A selected frame expands to the objects inside it. The panel shows the number of sources before sending. Comments, other rooms and other tasks are not sent. Cards also carry their status, assignee and due date — without them a plan would have to invent them.
 
+## History
+
+The room owner can delete one conversation or the whole agent history. Frames stay ordinary room content, and unfinished tasks in a deleted conversation stop. The deletion is recorded in the audit; there is no restore in the interface. Clearing history is a deliberate action, not an undo step.
+
 ## Undo and limits
 
 - **⌘Z** removes the latest draft as a whole when no newer local edit stands in front of it; otherwise the edits are undone first. The panel has the same Undo draft button and Fit frame, which expands an older draft frame to its objects.
