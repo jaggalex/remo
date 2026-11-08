@@ -8,7 +8,7 @@ rooms you can host on your own server.
 
 ![remo room](docs/screenshots/room.png)
 
-> **Status: 0.2.0 alpha.** The product is usable and self-hosted, but interfaces and
+> **Status: 0.2.1 alpha.** The product is usable and self-hosted, but interfaces and
 > formats may still change. It is provided **as is**, without warranty — see the
 > [disclaimer](https://docs.remo.letii.ru/guide/en/support/disclaimer.html).
 
