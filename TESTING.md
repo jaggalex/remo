@@ -109,10 +109,10 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 | ADR | 189, latest ADR-189 |
 | Schema version | 19 |
 | Browser scenarios | 120 in 30 files |
-| Help topics | 32 (RU + EN) |
-| Portal pages | 68 |
+| Help topics | 33 (RU + EN) |
+| Portal pages | 69 |
 | Baselines | 21 product + 12 DS |
-| Largest file | `apps/web/src/api.ts` — 800 lines |
+| Largest file | `apps/web/src/BoardApp.tsx` — 800 lines |
 <!-- generated:state:end -->
 
 A run owns its ports, its database and its report directories (ADR-130), so two runs can

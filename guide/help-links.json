@@ -30,5 +30,6 @@
   "rooms.home": "capabilities/home",
   "account.profile": "how-to/account",
   "org.manage": "how-to/account",
-  "objects.name": "concepts/board"
+  "objects.name": "concepts/board",
+  "agents.room": "capabilities/room-agent"
 }

@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/room-agent",
+  "type": "explanation",
+  "status": "available",
+  "order": 56,
+  "title": {
+    "ru": "Агент комнаты",
+    "en": "Room agent"
+  },
+  "summary": {
+    "ru": "Назначенный агент пишет первый черновик по поручению прямо в комнату: схему процесса или план спринта; команда правит его обычными инструментами.",
+    "en": "An assigned agent writes a first draft straight into the room from a request: a process map or a sprint plan; the team edits it with the usual tools."
+  },
+  "related": [
+    "capabilities/agents",
+    "how-to/delegate-agent",
+    "concepts/access"
+  ],
+  "updated": "2026-11-09",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:a345f7e82a37020f2a3d067e141b327096df28ad65db1ab6c181fdfd5d190e52",
+      "targetHash": "sha256:a46d3bea73a9100e5970b22a9e3f3c6e85e5b6953e6b7aa47d4fc43f53ef95ca"
+    }
+  }
+}

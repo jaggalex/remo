@@ -1,0 +1,26 @@
+{
+  "id": "agents.room",
+  "type": "how-to",
+  "title": {
+    "ru": "Агент комнаты",
+    "en": "Room agent"
+  },
+  "summary": {
+    "ru": "Владелец назначает агента комнате, агент пишет первый черновик по поручению, а команда правит его обычными инструментами.",
+    "en": "The owner assigns an agent to the room, the agent writes a first draft from a request, and the team edits it with the usual tools."
+  },
+  "related": [
+    "agents.task",
+    "agents.budget",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-09",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:101e0c8fabdcb3e7df7df9cc193802e64cb4b56d4caff13c371c2f5b243fea76",
+      "targetHash": "sha256:30fae06fe96a165df197cf84125246669dac3cd3dad703983913b4628992d1ab"
+    }
+  }
+}
