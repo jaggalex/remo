@@ -22,11 +22,11 @@ export const integrationMethods = {
   },
 
   async findIntegrationToken(tokenHash) {
-    const { rows } = await this.pool.query(
-      `select id, org_id, owner_id, label, scopes, expires_at, revoked_at, last_used_at
-         from integration_tokens where token_hash = $1`,
-      [tokenHash],
-    );
+    // A bearer token is looked up before its organisation is known; the security-definer
+    // function returns that one row (ADR-178 stage 4).
+    const { rows } = await this.pool.query("select * from remo_integration_lookup($1)", [
+      tokenHash,
+    ]);
     return rows[0] ?? null;
   },
 

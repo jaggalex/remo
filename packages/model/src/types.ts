@@ -335,6 +335,12 @@ export interface ConnectorWaypoint {
 /** ADR-077: a line with more points than this is a drawing, not a connector. */
 export const MAX_WAYPOINTS = 32;
 
+/**
+ * The most text one object hands to layout (ADR-176). The document may hold more until
+ * the server guard refuses the write; painting must not freeze on a hostile 10 MB note.
+ */
+export const MAX_TEXT_CHARS = 200_000;
+
 export type ShapeKind = "rectangle" | "round_rectangle" | "ellipse" | "diamond" | "triangle";
 
 export interface Board {

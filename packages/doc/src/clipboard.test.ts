@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as Y from "yjs";
 import { expandGroups, type Widget } from "@remo/model";
 import {
   BoardDocument,
@@ -159,6 +160,22 @@ describe("clipboard fragments", () => {
     expect(copies[0]!.groupId).not.toBe(board.widgets.get("a")!.groupId);
     expect(copies.some((w) => w.content === "hello")).toBe(true);
     expect(expandGroups(widgets, [pasted[0]!]).sort()).toEqual([...pasted].sort());
+  });
+
+  it("survives a peer writing null or a string into the widget map", () => {
+    const peer = new Y.Doc();
+    peer.getMap("widgets").set("junk", null);
+    peer.getMap("widgets").set("junk-string", "not a widget");
+    peer.getMap("widgets").set("ok", sticky("ok"));
+    const local = new Y.Doc();
+    Y.applyUpdate(local, Y.encodeStateAsUpdate(peer));
+    const board = new BoardDocument(local);
+
+    // Rendering already skipped these; copy, delete and grouping must not throw either.
+    expect(board.snapshot().widgets.map((widget) => widget.id)).toEqual(["ok"]);
+    expect(() => copyFragment(board, ["ok"])).not.toThrow();
+    expect(() => deleteWidgets(board, ["ok"])).not.toThrow();
+    expect(board.readWidget("junk")).toBeNull();
   });
 
   it("copies a frame with its contents and remaps the parent link", () => {

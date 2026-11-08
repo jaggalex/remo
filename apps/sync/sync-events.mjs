@@ -29,17 +29,22 @@ export function createWebhookConsumer({
 }) {
   return async function deliver(row) {
     if (!row.org_id) return;
-    const hook = await store.getOrgWebhook(row.org_id);
+    // The webhook row is tenant-protected; the drain calls this outside a request.
+    const inTenant = (fn) =>
+      store.withTenant ? store.withTenant(row.org_id, fn) : fn();
+    const hook = await inTenant(() => store.getOrgWebhook(row.org_id));
     if (!hook || !hook.enabled) return;
 
     try {
       const secret = openWebhookSecret(hook, { kek: kek ?? kekFromEnv() });
       await deliverWebhook({ url: hook.url, secret, event: row, fetchImpl, allowPrivate });
-      await store.touchWebhook(row.org_id, { ok: true }).catch(() => {});
+      await inTenant(() => store.touchWebhook(row.org_id, { ok: true })).catch(() => {});
     } catch (error) {
       // A status column is not worth failing the delivery record over: the outbox row
       // carries the retry, this is the operator's dashboard.
-      await store.touchWebhook(row.org_id, { ok: false, error: error.message }).catch(() => {});
+      await inTenant(() => store.touchWebhook(row.org_id, { ok: false, error: error.message })).catch(
+        () => {},
+      );
       log.error?.(`[webhooks] delivery to ${row.org_id} failed:`, error.message);
       throw error;
     }

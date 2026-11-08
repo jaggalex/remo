@@ -23,7 +23,7 @@ Result: the image contains exactly the chosen scope.
 
 1. Press **Экспорт**.
 2. Choose **Бэкап комнаты** (room backup).
-3. Save the JSON file.
+3. Save the JSON file. Cyrillic letters from the room title are preserved in the filename.
 
 Result: the file contains a manifest with a checksum, every room object, tags, presentation order and the discussion. A backup always covers the whole room, whatever is selected.
 

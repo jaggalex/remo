@@ -1,6 +1,6 @@
 ## When you need it
 
-You need to run a meeting on the room: show objects in order, keep attention, and return to work afterwards.
+You need to run a meeting in the room: show objects in order, keep attention, and return to work afterwards.
 
 ## Prerequisites
 

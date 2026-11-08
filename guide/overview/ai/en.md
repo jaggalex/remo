@@ -27,9 +27,9 @@ Give the agent the link first, then ask the question. Examples:
 - "Read the remo documentation at this link and explain how to give a colleague access to a room."
 - "Which roles does remo have, and what can each one do?"
 - "How do agents, change sets and budgets work?"
-- "How is a public link different from a role on a room?"
+- "How is a public link different from a role in a room?"
 
-The agent answers from the documentation. Acting on a room needs a normal account with rights; see the [API reference](/guide/reference/api) for sign-in and the [Agents](/guide/capabilities/agents) section for the agent surface.
+The agent answers from the documentation. Acting in a room needs a normal account with rights; see the [API reference](/guide/reference/api) for sign-in and the [Agents](/guide/capabilities/agents) section for the agent surface.
 
 ## What is inside
 

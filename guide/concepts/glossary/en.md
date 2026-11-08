@@ -23,13 +23,13 @@ One term, one concept. If a word in the documentation differs from the word on s
 | **Custom colour** | a value outside the palette; kept until another one is chosen |
 | **Rail** | the vertical toolbar on the left: create an object, undo, redo |
 | **Header** | the top strip of the room: name, menus, properties, presentation, discussion, access |
-| **Selection** | a temporary set of objects; not stored on the room |
+| **Selection** | a temporary set of objects; not stored in the room |
 | **Camera** | the position and scale of the view of the room |
 | **Card status** | work state: to do, in progress, done; does not replace the column |
 | **Assignee** | one person assigned to a card |
 | **Date range** | start and end; overdue is derived from the local date |
 | **Tag** | an element of the room vocabulary; an object stores a reference |
-| **Object link** | one field: an external URL or another object on this room |
+| **Object link** | one field: an external URL or another object in this room |
 
 ## People and access
 
@@ -43,7 +43,7 @@ One term, one concept. If a word in the documentation differs from the word on s
 | **Room tile** | a card on the organisation home: emoji, title, team, author and dates |
 | **Trash** | the room archive; a trashed room does not open and the owner can restore it |
 | **Team** | a group inside the organisation; roles can be granted to a team |
-| **Role** | what a person can do on the room: **Viewer**, **Commenter**, **Editor**, **Co-owner**, **Owner** |
+| **Role** | what a person can do in the room: **Viewer**, **Commenter**, **Editor**, **Co-owner**, **Owner** |
 | **Capability** | an atomic right of a role: `board.edit`, `board.export` and others |
 | **Grant** | the assignment of a role to a person, a team or the organisation |
 | **Public link** | a room property: read-only access, without an account |
@@ -76,11 +76,11 @@ One term, one concept. If a word in the documentation differs from the word on s
 | **Dead-letter queue (DLQ)** | events that could not be delivered after all retries |
 | **Integration token** | `remo_it_…`: the owner's access, narrowed by scope |
 | **Scope** | `board.read` or `board.edit` — what the token is allowed |
-| **Command** | a server action on a room with permission checks and idempotency |
+| **Command** | a server action in a room with permission checks and idempotency |
 | **Change set** | a package of agent changes with progress and resume |
 | **Plan** | a structure or a layout proposed by an agent: preview, Apply, one ⌘Z; the room does not change before it is applied |
 | **Tidy up** | the command that lays a selection out in columns according to an agent's plan |
-| **App** | a declarative panel on the room |
+| **App** | a declarative panel in the room |
 | **Manifest** | the description of an app: panel, actions, capabilities |
 
 ## Where to go next

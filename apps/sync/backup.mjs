@@ -11,6 +11,8 @@ import { Y } from "./y.mjs";
 
 /** Stable key order, so the checksum is the same on every export. */
 export function canonical(value) {
+  // PostgreSQL timestamps arrive as Dates and JSON sends their ISO strings.
+  if (value instanceof Date) return value.toJSON();
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === "object") {
     return Object.fromEntries(

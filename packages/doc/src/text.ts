@@ -239,7 +239,7 @@ export function setWidgetDelta(
   delta: readonly TextDeltaOp[],
   options: { height?: number | null } = {},
 ): void {
-  const widget = board.widgets.get(id);
+  const widget = board.readWidget(id);
   if (!widget || widget.locked) return;
 
   const next = normalizeDelta(delta);
@@ -257,7 +257,7 @@ export function setWidgetDelta(
 
   board.transact(() => {
     if (heightDiffers && options.height != null) {
-      const live = board.widgets.get(id);
+      const live = board.readWidget(id);
       if (live) board.widgets.set(id, { ...live, height: options.height });
     }
 
@@ -331,7 +331,7 @@ export function setWidgetText(
   value: string,
   options: { height?: number | null } = {},
 ): void {
-  const widget = board.widgets.get(id);
+  const widget = board.readWidget(id);
   if (!widget || widget.locked) return;
 
   const sharedText = board.texts.get(id);
@@ -350,7 +350,7 @@ export function setWidgetText(
     // need a canvas), and the resize rides along in the same merged transaction so
     // an editing session is still one undo step.
     if (heightDiffers && options.height != null) {
-      const live = board.widgets.get(id);
+      const live = board.readWidget(id);
       if (live) board.widgets.set(id, { ...live, height: options.height });
     }
 
@@ -388,7 +388,7 @@ export function setWidgetText(
 export function setNoteFontSize(board: BoardDocument, ids: string[], fontSize: number | null): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || !holdsText(widget)) continue;
       if (widget.locked) continue;
       const style = { ...widget.style };
@@ -407,7 +407,7 @@ export function setNoteTextAlign(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || !holdsText(widget)) continue;
       if (widget.locked) continue;
       board.widgets.set(id, { ...widget, style: { ...widget.style, textAlign: align } });
@@ -423,7 +423,7 @@ export function setNoteTextVAlign(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || !holdsText(widget)) continue;
       if (widget.locked) continue;
       board.widgets.set(id, { ...widget, style: { ...widget.style, textVAlign: vAlign } });
@@ -461,7 +461,7 @@ export function toggleNoteMark(
   mark: keyof TextMarks,
 ): void {
   for (const id of ids) {
-    if (board.widgets.get(id)?.locked) continue;
+    if (board.readWidget(id)?.locked) continue;
     const current = noteMarksOf(board, id);
     if (current == null) continue;
     const next: TextMarks = { ...current };
@@ -486,7 +486,7 @@ export function toggleNoteMark(
 export function clearContent(board: BoardDocument, ids: readonly string[]): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget) continue;
       if (widget.type === "card") {
         board.widgets.set(id, { ...widget, title: "" });

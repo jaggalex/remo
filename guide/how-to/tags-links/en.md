@@ -4,7 +4,7 @@ There are many objects, and you need to see themes or move from an object to its
 
 ## Before you start
 
-- You have edit permission on the room.
+- You have edit permission in the room.
 - The room has an object that needs a tag or a link.
 
 ## Tags
@@ -26,7 +26,7 @@ There are many objects, and you need to see themes or move from an object to its
 
 - Tags and the link are still there after a reload.
 - Renaming a tag does not create a second tag.
-- An external link opens in a new window; an internal one opens on this room.
+- An external link opens in a new window; an internal one opens in this room.
 - `javascript:` and `data:` are refused.
 
 ## Limits
@@ -34,7 +34,7 @@ There are many objects, and you need to see themes or move from an object to its
 - 50 tags per room, 10 per object.
 - A link grants no access: an internal link opens with the normal rights check.
 - The server does not fetch or embed an external address.
-- An internal link only targets an object on this room.
+- An internal link only targets an object in this room.
 
 ## Where to go next
 

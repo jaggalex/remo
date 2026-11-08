@@ -54,29 +54,34 @@ export async function anchorAiLogs({ store, env = process.env, log = console }) 
   const orgs = await store.orgsWithAiRuns();
   let anchored = 0;
   for (const orgId of orgs) {
-    const latest = await store.latestAiRun(orgId);
-    if (!latest) continue;
-    const previous = await store.latestAiAnchor(orgId);
-    if (previous?.hash === latest.hash) continue;
-    try {
-      const destination = await writeAnchor({
-        orgId,
-        seq: Number(latest.seq),
-        hash: latest.hash,
-        env,
-      });
-      if (!destination) continue;
-      await store.recordAiAnchor({
-        orgId,
-        seq: Number(latest.seq),
-        hash: latest.hash,
-        destination: destination.destination,
-        ref: destination.ref,
-      });
-      anchored += 1;
-    } catch (error) {
-      log.error?.(`[ai] anchor failed for ${orgId}:`, error.message);
-    }
+    // The AI tables are tenant-protected; this loop runs outside a request.
+    const anchorOrg = async () => {
+      const latest = await store.latestAiRun(orgId);
+      if (!latest) return 0;
+      const previous = await store.latestAiAnchor(orgId);
+      if (previous?.hash === latest.hash) return 0;
+      try {
+        const destination = await writeAnchor({
+          orgId,
+          seq: Number(latest.seq),
+          hash: latest.hash,
+          env,
+        });
+        if (!destination) return 0;
+        await store.recordAiAnchor({
+          orgId,
+          seq: Number(latest.seq),
+          hash: latest.hash,
+          destination: destination.destination,
+          ref: destination.ref,
+        });
+        return 1;
+      } catch (error) {
+        log.error?.(`[ai] anchor failed for ${orgId}:`, error.message);
+        return 0;
+      }
+    };
+    anchored += store.withTenant ? await store.withTenant(orgId, anchorOrg) : await anchorOrg();
   }
   return { skipped: false, anchored };
 }

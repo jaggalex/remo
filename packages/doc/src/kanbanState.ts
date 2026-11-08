@@ -1,6 +1,7 @@
 import * as Y from "yjs";
 import {
   DEFAULT_HEADER_HEIGHT,
+  finiteOr,
   type KanbanPlacement,
   type KanbanState,
 } from "@remo/model";
@@ -16,12 +17,19 @@ import type { BoardDocument } from "./board";
  */
 
 export function readKanban(kanban: Y.Map<unknown>): KanbanState {
-  const columnsArray = kanban.get("columns") as Y.Array<Y.Map<unknown>> | undefined;
-  const swimlanesArray = kanban.get("swimlanes") as Y.Array<Y.Map<unknown>> | undefined;
-  const cardsMap = kanban.get("cards") as Y.Map<Y.Map<unknown>> | undefined;
+  // Read defensively (ADR-171): every value here came from some client, and a column
+  // that is not a `Y.Map` or a width that is not a number must degrade to a default,
+  // not throw inside the snapshot and blank the room.
+  const columnsValue = kanban.get("columns");
+  const swimlanesValue = kanban.get("swimlanes");
+  const cardsValue = kanban.get("cards");
+  const columnsArray = columnsValue instanceof Y.Array ? columnsValue : null;
+  const swimlanesArray = swimlanesValue instanceof Y.Array ? swimlanesValue : null;
+  const cardsMap = cardsValue instanceof Y.Map ? cardsValue : null;
 
   const cards: Record<string, KanbanPlacement> = {};
-  cardsMap?.forEach((placement, cardId) => {
+  cardsMap?.forEach((placement: unknown, cardId: string) => {
+    if (!(placement instanceof Y.Map)) return;
     cards[cardId] = {
       columnId: String(placement.get("columnId") ?? ""),
       swimlaneId: String(placement.get("swimlaneId") ?? ""),
@@ -29,25 +37,32 @@ export function readKanban(kanban: Y.Map<unknown>): KanbanState {
     };
   });
 
+  const maps = (array: Y.Array<unknown> | null): Y.Map<unknown>[] =>
+    (array?.toArray() ?? []).filter((entry): entry is Y.Map<unknown> => entry instanceof Y.Map);
+
   return {
-    columns:
-      columnsArray?.toArray().map((column) => ({
+    columns: maps(columnsArray).map((column) => {
+      const wipLimit = column.get("wipLimit");
+      return {
         id: String(column.get("id")),
         title: String(column.get("title") ?? ""),
         accent: String(column.get("accent") ?? "#9ca3af"),
-        width: Number(column.get("width") ?? 574.6),
-        ...(column.get("wipLimit") != null
-          ? { wipLimit: Number(column.get("wipLimit")) }
+        width: finiteOr(column.get("width") ?? 574.6, 574.6),
+        ...(wipLimit != null && Number.isFinite(Number(wipLimit))
+          ? { wipLimit: Number(wipLimit) }
           : {}),
-      })) ?? [],
-    swimlanes:
-      swimlanesArray?.toArray().map((lane) => ({
-        id: String(lane.get("id")),
-        title: String(lane.get("title") ?? ""),
-      })) ?? [],
+      };
+    }),
+    swimlanes: maps(swimlanesArray).map((lane) => ({
+      id: String(lane.get("id")),
+      title: String(lane.get("title") ?? ""),
+    })),
     cards,
-    newColumnWidth: Number(kanban.get("newColumnWidth") ?? 574.6),
-    headerHeight: Number(kanban.get("headerHeight") ?? DEFAULT_HEADER_HEIGHT),
+    newColumnWidth: finiteOr(kanban.get("newColumnWidth") ?? 574.6, 574.6),
+    headerHeight: finiteOr(
+      kanban.get("headerHeight") ?? DEFAULT_HEADER_HEIGHT,
+      DEFAULT_HEADER_HEIGHT,
+    ),
   };
 }
 

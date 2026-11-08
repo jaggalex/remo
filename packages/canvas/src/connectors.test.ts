@@ -13,6 +13,10 @@ import {
   pathPolyline,
   resolvedEndSide,
   simplify,
+  CONNECTOR_GAP,
+  arrowHeadSize,
+  insetPath,
+  roundedArrowHead,
 } from "./connectors";
 
 const note = (id: string, x: number, y: number, width = 100, height = 100): Widget => ({
@@ -500,5 +504,62 @@ describe("legacy corner ports (ADR-137)", () => {
     )!;
     // `a` is 100×80 at the origin: its left midpoint is (-50, 0).
     expect(path.points[0]).toEqual({ x: -50, y: 0 });
+  });
+});
+
+describe("the drawn line stops short of its objects (ADR-184)", () => {
+  it("pulls each end back along its own segment", () => {
+    const drawn = insetPath({ points: [{ x: 50, y: 0 }, { x: 50, y: 100 }, { x: 350, y: 100 }] }, 8);
+    expect(drawn.points).toEqual([{ x: 50, y: 8 }, { x: 50, y: 100 }, { x: 342, y: 100 }]);
+  });
+
+  it("moves a curve's ends with its points", () => {
+    const curve = { from: { x: 0, y: 0 }, c1: { x: 60, y: 0 }, c2: { x: 140, y: 0 }, to: { x: 200, y: 0 } };
+    const drawn = insetPath({ points: [curve.from, curve.c1, curve.c2, curve.to], curve }, 8);
+    expect(drawn.curve).toEqual({ ...curve, from: { x: 8, y: 0 }, to: { x: 192, y: 0 } });
+  });
+
+  it("keeps a short line visible and leaves the attached path alone", () => {
+    const path = { points: [{ x: 0, y: 0 }, { x: 12, y: 0 }] };
+    expect(insetPath(path, 8).points).toEqual([{ x: 4, y: 0 }, { x: 8, y: 0 }]);
+    expect(path.points).toEqual([{ x: 0, y: 0 }, { x: 12, y: 0 }]);
+    expect(CONNECTOR_GAP).toBe(8);
+  });
+});
+
+describe("an arrow head meets its line cleanly (ADR-187)", () => {
+  const tip = { x: 100, y: 0 };
+  const tail = { x: 0, y: 0 };
+
+  it("rounds its apex onto the tip, never past it", () => {
+    for (const width of [1, 2, 4, 8]) {
+      const head = roundedArrowHead(tip, tail, width);
+      const apex = head.points[0]!;
+      // The round join grows the apex by radius / sin(spread): it reaches the tip exactly.
+      expect(apex.x + head.radius / Math.sin(0.42)).toBeCloseTo(tip.x, 6);
+      expect(apex.y).toBeCloseTo(0, 6);
+      for (const point of head.points) expect(point.x).toBeLessThan(tip.x);
+    }
+  });
+
+  it("stops the line inside the head, where the head is wider than the line", () => {
+    for (const width of [1, 2, 4, 8]) {
+      const head = roundedArrowHead(tip, tail, width);
+      expect(head.lineEnd.x).toBeLessThan(tip.x - width / 2);
+      const [apex, b, c] = head.points;
+      const halfAt = ((apex!.x - head.lineEnd.x) * Math.abs(b!.y - c!.y)) / 2 / (apex!.x - b!.x) + head.radius;
+      expect(halfAt).toBeGreaterThan(width / 2);
+      expect(head.trim).toBeCloseTo(tip.x - head.lineEnd.x, 6);
+    }
+  });
+
+  it("grows with a thick line and keeps the default size at 2", () => {
+    expect(arrowHeadSize(2)).toBe(14);
+    expect(arrowHeadSize(6)).toBeGreaterThan(arrowHeadSize(2));
+  });
+
+  it("trims each end of the drawn path by its own amount", () => {
+    const drawn = insetPath({ points: [{ x: 0, y: 0 }, { x: 100, y: 0 }] }, 0, 10);
+    expect(drawn.points).toEqual([{ x: 0, y: 0 }, { x: 90, y: 0 }]);
   });
 });

@@ -8,9 +8,9 @@ You need to turn a brief into a structure, turn text into a diagram, turn a sele
 
 ## Before you start
 
-- Agents are enabled in the organisation (by an administrator: Organisation → Agents) and on the room (by the owner or a co-owner).
+- Agents are enabled in the organisation (by an administrator: Organisation → Agents) and in the room (by the owner or a co-owner).
 - You have an active agent that you created.
-- You have edit permission on the room.
+- You have edit permission in the room.
 - A plan or a diagram needs a provider key. Without a key the task does not fail with `AI_NOT_CONFIGURED`: it stays queued and runs once the key is configured. Cards do not call a model, and tidying works without a key.
 - For cards, select the objects first. Tidying starts from a selection and does not open without one.
 - The brief file is optional; if you need one, it is `.md`, `.txt` or `.csv` in UTF-8, at most 100 000 bytes.
@@ -18,7 +18,7 @@ You need to turn a brief into a structure, turn text into a diagram, turn a sele
 ## Steps
 
 1. In the organisation open **Agents** and create an agent. Result: the agent is active.
-2. On the room open **More ▾ → Ask AI…** and choose the agent.
+2. In the room open **More ▾ → Ask AI…** and choose the agent.
 3. Choose a source: the task text, a file or a selection. The **Source** block shows how many objects and characters will reach the model; **Remove** leaves the task without object text, **Selection only** makes the selection the task itself.
 4. Choose a skill or **Auto**. **Brief to room** is selected by default; Auto picks a skill from the task and the selection.
 5. Describe the result, attach a brief file when you need one, and set a budget: changes and money. Tokens and time are server defaults. Money may be fractional: `0.1` is ten cents.
@@ -29,7 +29,7 @@ You need to turn a brief into a structure, turn text into a diagram, turn a sele
 
 | Skill | What it does | Before writing | Undo |
 |---|---|---|---|
-| **Brief to room** | proposes a plan for a structure | a plan preview: map, objects by kind, warnings | one ⌘Z |
+| **Brief to room** | proposes a plan for a structure | a preview in the room: the dashed plan, a task panel, warnings | one ⌘Z |
 | **Diagram from a description** | draws shapes and connectors | no preview, written at once | by hand: ⌘Z does not undo it |
 | **Cards from a selection** | turns the selection into cards | Preview job shows the card count | by hand; the package can be stopped and resumed |
 | **Tidy up selection** | lays the selection out in even columns | a before-and-after preview with warnings | one ⌘Z |
@@ -51,18 +51,18 @@ In detail:
 
 ## Check the result
 
-- **Plan.** The object and connector counts in the preview match what appeared on the room; one ⌘Z returns the room to the state before the apply.
+- **Plan.** The object and connector counts in the preview match what appeared in the room; one ⌘Z returns the room to the state before the apply.
 - **Diagram.** Shapes and connectors sit in the current view; Recent tasks shows the applied status; the object info names the agent and the `diagram` skill; ⌘Z removes nothing.
 - **Cards.** The card count matches Preview job; the Card jobs list shows the applied status; the card info names the agent and the `cards` skill.
 - **Tidy.** Objects stand in even columns, sizes and texts are unchanged, locked objects did not move; one ⌘Z restores the previous coordinates.
-- **Journals.** An editor sees Recent tasks and the objects on the room. The History tab in the organisation and the Evidential journal in Organisation → Agents are visible only to the Organisation admin and Security admin roles.
+- **Journals.** An editor sees Recent tasks and the objects in the room. The History tab in the organisation and the Evidential journal in Organisation → Agents are visible only to the Organisation admin and Security admin roles.
 
 ## Common mistakes
 
 | Symptom | Cause |
 |---|---|
 | No Ask AI… item | you are a viewer, a commenter or a public-link visitor |
-| `AGENT_DENIED` | the agent is disabled, you no longer have access to the room, agents are off in the organisation or on the room, or the agent lacks write capabilities |
+| `AGENT_DENIED` | the agent is disabled, you no longer have access to the room, agents are off in the organisation or in the room, or the agent lacks write capabilities |
 | `BUDGET_REQUIRED` | the task has no budget |
 | No preview, the task stays queued | no provider key is configured; the task runs once the key appears |
 | "The plan is not ready yet" | the task is still running; wait for the status and open the plan from the history |

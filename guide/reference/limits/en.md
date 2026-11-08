@@ -2,11 +2,17 @@
 
 | What | Value |
 |---|---|
+| Objects in a room | 20 000 |
+| Encoded room size | 64 MiB |
+| Size of one frame | 16 MiB |
+| Edit accepted by a full room | 16 KiB |
+| Write rate per socket | 256 KiB/s, 16 MiB burst |
+| Write rate per organisation | 2 MiB/s, 64 MiB burst |
 | Bends per connector | 32 |
 | Connectors between one pair of objects | 1 |
 | Cards per agent task | 500, processed in batches of 50 |
 | Offline queue in a tab | 1000 unacknowledged changes |
-| Tags per room | 50 |
+| Tags you can create in one room | 50 |
 | Tags per object | 10 |
 | Tag name length | 32 characters |
 | Comment body | 4000 characters |
@@ -78,6 +84,13 @@
 
 | Limit | Behaviour |
 |---|---|
+| 20 000 objects | new objects are refused, edits to existing ones still save; the connection closes with `4413` |
+| 64 MiB room | only edits up to 16 KiB are accepted; a large paste is refused and the connection closes with `4413` |
+| Frame over 16 MiB | the frame is not accepted |
+| 256 KiB/s per socket | the connection closes with `4429`; a retry comes in 5 s, then the pause grows to 60 s |
+| 2 MiB/s per organisation | the connection closes with `4429`; a retry comes in 5 s, then the pause grows to 60 s |
+| Close `4429` | edits stay in the current tab and leave after the next connection |
+| Close `4413` | edits stay in the current tab; a retry comes in 30 s, then the pause grows to 5 min |
 | Offline queue, 1000 | the tab stops accepting edits; the queue survives until the connection returns |
 | 32 waypoints per connector | a new point is not added until an existing one is removed |
 | 500 objects per task | the change set is refused with an explanation; the room is untouched |

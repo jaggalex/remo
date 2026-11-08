@@ -1,6 +1,6 @@
 ## Result
 
-An agent does a task on the room on your behalf. There are four scenarios, and they change the room differently:
+An agent does a task in the room on your behalf. There are four scenarios, and they change the room differently:
 
 - **Plan** (the Brief to room skill): the agent proposes a structure, you read the preview and press Apply. The room does not change before that, and one ⌘Z removes the whole structure.
 - **Diagram** (the Diagram from a description skill): the agent writes shapes and connectors immediately, with no preview; ⌘Z does not undo that write.
@@ -15,7 +15,7 @@ An agent does a task on the room on your behalf. There are four scenarios, and t
 
 ## Before you start
 
-- Agents are enabled in the organisation and on the room. In the organisation an administrator enables them (Organisation → Agents); on the room the owner or a co-owner does.
+- Agents are enabled in the organisation and in the room. In the organisation an administrator enables them (Organisation → Agents); in the room the owner or a co-owner does.
 - You have an active agent that you created: the list shows only your enabled agents, and nobody can run somebody else's agent.
 - A plan or a diagram needs a provider key. Without a key the task does not fail with `AI_NOT_CONFIGURED`: it stays queued and runs once the key is configured.
 - Cards do not call a model, and tidying works without a key.
@@ -32,7 +32,7 @@ A key is access to the provider budget. Create a separate key for remo with a sp
 2. **Preview.** The agent returns a plan: how many objects and connectors will appear, where they will sit, and what looks doubtful. The room does not change at this point.
 3. **Apply.** You read the plan and press Apply. All objects and connectors are written in one gesture.
 4. **Undo.** One ⌘Z removes the whole plan: objects and connectors alike.
-5. **Opening it again.** The plan shows the result and a "Show on room" button instead of Apply. If the same plan was open in two tabs, the tab that applies it second gets the server's "already applied" answer and writes nothing; it shows no ⌘Z hint, because it wrote nothing.
+5. **Opening it again.** The plan shows the result and a "Show in room" button instead of Apply. If the same plan was open in two tabs, the tab that applies it second gets the server's "already applied" answer and writes nothing; it shows no ⌘Z hint, because it wrote nothing.
 
 ## Steps
 
@@ -41,8 +41,8 @@ A key is access to the provider budget. Create a separate key for remo with a sp
 3. Check the source: the Source block shows how many objects and characters of the selection will reach the model. Remove keeps the task without object text; Selection only makes the selection the task itself.
 4. Describe the task: what should exist afterwards. Brief to room also accepts a `.md`, `.txt` or `.csv` file in UTF-8.
 5. Check "What will go to the model" and set a budget. The dialog sets changes and money; tokens and time are server defaults. Money may be fractional: `0.1` is ten cents, `0.25` a quarter.
-6. Click "Ask the agent" and wait for the plan ready status. A preview opens: a plan map, objects grouped by kind with counts, bounds, and warnings with their codes.
-7. Read the plan and press Apply. Reject closes the task and writes nothing. After applying, the dialog shows "⌘Z undoes the plan" and "Show on room".
+6. Click "Ask the agent" and wait for the plan ready status. The plan appears in the room as dashed lines, with a task panel at the bottom: the object count, the bounds and the buttons. Objects grouped by kind and warnings with their codes are under Details.
+7. Read the plan and press Apply. Reject closes the task and writes nothing. Esc hides the panel but does not reject the plan. After applying, the panel shows "⌘Z undoes the plan" and "Show in room".
 
 ## Diagram: straight onto the room
 
@@ -53,7 +53,7 @@ Result: shapes and connectors appear in the current view. There is no preview, s
 
 ## Cards: a package
 
-1. Select the objects to turn into cards on the room: up to 500.
+1. Select the objects to turn into cards in the room: up to 500.
 2. Choose the Cards from a selection skill, where the cards should go, and what to do with the source — Keep or Move.
 3. Click "Preview job". Result: the card count; nothing is written to the room yet.
 4. Click "Run job". Result: cards appear in chunks, and the Card jobs list shows progress.
@@ -62,19 +62,19 @@ A package can be stopped with Stop and resumed with Resume: progress is kept bet
 
 ## Tidy up: columns
 
-1. Select sticky notes on the room. Press Tidy up in the context menu or on the selection bar.
+1. Select sticky notes in the room. Press Tidy up in the context menu or on the selection bar.
 2. Choose a layout: Auto, By prefix, By type, Grid or By meaning. Natural order puts `US-2` before `US-10`.
-3. Wait for the before/after preview: the map shows where objects move from and to, and warnings name locked objects and foreign frames that stay put.
-4. Change the layout in the preview if needed: block labels are kept and coordinates are recomputed.
+3. Wait for the preview: dashed lines in the room show where objects move and where blocks appear, and warnings name locked objects and foreign frames that stay put.
+4. Change the layout under Details if needed: block labels are kept and coordinates are recomputed.
 5. Press Apply. Sizes, texts and lines do not change; one ⌘Z puts everything back.
 
 If a frame is selected, its contents are laid out inside it and the frame itself does not move. Blocks are frames, never groups. The 50-object limit is counted after groups and the selected frame are expanded: a larger set is refused before a plan is stored. A kanban card stays in place with a warning: its cell decides where it stands, and the plan applies to the remaining objects.
 
 ## Check the result
 
-- **Plan.** The object and connector counts in the preview match what appeared on the room. One ⌘Z returns the room to the state before the apply. Applying selects the created frames; "Show on room" only closes the preview and selects nothing.
-- **Tasks.** In the agent dialog, "Recent tasks" shows the status and the task text; the created objects are visible on the room.
-- **Who sees the journals.** The History tab in the organisation and the Evidential journal in Organisation → Agents are visible only to the Organisation admin and Security admin roles. An editor sees Recent tasks and the objects on the room, not those tabs.
+- **Plan.** The object and connector counts in the preview match what appeared in the room. One ⌘Z returns the room to the state before the apply. Applying selects the created frames; "Show in room" only closes the preview and selects nothing.
+- **Tasks.** In the agent dialog, "Recent tasks" shows the status and the task text; the created objects are visible in the room.
+- **Who sees the journals.** The History tab in the organisation and the Evidential journal in Organisation → Agents are visible only to the Organisation admin and Security admin roles. An editor sees Recent tasks and the objects in the room, not those tabs.
 - **Audit and events.** Applying a plan leaves organisation journal rows ("Plan approved", "Plan applied") but no `board.item.created` event. A card package creates objects through server commands, so each card produces a `board.item.created` event for webhooks.
 - **Diagram.** Shapes and connectors appear in the current view; "Recent tasks" shows the applied status; the object info names the agent and the `diagram` skill. ⌘Z does not remove the diagram.
 - **Cards.** The card count matches "Preview job"; the card job shows the applied status; the card info names the agent and the `cards` skill.
@@ -108,7 +108,7 @@ The task, the file and the room are data, not instructions. The model cannot cha
 - **"Agents are off".** An organisation administrator or the room owner (co-owner) turned them off.
 - **"The agent service is unreachable".** Sync is not running; start it and click Retry.
 - **"You have no agents yet".** Open **Organisation → Agents → Create agent**, enable it, then return to the room. The list shows only active agents you created.
-- **`AGENT_DENIED`.** The task did not run: the agent is disabled, you no longer have access to the room, agents are off in the organisation or on the room, or the agent lacks write capabilities. The exact reason is next to the task in "Recent tasks".
+- **`AGENT_DENIED`.** The task did not run: the agent is disabled, you no longer have access to the room, agents are off in the organisation or in the room, or the agent lacks write capabilities. The exact reason is next to the task in "Recent tasks".
 - **No key.** The task does not fail: it stays queued and runs once the key is configured. Until then no plan preview appears.
 - **"Attach a .md, .txt or .csv file".** Other formats are not read. Save the text in one of them.
 - **"The file does not look like UTF-8".** Save it as UTF-8 and attach it again.
@@ -119,5 +119,5 @@ The task, the file and the room are data, not instructions. The model cannot cha
 - **"Apply is blocked".** The plan has a critical warning: a box outside the allowed coordinates (±1 000 000). Ask the agent for a fresh plan.
 - **`TOO_MANY_OPERATIONS`.** The plan has more than 10 operations. It is not stored: split the task into parts.
 - **`PLAN_TOO_LARGE`.** A plan above 300 objects or placements is refused by validation and not stored: there is no preview, and the task shows the failed status. Split the task.
-- **"The plan is already applied".** It was applied in another tab. Nothing was written here; the objects are already on the room. If a simultaneous click in two tabs did double the objects, press ⌘Z and ask for a fresh plan.
+- **"The plan is already applied".** It was applied in another tab. Nothing was written here; the objects are already in the room. If a simultaneous click in two tabs did double the objects, press ⌘Z and ask for a fresh plan.
 - **The task failed.** A task cannot be resumed: read the reason in the history and set the task again. Only a card package can be resumed, with Resume in the Card jobs list.

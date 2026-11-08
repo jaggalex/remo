@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import rootPackage from "../../package.json";
 
 /**
  * The dev proxy can point at another sync instance, e.g. a test server on :1236.
@@ -13,8 +14,19 @@ const env = (globalThis as { process?: { env?: Record<string, string | undefined
 const syncTarget = env?.REMO_SYNC_TARGET ?? "http://localhost:1234";
 const syncWsTarget = syncTarget.replace(/^http/, "ws");
 
+// Docker passes the release identity as build args; a local build falls back to the
+// package version and a `dev` marker (ADR-179).
+const version = env?.REMO_VERSION ?? rootPackage.version;
+const build = env?.REMO_BUILD ?? "dev";
+const commit = env?.REMO_COMMIT ?? "dev";
+
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __REMO_VERSION__: JSON.stringify(version),
+    __REMO_BUILD__: JSON.stringify(build),
+    __REMO_COMMIT__: JSON.stringify(commit),
+  },
   server: {
     port: 5173,
     /**

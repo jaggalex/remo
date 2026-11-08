@@ -1,0 +1,25 @@
+{
+  "id": "access.claim",
+  "type": "how-to",
+  "title": {
+    "ru": "Закрепить комнату без владельца",
+    "en": "Claim a room without an owner"
+  },
+  "summary": {
+    "ru": "Комната без владельца закрыта: войдите, закрепите её за собой, и она получит владельца, организацию и команду.",
+    "en": "A room with no owner is closed: sign in, claim it, and it gets an owner, organisation and team."
+  },
+  "related": [
+    "access.roles",
+    "rooms.home"
+  ],
+  "verifiedAgainst": "2026-11-06",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:6a9c28caa2f245c5ff05a0c0895c5dd8f7c29355da059c2e07478d11cac13a36",
+      "targetHash": "sha256:d940e70984a05e554e1c3a55927e7156ac3021c53a8f02fdffe8359677378e33"
+    }
+  }
+}

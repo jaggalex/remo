@@ -12,6 +12,8 @@
  *  - Swimlanes have no collapsed flag — the source product has no fold affordance.
  */
 
+import { TONE_LEVELS } from "./colorLevels";
+
 export type ColumnId = string;
 export type SwimlaneId = string;
 
@@ -60,11 +62,11 @@ export function emptyKanbanState(overrides: Partial<KanbanState> = {}): KanbanSt
   };
 }
 
-/** Accents from remo's own tonal palette (ADR-127). */
+/** Accents from remo's own tonal palette (ADR-127), on its paper 300 row (ADR-182). */
 export const TODO_ACCENT = "#595959";
-export const DOING_ACCENT = "#f2b94a";
-export const DONE_ACCENT = "#85d965";
-export const NEUTRAL_ACCENT = "#bfb9b1";
+export const DOING_ACCENT = TONE_LEVELS.yellow[300];
+export const DONE_ACCENT = TONE_LEVELS.green[300];
+export const NEUTRAL_ACCENT = TONE_LEVELS.grey[300];
 
 /* ------------------------------------------- fractional order keys ---------- */
 

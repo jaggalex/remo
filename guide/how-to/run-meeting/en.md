@@ -1,6 +1,6 @@
 ## When you need it
 
-The meeting runs on the room: you need to keep to time, pick an option quickly and bring people together.
+The meeting runs in the room: you need to keep to time, pick an option quickly and bring people together.
 
 ## Before you start
 
@@ -19,7 +19,7 @@ The meeting runs on the room: you need to keep to time, pick an option quickly a
 2. Set the quota (3 by default), the duration and anonymity. An anonymous session shows only sums; an open session names who voted for what after it ends.
 3. Let people vote. Result: counters appear on the objects and a line above the room shows the votes left and the time.
 4. End the session or wait for the deadline. Result: the voting buttons disappear and each object keeps its result.
-5. Publish the results. Result: a text object appears on the room with a title, places and votes (up to 10), and the number of participants. It is ordinary text with no formatting.
+5. Publish the results. Result: a text object appears in the room with a title, places and votes (up to 10), and the number of participants. It is ordinary text with no formatting.
 
 ## Steps: gathering people
 
@@ -30,14 +30,14 @@ The meeting runs on the room: you need to keep to time, pick an option quickly a
 
 - The timer shows the same time for everyone.
 - The vote count does not exceed the quota per person.
-- After publishing, the result is visible on the room and in the journal.
+- After publishing, the result is visible in the room and in the journal.
 
 ## Common mistakes
 
 | Symptom | Cause |
 |---|---|
 | Voting cannot be opened | another session is already open |
-| No invitation button | there is nobody else on the room |
+| No invitation button | there is nobody else in the room |
 | The timer "stands still" | it is paused or the time is up |
 
 ## Where to go next

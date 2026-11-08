@@ -56,7 +56,9 @@ export async function integrationFromRequest(request, store, { now = Date.now() 
   if (!row) return { refused: "INTEGRATION_TOKEN_UNKNOWN" };
   if (row.revoked_at) return { refused: "INTEGRATION_TOKEN_REVOKED" };
   if (new Date(row.expires_at).getTime() <= now) return { refused: "INTEGRATION_TOKEN_EXPIRED" };
-  await store.touchIntegrationToken(row.id).catch(() => {});
+  // The token row is RLS-protected; touch it inside its own organisation.
+  const touch = () => store.touchIntegrationToken(row.id);
+  await (store.withTenant ? store.withTenant(row.org_id, touch) : touch()).catch(() => {});
   return {
     id: row.id,
     orgId: row.org_id,

@@ -4,19 +4,19 @@ An agent proposes a structure as a plan, you see it on a map before anything is 
 
 ## When you need it
 
-You have a description — a brief, a list of stories, a file or selected sticky notes — and no structure on the room yet. You want to see the result first and then decide whether to write it.
+You have a description — a brief, a list of stories, a file or selected sticky notes — and no structure in the room yet. You want to see the result first and then decide whether to write it.
 
 ## Before you start
 
-- You have edit permission on the room.
-- Agents are enabled in the organisation and on the room, and you have an active agent.
+- You have edit permission in the room.
+- Agents are enabled in the organisation and in the room, and you have an active agent.
 - A provider key is configured. Without a key the task does not fail: it stays queued and runs once the key appears.
 - A file, when you need one, is `.md`, `.txt` or `.csv` in UTF-8, at most 100 000 bytes.
 - A selection, when you use one, is at most 50 objects and 20 000 characters of text.
 
 ## Steps
 
-1. On the room open **More ▾ → Ask AI…**.
+1. In the room open **More ▾ → Ask AI…**.
 2. Choose an agent. The list shows only your active agents.
 3. Choose a source. The task text is always there; a file and a selection are added to it.
 
@@ -31,15 +31,16 @@ The **Source** block shows how many objects and characters will reach the model.
 4. Choose the **Brief to room** skill or **Auto**. Auto picks a skill from the task wording and the selection.
 5. Describe the result and attach a file when you need one.
 6. Check **What will go to the model** and set a budget: the number of changes and a dollar limit. Tokens and time are server defaults.
-7. Click **Ask the agent** and wait for the plan ready status. The preview opens by itself; later you can open it with the **Plan** button in Recent tasks.
-8. Read the preview and click **Apply**. Result: the objects and connectors appear in one gesture, and the dialog shows "⌘Z undoes the plan" and "Show on room".
+7. Click **Ask the agent** and wait for the plan ready status. The preview opens by itself: the plan is drawn with dashed lines right in the room, and a task panel appears at the bottom. Later you can open the preview with the **Plan** button in Recent tasks.
+8. Read the preview and click **Apply** in the task panel. Result: the objects and connectors appear in one gesture, and the panel shows "⌘Z undoes the plan" and "Show in room".
 
-**Reject** closes the task and writes nothing. **Show on room** closes the preview and selects nothing: applying the plan is what selects the created frames.
+**Reject** closes the task and writes nothing. **Show in room** closes the preview and selects nothing: applying the plan is what selects the created frames. Esc or the close button hides the panel but does not reject the plan.
 
 ## What the preview shows
 
-- The plan map: frame outlines, sticky notes, text and shapes by kind, and planned connectors.
-- The object and connector count, the bounds of the plan, and objects grouped by kind with counts.
+- The plan itself in the room: future frames have a rounded dashed outline, future objects and connectors are dashed ghosts. The camera moves to the plan once; you can pan, zoom and select in the room while the panel is open.
+- In the task panel: the status, the object and connector count, the bounds of the plan, the blocked reason and the buttons.
+- Under **Details**: warnings, objects grouped by kind with counts, and notes about the file and the selection. When there are warnings, the details are open from the start.
 - Warnings. **Apply** is disabled only by a critical warning about coordinates: an object is outside the allowed ±1 000 000.
 - Overlapping objects, an extended lane and closeness to the ceiling are warnings you may accept, not refusals.
 
@@ -58,7 +59,7 @@ Task text, a file and the room are data, never instructions. The model cannot ch
 
 ## How a plan differs from the other tasks
 
-| Skill | Before writing | On the room | Undo |
+| Skill | Before writing | In the room | Undo |
 |---|---|---|---|
 | **Brief to room** | a plan preview | after **Apply**, in one transaction | one ⌘Z |
 | **Diagram from a description** | no preview | immediately | by hand: ⌘Z does not undo it |
@@ -67,9 +68,9 @@ Task text, a file and the room are data, never instructions. The model cannot ch
 
 ## Check the result
 
-- The object and connector counts in the preview match what appeared on the room.
+- The object and connector counts in the preview match what appeared in the room.
 - One ⌘Z returns the room to the state before the apply; a second ⌘Z does not break anything.
-- After applying, the dialog shows Applied and Show on room, not the Apply button.
+- After applying, the panel shows Applied and Show in room, not the Apply button; the dashed lines in the room disappear.
 - If the same plan is open in two tabs, the tab that applies it second gets an "already applied" answer and writes nothing.
 - Applying a plan leaves organisation journal rows but creates no `board.item.created` event: your tab wrote the objects, not a server command.
 
@@ -78,7 +79,7 @@ Task text, a file and the room are data, never instructions. The model cannot ch
 | Symptom | Cause |
 |---|---|
 | No Ask AI… item | you are a viewer, a commenter, a public-link visitor, or you are not signed in |
-| `AGENT_DENIED` | the agent is off, you lost access to the room, or agents are off in the organisation or on the room |
+| `AGENT_DENIED` | the agent is off, you lost access to the room, or agents are off in the organisation or in the room |
 | `BUDGET_REQUIRED` | the task has no budget |
 | No preview, the task stays queued | no provider key is configured; the task runs once the key appears |
 | "The plan is not ready yet" | the task is still running; wait for the status and open the plan from the history |

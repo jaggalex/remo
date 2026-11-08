@@ -5,7 +5,7 @@ A planning room you can show to the team and restore from a file: a kanban with 
 ## Before you start
 
 - The room from the quick start, or a new one.
-- Edit permission on the room.
+- Edit permission in the room.
 - An organisation with at least one colleague to check access.
 
 ## Steps
@@ -30,4 +30,4 @@ A planning room you can show to the team and restore from a file: a kanban with 
 
 ## Where to go next
 
-[Access: organisation, team, room, role](/guide/concepts/access) — why a role is granted on the room and how to revoke it.
+[Access: organisation, team, room, role](/guide/concepts/access) — why a role is granted in the room and how to revoke it.

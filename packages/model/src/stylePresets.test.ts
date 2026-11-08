@@ -38,7 +38,7 @@ describe("built-in style presets (ADR-120, values ADR-129)", () => {
       strokeWidth: 2,
     });
     expect(linePresetStyle(LINE_PRESETS[1])).toEqual({
-      strokeColor: "#bfb9b1",
+      strokeColor: "#cdc8c0",
       strokeWidth: 1,
       strokeStyle: "dashed",
     });

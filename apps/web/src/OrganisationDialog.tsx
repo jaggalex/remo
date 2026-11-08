@@ -15,7 +15,7 @@ import { OrganisationTeams } from "./OrganisationTeams";
 import { Button, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
-import { ABOUT } from "./about";
+import { ABOUT, ABOUT_LABEL } from "./about";
 
 /**
  * The organisation screen: who is here, what they administer, and what happened.
@@ -776,7 +776,7 @@ export function OrganisationDialog({
         )}
 
         <footer className="org-foot">
-          <HelpLink topicId="about.remo">{`${ABOUT.name} ${ABOUT.version} · ${ABOUT.license}`}</HelpLink>
+          <HelpLink topicId="about.remo">{`${ABOUT_LABEL} · ${ABOUT.license}`}</HelpLink>
           <span className="muted">{me.email}</span>
           <button type="button" className="ghost-button" disabled={busy} onClick={() => void signOut()}>
             {t("org.signOut")}

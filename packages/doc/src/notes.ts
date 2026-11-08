@@ -171,7 +171,7 @@ export function createConnectedNote(
   let created: string | null = null;
 
   board.transact(() => {
-    const source = board.widgets.get(sourceId);
+    const source = board.readWidget(sourceId);
     if (!source || !holdsText(source)) return;
 
     const width = source.width;

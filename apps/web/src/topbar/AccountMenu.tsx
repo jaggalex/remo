@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import type { Presence } from "@remo/doc";
 import { api, ApiError, type SessionUser } from "../api";
 import { useI18n, type Lang } from "../i18n";
-import { ABOUT } from "../about";
+import { ABOUT_LABEL } from "../about";
 import type { Theme } from "../useTheme";
 import { useMenuFocus } from "../useMenuFocus";
 
@@ -264,7 +264,7 @@ export function AccountMenu({
             >
               {t("account.docs")}
             </a>
-            <span className="muted">{`${ABOUT.name} ${ABOUT.version}`}</span>
+            <span className="muted">{ABOUT_LABEL}</span>
           </div>
         </Popover>
       )}

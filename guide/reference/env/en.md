@@ -2,15 +2,19 @@
 
 | Variable | What it sets | Without it |
 |---|---|---|
-| `DATABASE_URL` | Postgres with rooms, IAM and the journal | the service refuses to start if a database is set but unreachable; without the variable disk mode works |
+| `DATABASE_URL` | Postgres with rooms, IAM and the journal; connection as the application role `remo_app` | the service refuses to start if a database is set but unreachable; without the variable disk mode works |
+| `REMO_MIGRATION_DATABASE_URL` | Postgres for schema and maintenance: migrations, `db:check`, `db:orphans`, `db:rls`; connection as the owner role | the service uses `DATABASE_URL` for schema too; RLS needs two roles |
 | `PORT` | port of the sync service | 1234 |
 | `REMO_DATA_DIR` | directory for disk mode | `apps/sync/.data` |
+
+The service connects as `remo_app`: DML only, no table ownership and no `BYPASSRLS`. Schema and maintenance use the owner role through `REMO_MIGRATION_DATABASE_URL`; the owner must be a superuser or have `BYPASSRLS`.
 
 ## Example
 
 ```bash
 # /srv/remo/.env, mode 600, owned by the service user
-DATABASE_URL=postgres://remo:<password>@127.0.0.1:5432/remo
+DATABASE_URL=postgres://remo_app:<app password>@127.0.0.1:5432/remo
+REMO_MIGRATION_DATABASE_URL=postgres://remo:<owner password>@127.0.0.1:5432/remo
 NODE_ENV=production
 PORT=1234
 REMO_APP_ORIGIN=https://boards.example.com
@@ -63,6 +67,20 @@ Without a key tasks finish with `AI_NOT_CONFIGURED`; the rest of the product wor
 | `REMO_REGISTER_LIMIT` | registrations from one IP per hour; 20 by default |
 | `REMO_HASH_CONCURRENCY` | parallel password hashes; 4 by default |
 | `REMO_AI_ALLOW_PRIVATE` | `1` allows AI outbound to a private network; off by default |
+
+## Saving quotas
+
+| Variable | What it sets |
+|---|---|
+| `REMO_WS_RATE_BYTES` | bytes per second per connection; 256 KiB/s by default |
+| `REMO_WS_BURST_BYTES` | burst per connection; 16 MiB by default |
+| `REMO_ORG_WS_RATE_BYTES` | bytes per second per organisation; 2 MiB/s by default |
+| `REMO_ORG_WS_BURST_BYTES` | burst per organisation; 64 MiB by default |
+| `REMO_ROOM_MAX_BYTES` | encoded room size; 64 MiB by default |
+| `REMO_ROOM_FULL_FRAME_BYTES` | largest edit a full room still accepts; 16 KiB by default |
+| `REMO_ROOM_MAX_OBJECTS` | objects in a room; 20 000 by default |
+
+One frame cannot exceed 16 MiB. An invalid variable value is ignored and the default stays.
 
 ## Webhook and debugging
 

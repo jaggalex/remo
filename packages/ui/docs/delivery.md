@@ -12,7 +12,7 @@ src/
   tokens/component.css      │ (не править руками — тест сверяет)
   tokens/themes/light.css   │
   tokens/themes/dark.css    ┘ выпуск в продукте — v1.1
-  fonts/                    Inter woff2 (latin + cyrillic) + OFL.txt
+  fonts/                    Golos Text + Inter woff2 (latin + cyrillic) + OFL
   components/*.tsx          компоненты; components.css — один слой @layer remo.components
   icons.ts, icons/*.svg     собственный набор, 35 иконок
   i18n.tsx                  контракт строк (ключи); слова — в apps/web/src/i18n.tsx (ds.*)

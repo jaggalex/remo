@@ -17,11 +17,11 @@
     "admin/backup-restore",
     "support/migrations"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-06",
   "translations": {
     "en": {
-      "sourceHash": "sha256:866c50bc3b45acdcbe1b8070f102b9ebe90c12217826aac752370a9560c9adcb",
-      "targetHash": "sha256:e98f848edcd89d0e718c302a0351feb5c00729ceb9578125d72a37e308e9f43c"
+      "sourceHash": "sha256:a1373f248619ee2371cfaeeb7d735503a54cf4f4ee52a43999078fb35bdb2332",
+      "targetHash": "sha256:257808ed4608886fc1748ce0cd356d5a3fc7f5cced2fe1366b4ebf8ffd4c88ea"
     }
   }
 }

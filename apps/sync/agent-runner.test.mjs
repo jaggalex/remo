@@ -59,7 +59,10 @@ function fakeStore({
   const board = {
     id: "b1",
     org_id: "o1",
-    owner_id: ownerRole === "owner" ? "u1" : null,
+    // Both cases are claimed boards (ADR-174): in the viewer case the owner is someone
+    // else and u1 reaches the room through a grant. The test is about the agent never
+    // exceeding the capabilities that person actually has.
+    owner_id: ownerRole === "owner" ? "u1" : "owner-2",
     agents_enabled: boardAgents,
     visibility: "private",
     archived_at: null,

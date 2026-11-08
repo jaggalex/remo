@@ -10,6 +10,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SCHEMA_VERSION } from "./schema-version.mjs";
+import { currentTenantClient, withTenant, withoutTenant } from "./tenant.mjs";
 import { boardMethods } from "./pg/boards.mjs";
 import { roomMethods } from "./pg/rooms.mjs";
 import { iamUserMethods } from "./pg/iam-users.mjs";
@@ -32,14 +33,25 @@ export class PostgresStore {
   /** Named in logs and operator metrics; the public health probe says only `ok`. */
   kind = "postgres";
 
-  constructor({ connectionString, poolSize = 8, log = console, metrics = null }) {
+  constructor({
+    connectionString,
+    migrationConnectionString = null,
+    poolSize = 8,
+    log = console,
+    metrics = null,
+  }) {
     this.connectionString = connectionString;
+    // The app role is subject to RLS; migrations and the legacy repair run as the
+    // owner, which is the only role allowed to bypass a policy (ADR-178 stage 2).
+    this.migrationConnectionString = migrationConnectionString ?? connectionString;
     this.poolSize = poolSize;
     this.log = log;
     /** Optional Prometheus registry; the store works without one (tests). */
     this.metrics = metrics;
     this.pool = null;
     this.rooms = new Map();
+    /** docName → organisation, so a room's timers run with a tenant setting (ADR-178). */
+    this.roomTenants = new Map();
     /** Set by the sync service to acknowledge clients after a successful flush. */
     this.onPersisted = null;
   }
@@ -67,8 +79,145 @@ export class PostgresStore {
     this.pool.on("error", (error) => {
       this.log.error("[sync] idle database connection lost:", error.message);
     });
+    // Every existing `this.pool.query` and `this.pool.connect` in pg/*.mjs goes through
+    // the request's tenant connection when there is one (ADR-178). The shim is the one
+    // place that knows about row-level security; the 200 call sites stay unchanged.
+    const poolQuery = this.pool.query.bind(this.pool);
+    const poolConnect = this.pool.connect.bind(this.pool);
+    this.pool.query = (...args) => {
+      const client = currentTenantClient();
+      return client ? client.query(...args) : poolQuery(...args);
+    };
+    this.pool.connect = (callback) => {
+      const client = currentTenantClient();
+      if (!client) return poolConnect(callback);
+      const lease = {
+        query: client.query.bind(client),
+        // The request owns the connection; a method that "releases" it is returning a
+        // lease, not the client, to the pool.
+        release: () => {},
+      };
+      if (typeof callback === "function") {
+        callback(null, lease, () => {});
+        return undefined;
+      }
+      return Promise.resolve(lease);
+    };
     this.pg = pg.default ?? pg;
-    await this.migrate();
+    const orphans = await this.migrate();
+    // An unowned room is closed (ADR-174). Say how many are waiting for the operator
+    // script instead of leaving the first visitor to discover it through a 403.
+    if (orphans) {
+      this.log.log(
+        `[sync] ${orphans} unowned room(s) are closed; run \`pnpm db:orphans --archive --yes\` after checking the list`,
+      );
+    }
+  }
+
+  /** Run `fn` with `app.org_id` set on its own connection (ADR-178). */
+  async withTenant(orgId, fn) {
+    return withTenant(this.pool, orgId, fn);
+  }
+
+  /**
+   * The organisation and owner of a board, resolved before a tenant context exists.
+   *
+   * The security-definer function is the only way to read `boards` once it is protected
+   * (ADR-178 stage 3). Before the function is installed the plain columns are the same
+   * answer; the fallback keeps an older database working.
+   */
+  async boardLookup(boardId) {
+    try {
+      const { rows } = await this.pool.query(
+        "select org_id, owner_id from remo_board_lookup($1)",
+        [boardId],
+      );
+      return rows[0] ?? null;
+    } catch {
+      const { rows } = await this.pool.query(
+        "select org_id, owner_id from boards where id = $1",
+        [boardId],
+      );
+      return rows[0] ?? null;
+    }
+  }
+
+  async boardOrg(boardId) {
+    return (await this.boardLookup(boardId))?.org_id ?? null;
+  }
+
+  /** The scheduler's three cross-tenant reads (ADR-178 stage 4). */
+  async agentTaskOrg(taskId) {
+    try {
+      const { rows } = await this.pool.query("select remo_agent_task_org($1) as org_id", [
+        taskId,
+      ]);
+      return rows[0]?.org_id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async nextAgentTask() {
+    try {
+      const { rows } = await this.pool.query("select * from remo_next_agent_task()");
+      return rows[0] ?? null;
+    } catch {
+      return this.nextQueuedAgentTask ? this.nextQueuedAgentTask() : null;
+    }
+  }
+
+  async dueAgentSchedulesAcrossTenants(limit = 10) {
+    try {
+      const { rows } = await this.pool.query("select * from remo_due_agent_schedules($1)", [
+        limit,
+      ]);
+      return rows;
+    } catch {
+      return this.dueAgentSchedules ? this.dueAgentSchedules(limit) : [];
+    }
+  }
+
+  /**
+   * Run `fn` with a connection that may bypass RLS: the owner URL when it differs,
+   * otherwise the app pool. Used only by maintenance that spans organisations.
+   */
+  async withOwnerClient(fn) {
+    if (this.migrationConnectionString === this.connectionString) {
+      const client = await this.pool.connect();
+      try {
+        return await fn(client);
+      } finally {
+        client.release();
+      }
+    }
+    const client = new this.pg.Client({
+      connectionString: this.migrationConnectionString,
+      connectionTimeoutMillis: 5000,
+    });
+    await client.connect();
+    try {
+      return await fn(client);
+    } finally {
+      await client.end().catch(() => {});
+    }
+  }
+
+  /** Remember which organisation owns a room, for work that runs outside a request. */
+  noteRoomTenant(docName, orgId) {
+    if (orgId) this.roomTenants.set(docName, orgId);
+    else this.roomTenants.delete(docName);
+  }
+
+  /**
+   * A room's timers have no request context; give them the room's organisation.
+   *
+   * Detached even when a request is in flight: a projection or log flush outlives the
+   * response, and reusing the request's connection would run on a released client.
+   */
+  async withRoomTenant(docName, fn) {
+    const orgId = this.roomTenants.get(docName);
+    return withoutTenant(() => withTenant(this.pool, orgId ?? null, fn));
   }
 
   async migrate() {
@@ -76,7 +225,15 @@ export class PostgresStore {
     // Several processes may start at once (a dev server, a test suite, a second sync
     // instance). Unlocked, their DDL blocks on the same tables and the slowest one
     // looks like a hang. One advisory lock makes migration a queue instead of a race.
-    const client = await this.pool.connect();
+    const separate =
+      this.migrationConnectionString !== this.connectionString;
+    const client = separate
+      ? new this.pg.Client({
+          connectionString: this.migrationConnectionString,
+          connectionTimeoutMillis: 5000,
+        })
+      : await this.pool.connect();
+    if (separate) await client.connect();
     try {
       await client.query("select pg_advisory_lock($1)", [721_472_1]);
       // A second instance, or a test suite running beside another, must not run DDL on
@@ -154,9 +311,14 @@ export class PostgresStore {
          on conflict do nothing`,
       );
       this.log.log("[sync] schema ready");
+      const { rows: orphans } = await client.query(
+        "select count(*)::int as n from boards where owner_id is null",
+      );
+      return orphans[0]?.n ?? 0;
     } finally {
       await client.query("select pg_advisory_unlock($1)", [721_472_1]).catch(() => {});
-      client.release();
+      if (separate) await client.end().catch(() => {});
+      else client.release();
     }
   }
 

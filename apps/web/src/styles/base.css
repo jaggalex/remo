@@ -98,8 +98,13 @@ button.rm-btn:disabled {
   color: var(--text-muted);
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
+/*
+ * Focus is the one blue in chrome (ADR-181). A control inside an `.rm-input` is skipped: the
+ * field shows focus on its own rounded edge, and an outline here would be a second, square
+ * frame inside it (this rule is unlayered, so it beats the component layer).
+ */
+:focus-visible:not(.rm-input :is(input, select, textarea)) {
+  outline: 2px solid var(--border-focus);
   outline-offset: 2px;
 }
 

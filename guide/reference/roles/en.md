@@ -16,7 +16,7 @@
 | User administrator (`user_admin`) | the people list, invitations and member roles |
 | Security administrator (`security_admin`) | the audit log and security policy |
 
-An organisation role does not replace a room role: access to content is still granted on the room.
+An organisation role does not replace a room role: access to content is still granted in the room.
 
 ## Capabilities
 
@@ -35,7 +35,7 @@ An organisation role does not replace a room role: access to content is still gr
 
 (*) An editor can share only if the organisation policy allows it.
 
-A **guest** works on a room within the granted role, but never has `board.share`,
+A **guest** works in a room within the granted role, but never has `board.share`,
 `board.manage`, `board.transfer` or `board.delete`, and cannot be a co-owner.
 
 **Copying a room and importing a backup** need `board.manage`. Only an owner or co-owner
@@ -49,7 +49,7 @@ themselves.
 
 | Source | How it appears |
 |---|---|
-| Direct grant | the role is granted to a person on the room |
+| Direct grant | the role is granted to a person in the room |
 | Team | the person is in a team, the role is granted to the team |
 | Organisation | the role is granted to the whole organisation; a guest does not inherit it |
 | Public link | a room property; grants `board.read` only |
@@ -58,7 +58,7 @@ When several sources apply, the strongest role wins.
 
 ## How a link differs from a role
 
-| | Public link | Role on the room |
+| | Public link | Role in the room |
 |---|---|---|
 | Account needed | no | yes |
 | What it grants | read only | the capabilities of the role |

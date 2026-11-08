@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { BoardConnection, Presence } from "@remo/doc";
-import type { Camera } from "@remo/canvas";
 import type { Identity } from "./identity";
+import { cameraStore } from "./cameraStore";
 import type { TranslationKey } from "./i18n";
 import {
   autoFollow,
@@ -23,8 +23,6 @@ export function useFollowAttention({
   presence,
   identity,
   connection,
-  camera,
-  setCamera,
   allowBringEveryone,
   setNotice,
   setFollowOpen,
@@ -33,8 +31,6 @@ export function useFollowAttention({
   presence: Presence[];
   identity: Identity;
   connection: BoardConnection | null;
-  camera: Camera;
-  setCamera: (camera: Camera) => void;
   allowBringEveryone: boolean;
   setNotice: (message: string) => void;
   setFollowOpen: (open: boolean) => void;
@@ -49,16 +45,34 @@ export function useFollowAttention({
   const seenStop = useRef(0);
   const seenInvite = useRef(0);
   const appliedCamera = useRef("");
+  const followTarget = useRef(follow.target);
+  useEffect(() => {
+    followTarget.current = follow.target;
+  }, [follow.target]);
 
   useEffect(() => {
     const awareness = connection?.awareness;
     if (!awareness) return;
-    // One broadcast per gesture, not per animation frame.
-    const timer = window.setTimeout(() => {
-      awareness.setLocalStateField("camera", camera);
-    }, 80);
-    return () => window.clearTimeout(timer);
-  }, [camera, connection]);
+    // One broadcast per gesture, not per animation frame. The subscription replaces the
+    // React dependency: BoardApp no longer re-renders on every pan (review P6).
+    let timer = 0;
+    const broadcast = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        awareness.setLocalStateField("camera", cameraStore.get());
+      }, 80);
+    };
+    broadcast();
+    const unsubscribe = cameraStore.subscribe((source) => {
+      // A follow-applied camera is not a local move; anything else pauses the mirror.
+      if (source !== "follow" && followTarget.current) dispatchFollow({ type: "localMove" });
+      broadcast();
+    });
+    return () => {
+      unsubscribe();
+      window.clearTimeout(timer);
+    };
+  }, [connection]);
 
   useEffect(() => {
     connection?.awareness?.setLocalStateField("followTo", follow.target);
@@ -75,7 +89,7 @@ export function useFollowAttention({
     const key = `${targetCamera.x}/${targetCamera.y}/${targetCamera.zoom}`;
     if (key === appliedCamera.current) return;
     appliedCamera.current = key;
-    setCamera(targetCamera);
+    cameraStore.set(targetCamera, "follow");
   }, [targetCamera?.x, targetCamera?.y, targetCamera?.zoom]);
 
   const targetPeer = follow.target
@@ -124,15 +138,6 @@ export function useFollowAttention({
     .map((peer) => peer.label);
   const otherPeers = presence.filter((peer) => !peer.self).length;
 
-  /** A local pan or zoom pauses the mirror; it never silently snaps back. */
-  const handleCamera = useCallback(
-    (next: Camera) => {
-      if (follow.target) dispatchFollow({ type: "localMove" });
-      setCamera(next);
-    },
-    [follow.target],
-  );
-
   const toggleFollow = useCallback(
     (target: string, label: string) => {
       dispatchFollow(
@@ -163,7 +168,6 @@ export function useFollowAttention({
     dispatchFollow,
     followInvite,
     setFollowInvite,
-    handleCamera,
     myFollowers,
     followerNames,
     otherPeers,

@@ -21,3 +21,7 @@ docs-site/
 e2e-report/
 test-results/
 playwright-report/
+
+# Generated design preview and Python bytecode cache
+/docs/design/assets/preview.html
+__pycache__/

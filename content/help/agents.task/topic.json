@@ -6,7 +6,7 @@
     "en": "Ask an agent to change the room"
   },
   "summary": {
-    "ru": "Четыре сценария — план с превью, диаграмма сразу на комнате, карточки пакетом и упорядочивание колонками; что уходит в модель и что делать без ключа.",
+    "ru": "Четыре сценария — план с превью, диаграмма сразу в комнате, карточки пакетом и упорядочивание колонками; что уходит в модель и что делать без ключа.",
     "en": "Four scenarios — a plan with a preview, a diagram straight onto the room, cards as a package and tidying into columns; what goes to the model and what happens without a key."
   },
   "related": [
@@ -14,13 +14,13 @@
     "agents.journal",
     "access.roles"
   ],
-  "verifiedAgainst": "2026-11-02",
+  "verifiedAgainst": "2026-11-08",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:96dee1033e586d91f0687acecabf5ccdeaf7ef496f6912bc083e194532814d34",
-      "targetHash": "sha256:268a58e11613f00874469daa07fff6d8571427c2976d27848e7aa8e407e87848"
+      "sourceHash": "sha256:16592d6da7edc8ff95af0aae427c5e2346348f5dc56535469b73ce57576063c7",
+      "targetHash": "sha256:b3ba40f2094cfa27fd4ed7a41e1a98fa9748d4980c7457d56f0e4372d3f8082b"
     }
   }
 }

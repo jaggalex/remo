@@ -7,6 +7,7 @@
  */
 
 import { ApiError, call } from "./apiCall";
+import { backupFilename } from "./backupFormat";
 import type { VoteSession } from "./vote/voteTypes";
 
 export { ApiError, call } from "./apiCall";
@@ -419,8 +420,7 @@ export const api = {
         payload,
       );
     }
-    const disposition = response.headers.get("content-disposition") ?? "";
-    const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "board.remo-backup.json";
+    const filename = backupFilename(response.headers.get("content-disposition") ?? "");
     return { blob: await response.blob(), filename };
   },
   claim: (boardId: string, token?: string) =>

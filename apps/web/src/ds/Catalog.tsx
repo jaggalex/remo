@@ -10,6 +10,7 @@ import { I18nProvider, useI18n, type Lang } from "../i18n";
 import { fixtures, type Fixtures } from "./fixtures";
 import { AgentScreen, BoardScreen, ShareScreen } from "./Screens";
 import { ConnectorPerf } from "./ConnectorPerf";
+import { ScalePerf } from "./ScalePerf";
 import { ConnectorStates } from "./ConnectorStates";
 
 type Theme = "light" | "dark";
@@ -318,6 +319,7 @@ function Catalog() {
     : view === "share" ? <ShareScreen f={f} />
     : view === "agent" ? <AgentScreen f={f} />
     : view === "perf" ? <ConnectorPerf />
+    : view === "scale" ? <ScalePerf />
     : view === "connectors" ? <ConnectorStates />
     : null;
   return (

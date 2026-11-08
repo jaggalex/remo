@@ -10,7 +10,7 @@ The right to a task is the intersection of three things:
 
 | What | Where it comes from |
 |---|---|
-| Owner's access | the owner's role on the room at the moment of execution |
+| Owner's access | the owner's role in the room at the moment of execution |
 | Organisation policy | whether agents are enabled and what is allowed |
 | Skill requirements | which capabilities are needed for this skill |
 

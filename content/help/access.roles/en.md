@@ -14,6 +14,6 @@ A role can come directly, through a team or through the organisation. The access
 
 ## Limits
 
-- The room is the unit of access: permissions are checked on the room, not on a single object.
+- The room is the unit of access: permissions are checked in the room, not on a single object.
 - A guest does not inherit organisation access: they get a personal room grant.
 - A room in the trash does not open; only the owner can restore it.

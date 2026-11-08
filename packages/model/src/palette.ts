@@ -1,3 +1,4 @@
+import { TONE_LEVELS } from "./colorLevels";
 import type { StickySize } from "./types";
 
 /** Colour vocabulary taken from the live templates (see SPEC §3.3). */
@@ -121,16 +122,28 @@ export function shade(hex: string, amount: number): string {
   return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
 
+/**
+ * What a note with no stored fill is painted: yellow 100, the value a new note gets
+ * (ADR-186). Read at call time, not at load: `colorLevels.ts` imports this module too.
+ */
+export function defaultNoteFill(): string {
+  return TONE_LEVELS.yellow[100];
+}
+
 /** The hex a widget's fill/solid colour resolves to, name or hex. */
-export function resolveColor(name: string | undefined, fallback = "#FFDD33"): string {
+export function resolveColor(name: string | undefined, fallback = defaultNoteFill()): string {
   if (!name) return fallback;
   return name.startsWith("#") ? name : (STICKY_COLORS[name] ?? fallback);
 }
 
+/**
+ * A note's fill: the stored hex, an imported colour name as it was (ADR-127 keeps stored
+ * values), or the default note fill when nothing is stored.
+ */
 export function stickyFill(name: string | undefined): string {
-  if (!name) return "#FFDD33";
+  if (!name) return defaultNoteFill();
   if (name.startsWith("#")) return name;
-  return STICKY_COLORS[name] ?? "#FFDD33";
+  return STICKY_COLORS[name] ?? defaultNoteFill();
 }
 
 /** Text needs enough contrast on saturated sticky colours. */

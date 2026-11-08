@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
 import {
   addComment,
@@ -11,14 +12,16 @@ import {
   seedNote,
 } from "./helpers";
 
-test("exports a PNG and restores the board from the same backup", async ({ page }) => {
-  const account = await freshBoard(page, "export");
+test("exports a PNG and downloads and restores a backup with a Cyrillic filename", async ({ page }) => {
+  const title = "План «Ёж»";
+  const account = await register(page, "export", { title });
+  await openBoard(page, account.boardId, { template: "empty" });
   await addSticky(page);
-
-  const backup = await page.request.get(`/api/boards/${account.boardId}/backup`);
-  expect(backup.ok()).toBeTruthy();
-  const bundle = await backup.json();
-  expect(bundle.manifest.format).toBe("remo.board.backup");
+  await openComments(page);
+  await addComment(page, "Reviewed before export");
+  await page.getByRole("button", { name: "Resolve", exact: true }).click();
+  await expect(page.locator(".comments-list li")).toHaveCount(0);
+  await page.locator(".comments-panel header button").click();
 
   // A real download, not a mocked canvas: the browser renderer is part of the product.
   await openBoardMenu(page);
@@ -30,11 +33,25 @@ test("exports a PNG and restores the board from the same backup", async ({ page 
   expect(download.suggestedFilename()).toMatch(/\.png$/);
   await expect(page.locator(".export-status.done")).toBeVisible({ timeout: 20_000 });
 
-  const input = page.locator(".export-import input[type=file]");
-  await input.setInputFiles({
-    name: "board.remo-backup.json",
+  const dialog = page.locator(".export-dialog");
+  await dialog.getByRole("radio", { name: /Room backup/ }).click();
+  const [backup] = await Promise.all([
+    page.waitForEvent("download"),
+    dialog.locator(".share-button").click(),
+  ]);
+  expect(backup.suggestedFilename()).toBe("план-ёж.remo-backup.json");
+  const contents = await readFile(await backup.path());
+  const bundle = JSON.parse(contents.toString());
+  expect(bundle.manifest).toMatchObject({ format: "remo.board.backup", title });
+  expect(bundle.comments).toMatchObject([{
+    resolvedAt: expect.any(String),
+    comments: [{ body: "Reviewed before export" }],
+  }]);
+
+  await dialog.locator(".export-import input[type=file]").setInputFiles({
+    name: backup.suggestedFilename(),
     mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(bundle)),
+    buffer: contents,
   });
   await expect(page.locator(".export-import-confirm")).toContainText("Replace the whole room");
   await page.getByRole("button", { name: "Replace the room" }).click();
@@ -47,6 +64,13 @@ test("exports a selection with the line between the selected objects", async ({ 
   const right = await seedNote(page, account.boardId, { x: 150, y: 0 });
   const line = await seedConnector(page, account.boardId, left, right);
   await openBoard(page, account.boardId);
+  // The board fits itself to the seeded content after load; take the camera once it
+  // settles, as gestures.spec.ts does, or the marquee lands on a stale projection.
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
 
   // A marquee over the pair: the line comes with it (ADR-138).
   const view = await page.evaluate(() => {

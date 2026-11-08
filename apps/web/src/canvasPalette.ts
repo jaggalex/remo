@@ -29,5 +29,7 @@ export function canvasPaletteFromTokens(root: Element = document.documentElement
     warning: t["state-warning"],
     success: t["state-success"],
     textOnPresence: t["text-on-presence"],
+    stickerCast: t["sticker-cast"],
+    agentProposal: t["agent-proposal"],
   };
 }

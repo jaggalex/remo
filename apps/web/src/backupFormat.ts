@@ -1,5 +1,17 @@
 import type { Board, KanbanState, Tag, TextDeltaOp, Widget } from "@remo/model";
 
+export function backupFilename(disposition: string): string {
+  const encoded = /(?:^|;)\s*filename\*=UTF-8'[^']*'([^;\s]+)/i.exec(disposition)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      // A malformed extended filename can still have a usable ASCII fallback.
+    }
+  }
+  return /(?:^|;)\s*filename="([^"]+)"/i.exec(disposition)?.[1] ?? "board.remo-backup.json";
+}
+
 /**
  * Reading a remo board backup in the browser (ADR-071).
  *

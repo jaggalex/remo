@@ -126,6 +126,19 @@ export async function testDatabaseStore(label = "database suite", options = {}) 
 }
 
 /**
+ * A board row for a storage test.
+ *
+ * The store no longer creates a room implicitly (ADR-174): creation belongs to
+ * `createIamBoard`, which requires an owner. A storage test that seeds a document names
+ * the row it is testing instead.
+ */
+export async function ensureBoard(store, id) {
+  await store.pool.query("insert into boards (id) values ($1) on conflict (id) do nothing", [
+    id,
+  ]);
+}
+
+/**
  * A skip is loud locally and fatal under CI. `env` is a parameter so the rule itself can be
  * tested without changing the process environment.
  */

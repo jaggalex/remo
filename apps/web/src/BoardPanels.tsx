@@ -1,4 +1,3 @@
-import type { Camera } from "@remo/canvas";
 import type { AgentPlan, AppliedAgentPlan } from "@remo/doc";
 import type { Widget } from "@remo/model";
 import type { Access, SessionUser } from "./api";
@@ -9,6 +8,7 @@ import { BoardDeleteDialog } from "./BoardDeleteDialog";
 import { OrganisationDialog } from "./OrganisationDialog";
 import { SettingsPanel } from "./SettingsPanel";
 import { useI18n } from "./i18n";
+import { Contained } from "./ErrorBoundary";
 import type { BoardSettings } from "./settings";
 
 /**
@@ -18,7 +18,17 @@ import type { BoardSettings } from "./settings";
  * itself is the organisation home (ADR-168), not an overlay. Keeping these here means
  * `BoardApp` composes and the file stays inside the Q4 size ratchet.
  */
-export function BoardPanels({
+export function BoardPanels(props: Parameters<typeof PanelsBody>[0]) {
+  // Opening another panel is a fresh attempt after a failure (ADR-171).
+  const open = [props.accountOpen, props.agentOpen, props.settingsOpen, props.trashOpen];
+  return (
+    <Contained scope="panel" resetKey={open.map(Number).join("")}>
+      <PanelsBody {...props} />
+    </Contained>
+  );
+}
+
+function PanelsBody({
   accountOpen,
   me,
   onCloseAccount,
@@ -28,7 +38,6 @@ export function BoardPanels({
   boardId,
   boardTitle,
   access,
-  camera,
   selectedIds,
   widgets,
   onApplyPlan,
@@ -53,7 +62,6 @@ export function BoardPanels({
   boardId: string;
   boardTitle: string;
   access: Access | null;
-  camera: Camera;
   selectedIds: string[];
   widgets: Widget[];
   onApplyPlan: (
@@ -102,7 +110,6 @@ export function BoardPanels({
         boardTitle={boardTitle}
         canManage={Boolean(access?.capabilities.includes("board.manage"))}
         canEdit={Boolean(access?.capabilities.includes("board.edit"))}
-        origin={{ x: camera.x, y: camera.y }}
         selectionIds={selectedIds}
         widgets={widgets}
         onApplyPlan={onApplyPlan}
@@ -115,7 +122,6 @@ export function BoardPanels({
         selectionIds={tidy.ids}
         widgets={widgets}
         canEdit={Boolean(access?.capabilities.includes("board.edit"))}
-        origin={{ x: camera.x, y: camera.y }}
         onApplyPlan={onApplyPlan}
         onClose={tidy.close}
         onOpenAgents={tidy.openAgents}

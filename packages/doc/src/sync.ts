@@ -37,6 +37,26 @@ export interface ConnectOptions {
    * the same denial.
    */
   onAccessChanged?: (code: number) => void;
+  /**
+   * The server closed the socket for a write budget (ADR-173): 4429 when this session
+   * writes too fast, 4413 when the room is full. The connection waits before it tries
+   * again instead of resending the same frame into the same refusal.
+   */
+  onLimited?: (code: typeof CLOSE_RATE_LIMITED | typeof CLOSE_ROOM_FULL) => void;
+}
+
+/** Close codes of the write budgets (ADR-173); the server uses the same numbers. */
+export const CLOSE_RATE_LIMITED = 4429;
+export const CLOSE_ROOM_FULL = 4413;
+
+/**
+ * How long to wait before reconnecting after a budget close: doubling from the base,
+ * capped. A room-full close waits longer — space only returns when someone deletes.
+ */
+export function limitBackoffMs(code: number, attempt: number): number {
+  const base = code === CLOSE_ROOM_FULL ? 30_000 : 5_000;
+  const cap = code === CLOSE_ROOM_FULL ? 300_000 : 60_000;
+  return Math.min(cap, base * 2 ** Math.max(0, attempt));
 }
 
 export interface BoardConnection {
@@ -174,11 +194,42 @@ export function connectBoard(
     publishSave();
     if (synced) scheduleAck();
   });
+  /** Budget closes in a row; a connection that stays up resets it. */
+  let limitedAttempts = 0;
+  let limitTimer: number | null = null;
+  let limitResetTimer: number | null = null;
+
   provider.on("connection-close", (event: { code?: number }) => {
     publish("disconnected");
+    if (limitResetTimer !== null) {
+      window.clearTimeout(limitResetTimer);
+      limitResetTimer = null;
+    }
     if (event?.code === 4403 || event?.code === 4401) {
       options.onAccessChanged?.(event.code);
     }
+    if (event?.code === CLOSE_RATE_LIMITED || event?.code === CLOSE_ROOM_FULL) {
+      const code = event.code;
+      // y-websocket reconnects in 100 ms after a connection that was up; that would
+      // resend the refused frame at once. Stop it, wait, then let it try again.
+      provider.disconnect();
+      if (limitTimer !== null) window.clearTimeout(limitTimer);
+      limitTimer = window.setTimeout(() => {
+        limitTimer = null;
+        provider.connect();
+      }, limitBackoffMs(code, limitedAttempts));
+      limitedAttempts += 1;
+      options.onLimited?.(code);
+    }
+  });
+  provider.on("status", (event: { status: ConnectionStatus }) => {
+    // A minute connected means the budget recovered; the next refusal starts over.
+    if (event.status !== "connected" || limitedAttempts === 0) return;
+    if (limitResetTimer !== null) window.clearTimeout(limitResetTimer);
+    limitResetTimer = window.setTimeout(() => {
+      limitResetTimer = null;
+      limitedAttempts = 0;
+    }, 60_000);
   });
 
   /**
@@ -258,6 +309,8 @@ export function connectBoard(
       }
       for (const timer of ackTimers) window.clearTimeout(timer);
       ackTimers.clear();
+      if (limitTimer !== null) window.clearTimeout(limitTimer);
+      if (limitResetTimer !== null) window.clearTimeout(limitResetTimer);
       doc.doc.off("update", onLocalUpdate);
       provider.destroy();
       awareness.destroy();

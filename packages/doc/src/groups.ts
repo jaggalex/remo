@@ -27,12 +27,12 @@ import type { BoardDocument } from "./board";
 export function groupWidgets(board: BoardDocument, ids: string[]): string | null {
   const selected = new Set(ids);
   const roots = [...new Set(ids)].filter((id) => {
-    const widget = board.widgets.get(id);
+    const widget = board.readWidget(id);
     if (!widget || !kindOf(widget.type).groupable) return false;
     let parent = widget.parentId;
     while (parent) {
       if (selected.has(parent)) return false;
-      parent = board.widgets.get(parent)?.parentId ?? null;
+      parent = board.readWidget(parent)?.parentId ?? null;
     }
     return true;
   });
@@ -41,12 +41,12 @@ export function groupWidgets(board: BoardDocument, ids: string[]): string | null
   // A group that is already exactly the selection must not be dissolved and
   // recreated: otherwise ⌘G on a group would silently lose its name.
   const existing = new Set(
-    roots.map((id) => board.widgets.get(id)?.groupId).filter((id): id is string => Boolean(id)),
+    roots.map((id) => board.readWidget(id)?.groupId).filter((id): id is string => Boolean(id)),
   );
 
   if (existing.size === 1) {
     const groupId = [...existing][0]!;
-    const members = [...board.widgets.values()].filter((widget) => widget.groupId === groupId);
+    const members = board.readWidgets().filter((widget) => widget.groupId === groupId);
     if (
       members.length === roots.length &&
       members.every((widget) => selected.has(widget.id))
@@ -58,7 +58,7 @@ export function groupWidgets(board: BoardDocument, ids: string[]): string | null
     // the cluster instead of dying because a member was added.
     board.transact(() => {
       for (const id of roots) {
-        const widget = board.widgets.get(id);
+        const widget = board.readWidget(id);
         if (!widget || widget.groupId === groupId) continue;
         board.widgets.set(id, { ...widget, groupId });
       }
@@ -69,14 +69,14 @@ export function groupWidgets(board: BoardDocument, ids: string[]): string | null
   const groupId = newId("grp");
   board.transact(() => {
     for (const id of roots) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget) continue;
       board.widgets.set(id, { ...widget, groupId });
     }
     // A merge of two named groups has no single name; remove the old labels so an
     // orphan name cannot outlive its membership.
     for (const oldId of existing) {
-      if (![...board.widgets.values()].some((widget) => widget.groupId === oldId)) {
+      if (!board.readWidgets().some((widget) => widget.groupId === oldId)) {
         board.groupNames.delete(oldId);
       }
     }
@@ -88,17 +88,17 @@ export function groupWidgets(board: BoardDocument, ids: string[]): string | null
 export function ungroupWidgets(board: BoardDocument, ids: string[]): void {
   const groups = new Set<string>();
   for (const id of ids) {
-    const groupId = board.widgets.get(id)?.groupId;
+    const groupId = board.readWidget(id)?.groupId;
     if (groupId) groups.add(groupId);
   }
   if (!groups.size) return;
 
   board.transact(() => {
-    const members = [...board.widgets.values()]
+    const members = board.readWidgets()
       .filter((widget) => widget.groupId && groups.has(widget.groupId))
       .map((widget) => widget.id);
     for (const id of members) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget) continue;
       const { groupId: _removed, ...rest } = widget;
       board.widgets.set(id, rest);

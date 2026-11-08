@@ -4,6 +4,7 @@ import type { Presence } from "@remo/doc";
 import type { Widget } from "@remo/model";
 
 import type { Gestures } from "./useGestures";
+import { paintedProposal } from "./proposalStore";
 
 /**
  * The dev-only probe that lets tests and automation drive the canvas.
@@ -42,6 +43,10 @@ export function useCanvasProbe({
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     (window as unknown as Record<string, unknown>).__remo = {
+      /** The plan under review the overlay draws (ADR-188), read at call time. */
+      get proposal() {
+        return paintedProposal();
+      },
       boardTitle,
       camera,
       viewport,

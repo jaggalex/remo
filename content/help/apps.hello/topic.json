@@ -2,8 +2,8 @@
   "id": "apps.hello",
   "type": "how-to",
   "title": {
-    "ru": "Приложения на комнате",
-    "en": "Apps on a room"
+    "ru": "Приложения в комнате",
+    "en": "Apps in a room"
   },
   "summary": {
     "ru": "Что такое приложения, как открыть панель, что делает «Приветствие» и почему чужой код здесь не выполняется.",
@@ -17,8 +17,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:3b3d4a110137d7065ae279eee85694965f6f1565a7c5be6782b2b2293133a8a1",
-      "targetHash": "sha256:925d9177fb26333b9233a935a1b129080ac543d6270110e7ab4ea431ca68052c"
+      "sourceHash": "sha256:72dfad4408a17a7dde3d0a910ce7ba55b99393eadf5ac72ab5ea656743e339d1",
+      "targetHash": "sha256:30eee90773e187b921e029c03accbcaf734e03d9a197df7bdeac19417f5c5164"
     }
   }
 }

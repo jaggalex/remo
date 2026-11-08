@@ -1,6 +1,6 @@
 ## What it gives
 
-An agent performs a task on the room from a short description: it builds a diagram, turns a selection into cards, tidies a selection into even columns, or proposes a plan for a structure. The model runs on the server; your tab applies the finished plan in one transaction.
+An agent performs a task in the room from a short description: it builds a diagram, turns a selection into cards, tidies a selection into even columns, or proposes a plan for a structure. The model runs on the server; your tab applies the finished plan in one transaction.
 
 ## When to use
 
@@ -14,7 +14,7 @@ An agent performs a task on the room from a short description: it builds a diagr
 
 An agent is a separate principal owned by a person. It has no rights of its own: a task receives the owner's access at the moment it runs.
 
-The order: an organisation administrator enables agents, the owner or a co-owner allows them on the room, you create an agent, set a task with a description and a **budget**, and the server runs it.
+The order: an organisation administrator enables agents, the owner or a co-owner allows them in the room, you create an agent, set a task with a description and a **budget**, and the server runs it.
 
 A task has four ways to write:
 
@@ -43,8 +43,8 @@ The agent (name, state), the task budget, the skill, the schedule. Provider keys
 
 ## Limitations
 
-- Agents are off by default; an organisation administrator enables them, and on a room the owner or a co-owner allows them.
-- A task can be set only from an account with edit permission on the room.
+- Agents are off by default; an organisation administrator enables them, and in a room the owner or a co-owner allows them.
+- A task can be set only from an account with edit permission in the room.
 - An agent cannot do more than the person on whose behalf it acts.
 - A plan and a diagram call the model; without a key such tasks wait in the queue. Tidying works without a model.
 - A card package produces one `board.item.created` event per card; applying a plan and a diagram leave audit records only.

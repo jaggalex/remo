@@ -43,7 +43,7 @@ export function insertTemplate(
   options: InsertOptions = {},
 ): { offset: { x: number; y: number }; inserted: number } {
   const gap = options.gap ?? 400;
-  const existing = [...board.widgets.values()];
+  const existing = board.readWidgets();
   const incoming = bounds(template.widgets);
 
   // Anchor on the right of the existing content, aligned to its top. An empty board
@@ -100,7 +100,7 @@ export function insertTemplate(
     }
 
     // A connector that lost an endpoint during remapping has nothing to join.
-    for (const widget of [...board.widgets.values()]) {
+    for (const widget of board.readWidgets()) {
       if (widget.type !== "connector") continue;
       if (!widget.start?.item || !widget.end?.item) board.widgets.delete(widget.id);
     }

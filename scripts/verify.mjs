@@ -40,6 +40,7 @@ steps.push(
   { name: "state", cmd: "node", args: ["scripts/state-report.mjs"] },
   { name: "ui rules", cmd: "node", args: ["scripts/ui-rules-check.mjs"] },
   { name: "typecheck", cmd: pnpm, args: ["typecheck"] },
+  { name: "lint", cmd: pnpm, args: ["lint"] },
   { name: "tests", cmd: pnpm, args: ["test"] },
 );
 if (withE2e) {

@@ -5,12 +5,16 @@
 | Sign-in appears to succeed, but there is no session | no HTTPS at `NODE_ENV=production` | the `Secure` cookie is not stored without TLS |
 | `401 AUTH_REQUIRED` with an account present | the cookie is lost or has expired | session lifetime 30 days, the domain and `SameSite` |
 | `403 FORBIDDEN` on an action | the role does not give the capability | the role table and role sources |
-| `404` on a room that exists | another account or organisation | access and `?org=<slug>` in the address |
+| `403 UNCLAIMED` in a room | the room has no owner | claim the room from its link; if that is not possible, ask the installation operator to assign an owner or archive it; there is no automatic deletion |
+| `404` in a room that exists | another account or organisation | access and `?org=<slug>` in the address |
 | The link does not open | disabled, expired, or the password changed | the **Public link** block |
 | No discussion is visible | you opened a link without an account, or the role is below **Commenter** | the account and the room role |
 | A lock cannot be released | another person locked the object | ask the author or a room manager |
 
 ## Socket and saving
+
+`4429` and `4413` are socket close codes, not API responses. In both cases the edits stay in
+the current tab and leave after the next connection.
 
 | Symptom | Cause | What to check |
 |---|---|---|
@@ -18,6 +22,11 @@
 | The indicator stays on `connecting` | the proxy does not pass WebSocket | `location /sync/` and the `Upgrade` headers |
 | `офлайн (N)` (offline) does not clear | the connection has not been restored | the network, then reload the tab |
 | `ввод остановлен` (input stopped) | the queue reached 1000 changes | restore the connection; edits in the queue are kept |
+| The connection closed with `4429` | the write budget is exceeded: 256 KiB/s per socket (16 MiB burst) or 2 MiB/s per organisation (64 MiB burst) | the size of the edit and the number of open tabs; retry in 5 s, then the pause grows to 60 s |
+| The connection closed with `4413` | the room is full: 64 MiB or 20 000 objects | the room size, the object count and recent large pastes; retry in 30 s, then the pause grows to 5 min |
+| A frame above 16 MiB is not accepted | the edit is above the single-frame ceiling | make the paste smaller or split it; the room may not be full at all |
+| A paste does not pass in a full room | the edit is above 16 KiB while the room is at its size ceiling | split the paste; edits to existing objects are still saved |
+| New objects are not created | the ceiling of 20 000 objects is reached | the object count; changes to existing objects are saved, new ones are refused |
 | After access is revoked, edits are not accepted | the tab is in read-only mode | this is expected behaviour |
 
 ## Export and backup

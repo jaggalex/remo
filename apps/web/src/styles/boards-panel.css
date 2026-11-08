@@ -12,7 +12,8 @@
   max-width: 440px;
   padding: 18px 20px;
   background: var(--bg-panel);
-  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-pop);
   font-size: 12.5px;
   line-height: 1.55;
@@ -60,14 +61,14 @@
 
 .boards-panel {
   position: fixed;
-  top: 78px;
+  top: calc(var(--topbar-height) + var(--space-6));
   right: 12px;
   bottom: 12px;
   width: 328px;
   z-index: var(--z-bar);
   background: var(--bg-panel);
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-bar);
   display: flex;
   flex-direction: column;
@@ -90,7 +91,7 @@
 .boards-panel header button {
   border: 0;
   background: transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-pill);
   width: 26px;
   height: 26px;
   cursor: pointer;
@@ -122,8 +123,8 @@
 }
 
 .new-board-dialog select {
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 8px 10px;
   font: inherit;
   font-size: 13px;
@@ -141,8 +142,8 @@
 }
 
 .group-name-field input {
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 6px 8px;
   font: inherit;
   font-size: 13px;
@@ -151,7 +152,9 @@
 }
 
 .group-name-field input:focus {
-  outline: 2px solid var(--accent-soft);
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
 }
 
 .card-fields {
@@ -179,8 +182,8 @@
 
 .card-field select,
 .card-field input {
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 5px 7px;
   font: inherit;
   font-size: 12.5px;
@@ -190,7 +193,9 @@
 
 .card-field select:focus,
 .card-field input:focus {
-  outline: 2px solid var(--accent-soft);
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
 }
 
 .card-dates {
@@ -216,8 +221,8 @@
 }
 
 .wip-field input {
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 4px 6px;
   font: inherit;
   font-size: 12px;
@@ -247,8 +252,8 @@
 .tag-row select,
 .link-row input,
 .link-row select {
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 5px 7px;
   font: inherit;
   font-size: 12px;
@@ -259,7 +264,7 @@
 .tag-add button,
 .link-row button {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   padding: 5px 8px;
   font: inherit;
   font-size: 12px;
@@ -292,7 +297,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   padding: 2px 6px;
   font-size: 11px;
   font-weight: 600;
@@ -397,7 +402,7 @@
 
 .present-follow,
 .present-join {
-  top: 76px;
+  top: calc(var(--topbar-height) + var(--space-6));
 }
 
 .present-bar button,
@@ -406,7 +411,7 @@
 .presentation-list button,
 .presentation-panel header button {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   padding: 4px 8px;
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -420,7 +425,8 @@
   max-height: calc(100vh - 48px);
   overflow-y: auto;
   padding: 18px 20px 20px;
-  border-radius: 16px;
+  border: var(--panel-border-width) solid var(--border-panel);
+  border-radius: var(--radius-2xl);
   background: var(--bg-panel);
   box-shadow: var(--shadow-pop);
 }
@@ -540,7 +546,7 @@
 
 .boards-search {
   border: 1px solid var(--line-strong);
-  border-radius: 9px;
+  border-radius: var(--radius-pill);
   padding: 8px 10px;
   font: inherit;
   font-size: 13px;
@@ -584,7 +590,7 @@
   text-align: left;
   border: 1px solid transparent;
   background: var(--bg-app);
-  border-radius: 9px;
+  border-radius: var(--radius-pill);
   padding: 8px 10px;
   font: inherit;
   font-size: 12px;

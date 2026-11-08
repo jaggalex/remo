@@ -32,8 +32,8 @@ export function moveCard(
   swimlaneId: string,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
-    if (board.widgets.get(cardId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
+    if (board.readWidget(cardId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
 
@@ -66,7 +66,7 @@ export function addCard(
   swimlaneId: string,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
     board.widgets.set(cardId, widget);
@@ -95,7 +95,7 @@ export function addColumn(
   atIndex?: number,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
 
@@ -124,7 +124,7 @@ export function renameColumn(
   title: string,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
     const column = columnsOf(kanban)
@@ -147,7 +147,7 @@ export function setColumnWip(
   limit: number | null,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
     const column = columnsOf(kanban)
@@ -169,7 +169,7 @@ export function moveColumn(
   toIndex: number,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
     const columns = columnsOf(kanban);
@@ -187,7 +187,7 @@ export function moveColumn(
 /** Delete a column; its cards fall back to the first remaining column. */
 export function deleteColumn(board: BoardDocument, kanbanId: string, columnId: string): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
 
@@ -220,7 +220,7 @@ export function addSwimlane(
   atIndex?: number,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
     const swimlanes = swimlanesOf(kanban);
@@ -240,7 +240,7 @@ export function renameSwimlane(
   title: string,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
     const lane = swimlanesOf(kanban)
@@ -257,7 +257,7 @@ export function moveSwimlane(
   toIndex: number,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
     const swimlanes = swimlanesOf(kanban);
@@ -277,7 +277,7 @@ export function deleteSwimlane(
   swimlaneId: string,
 ): void {
   board.transact(() => {
-    if (board.widgets.get(kanbanId)?.locked) return;
+    if (board.readWidget(kanbanId)?.locked) return;
     const kanban = kanbanOf(board, kanbanId);
     if (!kanban) return;
 
@@ -316,7 +316,7 @@ function resizeToColumns(
   const width = columnsOf(kanban)
     .toArray()
     .reduce((total, column) => total + Number(column.get("width") ?? 0), 0);
-  const widget = board.widgets.get(kanbanId);
+  const widget = board.readWidget(kanbanId);
   if (widget) board.widgets.set(kanbanId, { ...widget, width });
 }
 

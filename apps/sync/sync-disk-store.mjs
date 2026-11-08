@@ -68,6 +68,10 @@ export function createDiskStore({ dataDir, metrics, roomCount }) {
     async listBoards() {
       return [];
     },
+    // The disk fallback has no tenants and no RLS; the context is a no-op there.
+    async withTenant(_orgId, fn) {
+      return fn();
+    },
     async bindState(docName, ydoc) {
       try {
         const data = await readFile(fileFor(docName));

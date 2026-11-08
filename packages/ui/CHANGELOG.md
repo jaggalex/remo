@@ -50,3 +50,33 @@ Canvas palette and agent status tokens; the product now consumes the package.
   legacy `--ink…` names are aliases, `styles.css` has no colour literals, and a test
   fails if one returns. Inter is the default font for notes and chrome.
 - **Presence:** the six document presence colours match `presence-1…6`.
+
+## 2.0.0 — 2026-11-07
+
+Visual language v3 «Следы и Поля» (ADR-181) and paper sticker tones (ADR-182). Major:
+several roles point elsewhere, and the six saturated `*-100` sticker primitives are removed.
+
+- **Tokens** (`docs/design/DESIGN.md`, migrated once from the previous set;
+  `src/tokens/tokens.json` stays the only source from now on):
+  - ink `#1E2136` is `neutral-900`; the dark half of the neutral ramp is blue-black,
+    the light half warm paper; `bg-canvas` / `bg-app` are `#fbfbfa`;
+  - `accent` is ink (the primary button is an ink pill); focus and links stay blue;
+  - the agent has no colour: `agent`, `text-agent` are ink, `agent-hatch` is paper,
+    `agent-proposal` is the dashed hull (3.46:1 to the canvas); the violet agent
+    primitives are gone;
+  - new roles `border-panel`; new primitives `radius-xl` 24, `radius-2xl` 28, the
+    paper tones `paper-<tone>-100|300` (ADR-182), which replace `yellow-100`, `orange-100`,
+    `pink-100`, `violet-100`, `blue-100` and `green-100` (only stickers used them); new components `panel-border-width`, `control-large`;
+    `radius-xs` 2, `panel-tasks-height` 124 (`topbar-height` 52 and `toolbar-width` 48 stay: ADR-119 and the canvas layout tests);
+  - `shadow-pop` and `shadow-bar` are `none` (panels are outlined); the sticker shadow
+    sits under the bottom edge only;
+  - `sticker-*` are the paper 100 row of ADR-182.
+- **Font:** Golos Text (latin + cyrillic variable woff2, OFL) is `font-sans`, and the
+  board paints note, shape, card and kanban text in it too (`DEFAULT_FONT_FAMILY` in
+  `@remo/canvas`). Inter stays loaded as the fallback in that stack; a stored copy of a
+  previous default stack moves to the new one.
+- **Icons:** `src/icons.ts` is generated from `docs/design/assets/icons/icons.json`:
+  110 icons, a 24 master with stroke 2 and a separate 16 grid with stroke 1.5
+  (`ICONS_16`), filled parts in `ICON_FILLS` / `ICON_FILLS_16`. `Icon` picks the 16 grid
+  at 16 px and below. Renamed: `cloud-check` → `saved`, `sparkle` → `agent`,
+  `zoom-fit` → `fit`.

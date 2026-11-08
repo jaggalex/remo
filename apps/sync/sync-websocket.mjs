@@ -9,6 +9,8 @@
  */
 import { WebSocketServer } from "ws";
 import { guardReadOnly } from "./readonly.mjs";
+import { createEditAudit } from "./sync-edit-audit.mjs";
+import { createWsQuota, guardQuota, quotaSettings } from "./ws-quota.mjs";
 import { decodeSaveAck, isSyncStep1, isSyncStep2, SAVE_ACK_MESSAGE } from "./save-ack.mjs";
 import { Y, encoding, websocketUtils } from "./y.mjs";
 import { failUpgrade, roomFromRequestUrl } from "./http-boundary.mjs";
@@ -58,6 +60,16 @@ export function attachWebSocket({
 
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_FRAME_BYTES });
 
+  // Write budgets per socket, per organisation and per room (ADR-173). Measuring a room
+  // encodes its document; the quota does that only on first use and near the ceiling.
+  const quota = createWsQuota({
+    settings: quotaSettings(process.env, { maxFrameBytes: MAX_FRAME_BYTES }),
+    measure: (doc) => Y.encodeStateAsUpdate(doc).length,
+  });
+
+  // One aggregate audit row per session per window, not one per frame (ADR-175).
+  const editAudit = createEditAudit({ store, metrics, log });
+
   wss.on("connection", (socket, request) => {
     // An invalid or oversized frame makes ws emit `error`, and neither this file nor
     // y-websocket listened: one frame was an uncaught exception for every room (ADR-160).
@@ -72,17 +84,34 @@ export function attachWebSocket({
     const auth = authBySocket.get(socket);
     // No capability to edit means read-only: viewers and public links can receive the
     // document and send cursors, and nothing else (ADR-062).
-    const readOnly = Boolean(auth?.access && !auth.access.capabilities.includes("board.edit"));
+    const readOnly = Boolean(
+      auth?.access && !(auth.access.capabilities ?? []).includes("board.edit"),
+    );
 
     if (readOnly) {
       const state = { readOnly: true, initialRequestUsed: false };
       guardReadOnly(socket, state, () => metrics.inc("remo_ws_readonly_write_attempt"));
     }
 
+    // Installed after the read-only guard so it sees every frame first (ADR-173).
+    if (auth?.boardId) {
+      const room = auth.boardId;
+      guardQuota(socket, {
+        quota,
+        state: quota.open({ orgKey: auth.orgId ?? `room:${room}` }),
+        room: () => getYDoc(room),
+        onLimit: (reason) => {
+          metrics.inc("remo_ws_quota_closed_total", { reason });
+          log.warn?.(`[sync] closed a socket on ${room}: ${reason}`);
+        },
+      });
+    }
+
     if (auth?.boardId) {
       const record = {
         socket,
         userId: auth.session?.user.id ?? null,
+        sessionId: auth.session?.sessionId ?? null,
         sessionHash: auth.session?.tokenHash ?? null,
         unlockToken: auth.unlockToken ?? null,
         role: auth.access?.role ?? null,
@@ -104,6 +133,9 @@ export function attachWebSocket({
     if (auth?.boardId) {
       const docName = auth.boardId;
       const roomDoc = getYDoc(docName);
+      // The listener is per document, not per socket: every peer's update carries its
+      // own socket as origin, and the connection table names the session (ADR-175).
+      editAudit.attach(roomDoc, authBySocket);
       // The document is only replaced after its last socket closes, so a socket can
       // still join a room that failed to load; its edits would never be saved.
       if (isUnboundRoom(roomDoc)) socket.close(1011, "room unavailable");
@@ -146,6 +178,7 @@ export function attachWebSocket({
 
     let session = null;
     let upgradeAccess = null;
+    let orgId = null;
     let docName = "";
 
     try {
@@ -170,36 +203,68 @@ export function attachWebSocket({
         return;
       }
       if (store.getIamBoard) {
-        const iam = await store.getIamBoard(docName);
-        // An unknown room would be created by bindState on first load. Refusing it here
-        // keeps an anonymous socket from growing the database with arbitrary ids; 404
-        // also avoids disclosing which ids exist (ADR-062/ADR-064).
-        if (!iam) {
+        // `boards` is protected in stage 3; the lookup function is the only read that can
+        // happen before the tenant is known. Without it (an older database) the plain
+        // `getIamBoard` below is still the bootstrap.
+        const lookup = store.boardLookup
+          ? await store.boardLookup(docName).catch(() => null)
+          : null;
+        if (store.boardLookup && !lookup) {
           socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
           socket.destroy();
           metrics.inc("remo_ws_rejected_total");
           return;
         }
-        // The HTTP route decides access from `owner_id`; requiring `org_id` here let a
-        // board without an organisation skip the check entirely.
-        if (iam.owner_id) {
-          session = await sessionFromRequest(request, store);
+        // An unowned or org-less room is closed (ADR-174): there is no access decision.
+        if (lookup && (!lookup.owner_id || !lookup.org_id)) {
+          socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+          socket.destroy();
+          metrics.inc("remo_ws_rejected_total");
+          return;
+        }
+        const boardOrg = lookup?.org_id ?? null;
+
+        const decide = async () => {
+          const iam = await store.getIamBoard(docName);
+          if (!iam) return { missing: true };
+          if (!iam.owner_id) return { unclaimed: true };
+          const current = await sessionFromRequest(request, store);
           const resolved = await accessForBoard({
             store,
             boardId: docName,
-            userId: session?.user.id ?? null,
+            userId: current?.user.id ?? null,
             unlockToken: linkUnlockToken(request),
           });
-          upgradeAccess = resolved?.access ?? null;
-          if (!resolved?.access.allowed) {
-            // 4403 is the app's "no access" close code; the socket never reaches Yjs.
-            socket.write(
-              `HTTP/1.1 ${resolved?.access.reason === "AUTH_REQUIRED" ? 401 : 403} Unauthorized\r\nConnection: close\r\n\r\n`,
-            );
-            socket.destroy();
-            metrics.inc("remo_ws_rejected_total");
-            return;
-          }
+          return { session: current, resolved };
+        };
+        const decision =
+          boardOrg && store.withTenant
+            ? await store.withTenant(boardOrg, decide)
+            : await decide();
+
+        if (decision.missing) {
+          socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+          socket.destroy();
+          metrics.inc("remo_ws_rejected_total");
+          return;
+        }
+        if (decision.unclaimed) {
+          socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+          socket.destroy();
+          metrics.inc("remo_ws_rejected_total");
+          return;
+        }
+        session = decision.session;
+        upgradeAccess = decision.resolved?.access ?? null;
+        orgId = decision.resolved?.facts?.board?.orgId ?? boardOrg;
+        if (!upgradeAccess?.allowed) {
+          // 4403 is the app's "no access" close code; the socket never reaches Yjs.
+          socket.write(
+            `HTTP/1.1 ${upgradeAccess?.reason === "AUTH_REQUIRED" ? 401 : 403} Unauthorized\r\nConnection: close\r\n\r\n`,
+          );
+          socket.destroy();
+          metrics.inc("remo_ws_rejected_total");
+          return;
         }
       }
     } catch (error) {
@@ -207,12 +272,17 @@ export function attachWebSocket({
       return;
     }
 
+    // The room's own timers (log flush, projection, compaction) run outside this
+    // request; remember the organisation so they can set the tenant context (ADR-178).
+    if (orgId && store.noteRoomTenant) store.noteRoomTenant(docName, orgId);
+
     socket.removeListener("error", ignoreReset);
     try {
       wss.handleUpgrade(request, socket, head, (websocket) => {
         authBySocket.set(websocket, {
           boardId: docName,
           access: upgradeAccess,
+          orgId,
           session,
           unlockToken: linkUnlockToken(request),
         });

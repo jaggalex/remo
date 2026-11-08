@@ -21,6 +21,8 @@ ship together with a schema version; there is no separate "documentation release
 | 14 | idempotency indexes for commands and tasks |
 | 15 | the mandatory unique `@handle`: `users.handle` |
 | 16 | personal organisations and the home: `orgs.kind`, `boards.icon`, `boards.created_at`, `boards.created_by` |
+| 17 | `org_id` on the tables tied to a room: existing rows filled from their rooms, and a trigger for new rows |
+| 18 | organisation row-level isolation (RLS): policies on every table that holds tenant data, the `remo_app` application role, functions for the organisation lookup, agent tasks and the event queue |
 
 Versions 1–3 are the early line: rooms, access and the command journal. Databases created
 earlier are upgraded by the same `schema.sql` at start.
@@ -29,6 +31,7 @@ earlier are upgraded by the same `schema.sql` at start.
 
 | Date | What |
 |---|---|
+| 06.11.2026 | Rooms without an owner are closed: the API and the socket refuse, and the room is not in the room list; a claim returns the room and clears the archive. Organisation row-level isolation (RLS). Write quotas: `4429` when the rate is exceeded, `4413` when the room is full. Edits over the socket are audited as one row per session per 60 s window. |
 | 04.11.2026 | Templates arrive in the profile language: Russian names, copy and kanban columns for a Russian account. The plus in an empty kanban cell creates a card and opens its editor immediately. |
 | 04.11.2026 | The product says “room”: one noun in the interface and documentation; the technical `board.*` names remain identifiers. |
 | 04.11.2026 | Every account has a personal organisation; the home shows room tiles with name search, sorting, 24-per-page, trash and emoji; switching organisation leaves the room. |
@@ -42,7 +45,7 @@ earlier are upgraded by the same `schema.sql` at start.
 | 02.11.2026 | A new room screen: a header with menus, a creation rail, a bottom zoom bar; a frame and a shape resize with the corner handles. |
 | 02.11.2026 | A connector joins a selection and an export only with both ends; an object has four ports, and a port click joins or creates a copy. |
 | 02.11.2026 | An open voting session names who voted for what after it ends; the published result is ordinary text without markup. |
-| 29.10.2026 | Voting happens on the room: a "+1"/"−1" counter on every object, a bar with the remaining votes and the clock; a session ends with the timer or its own deadline and closes by itself. |
+| 29.10.2026 | Voting happens in the room: a "+1"/"−1" counter on every object, a bar with the remaining votes and the clock; a session ends with the timer or its own deadline and closes by itself. |
 | 29.10.2026 | "Delete?" and "replace?" questions belong to the app: no browser windows remain, and the link is shown in a normal field when the clipboard is refused. |
 | 29.10.2026 | Security pass: the read-only socket decodes varints, co-owner requires `board.manage`, the invitation email is checked in the transaction, network boundaries answer 400/500, AI outbound checks every address and refuses redirects, `/access` returns no metadata. |
 | 29.10.2026 | Current-slide comments in presentation; PNG/PDF with pins and a thread list |

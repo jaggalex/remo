@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { normalizeEmail } from "../iam.mjs";
 
 /**
@@ -135,13 +136,17 @@ async revokeUserSessions(userId) {
 
 async createOrgWithOwner({ name, slug, userId, kind = "shared" }) {
   const client = await this.pool.connect();
+  const orgId = randomUUID();
   try {
     await client.query("begin");
+    // The org and its seats are created before any request context exists; the
+    // transaction sets the tenant it is creating (ADR-178 stage 4).
+    await client.query("select set_config('app.org_id', $1, true)", [orgId]);
     const org = (
       await client.query(
-        `insert into orgs (name, slug, created_by, kind) values ($1, $2, $3, $4)
+        `insert into orgs (id, name, slug, created_by, kind) values ($1, $2, $3, $4, $5)
          returning id, name, slug, kind`,
-        [name, slug, userId, kind],
+        [orgId, name, slug, userId, kind],
       )
     ).rows[0];
     await client.query(
@@ -195,6 +200,12 @@ async getOrg(orgId) {
   return rows[0] ?? null;
 },
 
+/** The organisation home is addressed by slug; resolve it before the tenant context. */
+async getOrgBySlug(slug) {
+  const { rows } = await this.pool.query("select * from remo_org_by_slug($1)", [slug]);
+  return rows[0] ?? null;
+},
+
 async renameOrg({ orgId, name }) {
   const { rows } = await this.pool.query(
     `update orgs set name = $2 where id = $1 returning id, name, slug, kind`,
@@ -204,14 +215,9 @@ async renameOrg({ orgId, name }) {
 },
 
 async listOrgsForUser(userId) {
-  const { rows } = await this.pool.query(
-    `select o.id, o.name, o.slug, o.kind, m.relation, m.state
-       from org_memberships m
-       join orgs o on o.id = m.org_id
-      where m.user_id = $1 and m.state in ('active', 'invited')
-      order by o.created_at`,
-    [userId],
-  );
+  // The org switcher spans organisations; the security-definer function is the one
+  // read allowed to do that before a tenant is chosen (ADR-178 stage 4).
+  const { rows } = await this.pool.query("select * from remo_user_orgs($1)", [userId]);
   return rows;
 },
 
@@ -418,18 +424,17 @@ async acceptInvitation({ tokenHash, userId, email }) {
   const client = await this.pool.connect();
   try {
     await client.query("begin");
-    const { rows } = await client.query(
-      `select id, org_id, target_type, target_id, email, subject_kind, role, expires_at
-         from invitations
-        where token_hash = $1 and state = 'pending'
-        for update`,
-      [tokenHash],
-    );
+    // The invitation is found by a bearer token, before the organisation is known; the
+    // security-definer lookup returns that one row and locks it (ADR-178 stage 4).
+    const { rows } = await client.query("select * from remo_invitation_lookup($1)", [
+      tokenHash,
+    ]);
     const invitation = rows[0];
     if (!invitation) {
       await client.query("rollback");
       return null;
     }
+    await client.query("select set_config('app.org_id', $1, true)", [invitation.org_id]);
     if (new Date(invitation.expires_at).getTime() <= Date.now()) {
       await client.query(`update invitations set state = 'expired' where id = $1`, [
         invitation.id,

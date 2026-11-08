@@ -127,3 +127,18 @@ describe("reading stored settings", () => {
     expect(line.connectors.colour).toBe("#333333");
   });
 });
+
+describe("the board typeface (ADR-181)", () => {
+  it("defaults to Golos Text, the chrome's own face", () => {
+    expect(DEFAULT_SETTINGS.text.fontFamily).toMatch(/^"Golos Text", Inter,/);
+  });
+
+  it("moves a stored previous default to the current one, but keeps a chosen stack", () => {
+    for (const previous of ['"Helvetica Neue", Arial, sans-serif', 'Inter, "Helvetica Neue", Arial, sans-serif']) {
+      expect(normalizeSettings({ text: { fontFamily: previous } }).text.fontFamily).toBe(
+        DEFAULT_SETTINGS.text.fontFamily,
+      );
+    }
+    expect(normalizeSettings({ text: { fontFamily: "Georgia, serif" } }).text.fontFamily).toBe("Georgia, serif");
+  });
+});

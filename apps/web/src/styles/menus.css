@@ -9,7 +9,8 @@
   overflow-y: auto;
   padding: 6px;
   background: var(--bg-panel);
-  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
@@ -31,7 +32,7 @@
   text-align: left;
   border: 0;
   background: transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-pill);
   padding: 7px 8px;
   font: inherit;
   font-size: 13px;
@@ -60,7 +61,7 @@
 .context-menu-rename input {
   flex: 1;
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: var(--radius-pill);
   padding: 6px 8px;
   font: inherit;
   font-size: 13px;
@@ -68,7 +69,7 @@
 
 .context-menu-rename button {
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: var(--radius-pill);
   padding: 6px 10px;
   font-size: 12px;
 }

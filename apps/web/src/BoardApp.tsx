@@ -39,10 +39,10 @@ import { ToolRail } from "./ToolRail";
 import { useBoardTools } from "./useBoardTools";
 import { useBoardChrome } from "./useBoardChrome";
 import { useSharedTimer } from "./useSharedTimer";
+import { cameraStore } from "./cameraStore";
 import { useNotice } from "./useNotice";
 import { api } from "./api";
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type BoardSettings } from "./settings";
-import type { Camera } from "@remo/canvas";
 export function BoardApp() {
   const board = useMemo(() => new BoardDocument(), []);
   const { widgets, kanbanStates, title, groupNames, tags, allowBringEveryone } = useBoard(board);
@@ -57,7 +57,6 @@ export function BoardApp() {
   const requestDelete = useCallback((ids: readonly string[]) => {
     if (ids.length) setPendingDelete([...ids]);
   }, []);
-  const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 0.4 });
   const [identity, setIdentity] = useState<Identity>(() => loadIdentity());
   const [cameraEpoch, setCameraEpoch] = useState(0);
   /** Where the last context menu was opened, so a command that needs a point can use it. */
@@ -84,9 +83,6 @@ export function BoardApp() {
     boardTitle,
     authOpen,
     setAuthOpen,
-    inviteToken,
-    inviteDone,
-    setInviteDone,
     canShare,
     canExport,
     canBackup,
@@ -102,7 +98,7 @@ export function BoardApp() {
   const { openBoard, copyObjectLink, revealWidget } = useBoardNavigation({
     widgets,
     setSelectedIds,
-    setCamera,
+    setCamera: cameraStore.update,
     notify: showNotice,
     t,
   });
@@ -196,7 +192,6 @@ export function BoardApp() {
     dispatchFollow,
     followInvite,
     setFollowInvite,
-    handleCamera,
     myFollowers,
     followerNames,
     otherPeers,
@@ -207,8 +202,6 @@ export function BoardApp() {
     presence: visiblePresence,
     identity,
     connection,
-    camera,
-    setCamera,
     allowBringEveryone,
     setNotice: showNotice,
     setFollowOpen,
@@ -225,7 +218,7 @@ export function BoardApp() {
     resume,
     extend,
     reset,
-  } = useSharedTimer({ board, widgets, camera, identity, me, setSelectedIds, closePanel: () => setTimerOpen(false) });
+  } = useSharedTimer({ board, widgets, identity, me, setSelectedIds, closePanel: () => setTimerOpen(false) });
 
   const header = useBoardHeader({
     access,
@@ -323,7 +316,6 @@ export function BoardApp() {
     widgets,
     selectedIds,
     kanbanStates,
-    camera,
     settings,
     clipboardFragment,
     lastConnector,
@@ -504,20 +496,12 @@ export function BoardApp() {
         kanbanStates={kanbanStates}
         selectedIds={selectedIds}
         settings={settings}
-        camera={camera}
         access={access}
         me={me}
         identity={identity}
         boardId={currentRoom()}
         boardTitle={title}
         boardOrgId={boardOrgId ?? null}
-        inviteToken={inviteToken}
-        inviteDone={inviteDone}
-        onInviteDone={(boardId) => {
-          setInviteDone(true);
-          if (boardId) window.location.href = `/?room=${encodeURIComponent(boardId)}`;
-          else void refreshAccess();
-        }}
         onRefreshAccess={refreshAccess}
         onSignedIn={(user) => {
           setMe(user);
@@ -586,7 +570,6 @@ export function BoardApp() {
         boardId={currentRoom()}
         boardTitle={title}
         access={access}
-        camera={camera}
         selectedIds={selectedIds}
         widgets={widgets}
         onApplyPlan={applyPlan}
@@ -724,8 +707,6 @@ export function BoardApp() {
           onAddCard={onAddCard}
           onAddColumn={onAddColumn}
           onConnect={onConnect}
-          camera={camera}
-          onCamera={handleCamera}
           presence={visiblePresence}
           onCursor={onCursor}
           onContextMenu={(target, point) => openMenu(target, point)}

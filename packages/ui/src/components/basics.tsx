@@ -1,16 +1,22 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
-import { ICONS, type IconName } from "../icons";
+import { ICONS, ICONS_16, ICON_FILLS, ICON_FILLS_16, type IconName } from "../icons";
 import { useUiStrings } from "../i18n";
 import { cx, forced, type Forced } from "./util";
 
 export interface IconProps { name: IconName; size?: number; label?: string; className?: string }
 
+// At 16 px and below the icon uses its own 16 grid (ADR-181): the 24 master scaled down
+// lands its lines between pixels.
 export function Icon({ name, size = 16, label, className }: IconProps) {
   const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": true as const };
+  const small = size <= 16;
+  const line = small ? ICONS_16[name] : ICONS[name];
+  const fill = small ? ICON_FILLS_16[name] : ICON_FILLS[name];
   return (
-    <svg className={cx("rm-icon", className)} width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={size <= 16 ? 2 : 1.75} strokeLinecap="round" strokeLinejoin="round" focusable="false" {...a11y}>
-      <path d={ICONS[name]} />
+    <svg className={cx("rm-icon", className)} width={size} height={size} viewBox={small ? "0 0 16 16" : "0 0 24 24"} fill="none"
+      stroke="currentColor" strokeWidth={small ? 1.5 : 2} strokeLinecap="round" strokeLinejoin="round" focusable="false" {...a11y}>
+      {line && <path d={line} />}
+      {fill && <path d={fill} fill="currentColor" stroke="none" fillRule="evenodd" />}
     </svg>
   );
 }

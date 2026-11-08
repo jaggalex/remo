@@ -20,9 +20,9 @@ status.
 **Tags** are a room vocabulary: name, colour, rename and delete do not create duplicates. An
 object can carry up to ten tags; **Select (N)** selects everything with that tag.
 
-**The card filter** on the **Properties** panel selects cards by assignee and due state: overdue or no due date. It is a selection, not a hidden state: the other cards stay on the room.
+**The card filter** on the **Properties** panel selects cards by assignee and due state: overdue or no due date. It is a selection, not a hidden state: the other cards stay in the room.
 
-**A link** is one field: an external `http(s)://` or `mailto:` URL, or another object on this room. A link
+**A link** is one field: an external `http(s)://` or `mailto:` URL, or another object in this room. A link
 grants no room access and does not replace a role.
 
 ## Example

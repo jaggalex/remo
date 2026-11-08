@@ -47,7 +47,7 @@ export function MoreMenu({
     },
   ];
   if (canAskAgents) {
-    items.push({ label: t("more.ai"), icon: "sparkle", onSelect: onAi });
+    items.push({ label: t("more.ai"), icon: "agent", onSelect: onAi });
   }
   if (canUseApps) {
     items.push({ label: t("board.apps"), icon: "apps", onSelect: onApps });

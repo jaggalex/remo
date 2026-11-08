@@ -14,6 +14,7 @@ import {
   drawGuide,
   drawKanban,
   drawKanbanHover,
+  drawProposal,
   drawWidget,
   isVisible,
   labelPoint,
@@ -23,6 +24,7 @@ import {
   type Camera,
   type KanbanLayout,
   type PaintTheme,
+  type ProposalLayout,
   withAlpha,
 } from "@remo/canvas";
 import { bounds, canConnect, kindOf, soleSelectedGroup, type Widget } from "@remo/model";
@@ -268,7 +270,7 @@ export function paintBoardLayer(input: BoardPaintInput): void {
   if (namedGroups.size) {
     ctx.fillStyle = palette.textSecondary;
     ctx.textBaseline = "bottom";
-    ctx.font = `${12 / camera.zoom}px Inter, sans-serif`;
+    ctx.font = `${12 / camera.zoom}px ${theme.fontFamily}`;
     for (const [groupId, members] of namedGroups) {
       const box = bounds(members);
       const intersects =
@@ -314,6 +316,8 @@ export interface OverlayPaintInput {
   theme: PaintTheme;
   /** Point the keyboard is walking over, drawn with a focus ring. */
   focusedWaypoint?: { connectorId: string; waypointId: string } | null;
+  /** A plan under review (ADR-188), drawn under every other overlay mark. */
+  proposal?: ProposalLayout | null;
 }
 
 export function paintOverlayLayer(input: OverlayPaintInput): void {
@@ -334,6 +338,7 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     resolve: widgetById,
     theme,
     focusedWaypoint,
+    proposal,
   } = input;
   const palette = theme.palette;
 
@@ -341,6 +346,8 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   ctx.translate(width / 2, height / 2);
   ctx.scale(camera.zoom, camera.zoom);
   ctx.translate(-camera.x, -camera.y);
+
+  if (proposal) drawProposal(ctx, proposal, camera.zoom, palette);
 
   // The cell tint is a card-drop affordance: while a note is being dragged or
   // resized, a highlight left over from an earlier hover would just sit on top.

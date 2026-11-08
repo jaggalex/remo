@@ -136,8 +136,18 @@ export function fontFor(
   return parts.join(" ");
 }
 
-/** Fallback family; the app passes the one chosen in settings. */
-export const DEFAULT_FONT_FAMILY = 'Inter, "Helvetica Neue", Arial, sans-serif';
+/**
+ * The typeface of text on the board: Golos Text, the design system's `font-sans` (ADR-181),
+ * so a note reads in the same letters as the chrome around it. Inter stays second for a
+ * browser that cannot load the woff2. The app passes the family chosen in settings.
+ */
+export const DEFAULT_FONT_FAMILY = '"Golos Text", Inter, "Helvetica Neue", Arial, sans-serif';
+
+/** Stacks that were the default before; a stored copy of one is not a person's choice. */
+export const PREVIOUS_FONT_FAMILIES: readonly string[] = [
+  '"Helvetica Neue", Arial, sans-serif',
+  'Inter, "Helvetica Neue", Arial, sans-serif',
+];
 
 function marksOf(segment: TextMarks): TextMarks {
   const out: TextMarks = {};

@@ -3,8 +3,8 @@ import {
   TONES,
   TONE_LEVELS,
   colorExtras,
-  isPaletteColor,
   matchColor,
+  paletteValue,
   type ColorLevel,
   type ColorTone,
   type NamedColorId,
@@ -103,7 +103,8 @@ export function normalizeColor(value: string | null | undefined): string | null 
 /**
  * The word for what the role paints now.
  *
- * The palette's twenty-one values are named by hex (`color.<hex>`), and the named values
+ * The palette's twenty-one values are named by hex (`color.<hex>`) — a fill painted before
+ * ADR-182 takes the word of the entry it stands for — and the named values
  * the role offers are named by their chip's word (ADR-140). Anything else is "Custom
  * colour" with its hex beside it, which is how an object from the old palette keeps its
  * look and stops silently claiming a palette entry (ADR-127).
@@ -128,8 +129,18 @@ export function colorName(
   if (hex === NAMED_COLORS.white && named.includes("white")) {
     return { key: namedColorWord("white", role) };
   }
-  if (isPaletteColor(hex)) return { key: colorWord(hex) };
+  const palette = paletteValue(hex);
+  if (palette) return { key: colorWord(palette) };
   return { key: "color.own", detail: hex };
+}
+
+/**
+ * The value a swatch grid marks as current: a palette entry (or the entry a pre-ADR-182
+ * fill stands for), otherwise the stored value as it is.
+ */
+export function markedColor(value: string | null | undefined): string | null {
+  const hex = normalizeColor(value);
+  return hex ? (paletteValue(hex) ?? hex) : null;
 }
 
 /** Whether a stored value means "nothing painted", so a sample draws a checkerboard. */

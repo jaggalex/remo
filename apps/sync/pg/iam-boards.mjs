@@ -173,7 +173,7 @@ async claimBoard({ boardId, userId, orgId, teamId, tokenHash }) {
   const { rows } = await this.pool.query(
     `update boards
         set owner_id = $2, org_id = $3, team_id = $4, claimed_at = now(),
-            acl_version = acl_version + 1
+            archived_at = null, acl_version = acl_version + 1
       where id = $1 and owner_id is null
         and (claim_token_hash is null or claim_token_hash = $5)
       returning id, title, org_id, team_id, owner_id, visibility, acl_version`,

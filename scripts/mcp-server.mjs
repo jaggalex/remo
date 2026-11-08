@@ -13,11 +13,13 @@
  *
  * Transport: newline-delimited JSON-RPC over stdio, as MCP clients launch it.
  */
+import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
 
 const API = String(process.env.REMO_API_URL ?? "http://localhost:1234").replace(/\/$/, "");
 const TOKEN = process.env.REMO_AGENT_TOKEN ?? "";
+const VERSION = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
 async function api(path, init = {}) {
   if (!TOKEN) throw new Error("REMO_AGENT_TOKEN is not set");
@@ -270,7 +272,7 @@ export async function handleRequest(message, { callToolImpl = callTool } = {}) {
       result: {
         protocolVersion: params?.protocolVersion ?? "2024-11-05",
         capabilities: { tools: {} },
-        serverInfo: { name: "remo", version: "0.1.0" },
+        serverInfo: { name: "remo", version: VERSION },
       },
     };
   }

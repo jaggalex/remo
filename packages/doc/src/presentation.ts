@@ -10,7 +10,7 @@ import type { BoardDocument } from "./board";
  */
 
 export function frameWidgets(board: BoardDocument): Widget[] {
-  return [...board.widgets.values()].filter((widget) => widget.type === "frame");
+  return board.readWidgets().filter((widget) => widget.type === "frame");
 }
 
 /**

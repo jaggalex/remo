@@ -58,7 +58,7 @@ export interface BoardFragment {
  * copied has nothing to join.
  */
 export function copyFragment(board: BoardDocument, ids: string[]): BoardFragment | null {
-  const all = [...board.widgets.values()];
+  const all = board.readWidgets();
   const roots = expandGroups(all, ids).filter((id) => board.widgets.has(id));
   if (!roots.length) return null;
 
@@ -241,7 +241,7 @@ export function pasteFragment(
 
     // Never leave a card that the matrix did not accept.
     for (const id of [...inserted]) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget || widget.type !== "card") continue;
       const kanban = widget.parentId ? board.kanbans.get(widget.parentId) : undefined;
       if (!kanban || !cardsOf(kanban).has(id)) {

@@ -706,15 +706,83 @@ export function distanceToPath(point: Vec2, points: Vec2[]): number {  let best 
   return best;
 }
 
-/** Arrow head at `tip`, pointing away from `tail`. */
-export function arrowHead(tip: Vec2, tail: Vec2, size: number): Vec2[] {
+/** Clearance between an object's edge and the drawn end of a line, in board units (ADR-184). */
+export const CONNECTOR_GAP = 8;
+
+/**
+ * The path as it is drawn: the start pulled back along its first segment by `gap`, the end
+ * by `endGap` (the same unless given).
+ *
+ * Only the picture stops short (ADR-184). Anchors, handles, hit-testing and the stored
+ * ends stay on the object's edge, so grabbing a line's end works where it attaches. A
+ * segment shorter than twice the gap gives up at most a third of itself, so two close
+ * objects still get a visible line.
+ */
+export function insetPath(
+  path: ConnectorPath,
+  gap = CONNECTOR_GAP,
+  endGap = gap,
+): ConnectorPath {
+  const points = path.points;
+  if (points.length < 2 || (gap <= 0 && endGap <= 0)) return path;
+  const pull = (end: Vec2, toward: Vec2, by: number): Vec2 => {
+    const length = Math.hypot(toward.x - end.x, toward.y - end.y);
+    if (length === 0 || by <= 0) return end;
+    const step = Math.min(by, length / 3);
+    return {
+      x: end.x + ((toward.x - end.x) / length) * step,
+      y: end.y + ((toward.y - end.y) / length) * step,
+    };
+  };
+  const first = pull(points[0]!, points[1]!, gap);
+  const last = pull(points[points.length - 1]!, points[points.length - 2]!, endGap);
+  const next: ConnectorPath = { points: [first, ...points.slice(1, -1), last] };
+  if (path.curve) next.curve = { ...path.curve, from: first, to: last };
+  return next;
+}
+
+/**
+ * An arrow head that meets the line cleanly (ADR-187).
+ *
+ * The head is two converging sides with softly rounded corners: the painter fills
+ * `points` and strokes them with a round join of `radius`, which grows the triangle by
+ * `radius` on every side, so the triangle is built that much smaller and its apex sits
+ * back from `tip` by `radius / sin(spread)` — the rounded apex then lands exactly on
+ * `tip`. The line itself stops at `lineEnd`, inside the head, so its round cap never
+ * shows past the point. The head grows with the line, so a thick line keeps a head that
+ * reads as one.
+ */
+export interface ArrowHead {
+  points: Vec2[];
+  radius: number;
+  lineEnd: Vec2;
+  /** How far back from the tip the line stops; the painter trims the path by this. */
+  trim: number;
+}
+
+const HEAD_SPREAD = 0.42;
+
+/** Head length for a line of `width` board units: 14 at the default 2, longer when thick. */
+export function arrowHeadSize(width: number): number {
+  return Math.max(14, 10 + width * 2);
+}
+
+export function roundedArrowHead(tip: Vec2, tail: Vec2, width: number): ArrowHead {
+  const size = arrowHeadSize(width);
+  const radius = Math.max(1, width * 0.5);
   const angle = Math.atan2(tip.y - tail.y, tip.x - tail.x);
-  const spread = 0.42;
-  return [
-    tip,
-    { x: tip.x - size * Math.cos(angle - spread), y: tip.y - size * Math.sin(angle - spread) },
-    { x: tip.x - size * Math.cos(angle + spread), y: tip.y - size * Math.sin(angle + spread) },
+  const ux = Math.cos(angle);
+  const uy = Math.sin(angle);
+  const back = radius / Math.sin(HEAD_SPREAD);
+  const apex = { x: tip.x - ux * back, y: tip.y - uy * back };
+  const side = Math.max(size - back - radius, size * 0.4);
+  const points = [
+    apex,
+    { x: apex.x - side * Math.cos(angle - HEAD_SPREAD), y: apex.y - side * Math.sin(angle - HEAD_SPREAD) },
+    { x: apex.x - side * Math.cos(angle + HEAD_SPREAD), y: apex.y - side * Math.sin(angle + HEAD_SPREAD) },
   ];
+  const trim = size * 0.6;
+  return { points, radius, lineEnd: { x: tip.x - ux * trim, y: tip.y - uy * trim }, trim };
 }
 
 /** Hit test a connector by distance to its line, for picking. */

@@ -7,7 +7,7 @@
   --panel-gutter: var(--space-4);
   --topbar-height: 52px;
   --toolbar-width: 48px;
-  --inspector-width: 276px;
+  --inspector-width: 300px;
   --dialog-sm: 420px;
   --dialog-md: 560px;
   --dialog-lg: 720px;
@@ -18,6 +18,13 @@
   --handle-hit: 12px;
   --pin: 24px;
   --grid-step: 20px;
+  --panel-tasks-height: 124px;
+  --panel-border-width: 1.5px;
+  --control-large: 40px;
+  --toolbar-format-height: 32px;
+  --icon-mark-sm: 16px;
+  --icon-mark-md: 22px;
+  --icon-mark-lg: 28px;
   --control-h: var(--control-default);
 }
 [data-density="compact"] {

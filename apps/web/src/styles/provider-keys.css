@@ -81,8 +81,8 @@
 }
 
 .ai-key-mode select {
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 6px 8px;
   font: inherit;
   font-size: 12.5px;
@@ -181,8 +181,8 @@
 .share-security-row input {
   flex: 1;
   min-width: 140px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 6px 8px;
   font: inherit;
   font-size: 12px;
@@ -191,7 +191,9 @@
 }
 
 .share-security-row input:focus {
-  outline: 2px solid var(--accent-soft);
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
 }
 
 .link-gate {
@@ -205,8 +207,8 @@
 
 .link-gate input {
   min-width: 220px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   padding: 8px 10px;
   font: inherit;
   font-size: 13px;
@@ -215,7 +217,9 @@
 }
 
 .link-gate input:focus {
-  outline: 2px solid var(--accent-soft);
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
 }
 
 .link-gate .auth-error {
@@ -295,7 +299,7 @@
   position: fixed;
   z-index: var(--z-bar);
   left: 50%;
-  top: 76px;
+  top: calc(var(--topbar-height) + var(--space-6));
   transform: translateX(-50%);
   max-width: min(680px, calc(100% - 32px));
   padding: 8px 14px;

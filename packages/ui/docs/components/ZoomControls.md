@@ -7,7 +7,7 @@
 - Зум и пан не анимируются.
 
 ## Анатомия
-Панель `bg-raised`, `radius-md`, `shadow-bar`; `IconButton` 28, значение — `rm-num` 44 px, разделитель и кнопка fit.
+Пилюля `bg-raised`, волосяная линия 1 px `border-subtle`, `radius-pill`, без тени (правило E2, ADR-181); `IconButton` 28, значение — `rm-num` 44 px, разделитель и кнопка fit.
 
 ## Состояния
 default · hover · focus-visible · disabled (кнопка на пределе зума). loading, error, read-only, selected — не применимы.

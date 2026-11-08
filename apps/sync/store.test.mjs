@@ -10,7 +10,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PostgresStore } from "./postgres.mjs";
-import { testDatabaseStore } from "./test-db.mjs";
+import { ensureBoard, testDatabaseStore } from "./test-db.mjs";
 import { Y } from "./y.mjs";
 
 const database = await testDatabaseStore("postgres store");
@@ -55,6 +55,7 @@ suite("postgres store", () => {
 
   it("rebuilds a room from the snapshot after the log is folded in", async () => {
     const live = new Y.Doc();
+    await ensureBoard(store, BOARD);
     await store.bindState(BOARD, live);
 
     const widgets = live.getMap("widgets");
@@ -100,6 +101,7 @@ suite("postgres store", () => {
     const reopened = new PostgresStore({ connectionString: databaseUrl, log: { log() {}, error() {} } });
     await reopened.connect();
     try {
+      await ensureBoard(reopened, BOARD);
       await reopened.bindState(BOARD, replica);
       expect(shape(replica)).toEqual({
         widgets: ["w1", "w2"],
@@ -156,6 +158,7 @@ suite("postgres store", () => {
     // map. One shared teardown makes the overlap order-safe without a timer.
     const room = `${BOARD}-overlap`;
     const oldDoc = new Y.Doc();
+    await ensureBoard(store, room);
     await store.bindState(room, oldDoc);
     oldDoc.getMap("meta").set("title", "Overlap");
     oldDoc.getMap("widgets").set("w1", {
@@ -210,6 +213,7 @@ suite("postgres store", () => {
     // so what is under test is the ordering, not the timing.
     const room = `${BOARD}-race`;
     const live = new Y.Doc();
+    await ensureBoard(store, room);
     await store.bindState(room, live);
     live.getMap("widgets").set("a", { id: "a", type: "text", x: 0, y: 0, width: 10, height: 10 });
     await store.flushLog(store.rooms.get(room));

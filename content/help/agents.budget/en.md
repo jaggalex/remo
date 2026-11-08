@@ -23,4 +23,4 @@ A task without a budget is not created. That is not paperwork: the budget is you
 
 - **"Set a limit".** The changes field is empty or zero; the task was not created.
 - **`BUDGET_EXCEEDED` or `BUDGET_ACTIONS`.** The agent stopped; a partial result is not applied. Raise the limit and run again.
-- **`TOO_MANY_TASKS`.** The room already has a queue; wait for it or cancel a task.
+- **`TOO_MANY_TASKS`.** This room has reached its task limit. Wait for a task to finish or cancel one.

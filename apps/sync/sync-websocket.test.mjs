@@ -48,9 +48,9 @@ async function listen(bound, options = {}) {
   server = createServer();
   ({ wss } = attachWebSocket({
     server,
-    // By default the room exists as a legacy unclaimed board: the repair path must
-    // still open it. A test that wants an unknown room passes its own store.
-    store: options.store ?? { getIamBoard: async (id) => ({ id, owner_id: null }) },
+    // Every room here is claimed: an unowned room is closed (ADR-174), so the default
+    // must not accidentally test that path. A test for it passes its own store.
+    store: options.store ?? { getIamBoard: async (id) => ({ id, owner_id: "owner-1" }) },
     metrics: { inc() {} },
     sessionFromRequest: async () => null,
     accessForBoard: options.accessForBoard ?? (async () => ({ access: { allowed: true } })),
@@ -123,18 +123,20 @@ it("refuses an oversized room id before looking it up", async () => {
   expect(bound).toEqual([]);
 });
 
-it("still opens an existing unclaimed legacy board", async () => {
+it("refuses an unowned legacy board before access is even asked", async () => {
   const bound = [];
+  let accessAsked = false;
   const port = await listen(bound, {
     store: { getIamBoard: async (id) => ({ id, owner_id: null }) },
+    accessForBoard: async () => {
+      accessAsked = true;
+      return { access: { allowed: true } };
+    },
   });
 
-  const socket = await connect(port, "test-legacy-unclaimed");
-  cleanups.push(() => new Promise((resolve) => {
-    socket.on("close", resolve);
-    socket.close();
-  }));
-  expect(bound).toEqual(["test-legacy-unclaimed"]);
+  await expect(connect(port, "test-legacy-unclaimed")).rejects.toThrow(/403/);
+  expect(accessAsked).toBe(false);
+  expect(bound).toEqual([]);
 });
 
 it("refuses an upgrade from another origin", async () => {

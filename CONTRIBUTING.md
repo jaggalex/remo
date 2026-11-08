@@ -25,13 +25,51 @@ pnpm dev:web
 ## The gate
 
 ```sh
-pnpm verify --e2e
+pnpm verify --e2e   # includes pnpm lint
+pnpm audit:prod     # separate CI step, not part of verify
 ```
 
-This checks the dedicated test database (start it first with `pnpm test:db:up`), typecheck,
-unit and database tests, browser acceptance, documentation and guide checks, the build and
-the design-system checks. A pull
-request is ready only when it is green. Run `pnpm verify:fast` in the inner loop.
+`pnpm verify` checks the dedicated test database (start it first with `pnpm test:db:up`),
+typecheck, lint, unit and database tests, the build, documentation and the guide, and the
+design-system checks. `--e2e` adds browser acceptance and the guide audit. A pull request is
+ready only when it is green. Run `pnpm verify:fast` in the inner loop.
+
+`pnpm lint` runs Biome with the hook-placement rule as an error; `pnpm lint:strict` also
+fails on warnings. `pnpm audit:prod` fails on a high or critical production advisory only
+when a fix exists; CI runs it as its own step.
+
+## Tenant isolation
+
+Production connects as `remo_app`, a DML-only role with no table ownership and no
+`BYPASSRLS`; each tenant request sets `app.org_id`, and a query without it returns zero
+rows. A change to a tenant table must keep that true.
+
+```sh
+pnpm db:rls:setup            # create the role once (owner URL)
+pnpm db:rls:enable           # apply apps/sync/rls.sql (owner URL)
+pnpm db:rls --check          # exit 1 on any tenant table without FORCE RLS
+pnpm db:rls:enable --check   # the 37 protected tables
+```
+
+Run these with `REMO_MIGRATION_DATABASE_URL`; the owner must be a superuser or have
+`BYPASSRLS`, or the security-definer lookups return no rows. The RLS suite creates its own
+database on the test server (`pnpm test:db:up`) because `FORCE` takes an exclusive lock. The
+inventory is not part of `pnpm verify`: run it after a schema change.
+
+## Versioning and releases
+
+Three numbers, never mixed: `version` is the semver release in `package.json`, `build` is
+the git commit count, `schema` is the database compatibility version. The app, `/api/health`
+and `remo_build_info` report all three.
+
+```sh
+pnpm version:show
+pnpm release:minor --notes "what changed for a user" --commit
+```
+
+Ordinary commits do not change the version; `build` grows with git history. A release
+updates `package.json`, `README.md` and `CHANGELOG.md`, runs `pnpm verify`, commits and
+creates an annotated tag — it does not push. The deploy passes the same values to Docker.
 
 ## Rules that reviewers enforce
 

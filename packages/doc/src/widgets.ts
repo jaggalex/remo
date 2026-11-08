@@ -39,7 +39,7 @@ export function createWidget(board: BoardDocument, widget: Widget): void {
 export function setWidgetName(board: BoardDocument, id: string, name: string): void {
   const trimmed = name.trim().slice(0, 120);
   board.transact(() => {
-    const current = board.widgets.get(id);
+    const current = board.readWidget(id);
     if (!current) return;
     const next = { ...current };
     if (trimmed) next.name = trimmed;
@@ -54,7 +54,7 @@ export function patchWidget(
   patch: Partial<Widget>,
 ): void {
   board.transact(() => {
-    const current = board.widgets.get(id);
+    const current = board.readWidget(id);
     if (!current) return;
     board.widgets.set(id, { ...current, ...patch });
   });
@@ -91,7 +91,7 @@ export function moveSelection(
 ): void {
   const positions: WidgetPosition[] = [];
   for (const id of ids) {
-    const widget = board.widgets.get(id);
+    const widget = board.readWidget(id);
     if (!widget) continue;
     if (widget.type === "card" && widget.parentId) continue;
     positions.push({ id, x: widget.x + dx, y: widget.y + dy });
@@ -111,7 +111,7 @@ export function moveWidgets(board: BoardDocument, positions: WidgetPosition[]): 
 
     const apply = (id: string, x: number, y: number) => {
       if (moved.has(id)) return;
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget) return;
       // Cards inside a kanban are placed by the matrix, never by coordinates.
       if (widget.type === "card" && widget.parentId) return;
@@ -123,7 +123,7 @@ export function moveWidgets(board: BoardDocument, positions: WidgetPosition[]): 
 
       // Children follow their parent by the same delta.
       for (const childId of descendants(board, id)) {
-        const child = board.widgets.get(childId);
+        const child = board.readWidget(childId);
         if (!child || child.type === "card") continue;
         const dx = x - widget.x;
         const dy = y - widget.y;
@@ -144,11 +144,11 @@ export function moveWidgets(board: BoardDocument, positions: WidgetPosition[]): 
     // Only the final position matters, and only for the objects the gesture moved
     // directly; descendants followed their parent and keep their membership.
     for (const id of direct) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget) continue;
       if (!ADOPTABLE.has(widget.type)) continue;
       const parent = frameContaining(board, widget);
-      const currentParent = widget.parentId ? board.widgets.get(widget.parentId) : null;
+      const currentParent = widget.parentId ? board.readWidget(widget.parentId) : null;
       if (parent && widget.parentId !== parent.id) {
         board.widgets.set(id, { ...widget, parentId: parent.id });
       } else if (!parent && currentParent?.type === "frame") {
@@ -174,7 +174,7 @@ function frameContaining(board: BoardDocument, widget: Widget): Widget | null {
   const cx = widget.x;
   const cy = widget.y;
   let best: Widget | null = null;
-  board.widgets.forEach((candidate) => {
+  board.readWidgets().forEach((candidate) => {
     if (candidate.type !== "frame" || candidate.id === widget.id) return;
     if (candidate.locked) return;
     const halfWidth = candidate.width / 2;
@@ -206,13 +206,13 @@ function frameContaining(board: BoardDocument, widget: Widget): Widget | null {
  */
 function reconcileFrameMembership(board: BoardDocument, frame: Widget): void {
   const candidates: string[] = [];
-  board.widgets.forEach((widget) => {
+  board.readWidgets().forEach((widget) => {
     if (!ADOPTABLE.has(widget.type) || widget.locked) return;
     if (widget.parentId === frame.id || !widget.parentId) candidates.push(widget.id);
   });
 
   for (const id of candidates) {
-    const widget = board.widgets.get(id);
+    const widget = board.readWidget(id);
     if (!widget) continue;
     const parent = frameContaining(board, widget);
     // A free object joins this frame only if the resize put it in this frame; an
@@ -233,8 +233,8 @@ export function deletionSummary(
   ids: string[],
 ): { objects: number; connectors: number } {
   const doomed = new Set<string>();
-  for (const id of expandGroups([...board.widgets.values()], ids)) {
-    if (board.widgets.get(id)?.locked) continue;
+  for (const id of expandGroups(board.readWidgets(), ids)) {
+    if (board.readWidget(id)?.locked) continue;
     doomed.add(id);
     for (const childId of descendants(board, id)) doomed.add(childId);
   }
@@ -242,7 +242,7 @@ export function deletionSummary(
   let objects = 0;
   let connectors = 0;
   for (const id of doomed) {
-    const widget = board.widgets.get(id);
+    const widget = board.readWidget(id);
     if (!widget) continue;
     if (widget.type === "connector") connectors += 1;
     else objects += 1;
@@ -260,10 +260,10 @@ export function deleteWidgets(
     const doomed = new Set<string>();
     // Deleting one member of a group deletes the group: half a group is never a
     // state the user asked for.
-    for (const id of expandGroups([...board.widgets.values()], ids)) {
+    for (const id of expandGroups(board.readWidgets(), ids)) {
       // A locked object survives the delete key; unlocking it is the way to remove
       // it, which is the whole point of a lock (ADR-040).
-      if (!options.force && board.widgets.get(id)?.locked) continue;
+      if (!options.force && board.readWidget(id)?.locked) continue;
       doomed.add(id);
       for (const childId of descendants(board, id)) doomed.add(childId);
     }
@@ -273,7 +273,7 @@ export function deleteWidgets(
 
     const touchedGroups = new Set<string>();
     for (const id of doomed) {
-      const groupId = board.widgets.get(id)?.groupId;
+      const groupId = board.readWidget(id)?.groupId;
       if (groupId) touchedGroups.add(groupId);
       board.widgets.delete(id);
       board.texts.delete(id);
@@ -285,7 +285,7 @@ export function deleteWidgets(
     // A name belongs to its membership: when the last member is gone, the label
     // goes with it (ADR-101).
     for (const groupId of touchedGroups) {
-      if (![...board.widgets.values()].some((widget) => widget.groupId === groupId)) {
+      if (!board.readWidgets().some((widget) => widget.groupId === groupId)) {
         board.groupNames.delete(groupId);
       }
     }
@@ -314,7 +314,7 @@ export function setWidgetRects(board: BoardDocument, rects: WidgetRect[]): void 
   board.transact(() => {
     const resizedFrames = new Set<string>();
     for (const rect of rects) {
-      const widget = board.widgets.get(rect.id);
+      const widget = board.readWidget(rect.id);
       if (!widget || widget.locked) continue;
       const minimum = minimumSizeOf(widget.type);
       board.widgets.set(rect.id, {
@@ -327,7 +327,7 @@ export function setWidgetRects(board: BoardDocument, rects: WidgetRect[]): void 
       if (widget.type === "frame") resizedFrames.add(rect.id);
     }
     for (const id of resizedFrames) {
-      const frame = board.widgets.get(id);
+      const frame = board.readWidget(id);
       if (frame) reconcileFrameMembership(board, frame);
     }
   });

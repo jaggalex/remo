@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BOARD_COLORS, inkFor, readableInk, resolveColor, shade, stickyFill } from "./palette";
+import { TONE_LEVELS } from "./colorLevels";
 
 describe("the shared colour palette", () => {
   it("is one list, long enough to be useful and free of duplicates", () => {
@@ -12,7 +13,11 @@ describe("the shared colour palette", () => {
     expect(resolveColor("#fe9f4d")).toBe("#fe9f4d");
     // The captured boards store names; they must keep their look.
     expect(resolveColor("yellow")).toBe(stickyFill("yellow"));
-    expect(resolveColor(undefined)).toBe("#FFDD33");
+    expect(resolveColor("yellow")).toBe("#FFDD33");
+    // Nothing stored is the default paper yellow, the value a new note gets (ADR-186).
+    expect(resolveColor(undefined)).toBe(TONE_LEVELS.yellow[100]);
+    expect(stickyFill(undefined)).toBe(TONE_LEVELS.yellow[100]);
+    expect(stickyFill("")).toBe(TONE_LEVELS.yellow[100]);
   });
 
   it("darkens a fill for a note's edge without leaving the colour", () => {

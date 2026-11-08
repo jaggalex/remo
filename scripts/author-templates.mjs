@@ -171,7 +171,13 @@ function author(locale) {
 
   const storyMap = (() => {
     const widgets = [text(copy.story.title, 0, -430, 900, 70, null, 40)];
-    const fills = ["neutral-100", "yellow-100", "orange-100", "pink-100", "green-100"].map(token);
+    const fills = [
+      "paper-grey-100",
+      "paper-yellow-100",
+      "paper-orange-100",
+      "paper-pink-100",
+      "paper-green-100",
+    ].map(token);
     copy.story.frames.forEach((title, column) => {
       const x = (column - 2) * 300;
       const lane = frame(title, x, 0, 260, 560);

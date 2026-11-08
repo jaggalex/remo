@@ -10,11 +10,11 @@ Seven tones run in columns: grey, yellow, orange, pink, violet, blue, green. Lev
 |---|---|---|---|
 | Grey | Grey | Dark grey | Graphite |
 | Yellow | Yellow | Ochre | Deep ochre |
-| Orange | Orange | Carrot | Terracotta |
-| Pink | Pink | Raspberry | Deep raspberry |
+| Orange | Orange | Taupe | Terracotta |
+| Pink | Pink | Dusty pink | Deep raspberry |
 | Violet | Violet | Lilac | Deep violet |
-| Blue | Blue | Sky | Deep blue |
-| Green | Green | Grass | Deep green |
+| Blue | Blue | Grey blue | Deep blue |
+| Green | Green | Sage | Deep green |
 
 ## Named colours
 
@@ -44,6 +44,10 @@ A key works when only objects with that role are selected. In an input field, a 
 ## Custom colour
 
 A value outside the palette is labelled **Custom colour** below the grid. That is a label for the value, not a swatch to pick: only palette values can be chosen. The current value is kept until you choose another: the room is not repainted after the fact.
+
+## Sticky notes from the previous palette
+
+The 100 and 300 fills are now paper tones: muted, with dark text readable on every one. A sticky note painted earlier stays bright. The window names its colour by tone and level, for example **Yellow**, and marks that swatch. Click the swatch or press the digit and the note takes the new paper tone. An administrator can repaint every room at once with `pnpm db:repaint`.
 
 ## Check the result
 

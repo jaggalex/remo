@@ -2,7 +2,7 @@
 
 Presence is a separate stream that does not change the document. It shows:
 
-- who is on the room right now;
+- who is in the room right now;
 - where each person's cursor is;
 - which reaction a person sent, if they sent one.
 
@@ -29,7 +29,7 @@ Follow **does not give access**: if the room is closed, you will see only what y
 
 ## Calling everyone to you
 
-This is an invitation, not coercion: a person receives a request, agrees — and ends up in your part of the room with follow on. A refusal changes nothing. If automatic follow is enabled on the room, the invitation does not ask — the view moves immediately.
+This is an invitation, not coercion: a person receives a request, agrees — and ends up in your part of the room with follow on. A refusal changes nothing. If automatic follow is enabled in the room, the invitation does not ask — the view moves immediately.
 
 ## Practical consequence
 

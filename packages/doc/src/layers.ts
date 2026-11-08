@@ -37,7 +37,7 @@ export function setLocked(
 ): void {
   board.transact(() => {
     for (const id of ids) {
-      const widget = board.widgets.get(id);
+      const widget = board.readWidget(id);
       if (!widget) continue;
       // Locking an already locked object must not take authorship from its author.
       if (locked && widget.locked) continue;
@@ -83,7 +83,7 @@ export function reorderWidgets(
 ): void {
   const selected = new Set(ids);
   const list = paintOrder(
-    [...board.widgets.values()].filter((widget) => kindOf(widget.type).layered),
+    board.readWidgets().filter((widget) => kindOf(widget.type).layered),
   );
   if (!list.some((widget) => selected.has(widget.id))) return;
 
@@ -136,7 +136,7 @@ export function reorderWidgets(
       const next = key <= previous ? previous + 1 : key;
       previous = next;
       if (next !== key) {
-        const live = board.widgets.get(widget.id);
+        const live = board.readWidget(widget.id);
         if (live) board.widgets.set(widget.id, { ...live, z: next });
       }
     }

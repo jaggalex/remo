@@ -41,6 +41,7 @@ import { CSRF_COOKIE, csrfCookie, csrfProblem } from "./csrf.mjs";
 import { newToken } from "./iam.mjs";
 import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
+import { buildInfo } from "./build-info.mjs";
 
 import { websocketUtils } from "./y.mjs";
 
@@ -63,12 +64,20 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.REMO_DATA_DIR ?? join(HERE, ".data");
 const PORT = Number(process.env.PORT ?? 1234);
 const STARTED_AT = Date.now();
+const BUILD = buildInfo();
 
 await mkdir(DATA_DIR, { recursive: true });
 
 /* --------------------------------------------------------------- metrics --- */
 
 const metrics = new Metrics();
+metrics.describe("remo_build_info", "Build identity: version, build, commit and schema", "gauge");
+metrics.set("remo_build_info", 1, {
+  version: BUILD.version,
+  build: BUILD.build,
+  commit: BUILD.commit,
+  schema: String(BUILD.schema),
+});
 metrics.describe("remo_http_requests_total", "HTTP requests served, by route");
 metrics.describe("remo_ws_connections_total", "WebSocket connections accepted");
 metrics.describe("remo_ws_disconnections_total", "WebSocket connections closed");
@@ -78,6 +87,12 @@ metrics.describe(
   "Frames a read-only connection tried to write",
 );
 metrics.describe("remo_ws_protocol_errors_total", "WebSocket frames the protocol refused");
+metrics.describe(
+  "remo_ws_quota_closed_total",
+  "Sockets closed for a write budget, by reason (rate, room-full); ADR-173",
+);
+metrics.describe("remo_ws_edit_audit_rows_total", "Socket edit windows written to audit; ADR-175");
+metrics.describe("remo_ws_edit_audit_dropped_total", "Socket edit windows whose audit write failed");
 metrics.describe(
   "remo_background_failures_total",
   "Failures no caller handled; any non-zero rate is a bug (ADR-160)",
@@ -109,7 +124,13 @@ let store = diskStore;
 const ai = fakeModelEnabled() ? fakePlanClient() : new AiClient();
 
 if (databaseUrl) {
-  const postgres = new PostgresStore({ connectionString: databaseUrl, metrics });
+  // The app role is subject to RLS; migrations and the legacy repair need the owner
+  // (ADR-178 stage 2). Without a second URL the old single-role behaviour stays.
+  const postgres = new PostgresStore({
+    connectionString: databaseUrl,
+    migrationConnectionString: process.env.REMO_MIGRATION_DATABASE_URL ?? databaseUrl,
+    metrics,
+  });
   try {
     await connectWithRetry({ connect: () => postgres.connect() });
     store = postgres;
@@ -119,7 +140,11 @@ if (databaseUrl) {
     // sees the empty shell while the widgets sit under the encoded id (ADR-148). The
     // repair is idempotent, moves rows before deleting and logs what it left alone.
     try {
-      const { merged, skipped } = await postgres.mergeLegacyRoomIds();
+      // The repair moves rows in RLS-protected tables and no single tenant covers it;
+      // the owner connection is the only role allowed to see all of them (ADR-178).
+      const { merged, skipped } = await postgres.withOwnerClient((client) =>
+        postgres.mergeLegacyRoomIds({ client }),
+      );
       if (merged.length || skipped.length) {
         console.log(
           `[sync] duplicate rooms: ${merged.length} merged, ${skipped.length} left alone`,
@@ -190,7 +215,7 @@ if (metricsUrl && process.env.REMO_METRICS !== "off") {
     await metricsStore.connect();
     configureMetrics((event) => metricsStore.record(event), {
       enabled: true,
-      version: process.env.REMO_VERSION ?? "0.1.0",
+      version: BUILD.version,
     });
     console.log("[metrics] product metrics enabled");
   } catch (error) {
@@ -242,9 +267,61 @@ const corsHeaders =
           "Content-Type, If-Match, Idempotency-Key, Authorization, X-CSRF-Token",
       };
 
+/**
+ * The organisation a request belongs to, resolved before any tenant query (ADR-178).
+ *
+ * Board routes need one bootstrap read of `boards` to learn the org; that read happens
+ * outside the tenant context and is the only query allowed to do so. When policies are
+ * switched on it moves behind a `security definer` lookup, not into the app role.
+ */
+async function tenantOrgForRequest(store, url) {
+  const board = /^\/boards\/([^/]+)/.exec(url.pathname);
+  if (board) {
+    if (!store.getIamBoard) return null;
+    let id;
+    try {
+      id = decodeURIComponent(board[1]);
+    } catch {
+      return null;
+    }
+    // A security-definer lookup: `boards` is protected once stage 3 is on, and this is
+    // the one read that must happen before the tenant is known.
+    if (store.boardOrg) {
+      const orgId = await store.boardOrg(id).catch(() => null);
+      if (orgId) return orgId;
+    }
+    const iam = await store.getIamBoard(id).catch(() => null);
+    return iam?.org_id ?? null;
+  }
+  if (
+    (url.pathname === "/boards" || url.pathname === "/search") &&
+    url.searchParams.get("org") &&
+    store.getOrgBySlug
+  ) {
+    const org = await store.getOrgBySlug(url.searchParams.get("org")).catch(() => null);
+    return org?.id ?? null;
+  }
+  const org = /^\/orgs\/([^/]+)/.exec(url.pathname);
+  if (org) {
+    try {
+      return decodeURIComponent(org[1]);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 async function handleRequest(request, response) {
   const url = new URL(request.url, "http://localhost");
+  const orgId = await tenantOrgForRequest(store, url);
+  if (orgId && store.withTenant) {
+    return store.withTenant(orgId, () => routeRequest(request, response, url));
+  }
+  return routeRequest(request, response, url);
+}
 
+async function routeRequest(request, response, url) {
   // A fixed label per route family: a label per path would let an anonymous client
   // grow the in-memory registry without bound (the protected /metrics endpoint does
   // not stop the accumulation).
@@ -256,6 +333,11 @@ async function handleRequest(request, response) {
     return;
   }
   for (const [name, value] of Object.entries(corsHeaders)) response.setHeader(name, value);
+  // The service answers with data, never with a page: nothing it returns may be sniffed
+  // into HTML or framed. The proxies add the full policy for the app (ADR-172); these
+  // two hold even when the service is reached directly.
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
 
   // Every browser gets a CSRF cookie before it mutates anything; `/auth/me` hands the
   // same value to the app so it can echo it back in `X-CSRF-Token` (ADR-062).
@@ -349,11 +431,11 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/health") {
-    // A probe needs one bit, not an inventory: the store version, board and room
-    // counts and a raw driver error are for the operator's metrics, not the internet.
+    // A probe answers one bit, plus which build answered it. The store version, board
+    // and room counts and a raw driver error stay in metrics, not on the internet.
     const storage = await store.health();
     response.writeHead(storage.ok ? 200 : 503, { "Content-Type": "application/json" });
-    response.end(JSON.stringify({ ok: storage.ok }));
+    response.end(JSON.stringify({ ok: storage.ok, ...BUILD }));
     return;
   }
 
@@ -471,7 +553,9 @@ const { wss } = attachWebSocket({
 });
 
 server.listen(PORT, () => {
-  console.log(`[sync] listening on ws://localhost:${PORT} (store: ${store.kind})`);
+  console.log(
+    `[sync] listening on ws://localhost:${PORT} (store: ${store.kind}, remo ${BUILD.version} build ${BUILD.build} schema ${BUILD.schema})`,
+  );
   agents.start();
   events.start();
 });

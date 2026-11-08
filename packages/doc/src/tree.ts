@@ -14,12 +14,15 @@ export function descendants(board: BoardDocument, id: string): string[] {
 
   while (queue.length) {
     const parent = queue.shift()!;
-    board.widgets.forEach((widget, childId) => {
-      if (widget.parentId !== parent || seen.has(childId)) return;
+    // Read through the repair path: a peer may have written `null` into the map, and
+    // walking it raw would throw in copy, delete and grouping (ADR-171/ADR-174).
+    for (const widget of board.readWidgets()) {
+      const childId = widget.id;
+      if (widget.parentId !== parent || seen.has(childId)) continue;
       seen.add(childId);
       found.push(childId);
       queue.push(childId);
-    });
+    }
   }
   return found;
 }

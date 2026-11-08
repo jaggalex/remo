@@ -101,7 +101,7 @@ guide/
 :::
 
 :::actions
-[Начать работу](/guide/start/quickstart) — рабочая комната за десять минут.
+[Создать первую комнату](/guide/start/quickstart)
 :::
 
 :::tabs

@@ -460,17 +460,18 @@
   "how-to/agent-plan": {
     "adr": [
       142,
-      144
+      144,
+      188
     ],
     "code": [
       "apps/web/src/AgentDialog.tsx",
-      "apps/web/src/AgentPlanDialog.tsx",
+      "apps/web/src/AgentPlanPanel.tsx",
       "apps/web/src/AgentSelectionSource.tsx",
       "apps/web/src/AgentFileField.tsx",
       "apps/web/src/useApplyAgentPlan.ts",
       "apps/sync/agent-brief.mjs",
       "apps/sync/agent-plan.mjs",
-      "apps/web/src/TidyPlanMap.tsx"
+      "packages/canvas/src/proposal.ts"
     ],
     "tests": [
       "e2e/agents.spec.ts",

@@ -8,7 +8,7 @@
     "en": "Presence and follow"
   },
   "summary": {
-    "ru": "Кто находится на комнате, что видят другие и как устроено следование за участником.",
+    "ru": "Кто находится в комнате, что видят другие и как устроено следование за участником.",
     "en": "Who is on the room, what others see, and how following a participant works."
   },
   "related": [
@@ -20,8 +20,8 @@
   "updated": "2026-11-04",
   "translations": {
     "en": {
-      "sourceHash": "sha256:255557ff965322da89376cb2886b5cc5e2874b0f0c8a184931160c54eee85a96",
-      "targetHash": "sha256:fab000d073a9735a95023bfef6d1d8bde47d0c6e1d503ccf021b60be55fec7a7"
+      "sourceHash": "sha256:148c2c499cfec5001d608073fcead41836a83ca59426443aaa27f32a51587267",
+      "targetHash": "sha256:e057eb621f9f6238c9fab6a99cb8fa6fb032b45768531676d980bb8aea511574"
     }
   }
 }

@@ -42,19 +42,39 @@ export interface ToneColor {
 /**
  * The twenty-one values, by column.
  *
- * `grey` is the `neutral-*` scale. Yellow is split in the design system — `yellow-100` is
- * the fill, `ochre-300`/`ochre-600` are its deeper steps — so a column is named by hue,
- * not by a token prefix.
+ * The 100 and 300 rows are paper tones (ADR-182): muted, so ink reads on every one of them
+ * at 6.98:1 or better, and the concept's taupe is orange 300 rather than an eighth tone.
+ * They are the design system's `paper-<tone>-<level>` primitives. The 600 row is the
+ * line/border/text scale (`neutral-600`, `ochre-600`, `<tone>-600`), unchanged since
+ * ADR-127.
  */
 export const TONE_LEVELS = {
-  grey: { 100: "#efece8", 300: "#bfb9b1", 600: "#58534e" },
-  yellow: { 100: "#ffe07a", 300: "#f2b94a", 600: "#9a5800" },
-  orange: { 100: "#ffcd9e", 300: "#ff8a57", 600: "#c93e0a" },
-  pink: { 100: "#ffc6d9", 300: "#ff8fbd", 600: "#cc2470" },
-  violet: { 100: "#d9c9ff", 300: "#c69bff", 600: "#8a35d6" },
-  blue: { 100: "#b5dcff", 300: "#78b4ff", 600: "#1a6ad8" },
-  green: { 100: "#b9ecac", 300: "#85d965", 600: "#2b7f17" },
+  grey: { 100: "#f3f1ec", 300: "#cdc8c0", 600: "#58534e" },
+  yellow: { 100: "#ece2c8", 300: "#d8c79e", 600: "#9a5800" },
+  orange: { 100: "#e2d2c4", 300: "#bca996", 600: "#c93e0a" },
+  pink: { 100: "#e8d6d3", 300: "#cdb0ab", 600: "#cc2470" },
+  violet: { 100: "#dcd8e2", 300: "#b9b1c9", 600: "#8a35d6" },
+  blue: { 100: "#d8dde3", 300: "#aab7c5", 600: "#1a6ad8" },
+  green: { 100: "#dedfd4", 300: "#bcbfa9", 600: "#2b7f17" },
 } as const satisfies Record<ColorTone, Record<ColorLevel, string>>;
+
+/**
+ * The fill rows as they were before ADR-182 — read-only.
+ *
+ * A widget stores its hex and ADR-127 forbids rewriting stored colours, so rooms made
+ * before the switch keep these saturated values. They are never offered as swatches; the
+ * table only lets the window call such a note by its tone and level ("Yellow 100") and
+ * ring that swatch, instead of "Custom colour". Choosing any swatch writes the new value.
+ */
+export const PREVIOUS_FILL_LEVELS = {
+  grey: { 100: "#efece8", 300: "#bfb9b1" },
+  yellow: { 100: "#ffe07a", 300: "#f2b94a" },
+  orange: { 100: "#ffcd9e", 300: "#ff8a57" },
+  pink: { 100: "#ffc6d9", 300: "#ff8fbd" },
+  violet: { 100: "#d9c9ff", 300: "#c69bff" },
+  blue: { 100: "#b5dcff", 300: "#78b4ff" },
+  green: { 100: "#b9ecac", 300: "#85d965" },
+} as const satisfies Record<ColorTone, Record<(typeof FILL_LEVELS)[number], string>>;
 
 /**
  * The whole palette, row by row: every tone at 100, then every tone at 300, then 600.
@@ -89,8 +109,13 @@ export function colorAt(tone: ColorTone, level: ColorLevel): ToneColor {
 export interface ColorMatch {
   /** The nearest palette entry — the same entry when the hex is one of the twenty-one. */
   color: ToneColor;
-  /** True when the hex is that entry exactly, so the window can ring the swatch. */
+  /**
+   * True when the hex is that entry, or that entry's value before ADR-182, so the window
+   * can ring the swatch.
+   */
   exact: boolean;
+  /** True when the hex is the entry's previous value (`PREVIOUS_FILL_LEVELS`). */
+  previous: boolean;
   /** Squared RGB distance, 0 for an exact match; used to choose, not to display. */
   distance: number;
 }
@@ -98,8 +123,9 @@ export interface ColorMatch {
 /**
  * The palette entry a stored hex belongs to, or null for something that is not a colour.
  *
- * Exact first: a note painted from the palette keeps its swatch highlighted. Anything
- * else gets the nearest entry, which is what lets an object from the old 22-colour
+ * Exact first: a note painted from the palette keeps its swatch highlighted, and so does a
+ * note painted before ADR-182 with the entry's previous value. Anything else gets the
+ * nearest entry, which is what lets an object from the old 22-colour
  * palette show its closeness without offering to repaint it (ADR-127: no migration).
  * The distance is plain RGB — good enough to sort twenty-one candidates, and it never
  * leaves the model.
@@ -107,13 +133,39 @@ export interface ColorMatch {
 export function matchColor(hex: string): ColorMatch | null {
   const value = normalizeHex(hex);
   if (!value) return null;
+  const previous = previousEntry(value);
+  if (previous) return { color: previous, exact: true, previous: true, distance: 0 };
   const rgb = channels(value);
   let best: ColorMatch | null = null;
   for (const color of COLOR_LEVELS) {
     const distance = rgbDistance(rgb, channels(color.hex));
-    if (!best || distance < best.distance) best = { color, exact: distance === 0, distance };
+    if (!best || distance < best.distance) {
+      best = { color, exact: distance === 0, previous: false, distance };
+    }
   }
   return best;
+}
+
+/**
+ * The palette value a stored hex stands for: itself for one of the twenty-one, the new
+ * value for a fill painted before ADR-182, null for anything else.
+ *
+ * The window rings and names a swatch by this value; the stored hex is never rewritten.
+ */
+export function paletteValue(hex: string): string | null {
+  const value = normalizeHex(hex);
+  if (!value) return null;
+  if (COLOR_LEVELS.some((color) => color.hex === value)) return value;
+  return previousEntry(value)?.hex ?? null;
+}
+
+function previousEntry(value: string): ToneColor | null {
+  for (const tone of TONES) {
+    for (const level of FILL_LEVELS) {
+      if (PREVIOUS_FILL_LEVELS[tone][level] === value) return colorAt(tone, level);
+    }
+  }
+  return null;
 }
 
 /** Whether a stored hex is one of the palette's twenty-one, so a swatch can be chosen. */

@@ -93,6 +93,22 @@ describe("effective access", () => {
     expect(access.sources).toEqual(["owner"]);
   });
 
+  it("closes a room that has no owner, whoever asks", () => {
+    const unowned = board({ ownerId: null, orgId: null, teamId: null, visibility: "link" });
+    // Even the link and an org grant do not reopen it (ADR-174): there is no owner to
+    // derive a viewer from, and the legacy rule is gone.
+    const link = effective({
+      board: unowned,
+      viewer: null,
+      grants: [{ subjectType: "org", subjectId: "org-1", role: "editor" }],
+      link: { role: "viewer" },
+    });
+    expect(link).toMatchObject({ allowed: false, reason: "UNCLAIMED", capabilities: [] });
+    expect(
+      effective({ board: unowned, viewer: member(), grants: [] }).reason,
+    ).toBe("UNCLAIMED");
+  });
+
   it("denies a stranger and says it needs an account", () => {
     const access = effective({ board: board(), viewer: null });
     expect(access).toMatchObject({ allowed: false, reason: "AUTH_REQUIRED" });

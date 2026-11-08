@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, type Access, type OrgSummary, type SessionUser } from "./api";
 import { currentRoom } from "./identity";
 
@@ -6,8 +6,7 @@ import { currentRoom } from "./identity";
  * Who is signed in, and what this viewer may do with this board.
  *
  * One hook, one source: the server's `effective()` result is stored as-is, and every
- * capability in the UI is a read of that answer, not a local guess. The invitation token
- * is read once from the address (ADR-064/081).
+ * capability in the UI is a read of that answer, not a local guess.
  */
 export function useBoardAccess(room: string | null = currentRoom()) {
   const [me, setMe] = useState<SessionUser | null>(null);
@@ -19,12 +18,6 @@ export function useBoardAccess(room: string | null = currentRoom()) {
   const [boardOrgId, setBoardOrgId] = useState<string | undefined>(undefined);
   /** The board's server-side name, kept when a template seeds a new board. */
   const [boardTitle, setBoardTitle] = useState<string | undefined>(undefined);
-  /** A one-time invitation token from the URL. */
-  const inviteToken = useMemo(
-    () => new URLSearchParams(window.location.search).get("invite"),
-    [],
-  );
-  const [inviteDone, setInviteDone] = useState(false);
 
   // A failure is not an error state: most visitors of a legacy room are anonymous.
   useEffect(() => {
@@ -149,9 +142,6 @@ export function useBoardAccess(room: string | null = currentRoom()) {
     boardTitle,
     authOpen,
     setAuthOpen,
-    inviteToken,
-    inviteDone,
-    setInviteDone,
     canShare,
     canExport,
     canBackup,

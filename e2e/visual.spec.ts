@@ -67,6 +67,7 @@ function canvasPixels(page: Page) {
 
 test("three connector routings paint differently", async ({ page }) => {
   await page.goto("/__ds?view=connectors&lang=en");
+  await expect(page.locator("[data-testid=connector-states]")).toHaveAttribute("data-ready", "true");
   const canvas = page.locator("[data-testid=connector-states] canvas");
   await expect(canvas).toBeVisible();
 
@@ -237,7 +238,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
         hintClipped: hintElement ? hintElement.scrollWidth > hintElement.clientWidth + 1 : false,
         hintWraps: hintElement ? getComputedStyle(hintElement).whiteSpace : null,
         panels: document.querySelectorAll(".tool-rail-panel").length,
-        railShadow: panel ? getComputedStyle(panel).boxShadow : "",
+        railBorder: panel ? getComputedStyle(panel).borderTopWidth : "",
         railRadius: panel ? getComputedStyle(panel).borderRadius : "",
         tools: colours
           .filter((entry) => !entry.disabled && !entry.selected)
@@ -266,7 +267,8 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
   const state = await frame();
   // One panel of tools, one of history; a hairline is not a panel.
   expect(state.panels).toBe(2);
-  expect(state.railShadow).not.toBe("none");
+  // ADR-181: chrome is outlined, not lifted — the rail carries a hairline instead of a shadow.
+  expect(state.railBorder).toBe("1px");
   expect(state.railRadius).not.toBe("0px");
   // Р1: one colour for every tool that works; the muted token only for real stops.
   // Access arrives after the first paint, so a tool can be dimmed for a frame and
@@ -429,16 +431,16 @@ test("the header stays on one row and its menus fit the viewport", async ({ page
 });
 
 /**
- * The plan preview (ADR-142, M3), on data the fake provider makes identical on every run.
+ * The plan preview (ADR-188), on data the fake provider makes identical on every run.
  *
  * The fixture is two notes and one line, so the artefact shows the whole reading: the
- * counts, the bounds, and a miniature where a line joins the two boxes.
+ * room with the dashed plan in it, and the task panel with the counts and the bounds.
  */
 test("the agent plan preview is readable and fits the viewport", async ({ page }) => {
   await agentBoard(page, "visual-plan");
   await openMore(page);
   await page.getByRole("menuitem", { name: "Ask AI…" }).click();
-  const agents = page.getByRole("dialog", { name: "AI agents on this room" });
+  const agents = page.getByRole("dialog", { name: "AI agents in this room" });
   await expect(agents).toBeVisible();
   await agents.getByRole("combobox", { name: "Agent", exact: true }).selectOption({
     label: "Planner",
@@ -452,11 +454,11 @@ test("the agent plan preview is readable and fits the viewport", async ({ page }
 
   const plan = page.getByRole("dialog", { name: "Agent plan" });
   await expect(plan).toBeVisible({ timeout: 20_000 });
-  // Stable data: two objects, one connector, three actions, and a line on the map.
+  // Stable data: two objects, one connector, three actions, drawn in the room.
   await expect(plan).toContainText("Objects: 2 · connectors: 1 · actions: 3");
-  await expect(plan).toContainText("2 sticky notes");
-  await expect(plan.locator(".agent-plan-map-svg rect")).toHaveCount(2);
-  await expect(plan.locator(".agent-plan-map-svg line")).toHaveCount(1);
+  const drawn = await page.evaluate(() => window.__remo.proposal);
+  expect(drawn?.blocks).toHaveLength(2);
+  expect(drawn?.lines).toHaveLength(1);
 
   const box = await plan.boundingBox();
   expect(box).not.toBeNull();
@@ -466,12 +468,13 @@ test("the agent plan preview is readable and fits the viewport", async ({ page }
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true);
 
-  await capture(page, plan, "agent-plan");
+  await page.waitForTimeout(300);
+  await capture(page, page.locator(".app"), "agent-plan");
 });
 
 /**
- * The tidy preview (ADR-143): the same selection before and after, the strategy and the
- * warnings, on a deterministic prefix layout. The model is the fake provider, so the
+ * The tidy preview (ADR-143, ADR-188): the notes where they are and their dashed ghosts
+ * where they go, the block hull and the task panel, on a deterministic prefix layout. The model is the fake provider, so the
  * note text and the block title are identical on every run.
  */
 test("the tidy preview shows before and after and fits the viewport", async ({ page }) => {
@@ -533,8 +536,9 @@ test("the tidy preview shows before and after and fits the viewport", async ({ p
   await expect(plan).toBeVisible({ timeout: 20_000 });
   await expect(plan).toContainText("Moves: 5");
   await expect(plan).toContainText("Blocks: US");
-  await expect(plan.locator(".tidy-map-ghost")).toHaveCount(5);
-  await expect(plan.locator(".tidy-map-legend")).toContainText("Before");
+  const drawn = await page.evaluate(() => window.__remo.proposal);
+  expect(drawn?.moves).toHaveLength(5);
+  expect(drawn?.blocks.filter((block) => block.type === "frame")).toHaveLength(1);
 
   const box = await plan.boundingBox();
   expect(box).not.toBeNull();
@@ -544,5 +548,6 @@ test("the tidy preview shows before and after and fits the viewport", async ({ p
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true);
 
-  await capture(page, plan, "agent-plan-tidy");
+  await page.waitForTimeout(300);
+  await capture(page, page.locator(".app"), "agent-plan-tidy");
 });

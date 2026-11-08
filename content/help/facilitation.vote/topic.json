@@ -6,7 +6,7 @@
     "en": "Voting on objects"
   },
   "summary": {
-    "ru": "Сессия с квотой голосов на человека, анонимным подсчётом и результатами на комнате.",
+    "ru": "Сессия с квотой голосов на человека, анонимным подсчётом и результатами в комнате.",
     "en": "A session with a quota per person, an anonymous tally and results on the room."
   },
   "related": [
@@ -18,8 +18,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:f965c367a32d136c53c41a4bec36f14164d7cfd8f28066982558c0345af79267",
-      "targetHash": "sha256:370f918a4cbc21d7594c308e4b8b135a04b23ec934e4d9c11de5cd260c8ac62a"
+      "sourceHash": "sha256:e8b226f0fe0ad9dd3a8076b73037445d4e0e753422d8d4b42acadd0d0471af23",
+      "targetHash": "sha256:20dc94e0628e1d248bbe45a520b412c03562cd4ec2e9c3225a2da036965b9f7f"
     }
   }
 }

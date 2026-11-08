@@ -38,6 +38,63 @@ test("a signed-out visitor signs in from the access gate", async ({ page, browse
   }
 });
 
+test("an organisation invitation works after signing in from the link", async ({ page, browser }) => {
+  const owner = await register(page, "invite-org");
+  const invited = await browser.newContext();
+  try {
+    const guest = await invited.newPage();
+    const { email } = await register(guest, "invited-member");
+    expect((await guest.request.post("/api/auth/logout")).ok()).toBeTruthy();
+
+    const invitation = await page.request.post(`/api/orgs/${owner.orgId}/invitations`, {
+      data: { email },
+    });
+    expect(invitation.ok()).toBeTruthy();
+    const { url } = await invitation.json() as { url: string };
+    await guest.goto(`/${new URL(url).search}&lang=en`);
+
+    const prompt = guest.getByRole("dialog", { name: "You are invited" });
+    await prompt.getByRole("button", { name: "Sign in to accept" }).click();
+    const login = guest.locator(".auth-dialog");
+    await login.locator('input[type="email"]').fill(email);
+    await login.locator('input[type="password"]').fill(PASSWORD);
+    await login.getByRole("button", { name: "Sign in", exact: true }).click();
+    await prompt.getByRole("button", { name: "Accept invitation" }).click();
+
+    const org = await page.request.get(`/api/orgs/${owner.orgId}`);
+    const { org: { slug } } = await org.json() as { org: { slug: string } };
+    await expect(guest).toHaveURL((current) =>
+      current.searchParams.get("org") === slug && !current.searchParams.has("invite"));
+    await expect(prompt).toHaveCount(0);
+  } finally {
+    await invited.close();
+  }
+});
+
+test("a guest invitation opens its room after acceptance", async ({ page, browser }) => {
+  const owner = await register(page, "invite-room");
+  const invited = await browser.newContext();
+  try {
+    const guest = await invited.newPage();
+    const { email } = await register(guest, "invited-guest");
+    const invitation = await page.request.post(`/api/boards/${owner.boardId}/invitations`, {
+      data: { email, role: "viewer" },
+    });
+    expect(invitation.ok()).toBeTruthy();
+    const { url } = await invitation.json() as { url: string };
+    await guest.goto(`/${new URL(url).search}&lang=en`);
+    await guest.getByRole("dialog", { name: "You are invited" })
+      .getByRole("button", { name: "Accept invitation" }).click();
+
+    await expect(guest).toHaveURL((current) =>
+      current.searchParams.get("room") === owner.boardId && !current.searchParams.has("invite"));
+    await expect(guest.locator(".rm-readonly")).toContainText("View only");
+    await expect(guest.locator(".save-state")).toHaveText(/saved/i);
+  } finally {
+    await invited.close();
+  }
+});
+
 test("two sessions of one account are two follow targets with labels", async ({
   page,
   browser,
