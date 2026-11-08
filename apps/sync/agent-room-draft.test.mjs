@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { Y } from "./y.mjs";
 import {
+  DRAFT_PADDING,
   ROOM_DRAFT_LIMITS,
   applyRoomDraft,
   draftOrigin,
+  fitDraftFrame,
   findDraftFrame,
   parseRoomDraftReply,
   roomDraftPlan,
@@ -243,6 +245,42 @@ describe("room draft write", () => {
     expect(applied.createdIds).toContain(applied.frameId);
     expect(findDraftFrame(ydoc, "task-1")).toBe(applied.frameId);
     expect(findDraftFrame(ydoc, "task-2")).toBeNull();
+  });
+
+  it("expands the frame to contain every object", () => {
+    const ydoc = boardWith([]);
+    const parsed = parseRoomDraftReply({
+      ...reply,
+      objects: [
+        ...reply.objects,
+        {
+          tempId: "far",
+          type: "text",
+          parentRef: "frame",
+          x: 1300,
+          y: 700,
+          width: 120,
+          height: 60,
+          text: "outside",
+        },
+      ],
+    });
+    const { plan } = roomDraftPlan(parsed, {
+      existingWidgets: [...ydoc.getMap("widgets").values()],
+      existingConnectors: [],
+    });
+    fitDraftFrame(plan);
+    const frame = plan.objects.find((object) => object.type === "frame");
+    expect(frame.x).toBeLessThanOrEqual(40 - DRAFT_PADDING);
+    expect(frame.y).toBeLessThanOrEqual(60 - DRAFT_PADDING);
+    expect(frame.x + frame.width).toBeGreaterThanOrEqual(1300 + 120 + DRAFT_PADDING);
+    expect(frame.y + frame.height).toBeGreaterThanOrEqual(700 + 60 + DRAFT_PADDING);
+    expect(plan.bounds).toEqual({
+      x: frame.x,
+      y: frame.y,
+      width: frame.width,
+      height: frame.height,
+    });
   });
 
   it("places a draft away from existing objects", () => {

@@ -502,6 +502,37 @@ export function applyRoomDraft(
   return { frameId, createdIds: created, title };
 }
 
+/**
+ * The frame must contain the draft, even when the model's coordinates drift.
+ *
+ * `validatePlan` checks geometry but does not know that a frame is a container. This
+ * expands the frame to the union of its children with a padding; the writer then places
+ * the whole box in free space. A draft can be ugly, but it is never cut by its frame.
+ */
+export const DRAFT_PADDING = 48;
+
+export function fitDraftFrame(plan) {
+  const frame = plan.objects.find((object) => object.type === "frame");
+  if (!frame) return plan;
+  const children = plan.objects.filter((object) => object !== frame);
+  if (!children.length) return plan;
+  const left = Math.min(...children.map((object) => object.x));
+  const top = Math.min(...children.map((object) => object.y));
+  const right = Math.max(...children.map((object) => object.x + object.width));
+  const bottom = Math.max(...children.map((object) => object.y + object.height));
+  frame.x = Math.min(frame.x, left) - DRAFT_PADDING;
+  frame.y = Math.min(frame.y, top) - DRAFT_PADDING;
+  frame.width = Math.max(frame.x + frame.width, right + DRAFT_PADDING) - frame.x;
+  frame.height = Math.max(frame.y + frame.height, bottom + DRAFT_PADDING) - frame.y;
+  plan.bounds = {
+    x: frame.x,
+    y: frame.y,
+    width: frame.width,
+    height: frame.height,
+  };
+  return plan;
+}
+
 /** A retry after a lost flush finds the frame the first attempt already wrote. */
 export function findDraftFrame(ydoc, taskId) {
   for (const [id, widget] of ydoc.getMap("widgets").entries()) {

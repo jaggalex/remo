@@ -14,6 +14,7 @@ import {
   ROOM_DRAFT_SKILL,
   applyRoomDraft,
   draftOrigin,
+  fitDraftFrame,
   findDraftFrame,
   parseRoomDraftReply,
   roomDraftPlan,
@@ -212,6 +213,8 @@ export async function runRoomDraft({
   } catch (error) {
     return failDraft(error?.code ?? "DRAFT_INVALID", error?.message ?? String(error));
   }
+
+  fitDraftFrame(draft.plan);
 
   if (draft.plan.counts.objects > budget.maxActions) {
     return failDraft("BUDGET_ACTIONS", `the task allows ${budget.maxActions} changes`);
