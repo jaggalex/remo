@@ -10,6 +10,7 @@
   "scripts": {
     "templates": "node scripts/author-templates.mjs && node scripts/sync-templates.mjs",
     "mcp": "node scripts/mcp-server.mjs",
+    "demo:seed": "node scripts/demo-seed.mjs",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:check": "node scripts/db-check.mjs",

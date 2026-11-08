@@ -171,3 +171,9 @@
   flex-wrap: wrap;
   font-size: 11.5px;
 }
+
+.room-agent-assignment-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

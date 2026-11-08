@@ -19,6 +19,8 @@ export function useRoomAgent({
   roomId,
   boardTitle,
   canEdit,
+  identityKey,
+  openSettings,
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -26,6 +28,9 @@ export function useRoomAgent({
   roomId: string;
   boardTitle: string;
   canEdit: boolean;
+  /** A sign-in or an access change must re-read the assignment. */
+  identityKey: string;
+  openSettings: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<RoomAgentState | null>(null);
@@ -44,7 +49,7 @@ export function useRoomAgent({
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, [refresh, identityKey]);
 
   useEffect(() => {
     const drafts = widgets.filter(
@@ -135,6 +140,10 @@ export function useRoomAgent({
       onShowFrame: showFrame,
       onUndoFrame: undoFrame,
       onChanged: refresh,
+      onOpenSettings: () => {
+        close();
+        openSettings();
+      },
     },
   };
 }

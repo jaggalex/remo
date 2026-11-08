@@ -68,6 +68,11 @@ export function BoardApp() {
   const [shareOpen, setShareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [accountTab, setAccountTab] = useState<"people" | "audit" | "agents">("people");
+  const openAccount = useCallback((tab: "people" | "audit" | "agents" = "people") => {
+    setAccountTab(tab);
+    setAccountOpen(true);
+  }, []);
   const [agentOpen, setAgentOpen] = useState(false);
   const roomId = currentRoom();
   const tidy = useTidyCommand({ openAgents: () => setAgentOpen(true) });
@@ -126,6 +131,8 @@ export function BoardApp() {
     board, widgets, selectedIds, roomId,
     boardTitle: title || boardTitle || "",
     canEdit: Boolean(access?.capabilities.includes("board.edit")),
+    identityKey: `${me?.id ?? ""}:${access?.aclVersion ?? 0}`,
+    openSettings: () => openAccount("agents"),
   });
 
   /** One voting session, shared by the panel and the chips on the board (ADR-115). */
@@ -568,6 +575,7 @@ export function BoardApp() {
       />
       <BoardPanels
         accountOpen={accountOpen}
+        accountTab={accountTab}
         me={me}
         onCloseAccount={() => setAccountOpen(false)}
         onSignedOut={() => {
@@ -586,7 +594,7 @@ export function BoardApp() {
         onCloseAgent={() => setAgentOpen(false)}
         onOpenOrg={() => {
           setAgentOpen(false);
-          setAccountOpen(true);
+          openAccount("agents");
         }}
         settingsOpen={settingsOpen} settings={settings}
         onChangeSettings={(next) => {
@@ -654,7 +662,7 @@ export function BoardApp() {
         renameSelf={renameSelf} onAccountRenamed={setMe}
         theme={theme} setTheme={setTheme}
         lang={lang} setLang={setLang}
-        setAccountOpen={setAccountOpen}
+        setAccountOpen={(value) => (value ? openAccount("people") : setAccountOpen(false))}
         setAuthOpen={setAuthOpen}
         onSignOut={() => void signOutAndForgetName()}
         saveState={saveState}

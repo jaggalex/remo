@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import type { AgentThreadDetail, AgentThreadSummary, RoomAgentState } from "./roomAgentApi";
 import { formatMoment } from "./format";
+import { HelpLink } from "./help/HelpLink";
 import { useI18n, type TranslationKey } from "./i18n";
 
 /**
@@ -30,6 +31,7 @@ export function RoomAgentPanel({
   onShowFrame,
   onUndoFrame,
   onChanged,
+  onOpenSettings,
 }: {
   open: boolean;
   boardId: string;
@@ -41,6 +43,7 @@ export function RoomAgentPanel({
   onShowFrame: (frameId: string) => void;
   onUndoFrame: (frameId: string) => void;
   onChanged: () => void;
+  onOpenSettings: () => void;
 }) {
   const { t, lang } = useI18n();
   const [state, setState] = useState<RoomAgentState | null>(null);
@@ -177,7 +180,7 @@ export function RoomAgentPanel({
         <header className="org-head">
           <div>
             <h2>
-              {t("roomAgent.title")}
+              {t("roomAgent.title")} <HelpLink topicId="agents.room" />
               {state?.assigned && (
                 <span className="room-agent-badge" title={t("roomAgent.ai")}>
                   {state.assigned.name} · {t("roomAgent.ai")}
@@ -193,6 +196,7 @@ export function RoomAgentPanel({
 
         {error && <p className="auth-error">{error}</p>}
         {notice && <p className="muted agent-notice">{notice}</p>}
+        {state?.demo && <p className="muted agent-notice">{t("roomAgent.demo")}</p>}
         {state?.publicLink && <p className="agent-error">{t("roomAgent.publicLink")}</p>}
         {!state?.orgEnabled && <p className="muted">{t("agents.orgOff")}</p>}
 
@@ -235,16 +239,21 @@ export function RoomAgentPanel({
         {state?.assigned && (
           <div className="room-agent-assignment">
             <span>{t("roomAgent.assigned", { name: state.assigned.name })}</span>
-            {state.canAssign && (
-              <button
-                type="button"
-                className="link-button"
-                disabled={busy}
-                onClick={() => void run(() => api.assignRoomAgent(boardId, null))}
-              >
-                {t("roomAgent.unassign")}
+            <span className="room-agent-assignment-actions">
+              <button type="button" className="link-button" onClick={onOpenSettings}>
+                {t("roomAgent.settings")}
               </button>
-            )}
+              {state.canAssign && (
+                <button
+                  type="button"
+                  className="link-button"
+                  disabled={busy}
+                  onClick={() => void run(() => api.assignRoomAgent(boardId, null))}
+                >
+                  {t("roomAgent.unassign")}
+                </button>
+              )}
+            </span>
           </div>
         )}
 

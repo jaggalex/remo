@@ -22,6 +22,8 @@ export interface RoomAgentState {
   boardEnabled: boolean;
   owner: boolean;
   status: string | null;
+  /** The deterministic demo model answers instead of a provider. */
+  demo: boolean;
   agents: Array<{ id: string; name: string }>;
 }
 

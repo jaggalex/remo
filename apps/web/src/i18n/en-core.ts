@@ -295,6 +295,8 @@ export const enCore = {
     "What should the agent build? For example: map the refund process and mark where it is unclear who approves a refusal.",
   "roomAgent.process": "Process map",
   "roomAgent.problemMap": "Problem map",
+  "roomAgent.settings": "Agent settings",
+  "roomAgent.demo": "Demo model: answers are fixed examples and do not read your sources. Connect a provider key for a real draft.",
   "roomAgent.deliveryPlan": "Sprint or phase",
   "roomAgent.sources": "Sources: {count}",
   "roomAgent.create": "Create draft",

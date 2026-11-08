@@ -30,6 +30,7 @@ export function BoardPanels(props: Parameters<typeof PanelsBody>[0]) {
 
 function PanelsBody({
   accountOpen,
+  accountTab,
   me,
   onCloseAccount,
   onSignedOut,
@@ -54,6 +55,7 @@ function PanelsBody({
   onConfirmTrash,
 }: {
   accountOpen: boolean;
+  accountTab?: "people" | "audit" | "agents";
   me: SessionUser | null;
   onCloseAccount: () => void;
   onSignedOut: () => void;
@@ -90,6 +92,7 @@ function PanelsBody({
           open={accountOpen}
           me={me}
           initialOrgId={boardOrgId}
+          initialTab={accountTab}
           onOrgsChanged={refreshOrgs}
           onClose={onCloseAccount}
           onSignedOut={onSignedOut}

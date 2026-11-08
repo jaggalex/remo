@@ -6,6 +6,7 @@
  * later, from an integration without a second permission path.
  */
 import { fail, json, readBody } from "./iam-api.mjs";
+import { fakeModelEnabled } from "./ai-fake.mjs";
 
 export async function handleRoomAgentRoutes(ctx) {
   const {
@@ -63,6 +64,7 @@ export async function handleRoomAgentRoutes(ctx) {
         boardEnabled: board.agents_enabled === true,
         owner: board.owner_id === me.id,
         status: recent?.last_status ?? null,
+        demo: fakeModelEnabled(),
         agents: agents.map((agent) => ({ id: agent.id, name: agent.name })),
       });
       return true;
