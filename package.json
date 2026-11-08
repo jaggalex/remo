@@ -1,7 +1,7 @@
 {
   "name": "remo",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "packageManager": "pnpm@11.2.2",
   "engines": {
     "node": ">=22",
@@ -81,7 +81,7 @@
     "markdown-it": "^15.0.3",
     "pg": "^8.13.1",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^4.1.12"
   },
   "license": "AGPL-3.0-only",
   "author": "Alexander Kostylev",
