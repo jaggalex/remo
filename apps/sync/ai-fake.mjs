@@ -164,10 +164,37 @@ export function fakePlanReply(prompt = "") {
  * two common subjects and falls back to a neutral shape; the panel says this is a demo
  * fixture, not an analysis of the request.
  */
+function sourceHint(prompt) {
+  const at = String(prompt).indexOf("Selected material:");
+  if (at < 0) return "";
+  for (const line of String(prompt).slice(at).split("\n").slice(1)) {
+    if (!line.trim() || line.startsWith("[") || line.startsWith("(")) continue;
+    return line.trim().slice(0, 80);
+  }
+  return "";
+}
+
+/** The demo shows that the selected material reached the prompt. */
+function withSource(reply, hint) {
+  if (!hint) return reply;
+  reply.objects.push({
+    tempId: "source-note",
+    type: "text",
+    parentRef: "frame",
+    x: 40,
+    y: 430,
+    width: 520,
+    height: 90,
+    text: `Источник: ${hint}`,
+  });
+  return reply;
+}
+
 export function fakeRoomDraftReply(prompt = "") {
   const request = String(prompt).split("\n")[0].replace(/^Request:\s*/i, "").trim();
+  const hint = sourceHint(prompt);
   if (/(плат|оплат|эквайринг|payment|acquiring|checkout)/i.test(request)) {
-    return {
+    return withSource({
       title: "Процесс оплаты",
       objects: [
         { tempId: "frame", type: "frame", x: 0, y: 0, width: 1240, height: 620, title: "Процесс оплаты" },
@@ -187,10 +214,10 @@ export function fakeRoomDraftReply(prompt = "") {
         { from: "capture", to: "paid", arrow: "end", routing: "elbow" },
       ],
       questions: ["Кто обрабатывает chargeback?", "Что делать при таймауте эквайринга?"],
-    };
+    }, hint);
   }
   if (/(возврат|refund)/i.test(request)) {
-    return {
+    return withSource({
       title: "Процесс возврата",
       objects: [
         { tempId: "frame", type: "frame", x: 0, y: 0, width: 1100, height: 620, title: "Процесс возврата" },
@@ -208,10 +235,10 @@ export function fakeRoomDraftReply(prompt = "") {
         { from: "approve", to: "pay", arrow: "end", routing: "elbow" },
       ],
       questions: ["Кто согласует отказ?", "В какой срок возврат обязан быть закрыт?"],
-    };
+    }, hint);
   }
   const title = (request.replace(/^(опиши|собери|сделай|нарисуй|построй|describe|map|build)\s+/i, "").slice(0, 60)) || "Процесс";
-  return {
+  return withSource({
     title,
     objects: [
       { tempId: "frame", type: "frame", x: 0, y: 0, width: 1100, height: 620, title },
@@ -229,11 +256,12 @@ export function fakeRoomDraftReply(prompt = "") {
       { from: "do", to: "result", arrow: "end", routing: "elbow" },
     ],
     questions: ["Что осталось неясным?"],
-  };
+  }, hint);
 }
 
 /** A zoned delivery plan for the room-draft skill. */
-export function fakeDeliveryReply() {
+export function fakeDeliveryReply(prompt = "") {
+  const hint = sourceHint(prompt);
   return {
     title: "Спринт 24",
     summary: "Обязательный объём — 3 задачи; ёмкость команды не указана.",
@@ -258,6 +286,7 @@ export function fakeDeliveryReply() {
         items: [
           { id: "r1", text: "Ёмкость команды неизвестна" },
           { id: "r2", text: "Зависимость от API биллинга" },
+          ...(hint ? [{ id: "source-1", text: `Источник: ${hint}` }] : []),
         ],
       },
     ],
@@ -280,7 +309,7 @@ export function fakePlanClient() {
       const json = tidy
         ? fakeTidyReply(user)
         : delivery
-          ? fakeDeliveryReply()
+          ? fakeDeliveryReply(user)
           : roomDraft
             ? fakeRoomDraftReply(user)
             : fakePlanReply(user);
