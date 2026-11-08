@@ -294,6 +294,7 @@ export const ruCore = {
     "Что собрать? Например: собери процесс возврата и отметь, где неясно, кто согласует отказ.",
   "roomAgent.process": "Схема процесса",
   "roomAgent.problemMap": "Карта проблем",
+  "roomAgent.deliveryPlan": "Спринт или этап",
   "roomAgent.sources": "Источники: {count}",
   "roomAgent.create": "Создать черновик",
   "roomAgent.clarifyPlaceholder": "Уточнить черновик…",

@@ -91,12 +91,42 @@ describe("room draft prompt (ADR-189)", () => {
     expect(prompt.system).toContain("Exactly one object has type \"frame\"");
   });
 
+  it("carries the delivery-plan procedure and the card fields", () => {
+    const prompt = roomDraftPrompt({
+      kind: "delivery-plan",
+      lang: "ru",
+      intent: "Спланируй спринт",
+      sources: [],
+      thread: "",
+    });
+    expect(prompt.system).toContain("mandatory scope");
+    expect(prompt.system).toContain("never invent numbers");
+    expect(prompt.system).toContain("risks/assumptions/open questions");
+  });
+
   it("reads the live text of a chosen object", () => {
     const ydoc = boardWith([{ id: "note-1", text: "клиент ждёт неделю" }]);
     expect(widgetText(ydoc, "note-1")).toBe("клиент ждёт неделю");
     expect(sourceExcerpts(ydoc, ["note-1", "missing"])).toEqual([
       { id: "note-1", type: "sticky_note", title: "", text: "клиент ждёт неделю" },
     ]);
+  });
+
+  it("includes the card fields a plan depends on", () => {
+    const ydoc = boardWith([{ id: "card-1", text: "Экспорт отчёта" }]);
+    ydoc.getMap("widgets").set("card-1", {
+      ...ydoc.getMap("widgets").get("card-1"),
+      type: "card",
+      status: "todo",
+      assigneeName: "Ольга",
+      dueAt: "2026-11-20",
+    });
+    expect(sourceExcerpts(ydoc, ["card-1"])[0]).toMatchObject({
+      type: "card",
+      status: "todo",
+      assignee: "Ольга",
+      due: "2026-11-20",
+    });
   });
 
   it("stops at the source budget", () => {

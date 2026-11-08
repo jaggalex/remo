@@ -48,7 +48,7 @@ export function RoomAgentPanel({
   const [threadId, setThreadId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AgentThreadDetail | null>(null);
   const [intent, setIntent] = useState("");
-  const [kind, setKind] = useState<"process" | "problem-map">("process");
+  const [kind, setKind] = useState<"process" | "delivery-plan" | "problem-map">("process");
   const [assignId, setAssignId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -352,10 +352,13 @@ export function RoomAgentPanel({
                   <span>{t("roomAgent.newTask")}</span>
                   <select
                     value={kind}
-                    onChange={(event) => setKind(event.target.value as "process" | "problem-map")}
+                    onChange={(event) =>
+                      setKind(event.target.value as "process" | "delivery-plan" | "problem-map")
+                    }
                     disabled={busy}
                   >
                     <option value="process">{t("roomAgent.process")}</option>
+                    <option value="delivery-plan">{t("roomAgent.deliveryPlan")}</option>
                     <option value="problem-map">{t("roomAgent.problemMap")}</option>
                   </select>
                 </label>

@@ -37,7 +37,7 @@ export const ROOM_DRAFT_LIMITS = Object.freeze({
   citations: 60,
 });
 
-const KINDS = new Set(["process", "problem-map"]);
+const KINDS = new Set(["process", "delivery-plan", "problem-map"]);
 const TEXT_TYPES = new Set(["sticky_note", "text", "shape", "card", "connector"]);
 const ID_PREFIX = {
   frame: "frame",
@@ -76,6 +76,15 @@ export function sourceExcerpts(ydoc, ids) {
       type: String(widget.type),
       title: String(widget.title ?? "").slice(0, ROOM_DRAFT_LIMITS.titleChars),
       text,
+      // Card fields are part of the selected material: a sprint plan without status,
+      // owner or due date would invent what it cannot see.
+      ...(widget.type === "card"
+        ? {
+            ...(widget.status ? { status: String(widget.status) } : {}),
+            ...(widget.assigneeName ? { assignee: String(widget.assigneeName) } : {}),
+            ...(widget.dueAt ? { due: String(widget.dueAt) } : {}),
+          }
+        : {}),
     });
   }
   return chosen;
@@ -102,6 +111,13 @@ const PROCEDURES = {
 - Every decision is a diamond with a question inside; every outgoing line is labelled with its condition (yes/no or the actual rule).
 - The ordinary path and the refusal/exceptions path must both be visible.
 - Unknown owners or conditions become a separate question note, not a guess.`,
+  "delivery-plan": `Build a realistic delivery plan (a sprint or a project phase) from the request and the sources.
+- Read the tasks and separate the mandatory scope from the desirable scope.
+- Respect dependencies and order: a dependency is a labelled line ("blocks", "after"), not a guess about dates.
+- Compare the scope with the capacity you were actually given. If capacity, estimates or availability are missing, say they are unknown; never invent numbers, dates or people.
+- Use three labelled zones inside the frame: mandatory work, desirable work, and risks/assumptions/open questions. A zone header is a text object, not another frame: the draft has exactly one frame.
+- Mark a missing estimate or owner as "?" and leave assignments to the team.
+- The result is a proposal for the team to confirm, not a commitment.`,
   "problem-map": `Build a problem map from interview material.
 - Group observations into themes; keep every observation traceable to its source.
 - A theme is a text heading, not a claim: do not invent a summary the sources do not support.
@@ -158,7 +174,11 @@ ${PROCEDURES[chosen]}`;
     ? sources
         .map(
           (source, index) =>
-            `[${index + 1}] id=${source.id} type=${source.type} title=${JSON.stringify(source.title)}\n${source.text}`,
+            `[${index + 1}] id=${source.id} type=${source.type} title=${JSON.stringify(source.title)}` +
+          (source.status ? ` status=${source.status}` : "") +
+          (source.assignee ? ` assignee=${JSON.stringify(source.assignee)}` : "") +
+          (source.due ? ` due=${source.due}` : "") +
+          `\n${source.text}`,
         )
         .join("\n\n")
     : "(no sources selected)";
