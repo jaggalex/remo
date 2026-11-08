@@ -62,22 +62,51 @@ export function widgetText(ydoc, id) {
  */
 export function sourceExcerpts(ydoc, ids) {
   const widgets = ydoc.getMap("widgets");
+  const selected = new Set((ids ?? []).map(String));
+  const groups = new Set();
+  for (const id of selected) {
+    const widget = widgets.get(id);
+    if (widget?.groupId) groups.add(widget.groupId);
+  }
+
+  // A selected frame is a container, not a source with text of its own: the material
+  // the person pointed at is inside it. The same rule covers groups, which are
+  // membership without a box.
+  const expanded = [];
+  const seen = new Set();
+  const add = (widget) => {
+    if (!widget || seen.has(widget.id)) return;
+    seen.add(widget.id);
+    expanded.push(widget);
+  };
+  const visit = (id, depth) => {
+    const widget = widgets.get(id);
+    if (!widget) return;
+    add(widget);
+    if (widget.type !== "frame" || depth >= 3) return;
+    for (const child of widgets.values()) {
+      if (child.parentId !== id) continue;
+      add(child);
+      visit(child.id, depth + 1);
+    }
+  };
+  for (const id of selected) visit(id, 0);
+  for (const widget of widgets.values()) {
+    if (widget.groupId && groups.has(widget.groupId)) add(widget);
+  }
+
   const chosen = [];
   let total = 0;
-  for (const id of (ids ?? []).slice(0, ROOM_DRAFT_LIMITS.sourceObjects)) {
-    const widget = widgets.get(String(id));
-    if (!widget) continue;
-    const text = widgetText(ydoc, String(id)).trim().slice(0, ROOM_DRAFT_LIMITS.perSourceChars);
+  for (const widget of expanded.slice(0, ROOM_DRAFT_LIMITS.sourceObjects * 2)) {
+    const text = widgetText(ydoc, String(widget.id)).trim().slice(0, ROOM_DRAFT_LIMITS.perSourceChars);
     if (!text) continue;
     if (total + text.length > ROOM_DRAFT_LIMITS.sourceChars) break;
     total += text.length;
     chosen.push({
-      id: String(id),
+      id: String(widget.id),
       type: String(widget.type),
       title: String(widget.title ?? "").slice(0, ROOM_DRAFT_LIMITS.titleChars),
       text,
-      // Card fields are part of the selected material: a sprint plan without status,
-      // owner or due date would invent what it cannot see.
       ...(widget.type === "card"
         ? {
             ...(widget.status ? { status: String(widget.status) } : {}),
@@ -86,6 +115,7 @@ export function sourceExcerpts(ydoc, ids) {
           }
         : {}),
     });
+    if (chosen.length >= ROOM_DRAFT_LIMITS.sourceObjects) break;
   }
   return chosen;
 }

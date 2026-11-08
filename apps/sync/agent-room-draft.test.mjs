@@ -131,6 +131,40 @@ describe("room draft prompt (ADR-189)", () => {
     });
   });
 
+  it("expands a selected frame to the material inside it", () => {
+    const ydoc = boardWith([]);
+    const widgets = ydoc.getMap("widgets");
+    const texts = ydoc.getMap("texts");
+    widgets.set("frame-1", {
+      id: "frame-1",
+      type: "frame",
+      parentId: null,
+      x: 0,
+      y: 0,
+      width: 600,
+      height: 400,
+      title: "Раздел про возврат",
+    });
+    widgets.set("text-1", {
+      id: "text-1",
+      type: "text",
+      parentId: "frame-1",
+      x: 20,
+      y: 20,
+      width: 240,
+      height: 80,
+    });
+    const text = new Y.Text();
+    text.insert(0, "Клиент ждёт возврат неделю");
+    texts.set("text-1", text);
+
+    expect(sourceExcerpts(ydoc, ["frame-1"]).map((source) => source.id)).toEqual([
+      "frame-1",
+      "text-1",
+    ]);
+    expect(sourceExcerpts(ydoc, ["frame-1"])[1].text).toContain("ждёт возврат");
+  });
+
   it("stops at the source budget", () => {
     const long = "x".repeat(ROOM_DRAFT_LIMITS.perSourceChars + 100);
     const ydoc = boardWith([{ id: "note-1", text: long }]);

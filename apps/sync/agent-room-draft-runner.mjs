@@ -87,6 +87,9 @@ export async function runRoomDraft({
     ? task.input.sourceIds.map(String)
     : [];
   const sources = sourceExcerpts(ydoc, sourceIds);
+  // A selected frame expands to its children: a citation may name any of them, and the
+  // model was given their text, so the citation filter must know the same set.
+  const expandedSourceIds = sources.map((source) => source.id);
   const messages =
     threadId && typeof store.listAgentThreadMessages === "function"
       ? await store.listAgentThreadMessages(threadId)
@@ -119,7 +122,7 @@ export async function runRoomDraft({
       budget,
       capabilities: decision.capabilities,
       aclVersion: decision.board?.acl_version,
-      inputObjectIds: sourceIds,
+      inputObjectIds: expandedSourceIds,
       ai,
       env,
       now,
@@ -188,7 +191,7 @@ export async function runRoomDraft({
       const structured = parseDeliveryReply(completion.json);
       const built = deliveryPlan(structured, {
         lang: task.input?.lang,
-        sourceIds,
+        sourceIds: expandedSourceIds,
         existingWidgets,
         existingConnectors,
       });
@@ -236,7 +239,7 @@ export async function runRoomDraft({
       taskId: task.id,
       citations: draft.citations,
       labels: draft.labels,
-      sourceIds,
+      sourceIds: expandedSourceIds,
       now: now(),
     });
   } catch (error) {

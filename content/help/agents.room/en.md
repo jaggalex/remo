@@ -41,4 +41,4 @@ When the room changes owner, the assignment is cleared, unfinished tasks stop, a
 - One agent per room and one running task; further requests wait in the queue.
 - Delegation to other members is out of this version: the room owner gives the task.
 - A draft is new objects inside a new frame. Existing objects are not changed.
-- The agent sees only explicitly selected material, the request text and the messages of this thread.
+- The agent sees only explicitly selected material, the request text and the messages of this thread. A selected frame expands to the objects inside it; comments are not part of the context.
