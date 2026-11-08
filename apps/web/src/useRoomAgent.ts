@@ -36,9 +36,6 @@ export function useRoomAgent({
   const [state, setState] = useState<RoomAgentState | null>(null);
   const undoStack = useRef<Array<{ frameId: string; depth: number }>>([]);
   const seenDrafts = useRef<Set<string> | null>(null);
-  // Drafts that existed before this tab opened are not "the last action" here. A small
-  // window absorbs the clock difference between the server write and this render.
-  const mountedAt = useRef(Date.now() - 5_000);
 
   const refresh = useCallback(() => {
     void api
@@ -51,21 +48,30 @@ export function useRoomAgent({
     refresh();
   }, [refresh, identityKey]);
 
+  /**
+   * Every agent draft frame is kept around its children, including drafts written
+   * before the server learned to fit them. The repair is local and undoable; it is a
+   * no-op once the frame contains everything.
+   */
   useEffect(() => {
     const drafts = widgets.filter(
       (widget) =>
         widget.type === "frame" &&
         widget.agent?.skill === "room-draft" &&
-        Boolean(widget.agent?.taskId) &&
-        (widget.createdAt ?? 0) >= mountedAt.current,
+        Boolean(widget.agent?.taskId),
     );
-    if (!seenDrafts.current) {
-      seenDrafts.current = new Set(drafts.map((draft) => draft.id));
-      return;
-    }
+    const first = seenDrafts.current === null;
+    if (first) seenDrafts.current = new Set();
     for (const draft of drafts) {
-      if (seenDrafts.current.has(draft.id)) continue;
-      seenDrafts.current.add(draft.id);
+      if (first) {
+        // A draft that existed before this tab opened is repaired once, so an old
+        // geometry from an earlier build does not survive a reload.
+        fitFrameToContents(board, draft.id);
+        continue;
+      }
+      if (seenDrafts.current!.has(draft.id)) continue;
+      seenDrafts.current!.add(draft.id);
+      fitFrameToContents(board, draft.id);
       undoStack.current.push({ frameId: draft.id, depth: board.undo.undoStack.length });
       if (undoStack.current.length > 10) undoStack.current.shift();
     }
