@@ -18,7 +18,7 @@ This differs from a plan preview: there the room does not change until Apply, wh
 3. **Draft.** The server validates the plan, finds free space and writes the frame, its objects and connectors in one transaction. Draft ready appears after the write is confirmed.
 4. **Teamwork.** The frame is edited like any other. A refinement in the thread creates a new version beside the previous one; the previous version keeps manual edits.
 
-## Eight scenarios
+## Twelve scenarios
 
 | Kind | What the draft contains |
 |---|---|
@@ -29,6 +29,10 @@ This differs from a plan preview: there the room does not change until Apply, wh
 | **Retrospective** | Helped, hindered, themes, experiments with a check, and questions |
 | **Decision** | The decision question, criteria, options, disagreements, a recommendation and what to approve |
 | **Meeting actions** | Decisions, actions, open questions and missing data |
+| **Prioritisation** | Initiatives × criteria: effect, effort, confidence; an order and its assumptions |
+| **Competitors** | Products × criteria: observations, limits and opportunities |
+| **Architecture decision** | Options × criteria: cost, complexity, risk; a recommendation and the ADR consequences |
+| **Ideas** | Ideas × criteria: effect, effort, uncertainty; a shortlist and its checks |
 | **Problem map** | Themes, observations, hypotheses and links to the source quotes |
 
 A sprint plan is laid out deterministically: three columns, one row per task, a summary above them. The model decides what belongs where, not where to draw it.

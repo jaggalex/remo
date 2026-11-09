@@ -2,7 +2,7 @@
 
 The room owner assigns one active agent to the room. The agent writes a first draft from your request straight into the room, and the team continues with the usual tools: editing objects, commenting and deleting what is not needed.
 
-Eight scenarios: **a process map**, **a sprint or phase plan**, **requirements**, **MVP**, **a retrospective**, **a decision**, **meeting actions** and **a problem map** from interviews.
+Twelve scenarios: **a process map**, **a sprint or phase plan**, **requirements**, **MVP**, **a retrospective**, **a decision**, **meeting actions**, **prioritisation**, **competitors**, **an architecture decision**, **ideas** and **a problem map** from interviews.
 
 ## Who can ask
 
@@ -22,7 +22,7 @@ Eight scenarios: **a process map**, **a sprint or phase plan**, **requirements**
 
 1. Select the notes or cards the request is about. The selection is the agent's source.
 2. Press the agent avatar in the header.
-3. Write the request and choose a kind: Process map, Sprint or phase, Requirements, MVP, Retrospective, Decision, Meeting actions or Problem map.
+3. Write the request and choose a kind: Process map, Sprint or phase, Requirements, MVP, Retrospective, Decision, Meeting actions, Prioritisation, Competitors, Architecture decision, Ideas or Problem map.
 4. Check how many sources will be sent and press Create draft.
 5. Wait for Draft ready. An ordinary editable frame appears in the room; Show on canvas moves the camera to it.
 6. Discuss and edit it like any other objects. A refinement in the same thread creates a new frame beside the previous one; the previous version keeps all manual edits.
