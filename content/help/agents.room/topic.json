@@ -6,8 +6,8 @@
     "en": "Room agent"
   },
   "summary": {
-    "ru": "Восемь сценариев: процесс, спринт, требования, MVP, ретроспектива, согласование, итоги встречи и карта проблем.",
-    "en": "Eight scenarios: process, sprint, requirements, MVP, retrospective, decision, meeting actions and problem map."
+    "ru": "Двенадцать сценариев: процесс, спринт, требования, MVP, ретроспектива, согласование, итоги, приоритизация, конкуренты, архитектура, идеи и карта проблем.",
+    "en": "Twelve scenarios: process, sprint, requirements, MVP, retrospective, decision, meeting actions, prioritisation, competitors, architecture, ideas and problem map."
   },
   "related": [
     "agents.task",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:cb13d7be848e5b0f606b6b9e1cda3b015c17a09fd60fe4605b17aa66cfb3bcb7",
-      "targetHash": "sha256:a7b673dd77775a6659871f647815ea27777fad46313935992276fc3f6e090d8c"
+      "sourceHash": "sha256:920481bc62331a55601e85792fcc27aa60ea291b468e95177bb2319cb4c747b1",
+      "targetHash": "sha256:460594e0cfd0d03cf89d7cafffaec92cf5f7308f37eeed4de14bdef9b7089bae"
     }
   }
 }

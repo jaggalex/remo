@@ -361,6 +361,10 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
       "retrospective",
       "decision",
       "meeting-actions",
+      "prioritization",
+      "competitors",
+      "architecture-decision",
+      "idea-generation",
     ].includes(body?.kind)
       ? body.kind
       : "process";

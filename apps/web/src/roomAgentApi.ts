@@ -72,7 +72,11 @@ export interface RoomTaskBody {
     | "mvp-scoping"
     | "retrospective"
     | "decision"
-    | "meeting-actions";
+    | "meeting-actions"
+    | "prioritization"
+    | "competitors"
+    | "architecture-decision"
+    | "idea-generation";
   sourceIds?: string[];
   origin?: { x: number; y: number };
   lang?: "ru" | "en";

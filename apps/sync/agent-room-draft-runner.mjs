@@ -24,7 +24,7 @@ import {
 } from "./agent-room-draft.mjs";
 import { deliveryPlan, parseDeliveryReply } from "./agent-delivery-layout.mjs";
 import { actionsPlan, decisionPlan, requirementsPlan, retrospectivePlan } from "./agent-zones-layout.mjs";
-import { mvpPlan } from "./agent-mvp-layout.mjs";
+import { matrixPlan, mvpPlan } from "./agent-mvp-layout.mjs";
 
 function draftTitle(lang, agentName, title) {
   const prefix = lang === "en" ? `Draft · ${agentName}` : `Черновик · ${agentName}`;
@@ -218,6 +218,22 @@ export async function runRoomDraft({
         sourceIds: expandedSourceIds,
         existingWidgets,
         existingConnectors,
+      });
+      draft = {
+        plan: built.plan,
+        title: built.title,
+        labels: [],
+        citations: built.citations,
+        questions: built.questions,
+      };
+    } else if (["prioritization", "competitors", "architecture-decision", "idea-generation"].includes(task.input?.kind)) {
+      const built = matrixPlan(completion.json, {
+        lang: task.input?.lang,
+        sourceIds: expandedSourceIds,
+        existingWidgets,
+        existingConnectors,
+        cellType: "text",
+        cellHeight: 76,
       });
       draft = {
         plan: built.plan,

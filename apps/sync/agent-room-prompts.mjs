@@ -13,6 +13,10 @@ const KINDS = new Set([
   "retrospective",
   "decision",
   "meeting-actions",
+  "prioritization",
+  "competitors",
+  "architecture-decision",
+  "idea-generation",
 ]);
 const PROCEDURES = {
   process: `Build a readable business-process model from the request and the sources.
@@ -255,6 +259,81 @@ Procedure:
 - Collect open questions and missing data separately.
 - A definition of done is a draft for the team, not an accepted commitment.`;
 
+const MATRIX_SHAPE = `Return one JSON object and nothing else, in this shape:
+{
+  "title": "short name of the result",
+  "summary": "one sentence about the question and the main trade-off",
+  "columns": [{"key": "impact", "label": "Impact"}, {"key": "effort", "label": "Effort"}],
+  "rows": [{"key": "i1", "label": "Initiative"}],
+  "cells": [
+    {"row": "i1", "column": "impact", "items": [
+      {"text": "high", "meta": "", "sourceId": "source object id"}
+    ]}
+  ],
+  "recommendation": "the suggested order/choice and the conditions under which it changes",
+  "questions": ["an open question the team must settle"]
+}
+
+Rules:
+- Columns are the criteria or the subjects of comparison; 1 to 8, in the order the reader needs.
+- Rows are the options/initiatives/ideas; 1 to 30. Each key starts with a letter and is unique.
+- A cell names an existing row and column; an empty cell may be omitted.
+- Cell text is at most 300 characters. "meta" is a short source, number or signal only when
+  it is actually known; never invent one. Write "?" for an unknown value.
+- Separate observations from your own judgement; a missing fact is not a missing feature.
+- "recommendation" is a proposal with conditions, not an approved decision.
+- "sourceId" may only be one of the source object ids below.
+- Write the human-readable text in \${language}.
+- No markdown, no code fences, no commentary.`;
+
+function matrixSystem(role, procedure) {
+  return `You are ${role} inside a shared canvas. You never invent facts.
+
+${MATRIX_SHAPE}
+
+Procedure:
+${procedure}`;
+}
+
+const PRIORITIZATION_SYSTEM = matrixSystem(
+  "a product lead prioritising initiatives",
+  `- Bring the initiatives to the same level of detail.
+- Name the criteria and the direction of each one.
+- Score only where the sources give evidence; leave the rest as "?".
+- Show mandatory work separately from product bets; dependencies are not lost among ideas.
+- Recommend an order and state which assumption could change it.`,
+);
+
+const COMPETITORS_SYSTEM = matrixSystem(
+  "a product analyst comparing competitors",
+  `- Fix one user scenario as the boundary for every product.
+- Describe each product's steps through the same scenario.
+- Keep evidence (links, screenshots, documentation) with the observation.
+- Compare the approaches, their limits and their friction, not a feature checklist.
+- Separate observations from your own assessment.
+- Turn gaps into opportunities and questions to validate with users.`,
+);
+
+const ARCHITECTURE_SYSTEM = matrixSystem(
+  "an architect preparing a technical decision",
+  `- Fix the context and the mandatory requirements first.
+- Define the comparison criteria (cost, complexity, risk, operation).
+- Describe the options at the same level of detail.
+- Separate measured numbers from estimates; mark assumptions.
+- Recommend one option and say when the choice should be revisited.
+- Draft the consequences for an ADR; a recommendation is not an approved decision.`,
+);
+
+const IDEAS_SYSTEM = matrixSystem(
+  "a facilitator generating and selecting ideas",
+  `- State the problem without replacing it with a ready solution.
+- Name the constraints and the criteria of a good solution.
+- Offer ideas with different mechanisms, then merge duplicates and group them.
+- Compare effect, effort and uncertainty; explain the scores.
+- Select up to three hypotheses and give each one a check.
+- Do not present an idea as a decision.`,
+);
+
 export function roomDraftPrompt({ kind, lang = "ru", intent, sources, thread }) {
   const chosen = KINDS.has(kind) ? kind : "process";
   const language = lang === "en" ? "English" : "Russian";
@@ -291,6 +370,30 @@ export function roomDraftPrompt({ kind, lang = "ru", intent, sources, thread }) 
   if (chosen === "meeting-actions") {
     return {
       system: ACTIONS_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "prioritization") {
+    return {
+      system: PRIORITIZATION_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "competitors") {
+    return {
+      system: COMPETITORS_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "architecture-decision") {
+    return {
+      system: ARCHITECTURE_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "idea-generation") {
+    return {
+      system: IDEAS_SYSTEM.replace("${language}", language),
       user: draftUserPrompt({ intent, sources, thread }),
     };
   }
