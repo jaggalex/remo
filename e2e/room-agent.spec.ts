@@ -192,6 +192,11 @@ test("a problem map keeps its selected source and identifies a hypothesis", asyn
   const reopened = roomPanel(page);
   await expect(reopened.getByText("Group the interview observations", { exact: true }).first())
     .toBeVisible();
+  // Starting a new task and coming back must not leak that task's kind into the open
+  // conversation: the clarification continues the thread.
+  await reopened.getByRole("button", { name: "New task", exact: true }).click();
+  await reopened.getByRole("combobox").selectOption("process");
+  await reopened.getByRole("button", { name: /Group the interview observations/ }).first().click();
   const clarification = page.waitForRequest((entry) =>
     entry.method() === "POST" && entry.url().includes("/messages"));
   await reopened.getByRole("textbox").fill("Add another observation");

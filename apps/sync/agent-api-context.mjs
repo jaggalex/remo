@@ -15,6 +15,25 @@ import { ROOM_DRAFT_SKILL } from "./agent-room-draft.mjs";
 import { prepareTaskInputs } from "./task-file.mjs";
 import { buildSelectionSource, selectionInput } from "./selection-source.mjs";
 
+/** Every kind a room task accepts; the same list the prompts and the panel use. */
+const ROOM_TASK_KINDS = [
+  "process",
+  "delivery-plan",
+  "problem-map",
+  "requirements",
+  "mvp-scoping",
+  "retrospective",
+  "decision",
+  "meeting-actions",
+  "prioritization",
+  "competitors",
+  "architecture-decision",
+  "idea-generation",
+  "dependency-mapping",
+  "user-flow-design",
+  "architecture-mapping",
+];
+
 export function humanContext({ request, store, log, onTaskQueued, me, sessionId = null }) {
 
   const audit = (event) =>
@@ -352,23 +371,7 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
     if (intent.length < 3 || intent.length > 2000) {
       return { status: 422, code: "BAD_INTENT", message: "describe the task in 3–2000 characters" };
     }
-    const kind = [
-      "process",
-      "delivery-plan",
-      "problem-map",
-      "requirements",
-      "mvp-scoping",
-      "retrospective",
-      "decision",
-      "meeting-actions",
-      "prioritization",
-      "competitors",
-      "architecture-decision",
-      "idea-generation",
-      "dependency-mapping",
-      "user-flow-design",
-      "architecture-mapping",
-    ].includes(body?.kind)
+    let kind = ROOM_TASK_KINDS.includes(body?.kind)
       ? body.kind
       : "process";
     const lang = body?.lang === "en" ? "en" : "ru";
@@ -412,6 +415,9 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
       if (thread.created_by !== me.id && board.owner_id !== me.id) {
         return { status: 403, code: "FORBIDDEN", message: "this thread belongs to somebody else" };
       }
+      // A clarification continues the open conversation: the thread owns the kind even
+      // if the client sends another one.
+      if (ROOM_TASK_KINDS.includes(thread.kind)) kind = thread.kind;
     }
 
     const key = String(request.headers["idempotency-key"] ?? "").trim().slice(0, 95);
