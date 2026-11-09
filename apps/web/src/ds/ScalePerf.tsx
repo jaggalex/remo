@@ -73,7 +73,10 @@ export function ScalePerf() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const widgets = scene();
-    const resolve = (id: string) => widgets.find((widget) => widget.id === id);
+    // A connector asks for its two endpoints every frame; a linear `find` over the
+    // 10 000-object scene would measure the harness, not the painter.
+    const byId = new Map(widgets.map((widget) => [widget.id, widget]));
+    const resolve = (id: string) => byId.get(id);
     const palette = canvasPaletteFromTokens();
     const theme = {
       fontFamily: DEFAULT_FONT_FAMILY,

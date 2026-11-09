@@ -85,6 +85,9 @@ export function RoomAgentPanel({
     | "competitors"
     | "architecture-decision"
     | "idea-generation"
+    | "dependency-mapping"
+    | "user-flow-design"
+    | "architecture-mapping"
   >("process");
   const [assignId, setAssignId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -540,7 +543,10 @@ export function RoomAgentPanel({
                         | "prioritization"
                         | "competitors"
                         | "architecture-decision"
-                        | "idea-generation",
+                        | "idea-generation"
+                        | "dependency-mapping"
+                        | "user-flow-design"
+                        | "architecture-mapping",
                     )
                     }
                     disabled={busy}
@@ -556,6 +562,9 @@ export function RoomAgentPanel({
                     <option value="competitors">{t("roomAgent.competitors")}</option>
                     <option value="architecture-decision">{t("roomAgent.architectureDecision")}</option>
                     <option value="idea-generation">{t("roomAgent.ideas")}</option>
+                    <option value="dependency-mapping">{t("roomAgent.dependencies")}</option>
+                    <option value="user-flow-design">{t("roomAgent.userFlow")}</option>
+                    <option value="architecture-mapping">{t("roomAgent.architecture")}</option>
                     <option value="problem-map">{t("roomAgent.problemMap")}</option>
                   </select>
                 </label>
