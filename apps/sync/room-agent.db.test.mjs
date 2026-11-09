@@ -99,6 +99,7 @@ suite("room agent store", () => {
       agentId: ids.agent,
       boardId: ids.board,
       intent: "map the refund process",
+      input: { kind: "problem-map" },
       threadId: thread.id,
       createdBy: ids.user,
     });
@@ -129,7 +130,13 @@ suite("room agent store", () => {
     });
 
     const threads = await store.listAgentThreads(ids.board);
-    expect(threads[0]).toMatchObject({ id: thread.id, messages: 2, last_status: "ready" });
+    expect(threads[0]).toMatchObject({
+      id: thread.id,
+      messages: 2,
+      last_status: "ready",
+      kind: "problem-map",
+    });
+    expect(await store.getAgentThread(thread.id)).toMatchObject({ kind: "problem-map" });
     const messages = await store.listAgentThreadMessages(thread.id);
     expect(messages.map((message) => message.role)).toEqual(["user", "agent"]);
     expect(messages[1].frame_ids).toEqual(["frame-1"]);

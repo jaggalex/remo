@@ -288,7 +288,7 @@ export async function runRoomDraft({
       };
     }
   } catch (error) {
-    return failDraft(error?.code ?? "DRAFT_INVALID", error?.message ?? "the model returned an invalid draft");
+    return fail(error?.code ?? "DRAFT_INVALID", error?.message ?? "the model returned an invalid draft");
   }
 
   fitDraftFrame(draft.plan);
