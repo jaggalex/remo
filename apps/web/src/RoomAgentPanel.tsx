@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
-import type { AgentThreadDetail, AgentThreadSummary, RoomAgentState } from "./roomAgentApi";
+import type { AgentThreadDetail, AgentThreadSummary, RoomAgentState, RoomTaskKind } from "./roomAgentApi";
 import { formatMoment } from "./format";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n, type TranslationKey } from "./i18n";
@@ -72,23 +72,7 @@ export function RoomAgentPanel({
   const [threadId, setThreadId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AgentThreadDetail | null>(null);
   const [intent, setIntent] = useState("");
-  const [kind, setKind] = useState<
-    | "process"
-    | "delivery-plan"
-    | "problem-map"
-    | "requirements"
-    | "mvp-scoping"
-    | "retrospective"
-    | "decision"
-    | "meeting-actions"
-    | "prioritization"
-    | "competitors"
-    | "architecture-decision"
-    | "idea-generation"
-    | "dependency-mapping"
-    | "user-flow-design"
-    | "architecture-mapping"
-  >("process");
+  const [kind, setKind] = useState<RoomTaskKind>("process");
   const [assignId, setAssignId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +85,8 @@ export function RoomAgentPanel({
   const requestKey = useRef<{ fingerprint: string; key: string } | null>(null);
   const sending = useRef(false);
   const seenFrames = useRef(new Set<string>());
+  /** A thread teaches its kind once; later polling must not overwrite a new choice. */
+  const kindThread = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     const [next, list] = await Promise.all([
@@ -132,6 +118,11 @@ export function RoomAgentPanel({
     const next = await api.roomAgentThread(id);
     if (selectedThread.current !== id) return;
     setDetail(next);
+    // A clarification continues the thread's task, so its kind must survive a reload.
+    if (kindThread.current !== id && next.thread.kind) {
+      kindThread.current = id;
+      setKind(next.thread.kind);
+    }
     for (const message of next.messages) {
       if (message.role !== "agent" || !message.frame_ids.length) continue;
       const key = message.frame_ids[0];

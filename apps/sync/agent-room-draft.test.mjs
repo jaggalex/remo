@@ -267,6 +267,14 @@ describe("room draft plan", () => {
     expect(plan.counts.connectors).toBe(1);
   });
 
+  it("refuses a frame with no content", () => {
+    const parsed = parseRoomDraftReply({
+      title: "Empty",
+      objects: [{ tempId: "frame", type: "frame", x: 0, y: 0, width: 400, height: 300 }],
+    });
+    expect(() => roomDraftPlan(parsed, facts)).toThrow(/besides its frame/);
+  });
+
   it("refuses an object outside the frame", () => {
     const parsed = parseRoomDraftReply({
       ...reply,

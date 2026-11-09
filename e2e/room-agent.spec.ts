@@ -183,6 +183,23 @@ test("a problem map keeps its selected source and identifies a hypothesis", asyn
   await page.getByRole("menuitem", { name: "Info", exact: true }).click();
   await page.getByRole("button", { name: "Open task", exact: true }).click();
   await expect(panel.getByText("Group the interview observations", { exact: true }).first()).toBeVisible();
+
+  // A reload must keep the kind: a clarification continues the same task, it does not
+  // silently become a process map (defect found in acceptance).
+  await page.reload();
+  await waitForBoardEditor(page);
+  await page.getByRole("button", { name: "Assigned: Planner" }).click();
+  const reopened = roomPanel(page);
+  await expect(reopened.getByText("Group the interview observations", { exact: true }).first())
+    .toBeVisible();
+  const clarification = page.waitForRequest((entry) =>
+    entry.method() === "POST" && entry.url().includes("/messages"));
+  await reopened.getByRole("textbox").fill("Add another observation");
+  await reopened.getByRole("button", { name: "Send", exact: true }).click();
+  expect((await clarification).postDataJSON()).toMatchObject({ kind: "problem-map" });
+  await expect.poll(() => frames(page)).toHaveLength(2);
+  const titles = (await frames(page)).map((widget) => widget.text ?? "");
+  expect(titles.some((title) => title.includes("Interview problem map"))).toBe(true);
 });
 
 test("requirements and MVP drafts use their own layouts", async ({ page }) => {

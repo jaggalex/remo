@@ -224,6 +224,14 @@ export function centerDraftObjects(objects) {
   });
 }
 
+function assertDraftContent(plan) {
+  // A frame alone is not a result: publishing it would say "draft ready" and show an
+  // empty rectangle the team cannot use.
+  if (!plan.objects.some((object) => object.type !== "frame")) {
+    throw new PlanError("DRAFT_EMPTY", "a draft needs at least one object besides its frame");
+  }
+}
+
 export function roomDraftPlan(reply, { origin, existingWidgets, existingConnectors }) {
   const objects = reply.objects.map((object) => ({
     ...object,
@@ -249,6 +257,7 @@ export function roomDraftPlan(reply, { origin, existingWidgets, existingConnecto
   if (frames.length !== 1) {
     throw new PlanError("DRAFT_FRAME", "a draft has exactly one frame");
   }
+  assertDraftContent(plan);
   const frame = frames[0];
   for (const object of plan.objects) {
     if (object === frame) continue;
@@ -301,6 +310,8 @@ export function applyRoomDraft(
   plan,
   { placed, title, agent, taskId, citations = [], labels = [], sourceIds = [], now = Date.now() },
 ) {
+  // The last line of defence: no builder may publish an empty frame.
+  assertDraftContent(plan);
   const dx = placed.x - plan.bounds.x;
   const dy = placed.y - plan.bounds.y;
   const widgets = ydoc.getMap("widgets");

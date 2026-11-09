@@ -13,6 +13,17 @@ const skill = {
   risk: "write",
 };
 
+const roomSkill = {
+  id: "s2",
+  slug: "room-draft",
+  version: 1,
+  name: "Room draft",
+  state: "published",
+  handler: "builtin:room-draft",
+  required_capabilities: ["board.read", "board.edit"],
+  risk: "write",
+};
+
 function makeTask(overrides = {}) {
   return {
     id: "t1",
@@ -104,6 +115,17 @@ function fakeStore({
     }),
     getAgent: async () => agent,
     getIamBoard: async () => board,
+    getBoardAgent: async () => ({
+      agent_id: "a1",
+      enabled: true,
+      owner_id: "u1",
+      agent_state: "active",
+      delegate_ids: [],
+    }),
+    listAgentThreadMessages: async () => [],
+    updateAgentThreadMessageByTask: async ({ taskId, status, text }) => {
+      state.threadMessage = { taskId, status, text };
+    },
     getOrgPolicy: async () => ({ agentsEnabled: orgAgents }),
     accessFacts: async () => facts,
     listAgentSkills: async () => skills,
@@ -165,6 +187,36 @@ describe("runAgentTask", () => {
       "agent.task.finish",
     ]);
     expect(store.state.task.usage.actions).toBe(3);
+  });
+
+  it("fails an empty room draft with the reason, not a crash", async () => {
+    const store = fakeStore({
+      task: makeTask({
+        skill_id: "s2",
+        skill_slug: "room-draft",
+        skill_version: 1,
+        thread_id: "th1",
+        input: { kind: "process", origin: { x: 0, y: 0 } },
+      }),
+      skills: [roomSkill],
+    });
+    const empty = {
+      chatJson: async () => ({
+        json: {
+          title: "Empty",
+          objects: [{ tempId: "frame", type: "frame", x: 0, y: 0, width: 400, height: 300 }],
+          connectors: [],
+        },
+        usage: { promptTokens: 10, completionTokens: 5, costUsd: 0 },
+        model: "fake/model",
+      }),
+    };
+    const result = await runAgentTask({ store, taskId: "t1", ai: empty, log: { error() {} } });
+
+    expect(result).toMatchObject({ status: "failed", code: "DRAFT_EMPTY" });
+    expect(store.state.task.error).toContain("DRAFT_EMPTY");
+    expect(store.state.threadMessage).toMatchObject({ status: "error", text: "DRAFT_EMPTY" });
+    expect([...store.state.ydoc.getMap("widgets").values()]).toHaveLength(0);
   });
 
   it("refuses to mark applied when the room was replaced", async () => {

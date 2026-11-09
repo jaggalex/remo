@@ -176,7 +176,17 @@ async stopRoomAgentTask(id) {
 
 async getAgentThread(id) {
   const { rows } = await this.pool.query(
-    `select * from agent_threads where id = $1`,
+    // The skill kind lives on the task input. A reloaded panel must send the same kind
+    // with a clarification, so the thread reports the kind of its latest task.
+    `select t.*, (
+       select coalesce(a.input->>'kind', 'process')
+         from agent_tasks a
+        where a.thread_id = t.id
+        order by a.created_at desc, a.id desc
+        limit 1
+     ) as kind
+       from agent_threads t
+      where t.id = $1`,
     [id],
   );
   return rows[0] ?? null;
@@ -187,6 +197,11 @@ async listAgentThreads(boardId, limit = 30, frameId = null) {
     `select t.id, t.board_id, t.agent_id, t.agent_name, t.created_by, t.title,
             t.created_at, t.updated_at,
             (select count(*)::int from agent_thread_messages m where m.thread_id = t.id) as messages,
+            (select coalesce(a.input->>'kind', 'process')
+               from agent_tasks a
+              where a.thread_id = t.id
+              order by a.created_at desc, a.id desc
+              limit 1) as kind,
             (select m.status from agent_thread_messages m
               where m.thread_id = t.id and m.role = 'agent'
               order by m.created_at desc limit 1) as last_status
