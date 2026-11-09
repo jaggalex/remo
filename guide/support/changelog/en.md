@@ -23,8 +23,9 @@ ship together with a schema version; there is no separate "documentation release
 | 16 | personal organisations and the home: `orgs.kind`, `boards.icon`, `boards.created_at`, `boards.created_by` |
 | 17 | `org_id` on the tables tied to a room: existing rows filled from their rooms, and a trigger for new rows |
 | 18 | organisation row-level isolation (RLS): policies on every table that holds tenant data, the `remo_app` application role, functions for the organisation lookup, agent tasks and the event queue |
+| 20 | the room agent: `board_agents`, `agent_threads`, `agent_thread_messages`, `agent_tasks.thread_id` |
 
-Versions 1–3 are the early line: rooms, access and the command journal. Databases created
+Version 19 was never released. Versions 1–3 are the early line: rooms, access and the command journal. Databases created
 earlier are upgraded by the same `schema.sql` at start.
 
 ## What changed in the product and documentation
