@@ -149,6 +149,18 @@ describe("room draft prompt (ADR-189)", () => {
     }
   });
 
+  it("carries the three graph contracts", () => {
+    for (const [kind, phrase] of [
+      ["dependency-mapping", "must happen before"],
+      ["user-flow-design", "every edge a trigger"],
+      ["architecture-mapping", "boundary and the level of detail"],
+    ]) {
+      const prompt = roomDraftPrompt({ kind, lang: "ru", intent: "Собери граф", sources: [], thread: "" });
+      expect(prompt.system).toContain(phrase);
+      expect(prompt.system).toContain('"nodes"');
+    }
+  });
+
   it("carries the delivery-plan procedure and the card fields", () => {
     const prompt = roomDraftPrompt({
       kind: "delivery-plan",

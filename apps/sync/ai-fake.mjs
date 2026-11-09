@@ -591,6 +591,71 @@ export function fakeIdeasReply(prompt = "") {
   });
 }
 
+export function fakeDependencyReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "Зависимости релиза",
+    summary: "Релиз ждёт API и проверку лимитов; шаблоны можно вести параллельно.",
+    nodes: [
+      { id: "api", label: "API возврата", kind: "task" },
+      { id: "ui", label: "Форма в кабинете", kind: "task" },
+      { id: "limits", label: "Лимиты эквайринга", kind: "task" },
+      { id: "release", label: "Релиз", kind: "milestone" },
+      ...(hint ? [{ id: "source", label: `Источник: ${hint}`, kind: "task" }] : []),
+    ],
+    edges: [
+      { from: "api", to: "ui", label: "блокирует" },
+      { from: "limits", to: "release", label: "блокирует" },
+      { from: "ui", to: "release", label: "после" },
+    ],
+    questions: ["Кто подтвердит лимиты?"],
+  };
+}
+
+export function fakeUserFlowReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "Возврат в кабинете",
+    summary: "Клиент входит в кабинет, выбирает платёж и видит статус возврата.",
+    nodes: [
+      { id: "cabinet", label: "Кабинет", kind: "step" },
+      { id: "payment", label: "Выбор платежа", kind: "step" },
+      { id: "allowed", label: "Возврат разрешён?", kind: "decision" },
+      { id: "status", label: "Статус возврата", kind: "step" },
+      { id: "error", label: "Отказ с причиной", kind: "step" },
+      ...(hint ? [{ id: "source", label: `Источник: ${hint}`, kind: "step" }] : []),
+    ],
+    edges: [
+      { from: "cabinet", to: "payment", label: "открывает" },
+      { from: "payment", to: "allowed", label: "проверка" },
+      { from: "allowed", to: "status", label: "да" },
+      { from: "allowed", to: "error", label: "нет" },
+    ],
+    questions: ["Что показываем, если банк не отвечает?"],
+  };
+}
+
+export function fakeArchitectureMapReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "Возвраты в архитектуре",
+    summary: "Клиент идёт в API, API — в базу и эквайринг; очередь — предлагаемый вариант.",
+    nodes: [
+      { id: "client", label: "Клиент", kind: "actor", layer: 0 },
+      { id: "api", label: "API возврата", kind: "component", layer: 1 },
+      { id: "db", label: "База возвратов", kind: "store", layer: 2 },
+      { id: "acquirer", label: "Эквайринг", kind: "external", layer: 2 },
+      ...(hint ? [{ id: "source", label: `Источник: ${hint}`, kind: "component", layer: 1 }] : []),
+    ],
+    edges: [
+      { from: "client", to: "api", label: "HTTPS" },
+      { from: "api", to: "db", label: "SQL" },
+      { from: "api", to: "acquirer", label: "HTTPS" },
+    ],
+    questions: ["Нужна ли очередь между API и эквайрингом?"],
+  };
+}
+
 /** The provider shape `callAgentModel` expects, with no network and no key. */
 export function fakePlanClient() {
   return {
@@ -610,32 +675,27 @@ export function fakePlanClient() {
       const competitors = text.includes("comparing competitors");
       const architecture = text.includes("preparing a technical decision");
       const ideas = text.includes("generating and selecting ideas");
+      const dependencies = text.includes("mapping dependencies");
+      const userFlow = text.includes("mapping a user flow");
+      const architectureMap = text.includes("mapping a system");
       const roomDraft = text.includes("product analyst");
-      const json = tidy
-        ? fakeTidyReply(user)
-        : delivery
-          ? fakeDeliveryReply(user)
-          : requirements
-            ? fakeRequirementsReply(user)
-            : mvp
-              ? fakeMvpReply(user)
-              : retro
-                ? fakeRetroReply(user)
-                : decision
-                  ? fakeDecisionReply(user)
-                  : actions
-                    ? fakeActionsReply(user)
-                    : prioritization
-                      ? fakePrioritizationReply(user)
-                      : competitors
-                        ? fakeCompetitorsReply(user)
-                        : architecture
-                          ? fakeArchitectureReply(user)
-                          : ideas
-                            ? fakeIdeasReply(user)
-                            : roomDraft
-                              ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
-                              : fakePlanReply(user);
+      let json;
+      if (tidy) json = fakeTidyReply(user);
+      else if (dependencies) json = fakeDependencyReply(user);
+      else if (userFlow) json = fakeUserFlowReply(user);
+      else if (architectureMap) json = fakeArchitectureMapReply(user);
+      else if (delivery) json = fakeDeliveryReply(user);
+      else if (requirements) json = fakeRequirementsReply(user);
+      else if (mvp) json = fakeMvpReply(user);
+      else if (retro) json = fakeRetroReply(user);
+      else if (decision) json = fakeDecisionReply(user);
+      else if (actions) json = fakeActionsReply(user);
+      else if (prioritization) json = fakePrioritizationReply(user);
+      else if (competitors) json = fakeCompetitorsReply(user);
+      else if (architecture) json = fakeArchitectureReply(user);
+      else if (ideas) json = fakeIdeasReply(user);
+      else if (roomDraft) json = text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user);
+      else json = fakePlanReply(user);
       return {
         json,
         text: JSON.stringify(json),

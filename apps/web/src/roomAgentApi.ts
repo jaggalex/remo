@@ -76,7 +76,10 @@ export interface RoomTaskBody {
     | "prioritization"
     | "competitors"
     | "architecture-decision"
-    | "idea-generation";
+    | "idea-generation"
+    | "dependency-mapping"
+    | "user-flow-design"
+    | "architecture-mapping";
   sourceIds?: string[];
   origin?: { x: number; y: number };
   lang?: "ru" | "en";

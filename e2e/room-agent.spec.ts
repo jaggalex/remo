@@ -201,16 +201,21 @@ test("requirements and MVP drafts use their own layouts", async ({ page }) => {
     ["competitors", "Сравни конкурентов"],
     ["architecture-decision", "Подготовь архитектурное решение"],
     ["idea-generation", "Сгенерируй идеи"],
+    ["dependency-mapping", "Собери зависимости"],
+    ["user-flow-design", "Собери user flow"],
+    ["architecture-mapping", "Опиши архитектуру"],
   ] as const) {
     const created = await page.request.post(`/api/boards/${boardId}/agent-threads`, {
       data: { intent, kind, sourceIds: [] },
     });
     expect(created.ok(), await created.text()).toBeTruthy();
   }
-  await expect.poll(() => frames(page)).toHaveLength(9);
+  await expect.poll(() => frames(page)).toHaveLength(12);
   const texts = await page.evaluate(() =>
     (window as unknown as { __remo: { widgets: Array<{ type: string; text?: string }> } }).__remo.widgets
-      .filter((widget) => widget.type === "text")
+      // Graph nodes are shapes whose label lives in the shared text; the layout
+      // skills write plain text objects. Both carry their label in `text`.
+      .filter((widget) => widget.type === "text" || widget.type === "shape")
       .map((widget) => widget.text ?? ""),
   );
   expect(texts).toContain("Контекст");
@@ -222,4 +227,7 @@ test("requirements and MVP drafts use their own layouts", async ({ page }) => {
   expect(texts).toContain("Продукт A");
   expect(texts).toContain("Стоимость");
   expect(texts).toContain("Самообслуживание");
+  expect(texts).toContain("API возврата");
+  expect(texts).toContain("Кабинет");
+  expect(texts).toContain("Клиент");
 });
