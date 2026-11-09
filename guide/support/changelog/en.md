@@ -31,6 +31,7 @@ earlier are upgraded by the same `schema.sql` at start.
 
 | Date | What |
 |---|---|
+| 09.11.2026 | Room agent: assign an agent to a room, a draft appears in the room immediately, a shared thread, delegation to selected editors, undo of the latest draft and history deletion. Fifteen scenarios: process, sprint, requirements, MVP, retrospective, decision, meeting actions, prioritisation, competitors, architecture decision, ideas, dependencies, user flow, architecture and problem map. |
 | 06.11.2026 | Rooms without an owner are closed: the API and the socket refuse, and the room is not in the room list; a claim returns the room and clears the archive. Organisation row-level isolation (RLS). Write quotas: `4429` when the rate is exceeded, `4413` when the room is full. Edits over the socket are audited as one row per session per 60 s window. |
 | 04.11.2026 | Templates arrive in the profile language: Russian names, copy and kanban columns for a Russian account. The plus in an empty kanban cell creates a card and opens its editor immediately. |
 | 04.11.2026 | The product says “room”: one noun in the interface and documentation; the technical `board.*` names remain identifiers. |
