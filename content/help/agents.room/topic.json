@@ -6,8 +6,8 @@
     "en": "Room agent"
   },
   "summary": {
-    "ru": "Владелец назначает агента комнате, агент пишет первый черновик по поручению, а команда правит его обычными инструментами.",
-    "en": "The owner assigns an agent to the room, the agent writes a first draft from a request, and the team edits it with the usual tools."
+    "ru": "Пять сценариев: схема процесса, спринт, требования, MVP и карта проблем; агент пишет первый черновик по поручению.",
+    "en": "Five scenarios: process, sprint, requirements, MVP and problem map; the agent writes a first draft from a request."
   },
   "related": [
     "agents.task",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:d589a84307900f02c1054e0b3795612b4a0dae74e9adf2e770b58afbebe3d64c",
-      "targetHash": "sha256:9952495c6c4e93940ca79032f5a39efd8a21c22c9081431de97bafbc56a8ef13"
+      "sourceHash": "sha256:77b61c815c115a1752f5127439934cb36c8c640042d2cc1f7aff2913e30600bf",
+      "targetHash": "sha256:cff696a17c004cfb2e2044a342ca083026cc8aecc21fe15dba84282fde949e73"
     }
   }
 }
