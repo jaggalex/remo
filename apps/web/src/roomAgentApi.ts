@@ -30,6 +30,23 @@ export interface RoomAgentState {
   agents: Array<{ id: string; name: string }>;
 }
 
+export type RoomTaskKind =
+  | "process"
+  | "delivery-plan"
+  | "problem-map"
+  | "requirements"
+  | "mvp-scoping"
+  | "retrospective"
+  | "decision"
+  | "meeting-actions"
+  | "prioritization"
+  | "competitors"
+  | "architecture-decision"
+  | "idea-generation"
+  | "dependency-mapping"
+  | "user-flow-design"
+  | "architecture-mapping";
+
 export interface AgentThreadSummary {
   id: string;
   board_id: string;
@@ -37,6 +54,8 @@ export interface AgentThreadSummary {
   agent_name: string;
   created_by: string | null;
   title: string;
+  /** The kind of the latest task, so a clarification keeps it after a reload. */
+  kind?: RoomTaskKind | null;
   created_at: string;
   updated_at: string;
   messages: number;
@@ -64,22 +83,7 @@ export interface AgentThreadDetail {
 
 export interface RoomTaskBody {
   intent: string;
-  kind?:
-    | "process"
-    | "delivery-plan"
-    | "problem-map"
-    | "requirements"
-    | "mvp-scoping"
-    | "retrospective"
-    | "decision"
-    | "meeting-actions"
-    | "prioritization"
-    | "competitors"
-    | "architecture-decision"
-    | "idea-generation"
-    | "dependency-mapping"
-    | "user-flow-design"
-    | "architecture-mapping";
+  kind?: RoomTaskKind;
   sourceIds?: string[];
   origin?: { x: number; y: number };
   lang?: "ru" | "en";
