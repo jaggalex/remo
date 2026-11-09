@@ -23,7 +23,7 @@ import {
   threadExcerpt,
 } from "./agent-room-draft.mjs";
 import { deliveryPlan, parseDeliveryReply } from "./agent-delivery-layout.mjs";
-import { requirementsPlan } from "./agent-zones-layout.mjs";
+import { actionsPlan, decisionPlan, requirementsPlan, retrospectivePlan } from "./agent-zones-layout.mjs";
 import { mvpPlan } from "./agent-mvp-layout.mjs";
 
 function draftTitle(lang, agentName, title) {
@@ -214,6 +214,25 @@ export async function runRoomDraft({
       };
     } else if (task.input?.kind === "mvp-scoping") {
       const built = mvpPlan(completion.json, {
+        lang: task.input?.lang,
+        sourceIds: expandedSourceIds,
+        existingWidgets,
+        existingConnectors,
+      });
+      draft = {
+        plan: built.plan,
+        title: built.title,
+        labels: [],
+        citations: built.citations,
+        questions: built.questions,
+      };
+    } else if (["retrospective", "decision", "meeting-actions"].includes(task.input?.kind)) {
+      const planFor = {
+        retrospective: retrospectivePlan,
+        decision: decisionPlan,
+        "meeting-actions": actionsPlan,
+      }[task.input.kind];
+      const built = planFor(completion.json, {
         lang: task.input?.lang,
         sourceIds: expandedSourceIds,
         existingWidgets,
