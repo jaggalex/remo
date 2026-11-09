@@ -125,6 +125,23 @@ suite("agent API", () => {
     expect(Boolean(await store.getBoardAgent(boardId))).toBe(assigned.status === 200);
   });
 
+  it("keeps a clarification on the conversation's kind", async () => {
+    const { owner, boardId, agent } = await setup("room-thread-kind");
+    expect((await owner("PUT", `/boards/${boardId}/agent`, { agentId: agent.id })).status).toBe(200);
+    const created = await owner("POST", `/boards/${boardId}/agent-threads`, {
+      intent: "Group the interview observations",
+      kind: "problem-map",
+    });
+    expect(created.status).toBe(202);
+    const clarified = await owner("POST", `/agent-threads/${created.body.thread.id}/messages`, {
+      intent: "Add another observation",
+      kind: "process",
+    });
+    expect(clarified.status).toBe(202);
+    // The open conversation owns the kind, not the client that asks for a clarification.
+    expect(clarified.body.task.input.kind).toBe("problem-map");
+  });
+
   it("refuses room drafts on generic task and schedule endpoints", async () => {
     const { owner, boardId, agent } = await setup("room-draft-entry");
     await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
