@@ -18,23 +18,48 @@ async getBoardLink(boardId) {
   return rows[0] ?? null;
 },
 
-async enableBoardLink({ boardId, role = "viewer", createdBy }) {
+async enableBoardLink({
+  boardId, role = "viewer", createdBy, confirmDraftSharing = false, passwordHash, expiresAt,
+}) {
   const client = await this.pool.connect();
   try {
     await client.query("begin");
     const { rows } = await client.query(
-      `insert into board_links (board_id, role, enabled, created_by)
-       values ($1, $2, true, $3)
-       on conflict (board_id) do update set enabled = true, role = excluded.role
+      `insert into board_links (board_id, role, enabled, created_by, password_hash, expires_at)
+       values ($1, $2, true, $3, $4, $5)
+       on conflict (board_id) do update set enabled = true, role = excluded.role,
+         password_hash = case when $6 then excluded.password_hash else board_links.password_hash end,
+         password_version = board_links.password_version + case when $6 then 1 else 0 end,
+         expires_at = case when $7 then excluded.expires_at else board_links.expires_at end
        returning enabled, version, role, password_hash is not null as has_password,
                  password_version, expires_at`,
-      [boardId, role, createdBy],
+      [boardId, role, createdBy, passwordHash ?? null, expiresAt ?? null,
+        passwordHash !== undefined, expiresAt !== undefined],
     );
-    await client.query(`update boards set visibility = 'link' where id = $1`, [boardId]);
     await client.query(
-      `update boards set acl_version = acl_version + 1 where id = $1`,
+      `update boards set visibility = 'link', acl_version = acl_version + 1 where id = $1`,
       [boardId],
     );
+    // The board update holds the same row lock as assignment. Checking afterwards
+    // also sees an assignment that committed while this transaction was waiting.
+    const assignment = await client.query(
+      `select 1 from board_agents where board_id = $1`,
+      [boardId],
+    );
+    if (assignment.rowCount > 0) {
+      await client.query("rollback");
+      return { blockedBy: "assignment" };
+    }
+    if (!confirmDraftSharing) {
+      const drafts = await client.query(
+        `select 1 from agent_tasks where board_id = $1 and skill_slug = 'room-draft' limit 1`,
+        [boardId],
+      );
+      if (drafts.rowCount > 0) {
+        await client.query("rollback");
+        return { blockedBy: "drafts" };
+      }
+    }
     await client.query("commit");
     return rows[0];
   } catch (error) {

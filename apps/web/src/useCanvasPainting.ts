@@ -188,6 +188,7 @@ export function useCanvasPainting({
       resolve: resolveConnector,
       isCardOfKanban,
       theme: paintTheme,
+      editingId,
     };
     paintBoardLayer(input);
     paintStats.current.board += 1;

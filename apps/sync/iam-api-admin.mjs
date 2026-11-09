@@ -157,6 +157,21 @@ export async function handleAdminRoutes(ctx) {
       before: { ownerId: me.id },
       after: { ownerId: target.id },
     });
+    // ADR-189: a new owner gets a clean room agent. Unfinished work stops and the
+    // assignment is cleared; history and the frames already written stay.
+    if (typeof store.releaseBoardAgent === "function") {
+      const released = await store.releaseBoardAgent(boardId, "ownership changed");
+      if (released) {
+        await audit({
+          actorId: me.id,
+          orgId: board.org_id,
+          boardId,
+          action: "board.agent.assign",
+          subject: "off",
+          reason: "ownership changed",
+        });
+      }
+    }
     await onAclChanged?.(boardId);
     json(response, 200, { board: transferred });
     return true;

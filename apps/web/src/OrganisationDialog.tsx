@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ApiError,
   api,
@@ -32,6 +32,7 @@ export function OrganisationDialog({
   open,
   me,
   initialOrgId = null,
+  initialTab = "people",
   onOrgsChanged,
   onClose,
   onSignedOut,
@@ -40,6 +41,8 @@ export function OrganisationDialog({
   me: SessionUser;
   /** The organisation chosen in the directory (ADR-166); null means "pick one". */
   initialOrgId?: string | null;
+  /** Which tab the caller wants first; the room agent settings open "agents". */
+  initialTab?: "people" | "audit" | "agents";
   /** The directory list changed: a new organisation or a new name. */
   onOrgsChanged?: () => void | Promise<void>;
   onClose: () => void;
@@ -64,7 +67,8 @@ export function OrganisationDialog({
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [invitations, setInvitations] = useState<OrgInvitation[]>([]);
   const [audit, setAudit] = useState<AuditEvent[]>([]);
-  const [tab, setTab] = useState<"people" | "audit" | "agents">("people");
+  const [tab, setTab] = useState<"people" | "audit" | "agents">(initialTab);
+  const openedTab = useRef<"people" | "audit" | "agents">(initialTab);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +117,7 @@ export function OrganisationDialog({
   /** The organisation list is re-read every time the screen opens: invitations change it. */
   useEffect(() => {
     if (!open) return;
+    openedTab.current = initialTab;
     let alive = true;
     setError(null);
     void api
@@ -183,6 +188,12 @@ export function OrganisationDialog({
     setTab("people");
     void load(orgId);
   }, [open, orgId, load]);
+
+  useEffect(() => {
+    if (!open || !orgId) return;
+    setTab(openedTab.current);
+    openedTab.current = "people";
+  }, [open, orgId]);
 
   if (!open) return null;
 

@@ -24,6 +24,8 @@ export function useInfoCard(
         y,
         title: typeName(widget.type),
         rows: infoRows(widget, t),
+        draftFrameId: widget.type === "frame" && widget.agent?.skill === "room-draft"
+          ? widget.id : undefined,
         helpTopicId: widget.locked ? "objects.lock" : undefined,
       });
     },

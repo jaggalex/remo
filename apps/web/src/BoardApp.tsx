@@ -22,6 +22,8 @@ import { currentRoom, loadIdentity, type Identity } from "./identity";
 import { useCursorIdentity } from "./useCursorIdentity";
 import { useI18n } from "./i18n";
 import { InfoCard } from "./InfoCard";
+import { RoomAgentPanel } from "./RoomAgentPanel";
+import { useRoomAgent } from "./useRoomAgent";
 import { useInfoCard } from "./useInfoCard";
 import { useApplyAgentPlan } from "./useApplyAgentPlan";
 import { useTidyCommand } from "./useTidyCommand";
@@ -66,7 +68,13 @@ export function BoardApp() {
   const [shareOpen, setShareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [accountTab, setAccountTab] = useState<"people" | "audit" | "agents">("people");
+  const openAccount = useCallback((tab: "people" | "audit" | "agents" = "people") => {
+    setAccountTab(tab);
+    setAccountOpen(true);
+  }, []);
   const [agentOpen, setAgentOpen] = useState(false);
+  const roomId = currentRoom();
   const tidy = useTidyCommand({ openAgents: () => setAgentOpen(true) });
   const [timerOpen, setTimerOpen] = useState(false);
   const [followOpen, setFollowOpen] = useState(false);
@@ -119,14 +127,22 @@ export function BoardApp() {
     saveTitle,
   } = useBoardSession({ board, identity, accountId: me?.id ?? null, accountHandle: me?.handle ?? null, access, refreshAccess,
     setNotice: showNotice, t });
+  // Two different reasons stop writes: access, and the offline queue limit.
+  const writeBlocked = readOnly || saveState.blocked;
+  const roomAgent = useRoomAgent({
+    board, widgets, selectedIds, roomId, boardTitle: title || boardTitle || "",
+    canEdit: !writeBlocked,
+    accountId: me?.id ?? null, synced,
+    identityKey: `${me?.id ?? ""}:${access?.aclVersion ?? 0}`,
+    openSettings: () => openAccount("agents"),
+  });
+
   /** One voting session, shared by the panel and the chips on the board (ADR-115). */
   const { vote, open: voteOpen, setOpen: setVoteOpen, cast, withdraw } = useBoardVote({
     boardId: currentRoom(),
     connection,
     t,
   });
-  // Two different reasons stop writes: access, and the offline queue limit.
-  const writeBlocked = readOnly || saveState.blocked;
   /**
    * Why the rail is off, in words.
    *
@@ -444,6 +460,7 @@ export function BoardApp() {
     writeBlocked,
     onTool: runTool,
     onTone: applyTone,
+    onAgentUndo: roomAgent.undoAgentDraft,
     editingId,
     selectedIds,
     widgets,
@@ -558,6 +575,7 @@ export function BoardApp() {
       />
       <BoardPanels
         accountOpen={accountOpen}
+        accountTab={accountTab}
         me={me}
         onCloseAccount={() => setAccountOpen(false)}
         onSignedOut={() => {
@@ -576,7 +594,7 @@ export function BoardApp() {
         onCloseAgent={() => setAgentOpen(false)}
         onOpenOrg={() => {
           setAgentOpen(false);
-          setAccountOpen(true);
+          openAccount("agents");
         }}
         settingsOpen={settingsOpen} settings={settings}
         onChangeSettings={(next) => {
@@ -590,6 +608,7 @@ export function BoardApp() {
         onCloseTrash={() => setTrashOpen(false)}
         onConfirmTrash={() => void trashBoard()}
       />
+      <RoomAgentPanel {...roomAgent.panelProps} />
       <BoardTopbar
         title={title || boardTitle || ""}
         titleDraft={titleDraft}
@@ -628,6 +647,7 @@ export function BoardApp() {
         setTimerOpen={setTimerOpen}
         setFollowOpen={setFollowOpen}
         setAgentOpen={setAgentOpen}
+        {...roomAgent.barProps}
         setAppsOpen={setAppsOpen}
         onReact={react}
         follow={follow}
@@ -642,7 +662,7 @@ export function BoardApp() {
         renameSelf={renameSelf} onAccountRenamed={setMe}
         theme={theme} setTheme={setTheme}
         lang={lang} setLang={setLang}
-        setAccountOpen={setAccountOpen}
+        setAccountOpen={(value) => (value ? openAccount("people") : setAccountOpen(false))}
         setAuthOpen={setAuthOpen}
         onSignOut={() => void signOutAndForgetName()}
         saveState={saveState}
@@ -727,7 +747,7 @@ export function BoardApp() {
           focusedWaypoint={focusedWaypoint}
           editingId={editingId}
           onEdit={editWidget}
-          fitKey={`${active}#${cameraEpoch}`}
+          synced={synced} fitKey={`${active}#${cameraEpoch}`}
           grid={settings.grid.style ?? "lines"}
           hintAllowed={hintAllowed}
           settings={settings}
@@ -753,7 +773,7 @@ export function BoardApp() {
           }}
         />
         <ContextMenu state={menu} onClose={closeMenu} />
-        <InfoCard state={info} onClose={closeInfo} />
+        <InfoCard state={info} onClose={closeInfo} onOpenThread={roomAgent.openFromFrame} />
       <BoardInspector
         toggleInspector={toggleInspector}
         selectedIds={selectedIds}

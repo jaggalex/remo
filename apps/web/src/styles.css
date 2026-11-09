@@ -23,6 +23,7 @@
 @import "./styles/share.css";
 @import "./styles/organisation.css";
 @import "./styles/agents.css";
+@import "./styles/room-agent.css";
 @import "./styles/provider-keys.css";
 @import "./styles/journal.css";
 @import "./styles/voting.css";

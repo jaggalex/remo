@@ -1,8 +1,69 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="REMO">
-  <title>REMO</title>
-  <g fill="#1E2A44">
-    <circle cx="53" cy="48" r="37"/>
-    <rect x="111" y="12" width="72" height="72" rx="12"/>
-    <path d="M30.02,106 H169.98 A12,12 0 0 1 181.81,120.03 A83,83 0 0 1 18.19,120.03 A12,12 0 0 1 30.02,106 Z"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 200 200"
+   width="200"
+   height="200"
+   role="img"
+   aria-label="REMO"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="remo-logo.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.71892525"
+     inkscape:cx="107.10432"
+     inkscape:cy="86.935325"
+     inkscape:window-width="1099"
+     inkscape:window-height="680"
+     inkscape:window-x="221"
+     inkscape:window-y="33"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1" />
+  <title
+     id="title1">REMO</title>
+  <g
+     fill="#1E2A44"
+     id="g1">
+    <circle
+       cx="53"
+       cy="48"
+       r="37"
+       id="circle1" />
+    <rect
+       x="111"
+       y="12"
+       width="72"
+       height="72"
+       rx="12"
+       id="rect1" />
+    <path
+       d="M30.02,106 H169.98 A12,12 0 0 1 181.81,120.03 A83,83 0 0 1 18.19,120.03 A12,12 0 0 1 30.02,106 Z"
+       id="path1" />
   </g>
+  <path
+     style="fill:#ffff00;stroke-width:1.39097"
+     d="M 41.663864,82.308866 C 30.833658,78.136017 22.633232,70.139783 18.855768,60.068693 16.503791,53.798094 17.127605,39.652878 20.03882,33.242513 25.382758,21.475402 37.192671,13.222077 50.276837,12.110756 78.157356,9.7426887 98.149104,40.042035 84.829793,64.478961 82.59664,68.576125 78.592755,73.722618 75.932271,75.915614 66.892387,83.367051 51.74484,86.193037 41.663864,82.308866 Z"
+     id="path2" />
+  <path
+     style="fill:#d40000;stroke-width:1.39097"
+     d="M 82.762429,186.30577 C 69.179739,183.37802 54.708394,175.61123 44.04873,165.52808 33.460303,155.51231 27.031657,145.62779 22.198619,131.93193 c -4.471378,-12.671 -4.357598,-16.45429 0.645309,-21.45719 l 4.065899,-4.0659 h 73.239663 73.23968 l 4.06589,4.0659 c 4.95816,4.95816 5.02238,7.19941 0.58503,20.41803 -13.64336,40.64288 -54.24627,64.25733 -95.277661,55.413 z"
+     id="path3" />
+  <path
+     style="fill:#4d4d4d;stroke-width:1.39097"
+     d="m 114.85558,79.097432 c -2.69529,-3.426509 -2.88288,-5.450833 -2.88288,-31.109133 0,-25.6583 0.18759,-27.682624 2.88288,-31.109133 l 2.88289,-3.664997 h 28.86685 28.86685 l 3.37213,3.589475 c 3.33494,3.549874 3.37214,3.893918 3.37214,31.184655 0,27.290737 -0.0372,27.634781 -3.37214,31.184655 l -3.37213,3.589475 h -28.86685 -28.86685 z"
+     id="path4" />
 </svg>

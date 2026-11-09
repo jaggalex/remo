@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Widget } from "@remo/model";
-import { BoardDocument, loadBoard, setWidgetRects } from "./board";
+import { BoardDocument, fitFrameToContents, loadBoard, setWidgetRects } from "./board";
 
 /**
  * Resizing a frame (ADR-141).
@@ -186,5 +186,42 @@ describe("a shape resizes like a note (ADR-145)", () => {
       height: 160,
       content: "Label",
     });
+  });
+});
+
+/**
+ * Repairing an agent draft (ADR-189): an older frame may not contain the objects that
+ * belong to it. One local action grows the frame, never the children.
+ */
+describe("fitFrameToContents", () => {
+  it("grows a frame around a child that sits outside it", () => {
+    const board = boardWith([
+      frame("f", 400, 300),
+      note("inside", { x: 20, y: 20 }, "f"),
+      note("outside", { x: 500, y: 420 }, "f"),
+    ]);
+    expect(fitFrameToContents(board, "f", 20)).toBe(true);
+    const grown = board.readWidget("f")!;
+    expect(grown.x - grown.width / 2).toBe(-200);
+    expect(grown.y - grown.height / 2).toBe(-150);
+    expect(grown.x + grown.width / 2).toBe(540);
+    expect(grown.y + grown.height / 2).toBe(460);
+    // The children keep their positions: this is a frame repair, not a layout.
+    expect(board.readWidget("outside")!.x).toBe(500);
+  });
+
+  it("does nothing when the frame already contains its children", () => {
+    const board = boardWith([frame("f", 400, 300), note("inside", { x: 20, y: 20 }, "f")]);
+    expect(fitFrameToContents(board, "f", 0)).toBe(false);
+  });
+
+  it("refuses a locked frame and a non-frame", () => {
+    const board = boardWith([
+      { ...frame("f", 400, 300), locked: true },
+      note("inside", { x: 500, y: 500 }, "f"),
+      note("loose", { x: 0, y: 0 }),
+    ]);
+    expect(fitFrameToContents(board, "f")).toBe(false);
+    expect(fitFrameToContents(board, "loose")).toBe(false);
   });
 });

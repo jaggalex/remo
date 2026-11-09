@@ -74,3 +74,29 @@ describe("deviceScale (ADR-181 sticky shadow)", () => {
     expect(deviceScale({} as CanvasRenderingContext2D, 1.5)).toBe(1.5);
   });
 });
+
+describe("inline editing and the canvas (ADR-033)", () => {
+  const textWidget: Widget = {
+    id: "t1",
+    type: "text",
+    parentId: null,
+    x: 50,
+    y: 50,
+    width: 200,
+    height: 80,
+    content: "hello",
+    style: { fontSize: 16 },
+  };
+
+  it("draws the text when nobody is editing it", () => {
+    const { ctx, calls } = fakeContext();
+    drawWidget(ctx, textWidget, 1);
+    expect(calls).toContain("fillText");
+  });
+
+  it("leaves the text to the DOM editor, so it cannot be painted twice", () => {
+    const { ctx, calls } = fakeContext();
+    drawWidget(ctx, textWidget, 1, { editingId: "t1" });
+    expect(calls).not.toContain("fillText");
+  });
+});

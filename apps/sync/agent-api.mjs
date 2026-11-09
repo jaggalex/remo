@@ -22,6 +22,7 @@ import { handleOrgRoutes } from "./agent-api-org.mjs";
 import { handleAiCredentials } from "./agent-api-ai.mjs";
 import { handleChangeSets } from "./agent-api-changes.mjs";
 import { handleBoardRoutes } from "./agent-api-board.mjs";
+import { handleRoomAgentRoutes } from "./agent-api-room.mjs";
 
 export async function handleAgents({
   request,
@@ -49,11 +50,12 @@ export async function handleAgents({
       (parts[0] === "skills" && Boolean(parts[1]) && parts[2] === "publish") ||
       (parts[0] === "boards" &&
         Boolean(parts[1]) &&
-        ["agents", "agent-tasks", "agent-schedules", "agent-change-sets"].includes(parts[2])) ||
+        ["agents", "agent", "agent-tasks", "agent-schedules", "agent-change-sets", "agent-threads"].includes(parts[2])) ||
       (parts[0] === "change-sets" && Boolean(parts[1])) ||
       ((parts[0] === "agents" ||
         parts[0] === "agent-tasks" ||
-        parts[0] === "agent-schedules") &&
+        parts[0] === "agent-schedules" ||
+        parts[0] === "agent-threads") &&
         Boolean(parts[1]));
     if (!known) return false;
   }
@@ -83,6 +85,7 @@ export async function handleAgents({
   if (await handleOrgRoutes(ctx)) return true;
   if (await handleAiCredentials(ctx)) return true;
   if (await handleChangeSets(ctx)) return true;
+  if (await handleRoomAgentRoutes(ctx)) return true;
   if (await handleBoardRoutes(ctx)) return true;
   return false;
 }

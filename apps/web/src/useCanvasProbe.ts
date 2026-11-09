@@ -85,6 +85,7 @@ export function useCanvasProbe({
         start: w.start?.item ?? null,
         end: w.end?.item ?? null,
         text: textOf(w.id),
+        link: w.link ?? null,
         status: w.status ?? null,
         assigneeId: w.assigneeId ?? null,
         assigneeName: w.assigneeName ?? null,

@@ -11,6 +11,7 @@ export interface InfoState {
   rows: Array<{ label: string; value: string }>;
   /** A topic that explains the state the card is reporting, if any. */
   helpTopicId?: HelpTopicId;
+  draftFrameId?: string;
 }
 
 /**
@@ -20,9 +21,14 @@ export interface InfoState {
  * card is placed with the same measurement-and-clamp as the context menu, because
  * the object you are curious about is often near an edge (ADR-045, ADR-046).
  */
-export function InfoCard({ state, onClose }: { state: InfoState | null; onClose: () => void }) {
+export function InfoCard({ state, onClose, onOpenThread }: {
+  state: InfoState | null;
+  onClose: () => void;
+  onOpenThread?: (frameId: string) => Promise<boolean>;
+}) {
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement | null>(null);
+  const [missingThread, setMissingThread] = useState<InfoState | null>(null);
   const [placement, setPlacement] = useState<{ left: number; top: number } | null>(null);
 
   useLayoutEffect(() => {
@@ -94,6 +100,17 @@ export function InfoCard({ state, onClose }: { state: InfoState | null; onClose:
           </div>
         ))}
       </dl>
+      {state.draftFrameId && onOpenThread && (
+        <button type="button" className="link-button" onClick={() => {
+          void onOpenThread(state.draftFrameId!).then((opened) => {
+            if (opened) onClose();
+            else setMissingThread(state);
+          });
+        }}>
+          {t("roomAgent.openThread")}
+        </button>
+      )}
+      {missingThread === state && <p className="muted">{t("roomAgent.threadMissing")}</p>}
     </div>
   );
 }

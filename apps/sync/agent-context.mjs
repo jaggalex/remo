@@ -66,3 +66,31 @@ export async function decide(store, task, agent) {
     }),
   };
 }
+
+export async function roomAgentHistoryAllowed(store, board, access, userId) {
+  if (!board?.org_id || !access?.sources?.some((source) => source !== "link")) return false;
+  const seat = await store.getOrgMembership(board.org_id, userId);
+  return seat?.state === "active" && seat.relation === "member";
+}
+
+/** The requester must still be an active member with room edit rights. */
+export async function roomAgentMemberCanEdit(store, boardId, userId) {
+  const facts = await store.accessFacts(boardId, userId);
+  return Boolean(facts?.viewer?.org?.relation === "member"
+    && facts.viewer.org.state === "active"
+    && effective(facts).capabilities.includes("board.edit"));
+}
+
+export async function roomAgentCanRequest(store, board, assignment, userId) {
+  if (!board || board.visibility === "link" || !assignment?.enabled
+      || assignment.owner_id !== board.owner_id || assignment.agent_state !== "active") {
+    return false;
+  }
+  if (userId !== board.owner_id && !assignment.delegate_ids?.includes(userId)) return false;
+  return roomAgentMemberCanEdit(store, board.id, userId);
+}
+
+/** Serialize room agent commands separately from room loading and replacement. */
+export function withRoomAgentLock(store, boardId, run) {
+  return store.withRoomLock ? store.withRoomLock(`\0room-agent:${boardId}`, run) : run();
+}
