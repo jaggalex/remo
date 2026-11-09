@@ -135,6 +135,7 @@ interface Props {
   onEdit: (id: string | null) => void;
   /** Changes whenever a new template is loaded; used to fit once per load. */
   fitKey: string;
+  synced: boolean;
   /** Background grid: a view preference, never part of the document. */
   grid: GridStyle;
   /** The bottom-centre hint may be shown: no voting line owns that slot. */
@@ -215,7 +216,7 @@ export function BoardCanvas({
   focusedWaypoint,
   editingId,
   onEdit,
-  fitKey,
+  fitKey, synced,
   grid,
   hintAllowed,
   settings,
@@ -591,15 +592,22 @@ export function BoardCanvas({
   );
 
   const fittedFor = useRef<string | null>(null);
+  const emptyAfterSync = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!widgets.length) return;
     if (viewport.width <= 1 || viewport.height <= 1) return;
+    if (!widgets.length) {
+      if (synced) emptyAfterSync.current = fitKey;
+      return;
+    }
     const key = `${fitKey}@${Math.round(viewport.width)}x${Math.round(viewport.height)}`;
     if (fittedFor.current === key) return;
     fittedFor.current = key;
+    // A server draft arriving in an already open empty room must keep the view in place.
+    if (emptyAfterSync.current === fitKey
+        && widgets.every((widget) => widget.agent?.skill === "room-draft")) return;
     fit();
-  }, [fit, fitKey, viewport.height, viewport.width, widgets.length]);
+  }, [fit, fitKey, synced, viewport.height, viewport.width, widgets]);
 
   const worldCursor = cursor ? toWorld({ clientX: cursor.x, clientY: cursor.y }) : null;
   const selectedKanbanId = selectedIds.find((id) => kanbanStates[id]);

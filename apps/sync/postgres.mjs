@@ -16,6 +16,7 @@ import { roomMethods } from "./pg/rooms.mjs";
 import { iamUserMethods } from "./pg/iam-users.mjs";
 import { iamBoardMethods } from "./pg/iam-boards.mjs";
 import { agentMethods } from "./pg/agents.mjs";
+import { roomAgentMethods } from "./pg/room-agent.mjs";
 import { aiMethods } from "./pg/ai.mjs";
 import { changeSetMethods } from "./pg/change-sets.mjs";
 import { commandMethods } from "./pg/commands.mjs";
@@ -310,6 +311,20 @@ export class PostgresStore {
            'write', 'builtin:tidy', 'published', now())
          on conflict do nothing`,
       );
+      await client.query(
+        `insert into agent_skills
+           (org_id, slug, version, name, description, input_schema, output_schema,
+            required_capabilities, tools, risk, handler, state, published_at)
+         values (null, 'room-draft', 1,
+           'Room draft',
+           'Turn the selected material into a first draft in a new frame: a process with labelled branches, or a problem map with citations to the sources. The draft is written to the room immediately.',
+           '{"type":"object","properties":{"kind":{"enum":["process","problem-map"]},"sourceIds":{"type":"array"},"origin":{"type":"object"},"lang":{"enum":["ru","en"]}}}'::jsonb,
+           '{"type":"object","properties":{"frameId":{"type":"string"},"createdIds":{"type":"array"},"questions":{"type":"array"}}}'::jsonb,
+           array['board.read', 'board.edit'],
+           array['read_sources', 'write_draft'],
+           'write', 'builtin:room-draft', 'published', now())
+         on conflict do nothing`,
+      );
       this.log.log("[sync] schema ready");
       const { rows: orphans } = await client.query(
         "select count(*)::int as n from boards where owner_id is null",
@@ -364,6 +379,7 @@ Object.assign(
   iamUserMethods,
   iamBoardMethods,
   agentMethods,
+  roomAgentMethods,
   aiMethods,
   changeSetMethods,
   commandMethods,

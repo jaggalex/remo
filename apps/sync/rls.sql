@@ -37,6 +37,7 @@ begin
     'org_memberships', 'teams', 'admin_roles', 'org_policies', 'org_apps',
     'invitations', 'integration_tokens',
     'agents', 'agent_tasks', 'agent_schedules', 'agent_change_sets', 'agent_task_plans',
+    'board_agents', 'agent_threads', 'agent_thread_messages',
     'ai_runs', 'ai_log_anchors',
     'event_outbox', 'org_webhooks'
   ] loop

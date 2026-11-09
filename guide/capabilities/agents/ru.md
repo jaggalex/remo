@@ -68,4 +68,4 @@
 
 ## Связанные возможности
 
-[Принципал и бюджет](/guide/concepts/agents), [делегировать задачу](/guide/how-to/delegate-agent), [доступ](/guide/capabilities/access), [события](/guide/capabilities/events).
+[Принципал и бюджет](/guide/concepts/agents), [делегировать задачу](/guide/how-to/delegate-agent), [агент комнаты](/guide/capabilities/room-agent), [доступ](/guide/capabilities/access), [события](/guide/capabilities/events).

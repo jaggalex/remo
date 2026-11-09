@@ -147,7 +147,7 @@ export async function callAgentModel({
     latencyMs = Math.max(0, now() - startedCall);
     await logRun("failed", {
       code: error?.code ?? "AI_FAILED",
-      message: error?.message ?? String(error),
+      message: skill.slug === "room-draft" ? null : error?.message ?? String(error),
     }).catch((logError) => {
       // A failed call that cannot be journaled is still a failed call: the task fails
       // on the provider error, not on the logging error.

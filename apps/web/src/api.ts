@@ -7,6 +7,7 @@
  */
 
 import { ApiError, call } from "./apiCall";
+import { roomAgentApi } from "./roomAgentApi";
 import { backupFilename } from "./backupFormat";
 import type { VoteSession } from "./vote/voteTypes";
 
@@ -271,7 +272,7 @@ export interface AuditEvent {
   reason: string | null;
 }
 
-export const api = {
+export const api = { ...roomAgentApi,
   me: () =>
     call<{ user: SessionUser; orgs: OrgSummary[]; csrfToken?: string | null }>("/auth/me"),
   register: (body: { email: string; password: string; name: string }) =>
@@ -783,7 +784,7 @@ export const api = {
     }>(`/boards/${encodeURIComponent(boardId)}/link`),
   setLink: (
     boardId: string,
-    body: { enabled?: boolean; password?: string | null; expiresAt?: string | null },
+    body: { enabled?: boolean; password?: string | null; expiresAt?: string | null; confirmDraftSharing?: boolean },
   ) =>
     call<{
       link: {

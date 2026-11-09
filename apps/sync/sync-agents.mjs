@@ -6,16 +6,60 @@
  * chain once a day. Both timers are unref'd: they must never keep the process alive.
  */
 import { agentLimitsFromEnv } from "./agent-context.mjs";
+import { findDraftFrame, ROOM_DRAFT_SKILL } from "./agent-room-draft.mjs";
 import { agentTick } from "./agent-runner.mjs";
 import { anchorAiLogs } from "./ai-anchor.mjs";
+import { Y } from "./y.mjs";
+
+/** Repair the crash window between the room flush and the task/history updates. */
+export async function recoverRoomDrafts(store, log) {
+  const tasks = (await store.roomDraftsToRecover?.()) ?? [];
+  let recovered = 0;
+  for (const task of tasks) {
+    try {
+      const repaired = await store.withTenant(task.org_id, async () => {
+        let result = task.status === "applied" ? task.result : null;
+        if (task.status === "running") {
+          const doc = new Y.Doc();
+          try {
+            // Read persisted state, not a live room that may have pending updates.
+            await store.loadRoomStateInTenant(task.board_id, doc);
+            const frameId = findDraftFrame(doc, task.id);
+            if (frameId) {
+              const widgets = doc.getMap("widgets");
+              result = {
+                frameId,
+                createdIds: [...widgets.values()]
+                  .filter((widget) => widget?.agent?.taskId === task.id)
+                  .map((widget) => widget.id),
+                title: widgets.get(frameId).title,
+                recovered: true,
+                skill: ROOM_DRAFT_SKILL.slug,
+                skillVersion: task.skill_version,
+              };
+            }
+          } finally {
+            doc.destroy();
+          }
+        }
+        return store.finishRecoveredRoomDraft(task, result?.frameId ? result : null);
+      });
+      if (repaired) recovered += 1;
+    } catch (error) {
+      log.error("[agent] room draft recovery failed:", error.message);
+    }
+  }
+  return recovered;
+}
 
 export function createAgentLoops({ store, ai, log = console }) {
   let ticking = false;
   let timer = null;
   let anchorTimer = null;
+  let recovering = false;
 
   async function tick() {
-    if (ticking || typeof store.dueAgentSchedules !== "function") return;
+    if (recovering || ticking || typeof store.dueAgentSchedules !== "function") return;
     ticking = true;
     try {
       const result = await agentTick({
@@ -42,12 +86,24 @@ export function createAgentLoops({ store, ai, log = console }) {
     log.log(
       `[agent] ${ai.configured ? `model ${ai.model} via ${ai.baseUrl}` : "no model configured; queued tasks stay waiting until REMO_AI_API_KEY and REMO_AI_MODEL are set"}`,
     );
-    void store
-      .recoverStaleAgentTasks?.(15)
-      .then((rows) => {
-        if (rows?.length) log.log(`[agent] recovered ${rows.length} stale task(s)`);
+    // The single production worker has not claimed work yet. A running room draft
+    // at this point belongs to the previous process (ADR-189).
+    recovering = true;
+    void Promise.allSettled([recoverRoomDrafts(store, log), store.recoverStaleAgentTasks?.(15)])
+      .then(([drafts, stale]) => {
+        for (const result of [drafts, stale]) {
+          if (result.status === "rejected") {
+            log.error("[agent] recovery failed:", result.reason.message);
+          }
+        }
+        const count =
+          (drafts.status === "fulfilled" ? drafts.value : 0) +
+          (stale.status === "fulfilled" ? (stale.value?.length ?? 0) : 0);
+        if (count) log.log(`[agent] recovered ${count} stale task(s)`);
       })
-      .catch((error) => log.error("[agent] recovery failed:", error.message));
+      .finally(() => {
+        recovering = false;
+      });
     timer = setInterval(() => void tick(), 3000);
     timer.unref?.();
 

@@ -12,6 +12,7 @@ import { agentLimitsFromEnv, audit, decide, finite, selectionTexts } from "./age
 import { callAgentModel } from "./agent-call.mjs";
 import { runBriefAuthoring } from "./agent-brief-runner.mjs";
 import { runTidyAuthoring } from "./agent-tidy-runner.mjs";
+import { runRoomDraft } from "./agent-room-draft-runner.mjs";
 import { CARD_LIMITS, convertToCards } from "./cards.mjs";
 import { executeChangeSet } from "./change-set.mjs";
 import { applyDiagram, diagramPrompt, parseDiagram } from "./diagram.mjs";
@@ -63,6 +64,10 @@ async function runClaimedAgentTask({
       error: `${code}: ${message}`,
     });
     if (updated) {
+      if (task.thread_id && task.skill_slug === "room-draft") {
+        await store.updateAgentThreadMessageByTask({ taskId: task.id, status: "error", text: code })
+          .catch((error) => log.error?.("[agents] thread message failed:", error.message));
+      }
       await audit(store, log, {
         actorId: task.created_by,
         orgId: task.org_id,
@@ -313,7 +318,13 @@ async function runClaimedAgentTask({
       resolveSkill(catalog, { slug: task.skill_slug, intent: task.intent });
     if (!skill || skill.state !== "published") return fail("SKILL_UNAVAILABLE", "no published skill");
     if (
-      !["builtin:diagram", "builtin:cards", "builtin:brief", "builtin:tidy"].includes(
+      ![
+        "builtin:diagram",
+        "builtin:cards",
+        "builtin:brief",
+        "builtin:tidy",
+        "builtin:room-draft",
+      ].includes(
         skill.handler,
       )
     ) {
@@ -501,6 +512,24 @@ async function runClaimedAgentTask({
       });
     }
 
+    if (skill.handler === "builtin:room-draft") {
+      return await runRoomDraft({
+        store,
+        task,
+        agent,
+        skill,
+        budget,
+        decision: { ...first.decision, board: first.board },
+        ai,
+        env,
+        log,
+        now,
+        started,
+        fail,
+        audit,
+      });
+    }
+
     if (skill.handler === "builtin:tidy") {
       // Tidy also proposes and stops. It works without a provider: the layout is
       // deterministic and the model only labels blocks (ADR-143).
@@ -655,10 +684,11 @@ async function runClaimedAgentTask({
 
     return { status: "applied", task: updated, result };
   } catch (error) {
-    log.error?.("[agent] task failed:", error);
+    const roomDraft = task.skill_slug === "room-draft";
+    log.error?.("[agent] task failed:", roomDraft ? (error?.code ?? "AGENT_ERROR") : error);
     const code =
       error?.code === "AI_NOT_CONFIGURED" ? "AI_NOT_CONFIGURED" : "AGENT_ERROR";
-    return fail(code, error?.message ?? String(error));
+    return fail(code, roomDraft ? "the room draft failed" : error?.message ?? String(error));
   }
 }
 

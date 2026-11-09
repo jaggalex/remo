@@ -236,13 +236,14 @@ async createAgentTask({
   model = null,
   idempotencyKey = null,
   changeSetId = null,
+  threadId = null,
 }) {
   const { rows } = await this.pool.query(
     `insert into agent_tasks
        (org_id, agent_id, board_id, mode, capabilities, intent, input,
         skill_id, skill_slug, skill_version, budget, created_by, schedule_id,
-        credential_id, model, idempotency_key, change_set_id)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        credential_id, model, idempotency_key, change_set_id, thread_id)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
      returning *`,
     [
       orgId,
@@ -262,6 +263,7 @@ async createAgentTask({
       model,
       idempotencyKey,
       changeSetId,
+      threadId,
     ],
   );
   return rows[0];
@@ -301,13 +303,14 @@ async getAgentTask(id) {
   return rows[0] ?? null;
 },
 
+/** The generic task feed. The room-agent conversation has its own access rules. */
 async listBoardAgentTasks(boardId, limit = 20) {
   const { rows } = await this.pool.query(
     `select t.id, t.agent_id, t.board_id, t.mode, t.intent, t.skill_slug,
             t.status, t.budget, t.usage, t.progress, t.result, t.error,
             t.created_at, t.started_at, t.finished_at, a.name as agent_name
        from agent_tasks t join agents a on a.id = t.agent_id
-      where t.board_id = $1
+      where t.board_id = $1 and t.skill_slug is distinct from 'room-draft'
       order by t.created_at desc
       limit $2`,
     [boardId, Math.min(Math.max(limit, 1), 100)],
@@ -340,20 +343,33 @@ async listOrgAgentTasks(orgId, limit = 50) {
 
 async nextQueuedAgentTask() {
   const { rows } = await this.pool.query(
-    `select id, skill_slug from agent_tasks where status = 'queued' order by created_at limit 1`,
+    `select t.id, t.skill_slug from agent_tasks t
+      where t.status = 'queued'
+        and not exists (
+          select 1 from agent_tasks running
+           where running.board_id = t.board_id and running.status = 'running'
+        )
+      order by t.created_at limit 1`,
   );
   return rows[0] ?? null;
 },
 
 async claimAgentTask(id) {
-  const { rows } = await this.pool.query(
-    `update agent_tasks
-        set status = 'running', started_at = now()
-      where id = $1 and status = 'queued'
-      returning *`,
-    [id],
-  );
-  return rows[0] ?? null;
+  try {
+    const { rows } = await this.pool.query(
+      `update agent_tasks
+          set status = 'running', started_at = now()
+        where id = $1 and status = 'queued'
+        returning *`,
+      [id],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    // ADR-189: one running task per room. Another room's task may still start; a second
+    // task in the same room waits in the queue until the first finishes.
+    if (error?.code === "23505") return null;
+    throw error;
+  }
 },
 
 async updateAgentTaskProgress(id, progress) {
@@ -468,10 +484,55 @@ async recoverStaleAgentTasks(minutes = 15) {
         set status = 'failed', finished_at = now(),
             error = 'the worker stopped before finishing'
       where status = 'running' and started_at < now() - ($1::int * interval '1 minute')
+        and (skill_slug is distinct from 'room-draft' or thread_id is null)
       returning id`,
     [minutes],
   );
   return rows;
+},
+
+async roomDraftsToRecover() {
+  return this.withOwnerClient(async (client) => {
+    const { rows } = await client.query(
+      `select t.id, t.org_id, t.board_id, t.status, t.result, t.skill_version
+         from agent_tasks t
+        where t.skill_slug = 'room-draft' and t.thread_id is not null
+          and (t.status = 'running' or (t.status = 'applied' and t.result->>'frameId' is not null and exists (
+            select 1 from agent_thread_messages m
+             where m.task_id = t.id and m.role = 'agent' and m.status is distinct from 'ready'
+          )))`,
+    );
+    return rows;
+  });
+},
+
+async finishRecoveredRoomDraft(task, result) {
+  // Finish the task and its visible history together. The status guard lets a
+  // cancellation or history deletion that committed first keep its outcome.
+  const { rows } = await this.pool.query(
+    `with recovered as (
+       update agent_tasks
+          set status = $3, result = $4, error = $5, finished_at = coalesce(finished_at, now())
+        where id = $1 and status = $2 and thread_id is not null
+        returning id
+     ), history as (
+       update agent_thread_messages m
+          set status = $6, text = $7, frame_ids = $8
+         from recovered r where m.task_id = r.id and m.role = 'agent'
+     )
+     select id from recovered`,
+    [
+      task.id,
+      task.status,
+      result ? "applied" : "failed",
+      result,
+      result ? null : "the worker stopped before saving the draft",
+      result ? "ready" : "error",
+      result?.title ?? (result ? "" : "the worker stopped before saving the draft"),
+      result ? [result.frameId] : [],
+    ],
+  );
+  return Boolean(rows[0]);
 },
 
 async createAgentSchedule({

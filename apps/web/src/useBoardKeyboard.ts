@@ -32,6 +32,7 @@ export function useBoardKeyboard({
   pasteSelection,
   onTool,
   onTone,
+  onAgentUndo,
 }: {
   board: BoardDocument;
   writeBlocked: boolean;
@@ -55,6 +56,11 @@ export function useBoardKeyboard({
   onTool?: (tool: RailTool) => void;
   /** Keys 1–7 paint the main colour of the selection (ADR-127). */
   onTone?: (toneIndex: number) => void;
+  /**
+   * Undo the latest agent draft when it is the most recent action (ADR-189).
+   * Returns true when it consumed the keystroke.
+   */
+  onAgentUndo?: () => boolean;
 }) {
 useEffect(() => {
   const onKeyDown = (event: KeyboardEvent) => {
@@ -83,7 +89,7 @@ useEffect(() => {
     if (mod && key === "z") {
       event.preventDefault();
       if (event.shiftKey) board.redoOnce();
-      else board.undoOnce();
+      else if (!(onAgentUndo?.() ?? false)) board.undoOnce();
       forceRender((n) => n + 1);
       return;
     }
@@ -227,6 +233,7 @@ useEffect(() => {
   onMoveWaypoint,
   onTool,
   onTone,
+  onAgentUndo,
   pasteSelection,
   selectedIds,
   widgets,

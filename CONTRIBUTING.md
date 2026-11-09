@@ -97,3 +97,23 @@ creates an annotated tag — it does not push. The deploy passes the same values
 
 By contributing you agree that your contribution is licensed under
 [AGPL-3.0-only](LICENSE).
+
+## Trying the room agent locally
+
+The room agent needs an assigned agent, an enabled organisation and a provider. For a
+local run without a key, the deterministic demo model answers both MVP scenarios:
+
+```sh
+pnpm db:up
+pnpm demo:seed          # account, organisation, agent "Мира" and a room with notes
+REMO_DEMO=1 pnpm sync   # terminal 1: the fake model is explicitly non-production
+pnpm dev                # terminal 2
+```
+
+Open `http://localhost:5173/?room=demo-mvp` and sign in as `demo@remo.local` with
+`remo-demo-2026`. The room agent panel has the two scenarios and a note that the demo
+answers are fixed examples. Run the seed before `pnpm sync` starts: the service keeps a
+loaded room in memory and would write it back over a replaced snapshot.
+
+To use a real model, configure a provider key in Organisation → Agents and start the
+service without `REMO_DEMO`.

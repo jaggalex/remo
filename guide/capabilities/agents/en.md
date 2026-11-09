@@ -69,3 +69,5 @@ A key is access to the provider budget, not an interface setting. Create a separ
 ## Related capabilities
 
 [Principal and budget](/guide/concepts/agents), [delegate a task](/guide/how-to/delegate-agent), [access](/guide/capabilities/access), [events](/guide/capabilities/events).
+
+[Room agent](/guide/capabilities/room-agent).

@@ -23,6 +23,8 @@ const SIMPLE = [
   "agent_actions",
   "agent_schedules",
   "agent_task_plans",
+  "agent_threads",
+  "agent_thread_messages",
   "ai_runs",
   "audit_events",
   "board_link_unlocks",
@@ -44,6 +46,7 @@ const SPECIAL = [
   "event_outbox",
   "agent_change_sets",
   "agent_tasks",
+  "board_agents",
 ];
 
 /** An empty Yjs state update is two bytes; anything longer carries content. */
@@ -207,6 +210,16 @@ export const roomMergeMethods = {
       sourceId,
       targetId,
     ]);
+    // The room agent is a setting with one row per board: keep the target's choice, or
+    // adopt the source's when the target has none, then drop the source row.
+    await client.query(
+      `insert into board_agents (board_id, org_id, agent_id, assigned_by, assigned_at, enabled)
+       select $2, org_id, agent_id, assigned_by, assigned_at, enabled
+         from board_agents where board_id = $1
+       on conflict (board_id) do nothing`,
+      [sourceId, targetId],
+    );
+    await client.query("delete from board_agents where board_id = $1", [sourceId]);
     for (const [table, key] of [
       ["kanban_columns", "id"],
       ["kanban_swimlanes", "id"],
