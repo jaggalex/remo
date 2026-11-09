@@ -136,6 +136,19 @@ describe("room draft prompt (ADR-189)", () => {
     }
   });
 
+  it("carries the four comparison contracts", () => {
+    for (const [kind, phrase] of [
+      ["prioritization", "mandatory work"],
+      ["competitors", "same scenario"],
+      ["architecture-decision", "ADR"],
+      ["idea-generation", "hypotheses"],
+    ]) {
+      const prompt = roomDraftPrompt({ kind, lang: "ru", intent: "Сравни", sources: [], thread: "" });
+      expect(prompt.system).toContain(phrase);
+      expect(prompt.system).toContain('"recommendation"');
+    }
+  });
+
   it("carries the delivery-plan procedure and the card fields", () => {
     const prompt = roomDraftPrompt({
       kind: "delivery-plan",

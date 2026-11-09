@@ -73,7 +73,18 @@ export function RoomAgentPanel({
   const [detail, setDetail] = useState<AgentThreadDetail | null>(null);
   const [intent, setIntent] = useState("");
   const [kind, setKind] = useState<
-    "process" | "delivery-plan" | "problem-map" | "requirements" | "mvp-scoping" | "retrospective" | "decision" | "meeting-actions"
+    | "process"
+    | "delivery-plan"
+    | "problem-map"
+    | "requirements"
+    | "mvp-scoping"
+    | "retrospective"
+    | "decision"
+    | "meeting-actions"
+    | "prioritization"
+    | "competitors"
+    | "architecture-decision"
+    | "idea-generation"
   >("process");
   const [assignId, setAssignId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -525,7 +536,11 @@ export function RoomAgentPanel({
                         | "mvp-scoping"
                         | "retrospective"
                         | "decision"
-                        | "meeting-actions",
+                        | "meeting-actions"
+                        | "prioritization"
+                        | "competitors"
+                        | "architecture-decision"
+                        | "idea-generation",
                     )
                     }
                     disabled={busy}
@@ -537,6 +552,10 @@ export function RoomAgentPanel({
                     <option value="retrospective">{t("roomAgent.retrospective")}</option>
                     <option value="decision">{t("roomAgent.decision")}</option>
                     <option value="meeting-actions">{t("roomAgent.meetingActions")}</option>
+                    <option value="prioritization">{t("roomAgent.prioritization")}</option>
+                    <option value="competitors">{t("roomAgent.competitors")}</option>
+                    <option value="architecture-decision">{t("roomAgent.architectureDecision")}</option>
+                    <option value="idea-generation">{t("roomAgent.ideas")}</option>
                     <option value="problem-map">{t("roomAgent.problemMap")}</option>
                   </select>
                 </label>

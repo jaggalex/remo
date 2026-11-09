@@ -473,6 +473,124 @@ export function fakeActionsReply(prompt = "") {
   };
 }
 
+function matrixFixture({ title, summary, columns, rows, cells, recommendation, questions, hint }) {
+  return {
+    title,
+    summary,
+    columns,
+    rows,
+    cells: hint
+      ? [...cells, {
+          row: rows[rows.length - 1].key,
+          column: columns[columns.length - 1].key,
+          items: [{ text: `Источник: ${hint}`, meta: "" }],
+        }]
+      : cells,
+    recommendation,
+    questions,
+  };
+}
+
+export function fakePrioritizationReply(prompt = "") {
+  return matrixFixture({
+    title: "Приоритеты квартала",
+    summary: "Сначала экспорт, затем права; шаблоны — после проверки спроса.",
+    columns: [
+      { key: "impact", label: "Эффект" },
+      { key: "effort", label: "Усилия" },
+      { key: "confidence", label: "Уверенность" },
+    ],
+    rows: [
+      { key: "export", label: "Экспорт" },
+      { key: "rights", label: "Права" },
+      { key: "templates", label: "Шаблоны" },
+    ],
+    cells: [
+      { row: "export", column: "impact", items: [{ text: "высокий", meta: "" }] },
+      { row: "export", column: "effort", items: [{ text: "5 SP", meta: "" }] },
+      { row: "rights", column: "impact", items: [{ text: "высокий", meta: "" }] },
+      { row: "rights", column: "effort", items: [{ text: "?", meta: "" }] },
+      { row: "templates", column: "impact", items: [{ text: "средний", meta: "" }] },
+    ],
+    recommendation: "Экспорт → права → шаблоны; пересмотреть, если права окажутся дороже 8 SP.",
+    questions: ["Кто оценит права?"],
+    hint: sourceHint(prompt),
+  });
+}
+
+export function fakeCompetitorsReply(prompt = "") {
+  return matrixFixture({
+    title: "Сравнение по возврату",
+    summary: "Оба продукта закрывают возврат, но по-разному показывают статус.",
+    columns: [
+      { key: "a", label: "Продукт A" },
+      { key: "b", label: "Продукт B" },
+    ],
+    rows: [
+      { key: "request", label: "Запрос" },
+      { key: "status", label: "Статус" },
+    ],
+    cells: [
+      { row: "request", column: "a", items: [{ text: "форма в кабинете", meta: "документация" }] },
+      { row: "request", column: "b", items: [{ text: "только через поддержку", meta: "скриншот" }] },
+      { row: "status", column: "a", items: [{ text: "показывает срок", meta: "" }] },
+    ],
+    recommendation: "Возможность: показать срок возврата в кабинете и статус после запроса.",
+    questions: ["Достаточно ли данных по срокам у продукта B?"],
+    hint: sourceHint(prompt),
+  });
+}
+
+export function fakeArchitectureReply(prompt = "") {
+  return matrixFixture({
+    title: "Очередь или синхронный вызов",
+    summary: "Очередь дороже в эксплуатации, но снимает таймауты эквайринга.",
+    columns: [
+      { key: "cost", label: "Стоимость" },
+      { key: "complexity", label: "Сложность" },
+      { key: "risk", label: "Риск" },
+    ],
+    rows: [
+      { key: "sync", label: "Синхронно" },
+      { key: "queue", label: "Через очередь" },
+    ],
+    cells: [
+      { row: "sync", column: "cost", items: [{ text: "низкая", meta: "оценка" }] },
+      { row: "sync", column: "risk", items: [{ text: "таймаут эквайринга", meta: "" }] },
+      { row: "queue", column: "cost", items: [{ text: "средняя", meta: "оценка" }] },
+      { row: "queue", column: "complexity", items: [{ text: "выше", meta: "" }] },
+    ],
+    recommendation: "Очередь; пересмотреть при отказе от асинхронного API.",
+    questions: ["Есть ли SLA на восстановление очереди?"],
+    hint: sourceHint(prompt),
+  });
+}
+
+export function fakeIdeasReply(prompt = "") {
+  return matrixFixture({
+    title: "Идеи для возврата",
+    summary: "Три механизма; для проверки выбраны два.",
+    columns: [
+      { key: "effect", label: "Эффект" },
+      { key: "effort", label: "Усилия" },
+      { key: "uncertainty", label: "Неопределённость" },
+    ],
+    rows: [
+      { key: "self", label: "Самообслуживание" },
+      { key: "support", label: "Ускорить поддержку" },
+    ],
+    cells: [
+      { row: "self", column: "effect", items: [{ text: "высокий", meta: "" }] },
+      { row: "self", column: "effort", items: [{ text: "высокие", meta: "" }] },
+      { row: "support", column: "effect", items: [{ text: "средний", meta: "" }] },
+      { row: "support", column: "uncertainty", items: [{ text: "низкая", meta: "" }] },
+    ],
+    recommendation: "Проверить самообслуживание и ускорение поддержки; третью идею отложить.",
+    questions: ["Какой порог доли возвратов считаем успехом?"],
+    hint: sourceHint(prompt),
+  });
+}
+
 /** The provider shape `callAgentModel` expects, with no network and no key. */
 export function fakePlanClient() {
   return {
@@ -488,6 +606,10 @@ export function fakePlanClient() {
       const retro = text.includes("facilitate a retrospective");
       const decision = text.includes("facilitate a decision");
       const actions = text.includes("turn a meeting");
+      const prioritization = text.includes("prioritising initiatives");
+      const competitors = text.includes("comparing competitors");
+      const architecture = text.includes("preparing a technical decision");
+      const ideas = text.includes("generating and selecting ideas");
       const roomDraft = text.includes("product analyst");
       const json = tidy
         ? fakeTidyReply(user)
@@ -503,9 +625,17 @@ export function fakePlanClient() {
                   ? fakeDecisionReply(user)
                   : actions
                     ? fakeActionsReply(user)
-                    : roomDraft
-                      ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
-                      : fakePlanReply(user);
+                    : prioritization
+                      ? fakePrioritizationReply(user)
+                      : competitors
+                        ? fakeCompetitorsReply(user)
+                        : architecture
+                          ? fakeArchitectureReply(user)
+                          : ideas
+                            ? fakeIdeasReply(user)
+                            : roomDraft
+                              ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
+                              : fakePlanReply(user);
       return {
         json,
         text: JSON.stringify(json),

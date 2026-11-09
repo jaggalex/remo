@@ -86,6 +86,9 @@ export function ScalePerf() {
     };
     const frames: number[] = [];
     const visibleCounts: number[] = [];
+    /** The first frames pay JIT and font loading, not the steady-state paint. */
+    const WARMUP = 15;
+    const MEASURED = 60;
     let frame = 0;
     let raf = 0;
 
@@ -122,12 +125,15 @@ export function ScalePerf() {
       frames.push(ended - started);
       visibleCounts.push(painted);
       frame += 1;
-      if (frame < 60) raf = requestAnimationFrame(paint);
+      if (frame < WARMUP + MEASURED) raf = requestAnimationFrame(paint);
       else {
-        const average = frames.reduce((sum, value) => sum + value, 0) / frames.length;
-        const worst = Math.max(...frames);
+        // The budget is steady-state paint, not the cold first frames.
+        const steady = frames.slice(WARMUP);
+        const steadyVisible = visibleCounts.slice(WARMUP);
+        const average = steady.reduce((sum, value) => sum + value, 0) / steady.length;
+        const worst = Math.max(...steady);
         const visible = Math.round(
-          visibleCounts.reduce((sum, value) => sum + value, 0) / visibleCounts.length,
+          steadyVisible.reduce((sum, value) => sum + value, 0) / steadyVisible.length,
         );
         const measured = {
           average: Math.round(average * 10) / 10,
