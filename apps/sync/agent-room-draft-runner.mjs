@@ -23,6 +23,8 @@ import {
   threadExcerpt,
 } from "./agent-room-draft.mjs";
 import { deliveryPlan, parseDeliveryReply } from "./agent-delivery-layout.mjs";
+import { requirementsPlan } from "./agent-zones-layout.mjs";
+import { mvpPlan } from "./agent-mvp-layout.mjs";
 
 function draftTitle(lang, agentName, title) {
   const prefix = lang === "en" ? `Draft · ${agentName}` : `Черновик · ${agentName}`;
@@ -196,6 +198,34 @@ export async function runRoomDraft({
         citations: built.citations,
         questions: built.questions,
       };
+    } else if (task.input?.kind === "requirements") {
+      const built = requirementsPlan(completion.json, {
+        lang: task.input?.lang,
+        sourceIds: expandedSourceIds,
+        existingWidgets,
+        existingConnectors,
+      });
+      draft = {
+        plan: built.plan,
+        title: built.title,
+        labels: [],
+        citations: built.citations,
+        questions: built.questions,
+      };
+    } else if (task.input?.kind === "mvp-scoping") {
+      const built = mvpPlan(completion.json, {
+        lang: task.input?.lang,
+        sourceIds: expandedSourceIds,
+        existingWidgets,
+        existingConnectors,
+      });
+      draft = {
+        plan: built.plan,
+        title: built.title,
+        labels: [],
+        citations: built.citations,
+        questions: built.questions,
+      };
     } else {
       const reply = parseRoomDraftReply(completion.json);
       const { plan } = roomDraftPlan(reply, { origin, existingWidgets, existingConnectors });
@@ -208,7 +238,7 @@ export async function runRoomDraft({
       };
     }
   } catch (error) {
-    return fail(error?.code ?? "DRAFT_INVALID", "the model returned an invalid draft");
+    return failDraft(error?.code ?? "DRAFT_INVALID", error?.message ?? "the model returned an invalid draft");
   }
 
   fitDraftFrame(draft.plan);
