@@ -176,14 +176,19 @@ export function RoomAgentPanel({
   const submit = (asClarification: boolean) => {
     const text = intent.trim();
     if (text.length < 3 || sending.current) return;
+    const target = asClarification ? threadId : null;
+    // A clarification continues the open conversation, so its kind is the thread's,
+    // not whatever the new-task selector happened to show before coming back.
+    const threadKind = target
+      ? detail?.thread.kind ?? threads.find((thread) => thread.id === target)?.kind ?? kind
+      : kind;
     const body = {
       intent: text,
-      kind,
+      kind: threadKind,
       sourceIds: selectedIds,
       origin,
       lang: lang === "en" ? ("en" as const) : ("ru" as const),
     };
-    const target = asClarification ? threadId : null;
     const fingerprint = JSON.stringify({ target, ...body });
     if (requestKey.current?.fingerprint !== fingerprint) {
       requestKey.current = { fingerprint, key: crypto.randomUUID() };
@@ -385,6 +390,11 @@ export function RoomAgentPanel({
                   onClick={() => {
                     if (thread.id !== threadId || newTask) setIntent("");
                     setNewTask(false);
+                    // Returning to a conversation restores the kind its next task will use.
+                    if (thread.kind) {
+                      kindThread.current = thread.id;
+                      setKind(thread.kind);
+                    }
                     setThreadId(thread.id);
                   }}
                 >
