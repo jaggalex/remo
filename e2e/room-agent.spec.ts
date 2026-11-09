@@ -194,13 +194,16 @@ test("requirements and MVP drafts use their own layouts", async ({ page }) => {
   for (const [kind, intent] of [
     ["requirements", "Собери требования к возврату"],
     ["mvp-scoping", "Определи MVP возврата"],
+    ["retrospective", "Собери ретроспективу спринта"],
+    ["decision", "Подготовь решение о возврате"],
+    ["meeting-actions", "Извлеки итоги встречи"],
   ] as const) {
     const created = await page.request.post(`/api/boards/${boardId}/agent-threads`, {
       data: { intent, kind, sourceIds: [] },
     });
     expect(created.ok(), await created.text()).toBeTruthy();
   }
-  await expect.poll(() => frames(page)).toHaveLength(2);
+  await expect.poll(() => frames(page)).toHaveLength(5);
   const texts = await page.evaluate(() =>
     (window as unknown as { __remo: { widgets: Array<{ type: string; text?: string }> } }).__remo.widgets
       .filter((widget) => widget.type === "text")
@@ -208,4 +211,7 @@ test("requirements and MVP drafts use their own layouts", async ({ page }) => {
   );
   expect(texts).toContain("Контекст");
   expect(texts.some((text) => text.includes("граница MVP"))).toBe(true);
+  expect(texts).toContain("Помогало");
+  expect(texts).toContain("Вопрос решения");
+  expect(texts).toContain("Решения");
 });

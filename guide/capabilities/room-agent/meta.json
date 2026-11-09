@@ -8,8 +8,8 @@
     "en": "Room agent"
   },
   "summary": {
-    "ru": "Пять сценариев: схема процесса, спринт, требования, MVP и карта проблем; готовый черновик появляется в комнате.",
-    "en": "Five scenarios: process, sprint, requirements, MVP and problem map; the draft appears in the room."
+    "ru": "Восемь сценариев: процесс, спринт, требования, MVP, ретроспектива, согласование, итоги встречи и карта проблем.",
+    "en": "Eight scenarios: process, sprint, requirements, MVP, retrospective, decision, meeting actions and problem map."
   },
   "related": [
     "capabilities/agents",
@@ -19,8 +19,8 @@
   "updated": "2026-11-09",
   "translations": {
     "en": {
-      "sourceHash": "sha256:6e4f284348bb191ccfd336f8b0d0c804725d16ee11692b30771aaf0f3304cc09",
-      "targetHash": "sha256:d073f5385172c0ca99470d0f5ab9f6c2985a1fe76bf52ed0d669044a9d0f5c62"
+      "sourceHash": "sha256:4389afe6fc579cce6e391336242fc30ac745afe253b4a79ab7ee7afecb23f3e9",
+      "targetHash": "sha256:1b2ca86f1cbbdafea266eefcc435806643b216c5d2a67f72e3969fbcf6de3dbc"
     }
   }
 }

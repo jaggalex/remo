@@ -6,8 +6,8 @@
     "en": "Room agent"
   },
   "summary": {
-    "ru": "Пять сценариев: схема процесса, спринт, требования, MVP и карта проблем; агент пишет первый черновик по поручению.",
-    "en": "Five scenarios: process, sprint, requirements, MVP and problem map; the agent writes a first draft from a request."
+    "ru": "Восемь сценариев: процесс, спринт, требования, MVP, ретроспектива, согласование, итоги встречи и карта проблем.",
+    "en": "Eight scenarios: process, sprint, requirements, MVP, retrospective, decision, meeting actions and problem map."
   },
   "related": [
     "agents.task",
@@ -19,8 +19,8 @@
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:77b61c815c115a1752f5127439934cb36c8c640042d2cc1f7aff2913e30600bf",
-      "targetHash": "sha256:cff696a17c004cfb2e2044a342ca083026cc8aecc21fe15dba84282fde949e73"
+      "sourceHash": "sha256:cb13d7be848e5b0f606b6b9e1cda3b015c17a09fd60fe4605b17aa66cfb3bcb7",
+      "targetHash": "sha256:a7b673dd77775a6659871f647815ea27777fad46313935992276fc3f6e090d8c"
     }
   }
 }

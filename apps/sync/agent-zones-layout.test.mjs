@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PlanError } from "@remo/agent-plan";
-import { fakeRequirementsReply } from "./ai-fake.mjs";
+import { fakeActionsReply, fakeDecisionReply, fakeRequirementsReply, fakeRetroReply } from "./ai-fake.mjs";
 import { fitDraftFrame } from "./agent-room-draft.mjs";
-import { requirementsPlan } from "./agent-zones-layout.mjs";
+import { actionsPlan, decisionPlan, requirementsPlan, retrospectivePlan } from "./agent-zones-layout.mjs";
 
 const facts = { existingWidgets: [], existingConnectors: [] };
 
@@ -46,4 +46,28 @@ describe("requirements discovery (ADR-192)", () => {
     raw.zones = [...raw.zones, { key: "someday", label: "", items: [] }];
     expect(() => requirementsPlan(raw, facts)).toThrow(PlanError);
   });
+});
+
+const cases = [
+  ["retrospective", fakeRetroReply, retrospectivePlan, "zone-helped"],
+  ["decision", fakeDecisionReply, decisionPlan, "zone-question"],
+  ["meeting-actions", fakeActionsReply, actionsPlan, "zone-decisions"],
+];
+
+describe("the remaining zone skills (ADR-192)", () => {
+  for (const [name, fixture, planFor, firstZone] of cases) {
+    it(`lays out ${name} and keeps it inside the frame`, () => {
+      const built = planFor(fixture("Request: итоги"), facts);
+      const headers = built.plan.objects.filter((object) => object.tempId.startsWith("zone-"));
+      expect(headers[0]?.tempId).toBe(firstZone);
+      fitDraftFrame(built.plan);
+      const frame = built.plan.objects.find((object) => object.type === "frame");
+      for (const child of built.plan.objects.filter((object) => object !== frame)) {
+        expect(child.x - child.width / 2).toBeGreaterThanOrEqual(frame.x - frame.width / 2);
+        expect(child.y - child.height / 2).toBeGreaterThanOrEqual(frame.y - frame.height / 2);
+        expect(child.x + child.width / 2).toBeLessThanOrEqual(frame.x + frame.width / 2);
+        expect(child.y + child.height / 2).toBeLessThanOrEqual(frame.y + frame.height / 2);
+      }
+    });
+  }
 });

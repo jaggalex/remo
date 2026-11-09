@@ -64,7 +64,15 @@ export interface AgentThreadDetail {
 
 export interface RoomTaskBody {
   intent: string;
-  kind?: "process" | "delivery-plan" | "problem-map" | "requirements" | "mvp-scoping";
+  kind?:
+    | "process"
+    | "delivery-plan"
+    | "problem-map"
+    | "requirements"
+    | "mvp-scoping"
+    | "retrospective"
+    | "decision"
+    | "meeting-actions";
   sourceIds?: string[];
   origin?: { x: number; y: number };
   lang?: "ru" | "en";

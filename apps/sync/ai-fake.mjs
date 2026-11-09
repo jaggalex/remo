@@ -384,6 +384,95 @@ export function fakeMvpReply(prompt = "") {
   };
 }
 
+/** Retrospective for the demo. */
+export function fakeRetroReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "Ретроспектива спринта",
+    summary: "Период дал быстрый релиз, но передачи между поддержкой и финансами срывали срок.",
+    zones: [
+      { key: "helped", label: "Помогало", items: [
+        { id: "h1", text: "Ежедневная синхронизация", meta: "" },
+        ...(hint ? [{ id: "h2", text: `Источник: ${hint}`, meta: "" }] : []),
+      ] },
+      { key: "hindered", label: "Мешало", items: [
+        { id: "x1", text: "Очередь согласования на финансах", meta: "" },
+        { id: "x2", text: "Неясные критерии отказа", meta: "" },
+      ] },
+      { key: "themes", label: "Темы", items: [
+        { id: "t1", text: "Передачи между командами", meta: "" },
+        { id: "t2", text: "Критерии решений", meta: "" },
+      ] },
+      { key: "experiments", label: "Эксперименты", items: [
+        { id: "e1", text: "Один согласующий на неделю", meta: "эффект: быстрее решение" },
+      ] },
+      { key: "questions", label: "Вопросы", items: [
+        { id: "q1", text: "Кто владелец критериев отказа?", meta: "" },
+      ] },
+    ],
+    questions: ["Кто владелец критериев отказа?"],
+  };
+}
+
+/** Decision facilitation for the demo. */
+export function fakeDecisionReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "Выбор способа возврата",
+    summary: "Нужно решить, возвращать на исходный способ оплаты или на баланс.",
+    zones: [
+      { key: "question", label: "Вопрос решения", items: [
+        { id: "q1", text: "Куда возвращать деньги?", meta: "" },
+        ...(hint ? [{ id: "q2", text: `Источник: ${hint}`, meta: "" }] : []),
+      ] },
+      { key: "criteria", label: "Критерии", items: [
+        { id: "c1", text: "Скорость", meta: "выше лучше" },
+        { id: "c2", text: "Стоимость эквайринга", meta: "ниже лучше" },
+      ] },
+      { key: "options", label: "Варианты", items: [
+        { id: "o1", text: "На исходную карту", meta: "" },
+        { id: "o2", text: "На баланс в сервисе", meta: "" },
+      ] },
+      { key: "disagreements", label: "Разногласия", items: [
+        { id: "d1", text: "Финансы против баланса из-за учёта", meta: "" },
+      ] },
+      { key: "recommendation", label: "Рекомендация", items: [
+        { id: "r1", text: "Исходная карта; баланс — только при отказе банка", meta: "условие: доступен API возврата" },
+      ] },
+      { key: "questions", label: "Что утвердить", items: [
+        { id: "a1", text: "Утверждает владелец продукта", meta: "" },
+      ] },
+    ],
+    questions: ["Кто утверждает выбор?"],
+  };
+}
+
+/** Meeting to actions for the demo. */
+export function fakeActionsReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "Итоги встречи",
+    summary: "Встреча зафиксировала возврат на карту и два следующих шага.",
+    zones: [
+      { key: "decisions", label: "Решения", items: [
+        { id: "d1", text: "Возврат только на исходную карту", meta: "" },
+      ] },
+      { key: "actions", label: "Действия", items: [
+        { id: "a1", text: "Подготовить API возврата", meta: "владелец не указан" },
+        { id: "a2", text: "Проверить лимиты эквайринга", meta: "?" },
+        ...(hint ? [{ id: "a3", text: `Источник: ${hint}`, meta: "" }] : []),
+      ] },
+      { key: "open", label: "Открытые вопросы", items: [
+        { id: "o1", text: "Кто отвечает за API возврата?", meta: "" },
+      ] },
+      { key: "missing", label: "Недостающие данные", items: [
+        { id: "m1", text: "Срок ответа банка", meta: "" },
+      ] },
+    ],
+    questions: ["Кто отвечает за API возврата?"],
+  };
+}
+
 /** The provider shape `callAgentModel` expects, with no network and no key. */
 export function fakePlanClient() {
   return {
@@ -396,6 +485,9 @@ export function fakePlanClient() {
       const delivery = text.includes("delivery lead");
       const requirements = text.includes("requirements analyst");
       const mvp = text.includes("defining an MVP");
+      const retro = text.includes("facilitate a retrospective");
+      const decision = text.includes("facilitate a decision");
+      const actions = text.includes("turn a meeting");
       const roomDraft = text.includes("product analyst");
       const json = tidy
         ? fakeTidyReply(user)
@@ -405,9 +497,15 @@ export function fakePlanClient() {
             ? fakeRequirementsReply(user)
             : mvp
               ? fakeMvpReply(user)
-              : roomDraft
-                ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
-                : fakePlanReply(user);
+              : retro
+                ? fakeRetroReply(user)
+                : decision
+                  ? fakeDecisionReply(user)
+                  : actions
+                    ? fakeActionsReply(user)
+                    : roomDraft
+                      ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
+                      : fakePlanReply(user);
       return {
         json,
         text: JSON.stringify(json),
