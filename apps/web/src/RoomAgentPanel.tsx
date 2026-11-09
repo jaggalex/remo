@@ -72,7 +72,9 @@ export function RoomAgentPanel({
   const [threadId, setThreadId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AgentThreadDetail | null>(null);
   const [intent, setIntent] = useState("");
-  const [kind, setKind] = useState<"process" | "delivery-plan" | "problem-map" | "requirements" | "mvp-scoping">("process");
+  const [kind, setKind] = useState<
+    "process" | "delivery-plan" | "problem-map" | "requirements" | "mvp-scoping" | "retrospective" | "decision" | "meeting-actions"
+  >("process");
   const [assignId, setAssignId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -514,7 +516,17 @@ export function RoomAgentPanel({
                   <select
                     value={kind}
                     onChange={(event) =>
-                      setKind(event.target.value as "process" | "delivery-plan" | "problem-map" | "requirements" | "mvp-scoping")
+                      setKind(
+                      event.target.value as
+                        | "process"
+                        | "delivery-plan"
+                        | "problem-map"
+                        | "requirements"
+                        | "mvp-scoping"
+                        | "retrospective"
+                        | "decision"
+                        | "meeting-actions",
+                    )
                     }
                     disabled={busy}
                   >
@@ -522,6 +534,9 @@ export function RoomAgentPanel({
                     <option value="delivery-plan">{t("roomAgent.deliveryPlan")}</option>
                     <option value="requirements">{t("roomAgent.requirements")}</option>
                     <option value="mvp-scoping">{t("roomAgent.mvp")}</option>
+                    <option value="retrospective">{t("roomAgent.retrospective")}</option>
+                    <option value="decision">{t("roomAgent.decision")}</option>
+                    <option value="meeting-actions">{t("roomAgent.meetingActions")}</option>
                     <option value="problem-map">{t("roomAgent.problemMap")}</option>
                   </select>
                 </label>

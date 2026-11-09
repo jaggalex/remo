@@ -119,6 +119,23 @@ describe("room draft prompt (ADR-189)", () => {
     expect(prompt.system).toContain('"cells"');
   });
 
+  it("carries the retrospective, decision and meeting contracts", () => {
+    for (const [kind, key] of [
+      ["retrospective", '"key": "helped"'],
+      ["decision", '"key": "question"'],
+      ["meeting-actions", '"key": "decisions"'],
+    ]) {
+      const prompt = roomDraftPrompt({
+        kind,
+        lang: "ru",
+        intent: "Собери итоги",
+        sources: [],
+        thread: "",
+      });
+      expect(prompt.system).toContain(key);
+    }
+  });
+
   it("carries the delivery-plan procedure and the card fields", () => {
     const prompt = roomDraftPrompt({
       kind: "delivery-plan",

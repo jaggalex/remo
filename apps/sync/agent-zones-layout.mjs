@@ -244,7 +244,56 @@ export const REQUIREMENTS_SPEC = Object.freeze({
   questionsKey: "questions",
 });
 
+export const RETRO_SPEC = Object.freeze({
+  zones: Object.freeze([
+    { key: "helped", ru: "Помогало", en: "Helped" },
+    { key: "hindered", ru: "Мешало", en: "Hindered" },
+    { key: "themes", ru: "Темы", en: "Themes" },
+    { key: "experiments", ru: "Эксперименты", en: "Experiments" },
+    { key: "questions", ru: "Вопросы", en: "Questions", text: true },
+  ]),
+  questionsKey: "questions",
+});
+
+export const DECISION_SPEC = Object.freeze({
+  zones: Object.freeze([
+    { key: "question", ru: "Вопрос решения", en: "Decision question" },
+    { key: "criteria", ru: "Критерии", en: "Criteria" },
+    { key: "options", ru: "Варианты", en: "Options" },
+    { key: "disagreements", ru: "Разногласия", en: "Disagreements" },
+    { key: "recommendation", ru: "Рекомендация", en: "Recommendation", text: true },
+    { key: "questions", ru: "Что утвердить", en: "To approve", text: true },
+  ]),
+  questionsKey: "questions",
+});
+
+export const ACTIONS_SPEC = Object.freeze({
+  zones: Object.freeze([
+    { key: "decisions", ru: "Решения", en: "Decisions" },
+    { key: "actions", ru: "Действия", en: "Actions" },
+    { key: "open", ru: "Открытые вопросы", en: "Open questions", text: true },
+    { key: "missing", ru: "Недостающие данные", en: "Missing data", text: true },
+  ]),
+  questionsKey: "open",
+});
+
+export function zonedPlan(raw, spec, options = {}) {
+  const reply = parseZonedReply(raw, spec);
+  return zonesPlan(reply, { ...options, spec, columns: 3 });
+}
+
 export function requirementsPlan(raw, options = {}) {
-  const reply = parseZonedReply(raw, REQUIREMENTS_SPEC);
-  return zonesPlan(reply, { ...options, spec: REQUIREMENTS_SPEC, columns: 3 });
+  return zonedPlan(raw, REQUIREMENTS_SPEC, options);
+}
+
+export function retrospectivePlan(raw, options = {}) {
+  return zonedPlan(raw, RETRO_SPEC, options);
+}
+
+export function decisionPlan(raw, options = {}) {
+  return zonedPlan(raw, DECISION_SPEC, options);
+}
+
+export function actionsPlan(raw, options = {}) {
+  return zonedPlan(raw, ACTIONS_SPEC, options);
 }
