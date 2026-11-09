@@ -352,7 +352,7 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
     if (intent.length < 3 || intent.length > 2000) {
       return { status: 422, code: "BAD_INTENT", message: "describe the task in 3–2000 characters" };
     }
-    const kind = ["process", "delivery-plan", "problem-map"].includes(body?.kind)
+    const kind = ["process", "delivery-plan", "problem-map", "requirements", "mvp-scoping"].includes(body?.kind)
       ? body.kind
       : "process";
     const lang = body?.lang === "en" ? "en" : "ru";

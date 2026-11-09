@@ -298,6 +298,8 @@ export const enCore = {
   "roomAgent.placeholder":
     "What should the agent build? For example: map the refund process and mark where it is unclear who approves a refusal.",
   "roomAgent.process": "Process map",
+  "roomAgent.requirements": "Requirements",
+  "roomAgent.mvp": "MVP",
   "roomAgent.problemMap": "Problem map",
   "roomAgent.settings": "Agent settings",
   "roomAgent.demo": "Demo model: answers are fixed examples and do not read your sources. Connect a provider key for a real draft.",

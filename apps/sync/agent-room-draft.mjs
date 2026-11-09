@@ -37,7 +37,7 @@ export const ROOM_DRAFT_LIMITS = Object.freeze({
   citations: 60,
 });
 
-const KINDS = new Set(["process", "delivery-plan", "problem-map"]);
+const KINDS = new Set(["process", "delivery-plan", "problem-map", "requirements", "mvp-scoping"]);
 const TEXT_TYPES = new Set(["sticky_note", "text", "shape", "card", "connector"]);
 const ID_PREFIX = {
   frame: "frame",
@@ -187,26 +187,116 @@ Build a realistic delivery plan (a sprint or a project phase) from the request a
 - Use the three zones: mandatory work, desirable work, and risks/assumptions/open questions.
 - The result is a proposal for the team to confirm, not a commitment.`;
 
+function draftUserPrompt({ intent, sources, thread }) {
+  return `Request: ${intent}\n${thread ? `\nConversation so far:\n${thread}\n` : ""}\nSelected material:\n${
+    sources.length
+      ? sources
+          .map(
+            (source, index) =>
+              `[${index + 1}] id=${source.id} type=${source.type} title=${JSON.stringify(source.title)}` +
+              (source.status ? ` status=${source.status}` : "") +
+              (source.assignee ? ` assignee=${JSON.stringify(source.assignee)}` : "") +
+              (source.due ? ` due=${source.due}` : "") +
+              `\n${source.text}`,
+          )
+          .join("\n\n")
+      : "(no sources selected)"
+  }`;
+}
+
+const REQUIREMENTS_SYSTEM = `You are a careful requirements analyst working inside a shared canvas.
+You turn a request and selected material into a structured task model. You never invent facts.
+
+Return one JSON object and nothing else, in this shape:
+{
+  "title": "short name of the result",
+  "summary": "one sentence about the goal and the main gap",
+  "zones": [
+    {"key": "context", "label": "Context", "items": [
+      {"id": "c1", "text": "what is known", "meta": "", "sourceId": "source object id"}
+    ]},
+    {"key": "actors", "label": "Actors", "items": []},
+    {"key": "scenarios", "label": "Scenarios", "items": []},
+    {"key": "data", "label": "Data and rules", "items": []},
+    {"key": "constraints", "label": "Constraints", "items": []},
+    {"key": "questions", "label": "Questions", "items": []}
+  ],
+  "questions": ["a blocking question the team must settle"]
+}
+
+Rules:
+- Exactly the six zone keys, each present; an empty zone is allowed.
+- Item ids start with a letter, use letters, digits, "_" or "-", and are unique.
+- "text" is at most 300 characters. "meta" is a short line for an owner, date or estimate;
+  leave it empty when the source does not say.
+- "sourceId" may only be one of the source object ids below.
+- Write the human-readable text in \${language}.
+- No markdown, no code fences, no commentary.
+
+Procedure:
+- Separate the goal from a proposed solution.
+- Name the actors and what each needs.
+- Describe the main scenarios and the exceptions.
+- List data, entities and business rules.
+- Collect constraints and quality expectations.
+- Put contradictions, unknowns and blocking questions into the questions zone; do not guess them.`;
+
+const MVP_SYSTEM = `You are a product lead defining an MVP inside a shared canvas.
+You turn a request and selected material into a story map. You never invent facts.
+
+Return one JSON object and nothing else, in this shape:
+{
+  "title": "short name of the result",
+  "hypothesis": "the product hypothesis the MVP tests, and how the team will see it",
+  "columns": [{"key": "find", "label": "Find"}, {"key": "buy", "label": "Buy"}],
+  "rows": [{"key": "mvp", "label": "MVP"}, {"key": "next", "label": "Next"}, {"key": "out", "label": "Out"}],
+  "cells": [
+    {"row": "mvp", "column": "find", "items": [
+      {"text": "feature", "meta": "3 SP", "sourceId": "source object id"}
+    ]}
+  ],
+  "questions": ["an open question the team must settle"]
+}
+
+Rules:
+- Columns are the user actions in the main scenario, in order; 1 to 6.
+- Rows are release slices with exactly these keys: "mvp", "next", "out".
+- A cell names an existing row and column; empty cells may be omitted.
+- Item text is at most 300 characters; "meta" is a short estimate or owner, or empty.
+  Never invent a number or a person; write "?" when it is missing.
+- Only what the MVP needs to complete the scenario belongs in "mvp"; everything else is
+  in "next" or explicitly "out". Do not hedge: state what is not in the first version.
+- "sourceId" may only be one of the source object ids below.
+- Write the human-readable text in \${language}.
+- No markdown, no code fences, no commentary.
+
+Procedure:
+- Define the target user and the main scenario from start to result.
+- Break the scenario into user actions.
+- Under each action, list only the features needed to complete it.
+- Draw the MVP boundary: the smallest end-to-end path that proves the hypothesis.
+- Put the rest into next or out, and say what is deliberately out.
+- Add the hypothesis, its success signal and the open questions.`;
+
 export function roomDraftPrompt({ kind, lang = "ru", intent, sources, thread }) {
   const chosen = KINDS.has(kind) ? kind : "process";
   const language = lang === "en" ? "English" : "Russian";
   if (chosen === "delivery-plan") {
     return {
       system: DELIVERY_SYSTEM.replace("${language}", language),
-      user: `Request: ${intent}\n${thread ? `\nConversation so far:\n${thread}\n` : ""}\nSelected material:\n${
-        sources.length
-          ? sources
-              .map(
-                (source, index) =>
-                  `[${index + 1}] id=${source.id} type=${source.type} title=${JSON.stringify(source.title)}` +
-                  (source.status ? ` status=${source.status}` : "") +
-                  (source.assignee ? ` assignee=${JSON.stringify(source.assignee)}` : "") +
-                  (source.due ? ` due=${source.due}` : "") +
-                  `\n${source.text}`,
-              )
-              .join("\n\n")
-          : "(no sources selected)"
-      }`,
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "requirements") {
+    return {
+      system: REQUIREMENTS_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "mvp-scoping") {
+    return {
+      system: MVP_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
     };
   }
   const system = `You are a careful product analyst working inside a shared canvas.
@@ -572,18 +662,25 @@ export function fitDraftFrame(plan) {
   if (!frame) return plan;
   const children = plan.objects.filter((object) => object !== frame);
   if (!children.length) return plan;
-  const existing = planBounds([frame]);
-  const content = planBounds(children);
-  const left = Math.min(existing.x, content.x - DRAFT_PADDING);
-  const top = Math.min(existing.y, content.y - DRAFT_PADDING);
-  const right = Math.max(existing.x + existing.width, content.x + content.width + DRAFT_PADDING);
-  const bottom = Math.max(existing.y + existing.height, content.y + content.height + DRAFT_PADDING);
-  Object.assign(frame, {
-    x: (left + right) / 2,
-    y: (top + bottom) / 2,
-    width: right - left,
-    height: bottom - top,
-  });
+  // Plan objects are centre-anchored: x/y is the middle, not the top-left corner.
+  const frameLeft = frame.x - frame.width / 2;
+  const frameTop = frame.y - frame.height / 2;
+  const frameRight = frame.x + frame.width / 2;
+  const frameBottom = frame.y + frame.height / 2;
+  const childLeft = Math.min(...children.map((object) => object.x - object.width / 2));
+  const childTop = Math.min(...children.map((object) => object.y - object.height / 2));
+  const childRight = Math.max(...children.map((object) => object.x + object.width / 2));
+  const childBottom = Math.max(...children.map((object) => object.y + object.height / 2));
+  // Pad only the sides that actually overflow: a frame that already covers its
+  // children must not drift on every repair.
+  const left = Math.min(frameLeft, childLeft - DRAFT_PADDING);
+  const top = Math.min(frameTop, childTop - DRAFT_PADDING);
+  const right = Math.max(frameRight, childRight + DRAFT_PADDING);
+  const bottom = Math.max(frameBottom, childBottom + DRAFT_PADDING);
+  frame.x = (left + right) / 2;
+  frame.y = (top + bottom) / 2;
+  frame.width = right - left;
+  frame.height = bottom - top;
   plan.bounds = { x: left, y: top, width: right - left, height: bottom - top };
   return plan;
 }

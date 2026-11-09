@@ -93,6 +93,32 @@ describe("room draft prompt (ADR-189)", () => {
     expect(prompt.system).toContain("Exactly one object has type \"frame\"");
   });
 
+  it("carries the requirements contract", () => {
+    const prompt = roomDraftPrompt({
+      kind: "requirements",
+      lang: "ru",
+      intent: "Собери требования к возврату",
+      sources: [],
+      thread: "",
+    });
+    expect(prompt.system).toContain('"key": "context"');
+    expect(prompt.system).toContain('"key": "questions"');
+    expect(prompt.system).toContain("six zone keys");
+  });
+
+  it("carries the MVP story map contract", () => {
+    const prompt = roomDraftPrompt({
+      kind: "mvp-scoping",
+      lang: "ru",
+      intent: "Определи MVP возврата",
+      sources: [],
+      thread: "",
+    });
+    expect(prompt.system).toContain('"key": "mvp"');
+    expect(prompt.system).toContain("story map");
+    expect(prompt.system).toContain('"cells"');
+  });
+
   it("carries the delivery-plan procedure and the card fields", () => {
     const prompt = roomDraftPrompt({
       kind: "delivery-plan",

@@ -117,14 +117,20 @@ export function fitFrameToContents(
     .map((id) => board.readWidget(id))
     .filter((child): child is Widget => Boolean(child) && child?.type !== "card");
   if (!children.length) return false;
-  const left = Math.min(frame.x - frame.width / 2,
-    ...children.map((child) => child.x - child.width / 2 - padding));
-  const top = Math.min(frame.y - frame.height / 2,
-    ...children.map((child) => child.y - child.height / 2 - padding));
-  const right = Math.max(frame.x + frame.width / 2,
-    ...children.map((child) => child.x + child.width / 2 + padding));
-  const bottom = Math.max(frame.y + frame.height / 2,
-    ...children.map((child) => child.y + child.height / 2 + padding));
+  // Widget coordinates are centre-anchored: x/y is the middle of the box.
+  const frameLeft = frame.x - frame.width / 2;
+  const frameTop = frame.y - frame.height / 2;
+  const frameRight = frame.x + frame.width / 2;
+  const frameBottom = frame.y + frame.height / 2;
+  const childLeft = Math.min(...children.map((child) => child.x - child.width / 2));
+  const childTop = Math.min(...children.map((child) => child.y - child.height / 2));
+  const childRight = Math.max(...children.map((child) => child.x + child.width / 2));
+  const childBottom = Math.max(...children.map((child) => child.y + child.height / 2));
+  // Pad only the sides that overflow; an already fitting frame is left alone.
+  const left = Math.min(frameLeft, childLeft - padding);
+  const top = Math.min(frameTop, childTop - padding);
+  const right = Math.max(frameRight, childRight + padding);
+  const bottom = Math.max(frameBottom, childBottom + padding);
   const next = {
     x: (left + right) / 2,
     y: (top + bottom) / 2,

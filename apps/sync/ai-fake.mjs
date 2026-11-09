@@ -317,6 +317,73 @@ export function fakeDeliveryReply(prompt = "") {
   };
 }
 
+/** Requirements discovery for the demo. */
+export function fakeRequirementsReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "Требования к возврату",
+    summary: "Цель — закрыть возврат за 5 дней; главный пробел — кто согласует отказ.",
+    zones: [
+      { key: "context", label: "Контекст", items: [
+        { id: "c1", text: "Возврат запрашивают из личного кабинета", meta: "" },
+        ...(hint ? [{ id: "c2", text: `Источник: ${hint}`, meta: "" }] : []),
+      ] },
+      { key: "actors", label: "Участники", items: [
+        { id: "a1", text: "Клиент", meta: "" },
+        { id: "a2", text: "Поддержка", meta: "" },
+        { id: "a3", text: "Финансы", meta: "" },
+      ] },
+      { key: "scenarios", label: "Сценарии", items: [
+        { id: "s1", text: "Клиент просит возврат", meta: "" },
+        { id: "s2", text: "Поддержка проверяет условия", meta: "" },
+        { id: "s3", text: "Финансы подтверждают выплату", meta: "" },
+      ] },
+      { key: "data", label: "Данные и правила", items: [
+        { id: "d1", text: "Платёж, сумма, дата, причина", meta: "" },
+        { id: "d2", text: "Правило: 14 дней с момента оплаты", meta: "" },
+      ] },
+      { key: "constraints", label: "Ограничения", items: [
+        { id: "k1", text: "Выплата только на исходный способ оплаты", meta: "" },
+        { id: "k2", text: "Срок ответа клиенту — 5 дней", meta: "" },
+      ] },
+      { key: "questions", label: "Вопросы", items: [
+        { id: "q1", text: "Кто согласует отказ?", meta: "" },
+      ] },
+    ],
+    questions: ["Кто согласует отказ?", "Что делать при частичном возврате?"],
+  };
+}
+
+/** MVP scoping for the demo. */
+export function fakeMvpReply(prompt = "") {
+  const hint = sourceHint(prompt);
+  return {
+    title: "MVP возврата",
+    hypothesis: "Если вернуть деньги за 5 дней, доля повторных обращений упадёт.",
+    columns: [
+      { key: "request", label: "Запросить" },
+      { key: "check", label: "Проверить" },
+      { key: "pay", label: "Получить" },
+    ],
+    rows: [
+      { key: "mvp", label: "MVP" },
+      { key: "next", label: "Следующее" },
+      { key: "out", label: "Вне объёма" },
+    ],
+    cells: [
+      { row: "mvp", column: "request", items: [{ text: "Форма возврата", meta: "3 SP" }] },
+      { row: "mvp", column: "check", items: [{ text: "Проверка условий", meta: "5 SP" }] },
+      { row: "mvp", column: "pay", items: [{ text: "Выплата", meta: "8 SP" }] },
+      { row: "next", column: "request", items: [{ text: "Повторный возврат", meta: "" }] },
+      { row: "out", column: "pay", items: [
+        { text: "Частичный возврат", meta: "" },
+        ...(hint ? [{ text: `Источник: ${hint}`, meta: "" }] : []),
+      ] },
+    ],
+    questions: ["Кто согласует отказ?"],
+  };
+}
+
 /** The provider shape `callAgentModel` expects, with no network and no key. */
 export function fakePlanClient() {
   return {
@@ -327,14 +394,20 @@ export function fakePlanClient() {
       const text = String(system);
       const tidy = text.includes("group whiteboard objects");
       const delivery = text.includes("delivery lead");
+      const requirements = text.includes("requirements analyst");
+      const mvp = text.includes("defining an MVP");
       const roomDraft = text.includes("product analyst");
       const json = tidy
         ? fakeTidyReply(user)
         : delivery
           ? fakeDeliveryReply(user)
-          : roomDraft
-            ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
-            : fakePlanReply(user);
+          : requirements
+            ? fakeRequirementsReply(user)
+            : mvp
+              ? fakeMvpReply(user)
+              : roomDraft
+                ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
+                : fakePlanReply(user);
       return {
         json,
         text: JSON.stringify(json),

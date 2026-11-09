@@ -184,3 +184,28 @@ test("a problem map keeps its selected source and identifies a hypothesis", asyn
   await page.getByRole("button", { name: "Open task", exact: true }).click();
   await expect(panel.getByText("Group the interview observations", { exact: true }).first()).toBeVisible();
 });
+
+test("requirements and MVP drafts use their own layouts", async ({ page }) => {
+  const { boardId, agentId } = await agentBoard(page, "room-agent-skills");
+  const assigned = await page.request.put(`/api/boards/${boardId}/agent`, {
+    data: { agentId },
+  });
+  expect(assigned.ok(), await assigned.text()).toBeTruthy();
+  for (const [kind, intent] of [
+    ["requirements", "Собери требования к возврату"],
+    ["mvp-scoping", "Определи MVP возврата"],
+  ] as const) {
+    const created = await page.request.post(`/api/boards/${boardId}/agent-threads`, {
+      data: { intent, kind, sourceIds: [] },
+    });
+    expect(created.ok(), await created.text()).toBeTruthy();
+  }
+  await expect.poll(() => frames(page)).toHaveLength(2);
+  const texts = await page.evaluate(() =>
+    (window as unknown as { __remo: { widgets: Array<{ type: string; text?: string }> } }).__remo.widgets
+      .filter((widget) => widget.type === "text")
+      .map((widget) => widget.text ?? ""),
+  );
+  expect(texts).toContain("Контекст");
+  expect(texts.some((text) => text.includes("граница MVP"))).toBe(true);
+});

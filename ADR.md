@@ -7880,3 +7880,41 @@ Ordinary room access and shared history continue to follow the existing rules.
 **Consequences.** The owner can manage the allowlist in the room agent panel. The same
 person can lose launch permission and retain access to existing drafts and history.
 An owner can stop any task in the room. A delegated requester can stop their own task.
+
+## ADR-192: A room skill is a procedure plus a layout
+
+**Status:** accepted (2026-11-09). Extends ADR-189.
+
+**Context.** Fourteen product-research, process and delivery cases were specified as
+skills. Copying the room-draft endpoint for each one would produce fourteen permission
+paths, fourteen validators and fourteen ways to place a box. The cases differ in what
+the model is asked and what the reader needs to see, not in how a draft reaches the
+board.
+
+**Decision.**
+
+- **A skill is a manifest:** a procedure, a result kind and its quality checks. The
+  room-draft pipeline is unchanged: one task, one thread, one immediate write, the same
+  budgets, audit, idempotency and source expansion.
+- **The server owns the layout.** A skill returns meaning, not coordinates. Three
+  layouts cover the catalogue: a **process graph**, **zone columns** (requirements and
+  later retrospective/planning pages) and a **story-map matrix** (MVP and later
+  prioritisation).
+- **Requirements discovery** uses six zones in two rows of three: context, actors,
+  scenarios, data and rules, constraints, questions. **MVP scoping** uses actions as
+  columns and MVP / next / out as rows, with an explicit boundary marker.
+- **Quality checks live with the procedure.** The prompt states them and the skill
+  manifest can report them later; a model answer that does not satisfy the shape is
+  refused before anything is written, while display text is clipped rather than fatal.
+- **A new case is a prompt and a spec, not a route.** Cases that share a layout share
+  the validator and the tests; only a different layout is a new engine.
+- **The catalogue is added in clusters**, not all at once: the zones cluster first,
+  then the matrix, then the graph. Each cluster is measured by rework before the next.
+
+**Consequences.** The remaining cases can be added without widening the security
+surface or the panel's write path. The model still decides content; a bad procedure is
+a content problem, not a new code path. The user sees a growing skill picker, and the
+documentation lists the cases that actually exist rather than the whole catalogue.
+
+**Limits.** No custom user skill upload in this version; no per-skill budgets yet; the
+matrix and graph layouts are fixed, not user-editable templates.

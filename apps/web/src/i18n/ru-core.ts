@@ -297,6 +297,8 @@ export const ruCore = {
   "roomAgent.placeholder":
     "Что собрать? Например: собери процесс возврата и отметь, где неясно, кто согласует отказ.",
   "roomAgent.process": "Схема процесса",
+  "roomAgent.requirements": "Требования",
+  "roomAgent.mvp": "MVP",
   "roomAgent.problemMap": "Карта проблем",
   "roomAgent.settings": "Настройки агента",
   "roomAgent.demo": "Демо-модель: ответы — фиксированные примеры и не читают ваши источники. Для настоящего черновика подключите ключ провайдера.",

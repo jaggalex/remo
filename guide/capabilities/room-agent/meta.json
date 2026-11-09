@@ -8,8 +8,8 @@
     "en": "Room agent"
   },
   "summary": {
-    "ru": "Назначенный агент пишет первый черновик по поручению прямо в комнату: схему процесса или план спринта; команда правит его обычными инструментами.",
-    "en": "An assigned agent writes a first draft straight into the room from a request: a process map or a sprint plan; the team edits it with the usual tools."
+    "ru": "Пять сценариев: схема процесса, спринт, требования, MVP и карта проблем; готовый черновик появляется в комнате.",
+    "en": "Five scenarios: process, sprint, requirements, MVP and problem map; the draft appears in the room."
   },
   "related": [
     "capabilities/agents",
@@ -19,8 +19,8 @@
   "updated": "2026-11-09",
   "translations": {
     "en": {
-      "sourceHash": "sha256:caf5c825906af4a0a4b96c597d811a78f781ced3d12f9bb668b136c10b1b10b1",
-      "targetHash": "sha256:d8595db1101ccd63e7473e38a14a4a6c0bbf5fab2e584549e90a415131292d8b"
+      "sourceHash": "sha256:6e4f284348bb191ccfd336f8b0d0c804725d16ee11692b30771aaf0f3304cc09",
+      "targetHash": "sha256:d073f5385172c0ca99470d0f5ab9f6c2985a1fe76bf52ed0d669044a9d0f5c62"
     }
   }
 }
