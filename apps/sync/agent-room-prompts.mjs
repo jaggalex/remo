@@ -17,6 +17,9 @@ const KINDS = new Set([
   "competitors",
   "architecture-decision",
   "idea-generation",
+  "dependency-mapping",
+  "user-flow-design",
+  "architecture-mapping",
 ]);
 const PROCEDURES = {
   process: `Build a readable business-process model from the request and the sources.
@@ -334,6 +337,66 @@ const IDEAS_SYSTEM = matrixSystem(
 - Do not present an idea as a decision.`,
 );
 
+const GRAPH_SHAPE = `Return one JSON object and nothing else, in this shape:
+{
+  "title": "short name of the result",
+  "summary": "one sentence about what the graph shows",
+  "nodes": [
+    {"id": "n1", "label": "short label", "kind": "step", "layer": 0, "sourceId": "source object id"}
+  ],
+  "edges": [
+    {"from": "n1", "to": "n2", "label": "condition or protocol"}
+  ],
+  "questions": ["an open question the team must settle"]
+}
+
+Rules:
+- Node ids start with a letter, use letters, digits, "_" or "-", and are unique.
+- "kind" is one of step, decision, component, store, actor, external, task, milestone.
+- "layer" is optional, 0 to 8; leave it out unless the order is a fact from the sources.
+  The server lays the graph out; do not invent coordinates.
+- Edges join two nodes of this draft; a label says what the arrow means, not a description.
+- Labels are at most 80 characters; a summary at most 400.
+- "sourceId" may only be one of the source object ids below.
+- Write the human-readable text in \${language}.
+- No markdown, no code fences, no commentary.`;
+
+function graphSystem(role, procedure) {
+  return `You are ${role} inside a shared canvas. You never invent facts.
+
+${GRAPH_SHAPE}
+
+Procedure:
+${procedure}`;
+}
+
+const DEPENDENCY_SYSTEM = graphSystem(
+  "a delivery lead mapping dependencies",
+  `- Name the work and the expected result of each item.
+- An edge means "must happen before"; label what exactly is required.
+- Separate mandatory dependencies from a preferred order.
+- Show cycles and external waits as findings, not as a tidy chain.
+- Compute a critical path only when estimates exist; otherwise leave it as a question.`,
+);
+
+const USER_FLOW_SYSTEM = graphSystem(
+  "a product designer mapping a user flow",
+  `- Start at the entry point and end at a clear result.
+- Draw the main success path, then alternatives, cancel and return.
+- Give every edge a trigger; a decision has labelled outcomes.
+- Include errors, empty, loading and access states; no unexplained dead ends.
+- Mark places that need a product decision as questions.`,
+);
+
+const ARCHITECTURE_MAPPING_SYSTEM = graphSystem(
+  "an architect mapping a system",
+  `- Fix the boundary and the level of detail first.
+- Name external actors, components, stores and their connections.
+- Label an edge with its purpose or protocol, not only an arrow.
+- Keep the current architecture separate from what is proposed.
+- Do not mix abstraction levels without saying so; collect gaps as questions.`,
+);
+
 export function roomDraftPrompt({ kind, lang = "ru", intent, sources, thread }) {
   const chosen = KINDS.has(kind) ? kind : "process";
   const language = lang === "en" ? "English" : "Russian";
@@ -394,6 +457,24 @@ export function roomDraftPrompt({ kind, lang = "ru", intent, sources, thread }) 
   if (chosen === "idea-generation") {
     return {
       system: IDEAS_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "dependency-mapping") {
+    return {
+      system: DEPENDENCY_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "user-flow-design") {
+    return {
+      system: USER_FLOW_SYSTEM.replace("${language}", language),
+      user: draftUserPrompt({ intent, sources, thread }),
+    };
+  }
+  if (chosen === "architecture-mapping") {
+    return {
+      system: ARCHITECTURE_MAPPING_SYSTEM.replace("${language}", language),
       user: draftUserPrompt({ intent, sources, thread }),
     };
   }
