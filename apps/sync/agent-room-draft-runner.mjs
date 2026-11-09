@@ -8,7 +8,7 @@
  */
 import { withinBudget } from "./agents.mjs";
 import { callAgentModel } from "./agent-call.mjs";
-import { decide } from "./agent-context.mjs";
+import { decide, roomAgentCanRequest, withRoomAgentLock } from "./agent-context.mjs";
 import { emitMetric } from "./metrics-events.mjs";
 import {
   ROOM_DRAFT_SKILL,
@@ -20,6 +20,7 @@ import {
   roomDraftPlan,
   roomDraftPrompt,
   sourceExcerpts,
+  threadExcerpt,
 } from "./agent-room-draft.mjs";
 import { deliveryPlan, parseDeliveryReply } from "./agent-delivery-layout.mjs";
 
@@ -43,7 +44,7 @@ export async function runRoomDraft({
   fail,
   audit,
 }) {
-  const threadId = task.thread_id ?? task.input?.threadId ?? null;
+  const threadId = task.thread_id;
   if (!threadId) {
     return fail("THREAD_REQUIRED", "a room draft is always part of a task thread");
   }
@@ -54,11 +55,28 @@ export async function runRoomDraft({
       .updateAgentThreadMessageByTask({ taskId: task.id, status, text, frameIds })
       .catch((error) => log.error?.("[agents] thread message failed:", error.message));
   };
-  const failDraft = async (code, message, extra = {}, result = null) => {
-    await finishMessage("error", message);
-    return fail(code, message, extra, result);
+  const checkPermission = async () => {
+    const fresh = await store.getAgentTask(task.id);
+    if (fresh?.status !== "running" || fresh.thread_id !== threadId) return "STOPPED";
+    const assignment = await store.getBoardAgent(task.board_id);
+    const board = await store.getIamBoard(task.board_id);
+    if (assignment?.agent_id !== task.agent_id
+        || !await roomAgentCanRequest(store, board, assignment, task.created_by)) {
+      return "AGENT_DENIED";
+    }
+    const recheck = await decide(store, fresh, await store.getAgent(task.agent_id));
+    return recheck.decision.allowed ? null : "AGENT_DENIED";
+  };
+  const refuse = async (reason) => {
+    if (reason === "STOPPED") {
+      await finishMessage("stopped", "");
+      return { status: "cancelled" };
+    }
+    return fail(reason, "the room agent is no longer allowed to act");
   };
 
+  const initialRefusal = await checkPermission();
+  if (initialRefusal) return refuse(initialRefusal);
   await finishMessage("running", "");
   const ydoc = await store.roomDocument(task.board_id);
 
@@ -94,21 +112,16 @@ export async function runRoomDraft({
     threadId && typeof store.listAgentThreadMessages === "function"
       ? await store.listAgentThreadMessages(threadId)
       : [];
-  const thread = messages
-    .filter((message) => message.task_id !== task.id)
-    .map((message) => ({
-      role: message.role,
-      text: message.text,
-    }));
+  const requestIndex = messages.findIndex((message) => message.task_id === task.id);
+  const earlier = requestIndex < 0 ? [] : messages.slice(0, requestIndex);
+
 
   const prompt = roomDraftPrompt({
     kind: task.input?.kind,
     lang: task.input?.lang,
     intent: task.intent,
     sources,
-    thread: thread
-      .map((message) => `${message.role === "agent" ? "agent" : "person"}: ${message.text}`)
-      .join("\n"),
+    thread: threadExcerpt(earlier.filter((message) => message.role === "user" || message.status === "ready")),
   });
 
   let called;
@@ -128,7 +141,7 @@ export async function runRoomDraft({
       now,
     });
   } catch (error) {
-    return failDraft(error?.code ?? "AI_FAILED", error?.message ?? String(error));
+    return fail(error?.code ?? "AI_FAILED", "the provider could not prepare a draft");
   }
 
   const { completion, providerInfo } = called;
@@ -140,29 +153,7 @@ export async function runRoomDraft({
     seconds: Math.max(0, (now() - started) / 1000),
   };
   if (!withinBudget(budget, usage)) {
-    return failDraft("BUDGET_EXCEEDED", "the model call used more than the task allows", usage);
-  }
-
-  // A model call takes seconds. Revoking the assignment, disabling the agent or
-  // stopping the task during that time must leave the canvas untouched (ADR-189).
-  const fresh = await store.getAgentTask(task.id);
-  if (!fresh || fresh.status !== "running") {
-    await finishMessage("stopped", "");
-    return { status: "cancelled" };
-  }
-  const recheck = await decide(store, fresh, await store.getAgent(task.agent_id));
-  if (!recheck.decision.allowed) {
-    return failDraft("AGENT_DENIED", recheck.decision.reason);
-  }
-  const assignment = typeof store.getBoardAgent === "function"
-    ? await store.getBoardAgent(task.board_id)
-    : null;
-  if (!assignment || !assignment.enabled || assignment.agent_id !== task.agent_id) {
-    return failDraft("AGENT_UNASSIGNED", "the agent is no longer assigned to this room");
-  }
-  const board = await store.getIamBoard(task.board_id);
-  if (!board || board.visibility === "link") {
-    return failDraft("PUBLIC_LINK_ON", "the public link is on; ask the owner to turn it off");
+    return fail("BUDGET_EXCEEDED", "the model call used more than the task allows", usage);
   }
 
   const existingWidgets = [...ydoc.getMap("widgets").values()].map((widget) => ({
@@ -178,7 +169,10 @@ export async function runRoomDraft({
   const existingConnectors = [...ydoc.getMap("widgets").values()]
     .filter((widget) => widget.type === "connector" && widget.start?.item && widget.end?.item)
     .map((widget) => ({ from: widget.start.item, to: widget.end.item }));
-  const origin = {
+  const widgets = ydoc.getMap("widgets");
+  const previous = earlier.flatMap((message) => message.frame_ids ?? [])
+    .reverse().map((id) => widgets.get(id)).find((widget) => widget?.type === "frame");
+  const origin = previous ? { x: previous.x + previous.width / 2 + 80, y: previous.y - previous.height / 2 } : {
     x: Number(task.input?.origin?.x) || 0,
     y: Number(task.input?.origin?.y) || 0,
   };
@@ -214,82 +208,87 @@ export async function runRoomDraft({
       };
     }
   } catch (error) {
-    return failDraft(error?.code ?? "DRAFT_INVALID", error?.message ?? String(error));
+    return fail(error?.code ?? "DRAFT_INVALID", "the model returned an invalid draft");
   }
 
   fitDraftFrame(draft.plan);
 
-  if (draft.plan.counts.objects > budget.maxActions) {
-    return failDraft("BUDGET_ACTIONS", `the task allows ${budget.maxActions} changes`);
-  }
+  const committed = await withRoomAgentLock(store, task.board_id, async () => {
+    const current = await store.roomDocument(task.board_id);
+    if (current !== ydoc) {
+      return { outcome: await fail("APPLY_FAILED", "the room was replaced before the write") };
+    }
 
-  const current = await store.roomDocument(task.board_id);
-  if (current !== ydoc) {
-    return failDraft("APPLY_FAILED", "the room was replaced before the write");
-  }
+    const refusal = await checkPermission();
+    if (refusal) return { outcome: await refuse(refusal) };
+    const actions = draft.plan.counts.actions + draft.labels.length;
+    const seconds = Math.max(0, (now() - started) / 1000);
+    if (!withinBudget(budget, { ...usage, actions, seconds })) {
+      return { outcome: await fail("BUDGET_EXCEEDED", "the draft exceeds the task budget", usage) };
+    }
 
-  const placed = draftOrigin(ydoc, draft.plan, origin);
-  const title = draftTitle(task.input?.lang, agent.name, draft.title);
-  let applied;
-  try {
-    applied = applyRoomDraft(ydoc, draft.plan, {
-      placed,
-      title,
-      agent,
-      taskId: task.id,
-      citations: draft.citations,
-      labels: draft.labels,
-      sourceIds: expandedSourceIds,
-      now: now(),
+    const placed = draftOrigin(ydoc, draft.plan, origin);
+    const title = draftTitle(task.input?.lang, agent.name, draft.title);
+    let applied;
+    try {
+      applied = applyRoomDraft(ydoc, draft.plan, {
+        placed,
+        title,
+        agent,
+        taskId: task.id,
+        citations: draft.citations,
+        labels: draft.labels,
+        sourceIds: expandedSourceIds,
+        now: now(),
+      });
+    } catch (error) {
+      return { outcome: await fail(error?.code ?? "DRAFT_WRITE_FAILED", "the draft could not be written") };
+    }
+
+    usage = {
+      ...usage,
+      actions: applied.createdIds.length,
+      seconds: Math.max(0, (now() - started) / 1000),
+    };
+    const result = {
+      frameId: applied.frameId,
+      createdIds: applied.createdIds,
+      title: applied.title,
+      questions: draft.questions,
+      counts: draft.plan.counts,
+      placedAt: placed,
+      skill: skill.slug,
+      skillVersion: skill.version,
+      model: completion.model ?? null,
+      keySource: providerInfo.source,
+    };
+    const flushed = await store.flushRoom?.(task.board_id);
+    if (flushed === false) {
+      return { outcome: await fail("APPLY_FAILED", "the room was replaced before the write was stored") };
+    }
+    const updated = await store.finishAgentTask({
+      id: task.id,
+      status: "applied",
+      usage,
+      result,
     });
-  } catch (error) {
-    return failDraft(error?.code ?? "DRAFT_WRITE_FAILED", error?.message ?? String(error));
-  }
+    if (!updated) {
+      await finishMessage("stopped", "");
+      return { outcome: { status: "cancelled" } };
+    }
 
-  usage = {
-    ...usage,
-    actions: applied.createdIds.length,
-    seconds: Math.max(0, (now() - started) / 1000),
-  };
-  const result = {
-    frameId: applied.frameId,
-    createdIds: applied.createdIds,
-    title: applied.title,
-    questions: draft.questions,
-    counts: draft.plan.counts,
-    placedAt: placed,
-    skill: skill.slug,
-    skillVersion: skill.version,
-    model: completion.model ?? null,
-    keySource: providerInfo.source,
-  };
-  if (!withinBudget(budget, usage)) {
-    return failDraft("BUDGET_EXCEEDED", "the draft used more than the task allows", usage, result);
-  }
-
-  const flushed = await store.flushRoom?.(task.board_id);
-  if (flushed === false) {
-    return failDraft("APPLY_FAILED", "the room was replaced before the write was stored");
-  }
-  const updated = await store.finishAgentTask({
-    id: task.id,
-    status: "applied",
-    usage,
-    result,
+    await finishMessage("ready", applied.title, [applied.frameId]);
+    return { applied, updated, result };
   });
-  if (!updated) {
-    await finishMessage("stopped", "");
-    return { status: "cancelled" };
-  }
-
-  await finishMessage("ready", applied.title, [applied.frameId]);
+  if ("outcome" in committed) return committed.outcome;
+  const { applied, updated, result } = committed;
 
   await audit(store, log, {
     actorId: task.created_by,
     orgId: task.org_id,
     boardId: task.board_id,
     action: "agent.draft.write",
-    subject: applied.title.slice(0, 200),
+    subject: applied.frameId,
     agentId: task.agent_id,
     taskId: task.id,
     skill: `${skill.slug}@${skill.version}`,

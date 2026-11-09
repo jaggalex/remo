@@ -383,6 +383,25 @@ export async function handleBoardRoutes(ctx) {
         const body = await readBody(request);
         if (body === null) return fail(response, 400, "BAD_REQUEST", "invalid JSON"), true;
 
+        let passwordHash;
+        if ("password" in body) {
+          const value = body.password;
+          if (value !== null && (typeof value !== "string" || value.length < 8)) {
+            return fail(response, 422, "WEAK_PASSWORD", "the link password needs at least 8 characters"), true;
+          }
+          passwordHash = value === null ? null : await hashPassword(value);
+        }
+        let expiresAt;
+        if ("expiresAt" in body) {
+          expiresAt = body.expiresAt === null ? null : new Date(String(body.expiresAt));
+          if (expiresAt && Number.isNaN(expiresAt.getTime())) {
+            return fail(response, 422, "BAD_EXPIRY", "enter a valid date and time"), true;
+          }
+          if (expiresAt && expiresAt.getTime() <= Date.now()) {
+            return fail(response, 422, "EXPIRY_IN_PAST", "the expiry must be in the future"), true;
+          }
+        }
+
         if (body.enabled === false) {
           await store.disableBoardLink(boardId);
           await audit({ actorId: me2.id, orgId: board.org_id, boardId, action: "link.disable" });
@@ -394,7 +413,16 @@ export async function handleBoardRoutes(ctx) {
             props: { state: "off" },
           });
         } else if (body.enabled === true) {
-          await store.enableBoardLink({ boardId, role: "viewer", createdBy: me2.id });
+          const enabled = await store.enableBoardLink({
+            boardId, role: "viewer", createdBy: me2.id, confirmDraftSharing: body.confirmDraftSharing === true,
+            passwordHash, expiresAt,
+          });
+          if (enabled.blockedBy === "assignment") {
+            return fail(response, 409, "ROOM_AGENT_ASSIGNED", "unassign the room agent before turning on the public link"), true;
+          }
+          if (enabled.blockedBy === "drafts") {
+            return fail(response, 409, "CONFIRM_DRAFT_SHARING", "confirm that room drafts can be read through the public link"), true;
+          }
           await audit({ actorId: me2.id, orgId: board.org_id, boardId, action: "link.enable" });
           emitMetric({
             name: "link.enabled",
@@ -410,15 +438,9 @@ export async function handleBoardRoutes(ctx) {
           return fail(response, 409, "LINK_NOT_CONFIGURED", "turn the link on before adding security"), true;
         }
 
-        if ("password" in body) {
+        if (passwordHash !== undefined) {
           const value = body.password;
-          if (value !== null && (typeof value !== "string" || value.length < 8)) {
-            return fail(response, 422, "WEAK_PASSWORD", "the link password needs at least 8 characters"), true;
-          }
-          await store.setBoardLinkPassword(
-            boardId,
-            value === null ? null : await hashPassword(value),
-          );
+          if (body.enabled !== true) await store.setBoardLinkPassword(boardId, passwordHash);
           await audit({
             actorId: me2.id,
             orgId: board.org_id,
@@ -434,20 +456,8 @@ export async function handleBoardRoutes(ctx) {
           });
         }
 
-        if ("expiresAt" in body) {
-          const raw = body.expiresAt;
-          let expiresAt = null;
-          if (raw !== null) {
-            const parsed = new Date(String(raw));
-            if (Number.isNaN(parsed.getTime())) {
-              return fail(response, 422, "BAD_EXPIRY", "enter a valid date and time"), true;
-            }
-            if (parsed.getTime() <= Date.now()) {
-              return fail(response, 422, "EXPIRY_IN_PAST", "the expiry must be in the future"), true;
-            }
-            expiresAt = parsed;
-          }
-          await store.setBoardLinkExpiry(boardId, expiresAt);
+        if (expiresAt !== undefined) {
+          if (body.enabled !== true) await store.setBoardLinkExpiry(boardId, expiresAt);
           await audit({
             actorId: me2.id,
             orgId: board.org_id,

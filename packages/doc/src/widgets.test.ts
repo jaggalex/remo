@@ -202,10 +202,10 @@ describe("fitFrameToContents", () => {
     ]);
     expect(fitFrameToContents(board, "f", 20)).toBe(true);
     const grown = board.readWidget("f")!;
-    expect(grown.x).toBe(0);
-    expect(grown.y).toBe(0);
-    expect(grown.width).toBeGreaterThanOrEqual(540 + 20);
-    expect(grown.height).toBeGreaterThanOrEqual(460 + 20);
+    expect(grown.x - grown.width / 2).toBe(-200);
+    expect(grown.y - grown.height / 2).toBe(-150);
+    expect(grown.x + grown.width / 2).toBe(540);
+    expect(grown.y + grown.height / 2).toBe(460);
     // The children keep their positions: this is a frame repair, not a layout.
     expect(board.readWidget("outside")!.x).toBe(500);
   });

@@ -6,6 +6,8 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { runAgentTask } from "./agent-runner.mjs";
+import { fakeRoomDraftReply } from "./ai-fake.mjs";
 import { testDatabaseStore } from "./test-db.mjs";
 
 const database = await testDatabaseStore("room agent");
@@ -19,6 +21,7 @@ const ids = {
   board: `room-agent-${randomUUID()}`,
   agent: randomUUID(),
   agent2: randomUUID(),
+  editor: randomUUID(),
 };
 
 beforeAll(async () => {
@@ -50,7 +53,7 @@ afterAll(async () => {
   if (!store) return;
   await store.pool.query("delete from boards where id = $1", [ids.board]);
   await store.pool.query("delete from orgs where id = $1", [ids.org]);
-  await store.pool.query("delete from users where id = $1", [ids.user]);
+  await store.pool.query("delete from users where id = any($1::uuid[])", [[ids.user, ids.editor]]);
   await store.close();
 });
 
@@ -214,5 +217,58 @@ suite("room agent store", () => {
     await store.finishAgentTask({ id: first.id, status: "applied" });
     expect(await store.claimAgentTask(second.id)).not.toBeNull();
     await store.finishAgentTask({ id: second.id, status: "cancelled" });
+  });
+
+  it("stops queued and running delegated tasks without writing a draft", async () => {
+    const { editor } = ids;
+    await store.pool.query(
+      "insert into users (id, email, password_hash, name, handle) values ($1, $2, 'x', 'Editor', 'room-editor')",
+      [editor, `editor-${editor}@example.test`],
+    );
+    await store.pool.query(
+      "insert into org_memberships (org_id, user_id, relation, state) values ($1, $2, 'member', 'active'), ($1, $3, 'member', 'active')",
+      [ids.org, editor, ids.user],
+    );
+    await store.putGrant({
+      boardId: ids.board, subjectType: "user", subjectId: editor, role: "editor", grantedBy: ids.user,
+    });
+    await store.setOrgAgentsEnabled(ids.org, true);
+    await store.setBoardAgentsEnabled(ids.board, true);
+    await store.setBoardAgent({
+      boardId: ids.board, orgId: ids.org, agentId: ids.agent, assignedBy: ids.user,
+    });
+    const permission = { boardId: ids.board, agentId: ids.agent, ownerId: ids.user, userId: editor };
+    expect(await store.setRoomAgentDelegate({ ...permission, enabled: true })).toBe(true);
+    const skill = await store.getAgentSkillBySlug(ids.org, "room-draft");
+    const task = {
+      orgId: ids.org, boardId: ids.board, agentId: ids.agent, createdBy: editor,
+      skillId: skill.id, skillSlug: skill.slug, skillVersion: skill.version, mode: "write",
+      capabilities: ["board.read", "board.edit"], budget: { maxActions: 80 },
+      intent: "Map the refund process", input: { kind: "process", lang: "en" },
+    };
+    const running = await store.enqueueRoomAgentTask({ task, agentName: "Mira", authorName: "Editor" });
+    const queued = await store.enqueueRoomAgentTask({ task, agentName: "Mira", authorName: "Editor" });
+    let providerCalled = false;
+    const result = await runAgentTask({
+      store, taskId: running.task.id, env: {},
+      ai: {
+        configured: true,
+        async chatJson() {
+          providerCalled = true;
+          expect(await store.setRoomAgentDelegate({ ...permission, enabled: false })).toBe(true);
+          return { json: fakeRoomDraftReply("Map the refund process"), usage: {} };
+        },
+      },
+    });
+    expect(providerCalled).toBe(true);
+    expect(result.status).toBe("cancelled");
+    for (const item of [running, queued]) {
+      expect((await store.getAgentTask(item.task.id)).status).toBe("cancelled");
+      expect(await store.listAgentThreadMessages(item.thread.id)).toEqual([
+        expect.objectContaining({ role: "user" }),
+        expect.objectContaining({ role: "agent", status: "stopped", frame_ids: [] }),
+      ]);
+    }
+    expect((await store.roomDocument(ids.board)).getMap("widgets").size).toBe(0);
   });
 });

@@ -100,6 +100,80 @@ async function setup(tag) {
 }
 
 suite("agent API", () => {
+  it("requires the owner to unassign the room agent before opening a public link", async () => {
+    const { owner, boardId, agent } = await setup("room-link");
+    expect((await owner("PUT", `/boards/${boardId}/agent`, { agentId: agent.id })).status).toBe(200);
+
+    const blocked = await owner("PUT", `/boards/${boardId}/link`, { enabled: true });
+    expect(blocked).toMatchObject({ status: 409, body: { error: "ROOM_AGENT_ASSIGNED" } });
+    expect((await owner("GET", `/boards/${boardId}/link`)).body.link.enabled).toBe(false);
+
+    expect((await owner("PUT", `/boards/${boardId}/agent`, { agentId: null })).status).toBe(200);
+    expect((await owner("PUT", `/boards/${boardId}/link`, { enabled: true })).status).toBe(200);
+    expect((await owner("PUT", `/boards/${boardId}/agent`, { agentId: agent.id })).status).toBe(409);
+  });
+
+  it("serializes room agent assignment with public link activation", async () => {
+    const { owner, boardId, agent } = await setup("room-link-race");
+    const [assigned, enabled] = await Promise.all([
+      owner("PUT", `/boards/${boardId}/agent`, { agentId: agent.id }),
+      owner("PUT", `/boards/${boardId}/link`, { enabled: true }),
+    ]);
+    expect([assigned.status, enabled.status].sort()).toEqual([200, 409]);
+    const link = await store.getBoardLink(boardId);
+    expect(Boolean(link?.enabled)).toBe(enabled.status === 200);
+    expect(Boolean(await store.getBoardAgent(boardId))).toBe(assigned.status === 200);
+  });
+
+  it("refuses room drafts on generic task and schedule endpoints", async () => {
+    const { owner, boardId, agent } = await setup("room-draft-entry");
+    await owner("PUT", `/boards/${boardId}/agents`, { enabled: true });
+    const body = {
+      agentId: agent.id,
+      skillSlug: "room-draft",
+      intent: "Build a draft",
+      budget: { maxActions: 10 },
+    };
+    const expected = { status: 422, body: { error: "SKILL_NOT_SUPPORTED" } };
+    expect(await owner("POST", `/boards/${boardId}/agent-tasks`, body)).toMatchObject(expected);
+    expect(await owner("POST", `/boards/${boardId}/agent-schedules`, {
+      ...body, intervalSeconds: 60,
+    })).toMatchObject(expected);
+  });
+
+  it("keeps room draft requests out of the generic task feed and denies former requesters with link-only access", async () => {
+    const { owner, orgId, boardId, agent } = await setup("room-link-history");
+    const requester = client();
+    const registration = await requester("POST", "/auth/register", {
+      email: email("room-link-requester"), password, name: "Requester",
+    });
+    const createdBy = registration.body.user.id;
+    const invitation = await owner("POST", `/orgs/${orgId}/invitations`, { email: email("room-link-requester") });
+    await requester("POST", "/invitations/accept", {
+      token: new URL(invitation.body.url).searchParams.get("invite"),
+    });
+    expect((await owner("POST", `/boards/${boardId}/grants`, {
+      subjectType: "user", subjectId: createdBy, role: "editor",
+    })).status).toBe(200);
+    const task = await store.createAgentTask({
+      orgId, boardId, agentId: agent.id, createdBy, skillSlug: "room-draft", intent: "Private request",
+    });
+
+    expect((await requester("GET", `/boards/${boardId}/agent-tasks`)).body.tasks).toEqual([]);
+    expect((await requester("GET", `/boards/${boardId}/agents`)).body.tasks).toEqual([]);
+    expect((await requester("GET", `/agent-tasks/${task.id}`)).status).toBe(200);
+
+    expect((await owner("DELETE", `/boards/${boardId}/grants/user/${createdBy}`)).status).toBe(200);
+    expect(await owner("PUT", `/boards/${boardId}/link`, { enabled: true })).toMatchObject({
+      status: 409, body: { error: "CONFIRM_DRAFT_SHARING" },
+    });
+    expect((await owner("PUT", `/boards/${boardId}/link`, {
+      enabled: true, confirmDraftSharing: true,
+    })).status).toBe(200);
+    expect((await requester("GET", `/agent-tasks/${task.id}`)).status).toBe(404);
+    expect((await requester("POST", `/agent-tasks/${task.id}/cancel`)).status).toBe(404);
+  });
+
   it("is off by default and only an org admin can turn it on", async () => {
     const owner = client();
     const registered = await owner("POST", "/auth/register", {

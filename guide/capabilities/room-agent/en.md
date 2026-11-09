@@ -14,7 +14,7 @@ This differs from a plan preview: there the room does not change until Apply, wh
 ## How it works
 
 1. **Assignment.** The owner picks their own active agent and assigns it to the room. The agent belongs to a person and has no rights of its own: a task acts for the owner and cannot exceed those rights.
-2. **Request.** The owner selects the material, opens the agent avatar in the header, writes the request and chooses a kind.
+2. **Request.** The owner or a selected editor selects the material, opens the agent avatar in the header, writes the request and chooses a kind.
 3. **Draft.** The server validates the plan, finds free space and writes the frame, its objects and connectors in one transaction. Draft ready appears after the write is confirmed.
 4. **Teamwork.** The frame is edited like any other. A refinement in the thread creates a new version beside the previous one; the previous version keeps manual edits.
 
@@ -38,11 +38,12 @@ The room owner can delete one conversation or the whole agent history. Frames st
 
 ## Undo and limits
 
-- **⌘Z** removes the latest draft as a whole when no newer local edit stands in front of it; otherwise the edits are undone first. The panel has the same Undo draft button and Fit frame, which expands an older draft frame to its objects.
+- **⌘Z** removes the latest draft requested in this tab as a whole when no newer local edit stands in front of it; otherwise the edits are undone first. The panel has the same Undo draft button and Fit frame, which expands an older draft frame to its objects.
 - One agent per room and one running task; further requests wait in the queue.
 - While the public link is on, assignment and new tasks are closed.
 - When the room changes owner, the assignment is cleared, unfinished tasks stop, and the history and written frames remain.
-- Delegation to other members is out of this version.
+
+The owner manages the list of editors in the agent panel. Revoking permission stops that editor’s unfinished tasks.
 
 ## Settings
 

@@ -73,6 +73,24 @@ describe("delivery plan reply", () => {
     ).toThrow(/two items/);
   });
 
+  it("clips long display text instead of refusing the plan", () => {
+    const parsed = parseDeliveryReply({
+      ...reply,
+      dependencies: [],
+      summary: "s".repeat(600),
+      zones: [
+        {
+          key: "mandatory",
+          label: "Обязательно",
+          items: [{ id: "t1", text: "t".repeat(600), meta: "m".repeat(200) }],
+        },
+      ],
+    });
+    expect(parsed.summary.length).toBe(400);
+    expect(parsed.zones.get("mandatory").items[0].text.length).toBe(400);
+    expect(parsed.zones.get("mandatory").items[0].meta.length).toBe(80);
+  });
+
   it("refuses an item without text", () => {
     expect(() =>
       parseDeliveryReply({

@@ -64,6 +64,10 @@ async function runClaimedAgentTask({
       error: `${code}: ${message}`,
     });
     if (updated) {
+      if (task.thread_id && task.skill_slug === "room-draft") {
+        await store.updateAgentThreadMessageByTask({ taskId: task.id, status: "error", text: code })
+          .catch((error) => log.error?.("[agents] thread message failed:", error.message));
+      }
       await audit(store, log, {
         actorId: task.created_by,
         orgId: task.org_id,
@@ -509,7 +513,7 @@ async function runClaimedAgentTask({
     }
 
     if (skill.handler === "builtin:room-draft") {
-      return runRoomDraft({
+      return await runRoomDraft({
         store,
         task,
         agent,
@@ -680,10 +684,11 @@ async function runClaimedAgentTask({
 
     return { status: "applied", task: updated, result };
   } catch (error) {
-    log.error?.("[agent] task failed:", error);
+    const roomDraft = task.skill_slug === "room-draft";
+    log.error?.("[agent] task failed:", roomDraft ? (error?.code ?? "AGENT_ERROR") : error);
     const code =
       error?.code === "AI_NOT_CONFIGURED" ? "AI_NOT_CONFIGURED" : "AGENT_ERROR";
-    return fail(code, error?.message ?? String(error));
+    return fail(code, roomDraft ? "the room draft failed" : error?.message ?? String(error));
   }
 }
 

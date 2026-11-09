@@ -261,6 +261,26 @@ export function fakeRoomDraftReply(prompt = "") {
   }, hint);
 }
 
+function fakeProblemMapReply(prompt) {
+  const selected = String(prompt).split("Selected material:\n").at(-1) ?? "";
+  const source = /^\[1\] id=(\S+)[^\n]*\n([^\n]+)/m.exec(selected);
+  return {
+    title: "Interview problem map",
+    objects: [
+      { tempId: "frame", type: "frame", x: 0, y: 0, width: 720, height: 440 },
+      { tempId: "theme", type: "text", parentRef: "frame", x: 40, y: 50, width: 440, height: 60,
+        text: "Theme: interview findings" },
+      { tempId: "observation", type: "sticky_note", parentRef: "frame",
+        x: 40, y: 140, width: 250, height: 160, text: source?.[2] ?? "No selected observations" },
+      { tempId: "hypothesis", type: "sticky_note", parentRef: "frame",
+        x: 350, y: 140, width: 250, height: 160, text: "Hypothesis: is the issue repeated?" },
+    ],
+    connectors: [],
+    citations: source ? [{ tempId: "observation", sourceId: source[1] }] : [],
+    questions: ["Is the issue repeated?"],
+  };
+}
+
 /** A zoned delivery plan for the room-draft skill. */
 export function fakeDeliveryReply(prompt = "") {
   const hint = sourceHint(prompt);
@@ -313,7 +333,7 @@ export function fakePlanClient() {
         : delivery
           ? fakeDeliveryReply(user)
           : roomDraft
-            ? fakeRoomDraftReply(user)
+            ? text.includes("Build a problem map") ? fakeProblemMapReply(user) : fakeRoomDraftReply(user)
             : fakePlanReply(user);
       return {
         json,

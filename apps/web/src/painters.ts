@@ -72,6 +72,8 @@ export interface BoardPaintInput {
   resolve: (id: string) => Widget | undefined;
   isCardOfKanban: (widget: Widget) => boolean;
   theme: PaintTheme;
+  /** The object under the inline editor, if any. */
+  editingId?: string | null;
 }
 
 export function paintBoardLayer(input: BoardPaintInput): void {
@@ -88,6 +90,7 @@ export function paintBoardLayer(input: BoardPaintInput): void {
     resolve: widgetById,
     isCardOfKanban,
     theme,
+    editingId,
   } = input;
   const palette = theme.palette;
 
@@ -181,6 +184,7 @@ export function paintBoardLayer(input: BoardPaintInput): void {
       selectedIds: outlined,
       resolve: resolveForDrag,
       theme,
+      editingId: editingId ?? undefined,
     });
     if (dragging) ctx.restore();
 

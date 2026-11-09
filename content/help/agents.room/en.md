@@ -7,6 +7,7 @@ The first version has two scenarios: **a process map** and **a sprint or phase p
 ## Who can ask
 
 - **The room owner** assigns their own active agent, turns it on and gives it tasks.
+- **Selected editors** can give tasks. The owner selects them under Who can give tasks in the agent panel. Clearing the checkbox stops that editor’s unfinished tasks.
 - **Other organisation members** with access to the room read the task history, open drafts and edit them according to their role.
 - **A guest** works with objects according to their role but does not see the task history.
 - **A public-link visitor** cannot run the agent: while the link is on, assignment and new tasks are closed.
@@ -28,7 +29,7 @@ The first version has two scenarios: **a process map** and **a sprint or phase p
 
 ## Undo
 
-The server writes the draft, so it is not in the ordinary ⌘Z history. Right after the draft appears, **⌘Z** removes it as a whole when no newer local edit stands in front of it. If there were edits, they are undone first, then the draft. The panel has the same Undo draft button. If an older draft sits outside its frame, Fit frame expands the frame to its objects.
+The server writes the draft, so it is not in the ordinary ⌘Z history. If you gave the task in this tab, **⌘Z** after the draft appears removes it as a whole when no newer local edit stands in front of it. If there were edits, they are undone first, then the draft. The panel has the same Undo draft button. If an older draft sits outside its frame, Fit frame expands the frame to its objects.
 
 ## History
 
@@ -36,13 +37,12 @@ The room owner can delete one conversation or the whole agent history. Frames st
 
 ## Public link and ownership
 
-While the public link is on, an agent cannot be assigned and a new task cannot be created: a new draft would be visible to guests immediately. Task history is not available through the link.
+To enable a public link, turn off the agent and confirm that visitors can see existing drafts. Task history is available to organisation members with room access.
 
 When the room changes owner, the assignment is cleared, unfinished tasks stop, and the history and already written frames remain.
 
 ## Limits
 
 - One agent per room and one running task; further requests wait in the queue.
-- Delegation to other members is out of this version: the room owner gives the task.
 - A draft is new objects inside a new frame. Existing objects are not changed.
 - The agent sees only explicitly selected material, the request text and the messages of this thread. A selected frame expands to the objects inside it; comments are not part of the context.

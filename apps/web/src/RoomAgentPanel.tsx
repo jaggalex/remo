@@ -12,6 +12,15 @@ import { useI18n, type TranslationKey } from "./i18n";
  * itself; this panel only asks, shows the status and links to the frame. The room stays
  * the place where the team edits and discusses the result.
  */
+function errorKey(code: string): TranslationKey {
+  if (code === "AI_NOT_CONFIGURED") return "agents.aiNotConfigured";
+  if (code.startsWith("AI_")) return "roomAgent.error.provider";
+  if (code.startsWith("BUDGET_")) return "roomAgent.error.budget";
+  if (code.startsWith("DRAFT_") || code.startsWith("PLAN_")) return "roomAgent.error.invalid";
+  if (code === "AGENT_DENIED") return "roomAgent.error.denied";
+  return "roomAgent.error.generic";
+}
+
 const STATUS_KEY: Record<string, TranslationKey> = {
   queued: "roomAgent.status.queued",
   running: "roomAgent.status.running",
@@ -24,6 +33,7 @@ export function RoomAgentPanel({
   open,
   boardId,
   boardTitle,
+  linkedThread,
   selectedIds,
   origin,
   canEdit,
@@ -33,10 +43,15 @@ export function RoomAgentPanel({
   onChanged,
   onOpenSettings,
   onFitFrame,
+  onTaskQueued,
+  hasFrame,
+  canUndoFrame,
+  userId,
 }: {
   open: boolean;
   boardId: string;
   boardTitle: string;
+  linkedThread: { frameId: string; thread: AgentThreadSummary } | null;
   selectedIds: string[];
   origin: { x: number; y: number };
   canEdit: boolean;
@@ -46,6 +61,10 @@ export function RoomAgentPanel({
   onChanged: () => void;
   onOpenSettings: () => void;
   onFitFrame: (frameId: string) => void;
+  onTaskQueued: (taskId: string) => void;
+  hasFrame: (frameId: string) => boolean;
+  canUndoFrame: (frameId: string) => boolean;
+  userId: string | null;
 }) {
   const { t, lang } = useI18n();
   const [state, setState] = useState<RoomAgentState | null>(null);
@@ -60,6 +79,11 @@ export function RoomAgentPanel({
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [newTask, setNewTask] = useState(false);
+  const selectedThread = useRef<string | null>(null);
+  selectedThread.current = threadId;
+  const requestKey = useRef<{ fingerprint: string; key: string } | null>(null);
+  const sending = useRef(false);
   const seenFrames = useRef(new Set<string>());
 
   const load = useCallback(async () => {
@@ -69,15 +93,28 @@ export function RoomAgentPanel({
     ]);
     setState(next);
     setAssignId((current) => current || next.assigned?.agentId || next.agents[0]?.id || "");
-    setThreads(list.threads);
+    const visibleThreads = [...list.threads];
+    if (linkedThread && !visibleThreads.some((thread) => thread.id === linkedThread.thread.id)) {
+      const current = await api.roomAgentThreads(boardId, linkedThread.frameId).catch(() => null);
+      if (current?.threads[0]) visibleThreads.push(current.threads[0]);
+    }
+    setThreads(visibleThreads);
     setThreadId((current) => {
-      if (current && list.threads.some((thread) => thread.id === current)) return current;
-      return list.threads[0]?.id ?? null;
+      if (current && visibleThreads.some((thread) => thread.id === current)) return current;
+      return visibleThreads[0]?.id ?? null;
     });
-  }, [boardId]);
+  }, [boardId, linkedThread]);
+
+  useEffect(() => {
+    if (!linkedThread) return;
+    setNewTask(false);
+    setIntent("");
+    setThreadId(linkedThread.thread.id);
+  }, [linkedThread]);
 
   const loadDetail = useCallback(async (id: string) => {
     const next = await api.roomAgentThread(id);
+    if (selectedThread.current !== id) return;
     setDetail(next);
     for (const message of next.messages) {
       if (message.role !== "agent" || !message.frame_ids.length) continue;
@@ -120,7 +157,7 @@ export function RoomAgentPanel({
       if (message) setNotice(message);
       await load();
       // A delete may remove the selected thread; a missing detail is not a failure.
-      if (threadId) await loadDetail(threadId).catch(() => setDetail(null));
+      if (threadId) await loadDetail(threadId).catch(() => {});
       onChanged();
     } catch (failure) {
       setError((failure as Error)?.message ?? t("roomAgent.failed"));
@@ -131,7 +168,7 @@ export function RoomAgentPanel({
 
   const submit = (asClarification: boolean) => {
     const text = intent.trim();
-    if (text.length < 3) return;
+    if (text.length < 3 || sending.current) return;
     const body = {
       intent: text,
       kind,
@@ -139,21 +176,29 @@ export function RoomAgentPanel({
       origin,
       lang: lang === "en" ? ("en" as const) : ("ru" as const),
     };
+    const target = asClarification ? threadId : null;
+    const fingerprint = JSON.stringify({ target, ...body });
+    if (requestKey.current?.fingerprint !== fingerprint) {
+      requestKey.current = { fingerprint, key: crypto.randomUUID() };
+    }
+    const key = requestKey.current.key;
+    sending.current = true;
     void run(async () => {
-      if (asClarification && threadId) {
-        await api.sendRoomAgentMessage(threadId, body);
-      } else {
-        const created = await api.createRoomAgentThread(boardId, body);
-        setThreadId(created.thread.id);
-      }
+      const created = target
+        ? await api.sendRoomAgentMessage(target, body, key)
+        : await api.createRoomAgentThread(boardId, body, key);
+      onTaskQueued(created.task.id);
+      requestKey.current = null;
+      setThreadId(created.thread.id);
+      setNewTask(false);
       setIntent("");
       setNotice(null);
-    });
+    }).finally(() => { sending.current = false; });
   };
 
   const stop = () => {
-    if (!detail) return;
-    const active = [...detail.messages]
+    if (!currentDetail) return;
+    const active = [...currentDetail.messages]
       .reverse()
       .find(
         (message) =>
@@ -169,7 +214,13 @@ export function RoomAgentPanel({
   const active = detail?.messages.some(
     (message) => message.status === "queued" || message.status === "running",
   );
-  const canAsk = Boolean(state?.owner && state.assigned && !state.publicLink && canEdit);
+  const currentDetail = detail?.thread.id === threadId ? detail : null;
+  const canAsk = Boolean(state?.canRequest && canEdit);
+  const canClarify = Boolean(canAsk && currentDetail
+    && (state?.owner || currentDetail.thread.created_by === userId));
+  const canStop = Boolean(state?.owner || (canAsk && currentDetail?.thread.created_by === userId));
+  const compose = canAsk && (newTask || !threadId || canClarify);
+  const clarify = !newTask && Boolean(threadId);
 
   if (!open) return null;
 
@@ -248,7 +299,7 @@ export function RoomAgentPanel({
               <button type="button" className="link-button" onClick={onOpenSettings}>
                 {t("roomAgent.settings")}
               </button>
-              {state.canAssign && (
+              {state.owner && (
                 <button
                   type="button"
                   className="link-button"
@@ -262,9 +313,40 @@ export function RoomAgentPanel({
           </div>
         )}
 
+        {state?.delegates.length ? (
+          <fieldset className="agent-field">
+            <legend>{t("roomAgent.delegates")}</legend>
+            {state.delegates.map((member) => (
+              <label key={member.id}>
+                <input
+                  type="checkbox"
+                  checked={member.enabled}
+                  disabled={busy}
+                  onChange={(event) => {
+                    const enabled = event.target.checked;
+                    void run(() => api.setRoomAgentDelegate(boardId, member.id, enabled));
+                  }}
+                />
+                {member.name}
+              </label>
+            ))}
+          </fieldset>
+        ) : null}
+        {state?.assigned && !canAsk && !state.publicLink && (
+          <p className="muted">{t("roomAgent.readOnly")}</p>
+        )}
+
         <div className="agent-history">
           <div className="room-agent-threads-head">
             <h3 className="muted">{t("roomAgent.threads")}</h3>
+            {canAsk && threadId && (
+              <button type="button" className="link-button" onClick={() => {
+                setIntent("");
+                setNewTask(true);
+              }}>
+                {t("roomAgent.newTask")}
+              </button>
+            )}
             {state?.owner && threads.length > 0 && (
               <button
                 type="button"
@@ -293,7 +375,11 @@ export function RoomAgentPanel({
                 <button
                   type="button"
                   className={`room-agent-thread${thread.id === threadId ? " active" : ""}`}
-                  onClick={() => setThreadId(thread.id)}
+                  onClick={() => {
+                    if (thread.id !== threadId || newTask) setIntent("");
+                    setNewTask(false);
+                    setThreadId(thread.id);
+                  }}
                 >
                   <span className="room-agent-thread-title">{thread.title}</span>
                   <span className={`agent-status ${thread.last_status ?? ""}`}>
@@ -308,9 +394,9 @@ export function RoomAgentPanel({
           </ul>
         </div>
 
-        {detail && (
+        {!newTask && currentDetail && (
           <div className="room-agent-thread-body">
-            {detail.messages.map((message) => (
+            {currentDetail.messages.map((message) => (
               <div key={message.id} className={`room-agent-message ${message.role}`}>
                 <div className="room-agent-message-meta">
                   <strong>
@@ -327,8 +413,13 @@ export function RoomAgentPanel({
                   )}
                   <span className="muted">{formatMoment(message.created_at, lang)}</span>
                 </div>
-                {message.text && <p>{message.text}</p>}
-                {message.frame_ids.length > 0 && (
+                {message.status === "error"
+                  ? <p>{t(errorKey(message.text))}</p>
+                  : message.text && <p>{message.text}</p>}
+                {message.frame_ids[0] && !hasFrame(message.frame_ids[0]) && (
+                  <p className="muted">{t("roomAgent.frameMissing")}</p>
+                )}
+                {message.frame_ids[0] && hasFrame(message.frame_ids[0]) && (
                   <div className="agent-actions">
                     <button
                       type="button"
@@ -337,26 +428,26 @@ export function RoomAgentPanel({
                     >
                       {t("roomAgent.show")}
                     </button>
-                    <button
+                    {canEdit && <button
                       type="button"
                       className="link-button"
                       onClick={() => onFitFrame(message.frame_ids[0]!)}
                     >
                       {t("roomAgent.fitFrame")}
-                    </button>
+                    </button>}
                   </div>
                 )}
               </div>
             ))}
 
-            {active && (
+            {active && canStop && (
               <div className="agent-actions">
                 <button type="button" className="link-button danger" onClick={stop} disabled={busy}>
                   {t("roomAgent.stop")}
                 </button>
               </div>
             )}
-            {!active && latestFrame?.frame_ids[0] && (
+            {!active && latestFrame?.frame_ids[0] && canUndoFrame(latestFrame.frame_ids[0]) && (
               <div className="agent-actions">
                 <button
                   type="button"
@@ -394,27 +485,30 @@ export function RoomAgentPanel({
           </div>
         )}
 
-        {canAsk && (
+        {compose && (
           <form
             className="agent-form"
             onSubmit={(event) => {
               event.preventDefault();
-              submit(Boolean(threadId));
+              submit(clarify);
             }}
           >
             <label className="agent-field agent-intent">
-              <span>{threadId ? t("roomAgent.clarifyPlaceholder") : t("roomAgent.newTask")}</span>
+              <span>{clarify ? t("roomAgent.clarifyPlaceholder") : t("roomAgent.newTask")}</span>
               <textarea
                 value={intent}
                 placeholder={t("roomAgent.placeholder")}
-                onChange={(event) => setIntent(event.target.value)}
+                onChange={(event) => {
+                  if (!threadId) setNewTask(true);
+                  setIntent(event.target.value);
+                }}
                 rows={3}
                 maxLength={2000}
                 disabled={busy}
               />
             </label>
             <div className="agent-actions">
-              {!threadId && (
+              {!clarify && (
                 <label className="agent-field">
                   <span>{t("roomAgent.newTask")}</span>
                   <select
@@ -438,10 +532,9 @@ export function RoomAgentPanel({
                 className="primary-button"
                 disabled={busy || intent.trim().length < 3}
               >
-                {threadId ? t("roomAgent.send") : t("roomAgent.create")}
+                {clarify ? t("roomAgent.send") : t("roomAgent.create")}
               </button>
             </div>
-            {!state?.owner && <p className="muted">{t("roomAgent.readOnly")}</p>}
           </form>
         )}
       </section>

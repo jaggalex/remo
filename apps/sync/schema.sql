@@ -1191,6 +1191,8 @@ create table if not exists board_agents (
   enabled boolean not null default true
 );
 
+alter table board_agents add column if not exists delegate_ids uuid[] not null default '{}';
+
 create index if not exists board_agents_agent_idx on board_agents (agent_id);
 
 -- A thread is one conversation with the room agent: the original request, the attempts
@@ -1254,5 +1256,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 19)
+insert into schema_meta (id, version) values (1, 20)
 on conflict (id) do update set version = excluded.version, updated_at = now();

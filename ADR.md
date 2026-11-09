@@ -7860,3 +7860,23 @@ deliberate and is not in the document's undo stack.
 
 **Limits.** No per-message delete, no restore from the interface, and no bulk delete
 across rooms. A deleted conversation cannot be reconstructed into the panel.
+
+## ADR-191: The room owner can delegate requests to selected editors
+
+**Status:** accepted (2026-11-09). Supersedes the owner-only launch rule in ADR-189.
+
+**Context.** The room agent is shared with the team. Its owner needs to choose which
+colleagues may request drafts while keeping control over the agent and its budget.
+
+**Decision.** The room assignment stores the selected user IDs. Only the room owner
+can grant or revoke this permission. An invitee must be an active organisation member
+with edit access to the room. The agent still acts with its owner's existing authority.
+The server checks the requester's access and the assignment at submission and execution.
+Removing a grant stops unfinished work by that requester. Removing or replacing the
+assignment clears its grants. The owner turns off the agent before enabling a public link and confirms that existing
+drafts will be visible to link visitors. A room with an active link cannot accept requests.
+Ordinary room access and shared history continue to follow the existing rules.
+
+**Consequences.** The owner can manage the allowlist in the room agent panel. The same
+person can lose launch permission and retain access to existing drafts and history.
+An owner can stop any task in the room. A delegated requester can stop their own task.

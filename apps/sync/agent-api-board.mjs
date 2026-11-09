@@ -7,6 +7,8 @@ import { aiEntryRefusal } from "./agents.mjs";
 import { MAX_TOKENS_PER_AGENT, integer, operatorView } from "./agent-api-shared.mjs";
 import { relayoutTidyTask } from "./agent-tidy-runner.mjs";
 import { readSelectionInput } from "./selection-source.mjs";
+import { roomAgentHistoryAllowed, withRoomAgentLock } from "./agent-context.mjs";
+import { ROOM_DRAFT_SKILL } from "./agent-room-draft.mjs";
 
 export async function handleBoardRoutes(ctx) {
   const { request, response, parts, method, store, me, audit, isOrgAdmin, boardAndAccess, createTask, createSchedule } = ctx;
@@ -35,7 +37,7 @@ export async function handleBoardRoutes(ctx) {
         // The room draft is asked for through its own thread route (ADR-189); offering
         // it in the generic task dialog would create a task without a thread.
         skills: (await store.listAgentSkills(board.org_id)).filter(
-          (skill) => skill.slug !== "room-draft",
+          (skill) => skill.handler !== ROOM_DRAFT_SKILL.handler,
         ),
       });
       return true;
@@ -124,9 +126,14 @@ export async function handleBoardRoutes(ctx) {
       return true;
     }
 
+    const roomDraft = task.skill_slug === ROOM_DRAFT_SKILL.slug;
     /* ---------------------------------------------------------- plan routes --- */
 
     if (parts[2] === "plan") {
+      if (roomDraft) {
+        fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
+        return true;
+      }
       // A plan is board content that leads to board writes. Approval therefore needs
       // the same account and the same `board.edit` as applying it: a public-link
       // visitor or a reader gets a refusal that says which one they are (ADR-142).
@@ -530,10 +537,14 @@ export async function handleBoardRoutes(ctx) {
       return true;
     }
 
-    const { access: boardAccess } = await boardAndAccess(task.board_id);
+    const { board, access: boardAccess } = await boardAndAccess(task.board_id);
     const onBoard = Boolean(boardAccess?.allowed);
     const mine = task.created_by === me.id || task.owner_id === me.id;
-    if (!(onBoard && mine) && !(await isOrgAdmin(task.org_id))) {
+    const roomOwner = board?.owner_id === me.id;
+    const allowed = roomDraft
+      ? (roomOwner || mine) && await roomAgentHistoryAllowed(store, board, boardAccess, me.id)
+      : (onBoard && mine) || await isOrgAdmin(task.org_id);
+    if (!allowed) {
       fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
       return true;
     }
@@ -542,7 +553,14 @@ export async function handleBoardRoutes(ctx) {
       return true;
     }
     if (method === "POST" && parts[2] === "cancel") {
-      const cancelled = await store.cancelAgentTask(task.id);
+      if (roomDraft && !roomOwner
+          && (task.created_by !== me.id || !boardAccess.capabilities.includes("board.edit"))) {
+        fail(response, 403, "FORBIDDEN", "only the room owner or an editor who requested the task can stop it");
+        return true;
+      }
+      const cancelled = roomDraft
+        ? await withRoomAgentLock(store, task.board_id, () => store.stopRoomAgentTask(task.id))
+        : await store.cancelAgentTask(task.id);
       if (!cancelled) {
         fail(response, 409, "TASK_NOT_ACTIVE", "this task already finished");
         return true;

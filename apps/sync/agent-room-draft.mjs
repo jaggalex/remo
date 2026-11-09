@@ -7,7 +7,7 @@
  * stays the one contract for geometry and kinds, and a small extra rule keeps every
  * object inside the single frame that gives the draft its identity.
  */
-import { PlanError, validatePlan } from "@remo/agent-plan";
+import { PLAN_LIMITS, PlanError, planBounds, validatePlan } from "@remo/agent-plan";
 import { Y } from "./y.mjs";
 import { freeOrigin, makeId } from "./diagram.mjs";
 
@@ -120,7 +120,7 @@ export function sourceExcerpts(ydoc, ids) {
   return chosen;
 }
 
-function threadExcerpt(messages) {
+export function threadExcerpt(messages) {
   let total = 0;
   const lines = [];
   for (const message of (messages ?? []).slice(-ROOM_DRAFT_LIMITS.threadMessages)) {
@@ -239,9 +239,11 @@ Return one JSON object and nothing else, in this shape:
 }
 
 Rules:
-- Exactly one object has type "frame"; every other object has "parentRef" equal to its tempId.
+- Exactly one object has type "frame"; every other object has "parentRef" equal to the frame tempId.
+- x and y are the top-left of each object in the same coordinate system.
 - Types are sticky_note, text, shape and frame. shapeKind is rectangle, round_rectangle, ellipse, diamond or triangle.
 - A connector joins two objects of this draft. It never joins an existing board object.
+- A title is at most 120 characters and a text at most 1200; prefer a short label.
 - A connector label is the condition of the branch, not a description.
 - "citations" may only name a tempId from this draft and a sourceId from the list below.
 - Write the human-readable labels in ${language}.
@@ -342,13 +344,37 @@ export function parseRoomDraftReply(raw) {
  * Validate the draft as a plan and prove the one rule the shared contract does not
  * carry: a draft is one frame, and everything it creates lives inside it.
  */
+/** A model label is data, not a contract violation: clip it to the plan's limit. */
+function clip(value, max) {
+  if (typeof value !== "string" || value.length <= max) return value;
+  return `${value.slice(0, max - 1)}…`;
+}
+
+/** Model and delivery layout use top-left offsets; Remo widgets use centres. */
+export function centerDraftObjects(objects) {
+  return objects.map((object) => {
+    if (typeof object?.x !== "number" || typeof object?.y !== "number"
+        || typeof object.width !== "number" || typeof object.height !== "number") return object;
+    return { ...object, x: object.x + object.width / 2, y: object.y + object.height / 2 };
+  });
+}
+
 export function roomDraftPlan(reply, { origin, existingWidgets, existingConnectors }) {
+  const objects = reply.objects.map((object) => ({
+    ...object,
+    ...(typeof object.title === "string"
+      ? { title: clip(object.title, PLAN_LIMITS.titleLength - 20) }
+      : {}),
+    ...(typeof object.text === "string"
+      ? { text: clip(object.text, PLAN_LIMITS.textLength - 200) }
+      : {}),
+  }));
   const plan = validatePlan(
     {
       version: 1,
       template: null,
       origin,
-      objects: reply.objects,
+      objects: centerDraftObjects(objects),
       connectors: reply.connectors,
       warnings: [],
     },
@@ -505,13 +531,13 @@ export function applyRoomDraft(
       const source = widgets.get(from);
       const target = widgets.get(to);
       const id = makeId("text");
-      const midX = (source.x + target.x + source.width / 2 + target.width / 2) / 2;
-      const midY = (source.y + target.y + source.height / 2 + target.height / 2) / 2;
+      const midX = (source.x + target.x) / 2;
+      const midY = (source.y + target.y) / 2;
       const widget = {
         id,
         type: "text",
         parentId: frameId,
-        x: midX - 40,
+        x: midX,
         y: midY - 12,
         width: 120,
         height: 28,
@@ -546,20 +572,19 @@ export function fitDraftFrame(plan) {
   if (!frame) return plan;
   const children = plan.objects.filter((object) => object !== frame);
   if (!children.length) return plan;
-  const left = Math.min(...children.map((object) => object.x));
-  const top = Math.min(...children.map((object) => object.y));
-  const right = Math.max(...children.map((object) => object.x + object.width));
-  const bottom = Math.max(...children.map((object) => object.y + object.height));
-  frame.x = Math.min(frame.x, left) - DRAFT_PADDING;
-  frame.y = Math.min(frame.y, top) - DRAFT_PADDING;
-  frame.width = Math.max(frame.x + frame.width, right + DRAFT_PADDING) - frame.x;
-  frame.height = Math.max(frame.y + frame.height, bottom + DRAFT_PADDING) - frame.y;
-  plan.bounds = {
-    x: frame.x,
-    y: frame.y,
-    width: frame.width,
-    height: frame.height,
-  };
+  const existing = planBounds([frame]);
+  const content = planBounds(children);
+  const left = Math.min(existing.x, content.x - DRAFT_PADDING);
+  const top = Math.min(existing.y, content.y - DRAFT_PADDING);
+  const right = Math.max(existing.x + existing.width, content.x + content.width + DRAFT_PADDING);
+  const bottom = Math.max(existing.y + existing.height, content.y + content.height + DRAFT_PADDING);
+  Object.assign(frame, {
+    x: (left + right) / 2,
+    y: (top + bottom) / 2,
+    width: right - left,
+    height: bottom - top,
+  });
+  plan.bounds = { x: left, y: top, width: right - left, height: bottom - top };
   return plan;
 }
 
@@ -572,6 +597,8 @@ export function findDraftFrame(ydoc, taskId) {
 }
 
 export function draftOrigin(ydoc, plan, origin) {
-  const existing = [...ydoc.getMap("widgets").values()];
+  const existing = [...ydoc.getMap("widgets").values()].map((widget) => ({
+    ...widget, x: widget.x - widget.width / 2, y: widget.y - widget.height / 2,
+  }));
   return freeOrigin(origin, plan.bounds, existing);
 }

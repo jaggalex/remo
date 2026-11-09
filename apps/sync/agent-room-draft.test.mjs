@@ -305,16 +305,29 @@ describe("room draft write", () => {
     });
     fitDraftFrame(plan);
     const frame = plan.objects.find((object) => object.type === "frame");
-    expect(frame.x).toBeLessThanOrEqual(40 - DRAFT_PADDING);
-    expect(frame.y).toBeLessThanOrEqual(60 - DRAFT_PADDING);
-    expect(frame.x + frame.width).toBeGreaterThanOrEqual(1300 + 120 + DRAFT_PADDING);
-    expect(frame.y + frame.height).toBeGreaterThanOrEqual(700 + 60 + DRAFT_PADDING);
+    expect(frame.x - frame.width / 2).toBeLessThanOrEqual(40 - DRAFT_PADDING);
+    expect(frame.y - frame.height / 2).toBeLessThanOrEqual(60 - DRAFT_PADDING);
+    expect(frame.x + frame.width / 2).toBeGreaterThanOrEqual(1300 + 120 + DRAFT_PADDING);
+    expect(frame.y + frame.height / 2).toBeGreaterThanOrEqual(700 + 60 + DRAFT_PADDING);
     expect(plan.bounds).toEqual({
-      x: frame.x,
-      y: frame.y,
+      x: frame.x - frame.width / 2,
+      y: frame.y - frame.height / 2,
       width: frame.width,
       height: frame.height,
     });
+  });
+
+  it("clips an over-long model label instead of refusing the draft", () => {
+    const parsed = parseRoomDraftReply({
+      ...reply,
+      objects: reply.objects.map((object) =>
+        object.tempId === "step" ? { ...object, title: "x".repeat(300) } : object,
+      ),
+    });
+    const { plan } = roomDraftPlan(parsed, { existingWidgets: [], existingConnectors: [] });
+    const step = plan.objects.find((object) => object.tempId === "step");
+    expect(step.title.length).toBeLessThanOrEqual(180);
+    expect(step.title.endsWith("…")).toBe(true);
   });
 
   it("places a draft away from existing objects", () => {

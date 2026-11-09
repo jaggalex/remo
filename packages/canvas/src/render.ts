@@ -225,6 +225,11 @@ export interface DrawWidgetOptions {
   selectedIds?: readonly string[];
   /** Font family and text-size caps chosen in settings. */
   theme?: PaintTheme;
+  /**
+   * The object under the inline editor. Its text is left to the DOM editor, so the
+   * canvas does not paint a second copy behind it (ADR-033).
+   */
+  editingId?: string;
 }
 
 /** Visual defaults that come from the person's settings. */
@@ -385,6 +390,7 @@ function paintWidget(
   const left = widget.x - widget.width / 2;
   const top = widget.y - widget.height / 2;
   const selected = options.selectedIds?.includes(widget.id) ?? false;
+  const editing = options.editingId === widget.id;
   const theme = options.theme ?? DEFAULT_THEME;
   const palette = theme.palette;
 
@@ -479,15 +485,18 @@ function paintWidget(
 
       // Notes and shapes share one text block: same Auto sizing, same alignment,
       // same runs. Two implementations would drift (ADR-033).
-      drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
-        cap: theme.fontCap[widget.style?.stickySize ?? "M"] ?? stickyFontCap(widget.style?.stickySize),
-        align: widget.style?.textAlign ?? "center",
-        vAlign: widget.style?.textVAlign ?? "middle",
-        clip: true,
-      });
+      if (!editing) {
+        drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
+          cap: theme.fontCap[widget.style?.stickySize ?? "M"] ?? stickyFontCap(widget.style?.stickySize),
+          align: widget.style?.textAlign ?? "center",
+          vAlign: widget.style?.textVAlign ?? "middle",
+          clip: true,
+        });
+      }
       break;
     }
     case "text": {
+      if (editing) break;
       const size = widget.style?.fontSize ?? 16;
       ctx.fillStyle = widget.style?.color ?? palette.textPrimary;
       const runs: TextRun[] = widget.runs?.length
@@ -542,6 +551,7 @@ function paintWidget(
         { fontFamily: theme.fontFamily, palette, statusLabel: theme.cardStatus },
         zoom,
       );
+      if (editing) break;
       if (widget.title) {
         ctx.fillStyle = palette.textSecondary;
         ctx.font = `13px ${theme.fontFamily}`;
@@ -604,7 +614,7 @@ function paintWidget(
       }
       ctx.setLineDash([]);
 
-      if (widget.content || widget.runs?.length) {
+      if (!editing && (widget.content || widget.runs?.length)) {
         ctx.fillStyle = inkFor(fill, widget.style?.textColor);
         drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
           cap: theme.fontCap.M,
@@ -681,7 +691,7 @@ function paintWidget(
       // place when either end moves. Its size and colour are the object's, like a
       // note's (ADR-041, ADR-043).
       const label = widget.content?.trim();
-      if (label) {
+      if (!editing && label) {
         const at = labelPoint(attached, widget.labelAt);
         const fontPx = widget.style?.fontSize ?? 13;
         ctx.font = `500 ${fontPx}px ${theme.fontFamily}`;

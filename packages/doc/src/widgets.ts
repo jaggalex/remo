@@ -117,15 +117,19 @@ export function fitFrameToContents(
     .map((id) => board.readWidget(id))
     .filter((child): child is Widget => Boolean(child) && child?.type !== "card");
   if (!children.length) return false;
-  const left = Math.min(...children.map((child) => child.x)) - padding;
-  const top = Math.min(...children.map((child) => child.y)) - padding;
-  const right = Math.max(...children.map((child) => child.x + child.width)) + padding;
-  const bottom = Math.max(...children.map((child) => child.y + child.height)) + padding;
+  const left = Math.min(frame.x - frame.width / 2,
+    ...children.map((child) => child.x - child.width / 2 - padding));
+  const top = Math.min(frame.y - frame.height / 2,
+    ...children.map((child) => child.y - child.height / 2 - padding));
+  const right = Math.max(frame.x + frame.width / 2,
+    ...children.map((child) => child.x + child.width / 2 + padding));
+  const bottom = Math.max(frame.y + frame.height / 2,
+    ...children.map((child) => child.y + child.height / 2 + padding));
   const next = {
-    x: Math.min(frame.x, left),
-    y: Math.min(frame.y, top),
-    width: Math.max(frame.x + frame.width, right) - Math.min(frame.x, left),
-    height: Math.max(frame.y + frame.height, bottom) - Math.min(frame.y, top),
+    x: (left + right) / 2,
+    y: (top + bottom) / 2,
+    width: right - left,
+    height: bottom - top,
   };
   if (
     next.x === frame.x &&

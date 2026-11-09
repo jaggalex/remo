@@ -784,7 +784,7 @@ export const api = { ...roomAgentApi,
     }>(`/boards/${encodeURIComponent(boardId)}/link`),
   setLink: (
     boardId: string,
-    body: { enabled?: boolean; password?: string | null; expiresAt?: string | null },
+    body: { enabled?: boolean; password?: string | null; expiresAt?: string | null; confirmDraftSharing?: boolean },
   ) =>
     call<{
       link: {

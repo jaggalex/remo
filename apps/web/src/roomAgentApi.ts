@@ -18,9 +18,12 @@ export interface RoomAgentState {
   assigned: RoomAgentAssignment | null;
   canAssign: boolean;
   publicLink: boolean;
+  hasHistory: boolean;
   orgEnabled: boolean;
   boardEnabled: boolean;
   owner: boolean;
+  canRequest: boolean;
+  delegates: Array<{ id: string; name: string; enabled: boolean }>;
   status: string | null;
   /** The deterministic demo model answers instead of a provider. */
   demo: boolean;
@@ -78,14 +81,18 @@ export const roomAgentApi = {
       `/boards/${encodeURIComponent(boardId)}/agent`,
       { method: "PUT", body: { agentId } },
     ),
-  roomAgentThreads: (boardId: string) =>
+  setRoomAgentDelegate: (boardId: string, userId: string, enabled: boolean) =>
+    call<{ ok: boolean }>(`/boards/${encodeURIComponent(boardId)}/agent/delegates`, {
+      method: "PUT", body: { userId, enabled },
+    }),
+  roomAgentThreads: (boardId: string, frameId?: string) =>
     call<{ threads: AgentThreadSummary[] }>(
-      `/boards/${encodeURIComponent(boardId)}/agent-threads`,
+      `/boards/${encodeURIComponent(boardId)}/agent-threads${frameId ? `?frame=${encodeURIComponent(frameId)}` : ""}`,
     ),
-  createRoomAgentThread: (boardId: string, body: RoomTaskBody) =>
+  createRoomAgentThread: (boardId: string, body: RoomTaskBody, key: string) =>
     call<{ thread: AgentThreadSummary; task: AgentTask }>(
       `/boards/${encodeURIComponent(boardId)}/agent-threads`,
-      { method: "POST", body },
+      { method: "POST", body, headers: { "Idempotency-Key": key } },
     ),
   roomAgentThread: (threadId: string) =>
     call<AgentThreadDetail>(`/agent-threads/${encodeURIComponent(threadId)}`),
@@ -97,10 +104,10 @@ export const roomAgentApi = {
     call<{ deleted: number }>(`/boards/${encodeURIComponent(boardId)}/agent-threads`, {
       method: "DELETE",
     }),
-  sendRoomAgentMessage: (threadId: string, body: RoomTaskBody) =>
+  sendRoomAgentMessage: (threadId: string, body: RoomTaskBody, key: string) =>
     call<{ thread: AgentThreadSummary; task: AgentTask }>(
       `/agent-threads/${encodeURIComponent(threadId)}/messages`,
-      { method: "POST", body },
+      { method: "POST", body, headers: { "Idempotency-Key": key } },
     ),
 
 };

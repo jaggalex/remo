@@ -8,6 +8,7 @@
  * it on the board.
  */
 import { PlanError, validatePlan } from "@remo/agent-plan";
+import { centerDraftObjects } from "./agent-room-draft.mjs";
 
 export const DELIVERY_LIMITS = Object.freeze({
   zones: 3,
@@ -54,6 +55,13 @@ function text(value, field, max) {
   return result;
 }
 
+function clip(value, field, max) {
+  if (value === undefined || value === null) return "";
+  const result = String(value).trim();
+  // Display text is clipped, not refused: a long label is not an unsafe plan.
+  return result.length > max ? `${result.slice(0, max - 1)}…` : result;
+}
+
 function cleanId(value, field) {
   const id = text(value, field, DELIVERY_LIMITS.id);
   if (!ID.test(id)) {
@@ -75,11 +83,11 @@ export function parseDeliveryReply(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     throw new PlanError("DELIVERY_SCHEMA", "the model must return a JSON object");
   }
-  const title = text(raw.title, "title", DELIVERY_LIMITS.label);
+  const title = clip(raw.title, "title", DELIVERY_LIMITS.label);
   if (!title) throw new PlanError("DELIVERY_SCHEMA", "the plan needs a title");
-  const summary = text(raw.summary, "summary", DELIVERY_LIMITS.summary);
+  const summary = clip(raw.summary, "summary", DELIVERY_LIMITS.summary);
   const questions = array(raw.questions, "questions")
-    .map((question, index) => text(question, `questions[${index}]`, DELIVERY_LIMITS.text))
+    .map((question, index) => clip(question, `questions[${index}]`, DELIVERY_LIMITS.text))
     .filter(Boolean)
     .slice(0, DELIVERY_LIMITS.questions);
 
@@ -96,18 +104,18 @@ export function parseDeliveryReply(raw) {
         throw new PlanError("DELIVERY_TOO_LARGE", `zone "${key}" has more than ${DELIVERY_LIMITS.perZone} items`);
       }
       const id = cleanId(item?.id, `zones[${index}].items[${itemIndex}].id`);
-      const label = text(item?.text, `zones[${index}].items[${itemIndex}].text`, DELIVERY_LIMITS.text);
+      const label = clip(item?.text, `zones[${index}].items[${itemIndex}].text`, DELIVERY_LIMITS.text);
       if (!label) throw new PlanError("DELIVERY_SCHEMA", "every item needs text");
       items.push({
         id,
         text: label,
-        meta: text(item?.meta, `zones[${index}].items[${itemIndex}].meta`, DELIVERY_LIMITS.meta),
+        meta: clip(item?.meta, `zones[${index}].items[${itemIndex}].meta`, DELIVERY_LIMITS.meta),
         sourceId: text(item?.sourceId, "sourceId", DELIVERY_LIMITS.text) || null,
       });
     }
     zones.set(key, {
       key,
-      label: text(zone?.label, `zones[${index}].label`, DELIVERY_LIMITS.label),
+      label: clip(zone?.label, `zones[${index}].label`, DELIVERY_LIMITS.label),
       items,
     });
   }
@@ -140,7 +148,7 @@ export function parseDeliveryReply(raw) {
     dependencies.push({
       from,
       to,
-      label: text(dependency?.label, `dependencies[${index}].label`, 40),
+      label: clip(dependency?.label, `dependencies[${index}].label`, 40),
     });
   }
 
@@ -271,7 +279,8 @@ export function deliveryPlan(reply, {
     summary: reply.summary,
     questions: reply.questions,
     plan: validatePlan(
-      { version: 1, template: null, origin: { x: 0, y: 0 }, objects, connectors, warnings: [] },
+      { version: 1, template: null, origin: { x: 0, y: 0 },
+        objects: centerDraftObjects(objects), connectors, warnings: [] },
       { existingWidgets, existingConnectors },
     ),
     labels,

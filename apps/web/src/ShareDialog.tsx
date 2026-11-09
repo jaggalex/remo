@@ -56,6 +56,7 @@ export function ShareDialog({
     expired: boolean;
     version: number;
   } | null>(null);
+  const [confirmDraftSharing, setConfirmDraftSharing] = useState(false);
   const [linkPassword, setLinkPassword] = useState("");
   const [linkExpiry, setLinkExpiry] = useState("");
   const [busy, setBusy] = useState(false);
@@ -104,6 +105,7 @@ export function ShareDialog({
     if (!open) return;
     setTransferTo("");
     setConfirmTransfer(false);
+    setConfirmDraftSharing(false);
     setInviteUrl(null);
     setLinkError(null);
     setPasswordError(null);
@@ -118,6 +120,11 @@ export function ShareDialog({
     if (code === "EXPIRY_IN_PAST") return t("share.expiryPast");
     if (code === "BAD_EXPIRY") return t("share.expiryInvalid");
     if (code === "WEAK_PASSWORD") return t("share.passwordWeak");
+    if (code === "ROOM_AGENT_ASSIGNED") return t("share.roomAgentAssigned");
+    if (code === "CONFIRM_DRAFT_SHARING") {
+      setConfirmDraftSharing(true);
+      return null;
+    }
     if (failure instanceof Error) return failure.message;
     return t("share.failed");
   };
@@ -396,18 +403,22 @@ export function ShareDialog({
               <button
                 type="button"
                 className={link?.enabled ? "primary-button" : "ghost-button"}
-                disabled={busy}
-                onClick={() =>
-                  void run(
-                    () => api.setLink(boardId, { enabled: !link?.enabled }),
-                    setLinkError,
-                  )
-                }
+                disabled={busy || !link}
+                onClick={() => {
+                  const enabled = !link?.enabled;
+                  setConfirmDraftSharing(false);
+                  void run(() => api.setLink(boardId, { enabled, confirmDraftSharing }), setLinkError);
+                }}
               >
-                {link?.enabled ? t("share.linkOffAction") : t("share.linkOn")}
+                {link?.enabled
+                  ? t("share.linkOffAction")
+                  : confirmDraftSharing ? t("share.linkConfirmDrafts") : t("share.linkOn")}
               </button>
             </div>
 
+            {confirmDraftSharing && (
+              <p className="muted share-link-warning">{t("share.linkDraftWarning")}</p>
+            )}
             {!link?.enabled && (
               <p className="muted share-link-warning">{t("share.linkReenable")}</p>
             )}

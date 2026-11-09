@@ -127,10 +127,12 @@ export function BoardApp() {
     saveTitle,
   } = useBoardSession({ board, identity, accountId: me?.id ?? null, accountHandle: me?.handle ?? null, access, refreshAccess,
     setNotice: showNotice, t });
+  // Two different reasons stop writes: access, and the offline queue limit.
+  const writeBlocked = readOnly || saveState.blocked;
   const roomAgent = useRoomAgent({
-    board, widgets, selectedIds, roomId,
-    boardTitle: title || boardTitle || "",
-    canEdit: Boolean(access?.capabilities.includes("board.edit")),
+    board, widgets, selectedIds, roomId, boardTitle: title || boardTitle || "",
+    canEdit: !writeBlocked,
+    accountId: me?.id ?? null, synced,
     identityKey: `${me?.id ?? ""}:${access?.aclVersion ?? 0}`,
     openSettings: () => openAccount("agents"),
   });
@@ -141,8 +143,6 @@ export function BoardApp() {
     connection,
     t,
   });
-  // Two different reasons stop writes: access, and the offline queue limit.
-  const writeBlocked = readOnly || saveState.blocked;
   /**
    * Why the rail is off, in words.
    *
@@ -747,7 +747,7 @@ export function BoardApp() {
           focusedWaypoint={focusedWaypoint}
           editingId={editingId}
           onEdit={editWidget}
-          fitKey={`${active}#${cameraEpoch}`}
+          synced={synced} fitKey={`${active}#${cameraEpoch}`}
           grid={settings.grid.style ?? "lines"}
           hintAllowed={hintAllowed}
           settings={settings}
@@ -773,7 +773,7 @@ export function BoardApp() {
           }}
         />
         <ContextMenu state={menu} onClose={closeMenu} />
-        <InfoCard state={info} onClose={closeInfo} />
+        <InfoCard state={info} onClose={closeInfo} onOpenThread={roomAgent.openFromFrame} />
       <BoardInspector
         toggleInspector={toggleInspector}
         selectedIds={selectedIds}
