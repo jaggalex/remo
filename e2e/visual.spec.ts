@@ -100,6 +100,23 @@ test("three connector routings paint differently", async ({ page }) => {
   expect(new Set(Object.values(pixels.signatures)).size).toBe(3);
 });
 
+test("a locked object carries the canvas lock badge", async ({ page }) => {
+  await freshBoard(page, "lock-badge", { template: "empty" });
+  await addSticky(page);
+  await page.keyboard.press("Meta+Shift+l");
+  await expect(page.locator(".badge-lock")).toHaveCount(1);
+  // The selection badge is a DOM plate over the note's corner; clear it so the
+  // canvas mark, not the plate, is what the baseline records (ADR-193).
+  await page.keyboard.press("Escape");
+  // A single note makes the camera fit it at >400 %; step back to a normal zoom so
+  // the 16 px mark is read against the object, not against a magnified canvas.
+  for (let step = 0; step < 8; step += 1) {
+    await page.getByRole("button", { name: "Zoom out" }).click();
+  }
+  await page.mouse.move(700, 500);
+  await capture(page, page.locator("body"), "lock-badge");
+});
+
 test("the board, export, timer and vote screens fit the viewport", async ({ page }) => {
   const account = await freshBoard(page, "visual");
   await addSticky(page);

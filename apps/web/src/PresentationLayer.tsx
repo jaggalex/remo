@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addAllFrames,
   addPresentationSlide,
@@ -33,6 +33,7 @@ export function PresentationLayer({
   canFacilitate,
   panelOpen,
   onPanelOpen,
+  onPresentingChange,
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -44,6 +45,8 @@ export function PresentationLayer({
   canFacilitate: boolean;
   panelOpen: boolean;
   onPanelOpen: (value: boolean) => void;
+  /** Tells the canvas to hide state marks that are not content (ADR-193). */
+  onPresentingChange: (presenting: boolean) => void;
 }) {
   const { t } = useI18n();
   const [filter, setFilter] = useState("");
@@ -59,6 +62,11 @@ export function PresentationLayer({
     setPanelOpen: onPanelOpen,
     t,
   });
+
+  useEffect(() => {
+    onPresentingChange(Boolean(presentation.local || presentation.remote));
+  }, [onPresentingChange, presentation.local, presentation.remote]);
+
   const slides = presentation.slides;
   const byId = useMemo(() => new Map(widgets.map((widget) => [widget.id, widget])), [widgets]);
   const labelOf = (id: string) => {

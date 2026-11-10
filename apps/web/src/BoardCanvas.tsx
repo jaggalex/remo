@@ -238,6 +238,8 @@ export function BoardCanvas({
 }: Props) {
   const { t } = useI18n();
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
+  /** A live presentation hides state marks that are not content (ADR-193). */
+  const [presenting, setPresenting] = useState(false);
   // The canvas owns the camera subscription: panning repaints this component, not the
   // forty-four hooks above it in BoardApp (review P6).
   const camera = useCamera();
@@ -358,6 +360,7 @@ export function BoardCanvas({
     focusedWaypoint,
     kanbanStates,
     clock: timerLeft,
+    presenting,
     t,
   });
 
@@ -716,6 +719,7 @@ export function BoardCanvas({
         canFacilitate={canFacilitate}
         panelOpen={presentationOpen}
         onPanelOpen={onPresentationOpen}
+        onPresentingChange={setPresenting}
       />
       <VoteLayer
         session={voteSession}

@@ -48,6 +48,7 @@ export function useCanvasPainting({
   focusedWaypoint,
   kanbanStates,
   clock,
+  presenting,
   t,
 }: {
   boardRef: React.RefObject<HTMLCanvasElement | null>;
@@ -70,6 +71,8 @@ export function useCanvasPainting({
   kanbanStates: Record<string, KanbanState>;
   /** Changes once a second while the shared timer runs; the timer card paints from it. */
   clock: number;
+  /** A live presentation hides state marks that are not content (ADR-193). */
+  presenting: boolean;
   t: (key: TranslationKey) => string;
 }) {
   const {
@@ -225,6 +228,7 @@ export function useCanvasPainting({
       viewport,
       settings,
       layouts,
+      widgets,
       selectedIds,
       preview,
       editingId,
@@ -240,6 +244,7 @@ export function useCanvasPainting({
       theme: paintTheme,
       focusedWaypoint,
       proposal,
+      presenting,
     };
     paintOverlayLayer(input);
     paintStats.current.overlay += 1;
@@ -260,10 +265,12 @@ export function useCanvasPainting({
     presence,
     preview,
     proposal,
+    presenting,
     selectedIds,
     settings,
     viewport,
     resolveConnector,
+    widgets,
   ]);
 
   /**

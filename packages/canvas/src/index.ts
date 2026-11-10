@@ -4,6 +4,7 @@ export * from "./guides";
 export * from "./hit";
 export * from "./kanban";
 export * from "./layout";
+export * from "./lockBadge";
 export * from "./palette";
 export * from "./render";
 export * from "./scene";

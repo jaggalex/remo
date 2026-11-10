@@ -3,6 +3,7 @@ import {
   HANDLE_GAP,
   anchorsOf,
   cornerPoints,
+  placedWidget,
   placementOfCard,
 } from "./canvasGeometry";
 import {
@@ -14,10 +15,12 @@ import {
   drawGuide,
   drawKanban,
   drawKanbanHover,
+  drawLockBadge,
   drawProposal,
   drawWidget,
   isVisible,
   labelPoint,
+  lockBadgeRect,
   paintOrder,
   translateLayout,
   visibleWorldRect,
@@ -297,6 +300,8 @@ export interface OverlayPaintInput {
   viewport: { width: number; height: number };
   settings: BoardSettings;
   layouts: Map<string, KanbanLayout>;
+  /** Every object, so the overlay can mark every locked one (ADR-193). */
+  widgets: readonly Widget[];
   selectedIds: readonly string[];
   preview: ReadonlyMap<string, Partial<Widget>>;
   editingId: string | null;
@@ -322,12 +327,15 @@ export interface OverlayPaintInput {
   focusedWaypoint?: { connectorId: string; waypointId: string } | null;
   /** A plan under review (ADR-188), drawn under every other overlay mark. */
   proposal?: ProposalLayout | null;
+  /** Presentation hides state marks that are not content (ADR-193). */
+  presenting?: boolean;
 }
 
 export function paintOverlayLayer(input: OverlayPaintInput): void {
   const { ctx, camera, viewport, settings, layouts } = input;
   const { width, height } = viewport;
   const {
+    widgets,
     selectedIds,
     preview,
     editingId,
@@ -343,8 +351,10 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     theme,
     focusedWaypoint,
     proposal,
+    presenting,
   } = input;
   const palette = theme.palette;
+  const visible = visibleWorldRect(camera, viewport);
 
   ctx.save();
   ctx.translate(width / 2, height / 2);
@@ -358,6 +368,21 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   if (hoverCell && preview.size === 0) {
     for (const layout of layouts.values()) {
       drawKanbanHover(ctx, layout, hoverCell, palette);
+    }
+  }
+
+  // A lock is state, not content: every locked object carries the mark, and the
+  // overlay keeps it out of exports and presentations (ADR-193).
+  if (!presenting) {
+    for (const widget of widgets) {
+      if (!widget.locked) continue;
+      const placed = placedWidget(widget, layouts);
+      if (!isVisible(placed, visible)) continue;
+      drawLockBadge(
+        ctx,
+        lockBadgeRect(boxOf(placed), camera.zoom),
+        withAlpha(palette.textPrimary, 0.75),
+      );
     }
   }
 
@@ -493,7 +518,6 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   // rather than only the two boxes: an alignment is a line across the board, and a
   // segment hidden under the object being dragged would not explain anything.
   if (guides.length && settings.snapping.guides) {
-    const visible = visibleWorldRect(camera, viewport);
     for (const guide of guides) {
       drawGuide(
         ctx,
