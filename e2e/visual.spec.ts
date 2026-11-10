@@ -177,6 +177,8 @@ test("the board, export, timer and vote screens fit the viewport", async ({ page
 
 test("a card with fields is readable", async ({ page }) => {
   await freshBoard(page, "visual-card");
+  // ADR-197: the inspector starts closed; the card fields live in it.
+  await page.getByRole("button", { name: "Properties" }).click();
 
   const point = await page.evaluate(() => {
     const probe = window as unknown as {

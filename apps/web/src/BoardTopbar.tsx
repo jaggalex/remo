@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { MutableRefObject } from "react";
 import type { Presence, SaveState } from "@remo/doc";
 import { Button, IconButton, Separator, Tooltip } from "@remo/ui";
@@ -99,6 +99,8 @@ export interface BoardTopbarProps {
   setCommentsOpen: (value: boolean) => void;
   commentsUnread: number;
   addTemplate: (key: TemplateKey) => void;
+  /** A counter from the empty room's example link: open the template picker. */
+  templateRequest: number;
 }
 
 export function BoardTopbar(props: BoardTopbarProps) {
@@ -117,8 +119,12 @@ export function BoardTopbar(props: BoardTopbarProps) {
     visiblePresence, me, identity, roleLine, renameSelf, onAccountRenamed, theme, setTheme,
     setAccountOpen, setAuthOpen, onSignOut, saveState, saveLabel, saveTitle, inspectorOpen,
     toggleInspector, presentOpen, setPresentOpen, commentsOpen, setCommentsOpen,
-    commentsUnread, addTemplate,
+    commentsUnread, addTemplate, templateRequest,
   } = props;
+
+  useEffect(() => {
+    if (templateRequest > 0) setMenu("templates");
+  }, [templateRequest]);
 
   const self = visiblePresence.find((peer) => peer.self);
   const peers = visiblePresence.filter((peer) => !peer.self);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Icon, IconButton, Input, Popover, Select } from "@remo/ui";
+import { type TemplateKey } from "@remo/model";
 import { api, type OrgSummary, type SessionUser } from "./api";
 import {
   boardDirectory,
@@ -11,6 +12,7 @@ import { AuthDialog } from "./AuthDialog";
 import { BoardDeleteDialog } from "./BoardDeleteDialog";
 import { InviteDialog } from "./InviteDialog";
 import { NewBoardDialog } from "./NewBoardDialog";
+import { TEMPLATE_LABEL_KEY } from "./templateLabels";
 import { OrganisationDialog } from "./OrganisationDialog";
 import { SessionsDialog } from "./SessionsDialog";
 import { AccountMenu } from "./topbar/AccountMenu";
@@ -26,6 +28,12 @@ import { HelpLink } from "./help/HelpLink";
 
 type Sort = "updated" | "created" | "name" | "author";
 const PAGE_SIZE = 24;
+/** The authored templates that make a useful first example; the prefilled roadmap is a variant. */
+const EXAMPLES: TemplateKey[] = [
+  "user-story-map-basic",
+  "product-roadmap-basic",
+  "kanban-framework",
+];
 
 const EMOJI = [
   "📋",
@@ -106,6 +114,11 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [templatePreset, setTemplatePreset] = useState<"empty" | TemplateKey>("empty");
+  const startNew = (template: "empty" | TemplateKey = "empty") => {
+    setTemplatePreset(template);
+    setCreating(true);
+  };
   const [pendingDelete, setPendingDelete] = useState<BoardTile | null>(null);
   const [emojiBoard, setEmojiBoard] = useState<string | null>(null);
 
@@ -181,6 +194,8 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
   const total = data?.total ?? 0;
   const pageSize = data?.pageSize ?? PAGE_SIZE;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  // ADR-197: the directory appears only when there is more than one page to direct.
+  const directory = total > PAGE_SIZE || Boolean(query.trim()) || trash || page > 1;
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
@@ -380,22 +395,36 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
               <p className="muted">
                 {total > 0 ? t("home.count", { from, to, total }) : null}
               </p>
-              <div className="home-views" role="group" aria-label={t("boards.title")}>
+              {directory ? (
+                <div className="home-views" role="group" aria-label={t("boards.title")}>
+                  <Button
+                    size="compact"
+                    variant="ghost"
+                    selected={!trash}
+                    onClick={() => {
+                      setTrash(false);
+                      setPage(1);
+                    }}
+                  >
+                    {t("home.boards")}
+                  </Button>
+                  <Button
+                    size="compact"
+                    variant="ghost"
+                    selected={trash}
+                    onClick={() => {
+                      setTrash(true);
+                      setPage(1);
+                      setQuery("");
+                    }}
+                  >
+                    {t("home.trash")}
+                  </Button>
+                </div>
+              ) : (
                 <Button
                   size="compact"
                   variant="ghost"
-                  selected={!trash}
-                  onClick={() => {
-                    setTrash(false);
-                    setPage(1);
-                  }}
-                >
-                  {t("home.boards")}
-                </Button>
-                <Button
-                  size="compact"
-                  variant="ghost"
-                  selected={trash}
                   onClick={() => {
                     setTrash(true);
                     setPage(1);
@@ -404,13 +433,13 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
                 >
                   {t("home.trash")}
                 </Button>
-              </div>
+              )}
             </div>
             {!trash && (
               <Button
                 variant="primary"
                 icon="plus"
-                onClick={() => setCreating(true)}
+                onClick={() => startNew()}
                 disabled={!activeOrg.capabilities?.includes("board.create")}
               >
                 {t("boards.new")}
@@ -418,44 +447,46 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
             )}
           </div>
 
-          <div className="home-toolbar">
-            <Input
-              type="search"
-              className="home-search"
-              label={t("home.search")}
-              placeholder={t("home.searchPlaceholder")}
-              value={query}
-              onChange={(event) => {
-                setQuery(event.currentTarget.value);
-                setPage(1);
-              }}
-            />
-            <Select
-              label={t("home.sort")}
-              value={sort}
-              options={[
-                { value: "updated", label: t("home.updated") },
-                { value: "created", label: t("home.created") },
-                { value: "name", label: t("home.name") },
-                { value: "author", label: t("home.author") },
-              ]}
-              onChange={(event) => {
-                setSort(readSort(event.currentTarget.value));
-                setPage(1);
-              }}
-            />
-            <Button
-              variant="secondary"
-              aria-label={dir === "asc" ? t("home.asc") : t("home.desc")}
-              title={dir === "asc" ? t("home.asc") : t("home.desc")}
-              onClick={() => {
-                setDir((value) => (value === "asc" ? "desc" : "asc"));
-                setPage(1);
-              }}
-            >
-              {dir === "asc" ? "↑" : "↓"}
-            </Button>
-          </div>
+          {directory && (
+            <div className="home-toolbar">
+              <Input
+                type="search"
+                className="home-search"
+                label={t("home.search")}
+                placeholder={t("home.searchPlaceholder")}
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.currentTarget.value);
+                  setPage(1);
+                }}
+              />
+              <Select
+                label={t("home.sort")}
+                value={sort}
+                options={[
+                  { value: "updated", label: t("home.updated") },
+                  { value: "created", label: t("home.created") },
+                  { value: "name", label: t("home.name") },
+                  { value: "author", label: t("home.author") },
+                ]}
+                onChange={(event) => {
+                  setSort(readSort(event.currentTarget.value));
+                  setPage(1);
+                }}
+              />
+              <Button
+                variant="secondary"
+                aria-label={dir === "asc" ? t("home.asc") : t("home.desc")}
+                title={dir === "asc" ? t("home.asc") : t("home.desc")}
+                onClick={() => {
+                  setDir((value) => (value === "asc" ? "desc" : "asc"));
+                  setPage(1);
+                }}
+              >
+                {dir === "asc" ? "↑" : "↓"}
+              </Button>
+            </div>
+          )}
 
           {error && (
             <div className="home-error" role="alert">
@@ -479,9 +510,24 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
                     : t("home.empty")}
               </h2>
               {!query.trim() && !trash && (
-                <Button variant="primary" icon="plus" onClick={() => setCreating(true)}>
-                  {t("boards.new")}
-                </Button>
+                <>
+                  <Button variant="primary" icon="plus" onClick={() => startNew()}>
+                    {t("boards.new")}
+                  </Button>
+                  <div className="home-examples">
+                    <span className="muted">{t("home.examples")}</span>
+                    {EXAMPLES.map((template) => (
+                      <Button
+                        key={template}
+                        size="compact"
+                        variant="ghost"
+                        onClick={() => startNew(template)}
+                      >
+                        {t(TEMPLATE_LABEL_KEY[template])}
+                      </Button>
+                    ))}
+                  </div>
+                </>
               )}
             </section>
           ) : data ? (
@@ -510,8 +556,9 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
                         <span>{t("home.updatedOn", { date: formatDateTime(board.updatedAt, lang) })}</span>
                       </span>
                     </button>
-                    <div className="home-tile-menu">
-                      {trash ? (
+                    {directory && (
+                      <div className="home-tile-menu">
+                        {trash ? (
                         <Button size="compact" variant="secondary" onClick={() => void restoreBoard(board)}>
                           {t("home.restore")}
                         </Button>
@@ -574,7 +621,8 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
                       )}
                         </>
                       )}
-                    </div>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -628,6 +676,7 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
         open={creating}
         orgs={orgs}
         defaultOrgId={activeOrg?.id ?? null}
+        initialTemplate={templatePreset}
         onClose={() => setCreating(false)}
         onCreated={createdBoard}
       />

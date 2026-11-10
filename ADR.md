@@ -8059,3 +8059,44 @@ the painter, hit-testing, export, backup and the AI projection. A hidden DOM tab
 the canvas grid for screen readers. Not decided here: limits on axes and objects (to be
 measured), presentation order beyond "by rows", and whether first-axis seeding defaults to
 "lay out by position" or "keep in the first cell" (session hypothesis H4).
+
+## ADR-197: The first visit starts with a room, not a directory (extends ADR-168)
+
+**Status:** accepted (2026-11-10); implementation pending.
+
+**Context.** A new account lands on the organisation home and meets search, sorting,
+direction, trash, pagination and tile menus before it has one room. The empty room then
+says "Pick a template in the More menu", so the first useful action is behind a menu. The
+owner's design review of P1–P3 (10.11.2026) fixed the first path: one room, two equal
+starting points, and the directory only when there is enough to direct.
+
+**Decision.**
+
+- **Home while the organisation fits on one page.** With no more than `PAGE_SIZE` rooms in
+  the current view, the home shows the organisation context, one primary "New room", the
+  room tiles, and a quiet "Trash" link. Search, sorting, direction, pagination and the tile
+  menus (emoji, duplicate, delete) appear only when the view has more than one page. The
+  same screen with more rooms is the existing directory (ADR-168), unchanged.
+- **New room.** "Start empty" is the default; a template is an optional choice. The
+  organisation and team fields appear only when there is more than one. The primary button
+  says "Create room".
+- **Empty room.** "Start with a note or a shape" with two equal actions; "Text" is a
+  tertiary action and an example is a quiet link. The old "Pick a template in the More
+  menu" sentence is removed. A note or shape is created at the centre of the viewport and
+  opens for typing; `Escape` ends the input.
+- **Examples are the authored templates.** The home's quiet examples open the new-room
+  dialog with that template chosen; there is no demo room yet. A "scheme" example waits
+  until a diagram template exists; the home does not invent one.
+- **Properties.** A person with no stored inspector choice starts with the inspector
+  closed. A stored `open` stays open; the choice remains a browser preference (ADR-032,
+  ADR-123) until per-account preferences replace it (ADR-194's follow-up).
+- **No mandatory onboarding.** None of these states adds a tour, a checklist or a gate. The
+  rail, the empty state and the home remain the only entry points; every action is still a
+  canonical command.
+
+**Consequences.** The home has two layouts, and the directory layout is the existing one.
+`WorkspaceHome`, `NewBoardDialog`, the empty-room overlay and the inspector default change;
+the "example" path needs the new-room dialog to accept a preselected template. The empty
+state's two buttons call the same creation commands as the rail, so there is no second
+creation mechanism. Help and the guide that describe "choose a template in the More menu"
+must be updated with the first path.

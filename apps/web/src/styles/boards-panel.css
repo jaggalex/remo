@@ -25,6 +25,14 @@
   color: var(--ink);
 }
 
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
 /* Inline text editor: a DOM textarea placed over the object being edited. */
 .inline-editor {
   position: absolute;

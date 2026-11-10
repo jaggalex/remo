@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { freshBoard } from "./helpers";
+import { freshBoard, openBoardMenu } from "./helpers";
 
-test("home shows board tiles with metadata and keeps an emoji", async ({ page }) => {
-  await freshBoard(page, "home-meta", { title: "Meta board" });
+test("home shows board tiles with metadata, then the directory at a second page", async ({
+  page,
+}) => {
+  const account = await freshBoard(page, "home-meta", { title: "Meta board" });
   await page.getByRole("button", { name: "All rooms" }).click();
 
   const home = page.locator(".home");
@@ -12,26 +14,39 @@ test("home shows board tiles with metadata and keeps an emoji", async ({ page })
   await expect(tile).toContainText("Updated");
   await expect(tile).toContainText("by home-meta");
 
-  await tile.getByRole("button", { name: "Choose emoji" }).click();
+  // ADR-197: one page of rooms is not a directory. No search, sort or tile menus.
+  await expect(home.locator(".home-toolbar")).toHaveCount(0);
+  await expect(tile.getByRole("button", { name: "Choose emoji" })).toHaveCount(0);
+
+  // A second page brings the directory and its tile menus back.
+  for (let index = 1; index <= 24; index += 1) {
+    const created = await page.request.post(`/api/orgs/${account.orgId}/boards`, {
+      data: { title: `Meta page ${String(index).padStart(2, "0")}` },
+    });
+    expect(created.ok(), await created.text()).toBeTruthy();
+  }
+  await page.reload();
+  await expect(home.locator(".home-toolbar")).toBeVisible();
+
+  const first = home.locator(".home-tile").first();
+  await first.getByRole("button", { name: "Choose emoji" }).click();
   await page.getByRole("button", { name: "🚀", exact: true }).click();
-  await expect(tile.locator(".home-tile-icon")).toHaveText("🚀");
+  await expect(first.locator(".home-tile-icon")).toHaveText("🚀");
 
   await page.reload();
-  const reloaded = page.locator(".home-tile").filter({ hasText: "Meta board" });
-  await expect(reloaded.locator(".home-tile-icon")).toHaveText("🚀");
+  await expect(home.locator(".home-tile").first().locator(".home-tile-icon")).toHaveText("🚀");
 });
 
 test("trashes a board and restores it from the home", async ({ page }) => {
   await freshBoard(page, "home-trash", { title: "Trash board" });
-  await page.getByRole("button", { name: "All rooms" }).click();
+
+  // A one-page home has no tile menu, so the room's own menu moves it to the trash.
+  await openBoardMenu(page);
+  await page.getByRole("menuitem", { name: /Move to trash/ }).click();
+  await page.getByRole("button", { name: "Move to trash" }).click();
 
   const home = page.locator(".home");
-  const tile = home.locator(".home-tile").filter({ hasText: "Trash board" });
-  await tile.hover();
-  await tile.getByRole("button", { name: "Delete" }).click();
-  await page.getByRole("button", { name: "Move to trash" }).click();
-  await expect(tile).toHaveCount(0);
-
+  await expect(home.locator(".home-tile").filter({ hasText: "Trash board" })).toHaveCount(0);
   await home.getByRole("button", { name: "Trash", exact: true }).click();
   const trashed = home.locator(".home-tile").filter({ hasText: "Trash board" });
   await expect(trashed).toBeVisible();

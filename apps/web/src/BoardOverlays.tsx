@@ -4,7 +4,7 @@ import { DeleteConfirmation } from "./DeleteDialog";
 import { HelpLink } from "./help/HelpLink";
 import type { FollowEvent, FollowState } from "./follow";
 import { useI18n } from "./i18n";
-import { useProposal } from "./proposalStore";
+import { EmptyRoomStart } from "./EmptyRoomStart";
 
 /**
  * The banners and pills that float over the canvas.
@@ -168,19 +168,6 @@ export function OfflineBlocked() {
   );
 }
 
-/** The empty board's first line: the room name, so a link can be pasted to a teammate. */
-export function EmptyBoard({ room }: { room: string }) {
-  const { t } = useI18n();
-  // A plan under review is drawn where the room is empty; the card would cover it.
-  if (useProposal()) return null;
-  return (
-    <div className="empty-board">
-      <b>{t("empty.title")}</b>
-      <span>{t("empty.body", { room })}</span>
-    </div>
-  );
-}
-
 /**
  * Why the board cannot be used right now, in one place: a blocked queue, an empty
  * board, a denied board or an unclaimed room. App decides the facts; the layer only
@@ -194,6 +181,11 @@ export function BoardStateLayer({
   reason,
   signedIn,
   boardId,
+  readOnly,
+  onCreateNote,
+  onCreateShape,
+  onCreateText,
+  onExample,
   onSignIn,
   onRetry,
   onClaim,
@@ -205,6 +197,11 @@ export function BoardStateLayer({
   reason: string | null | undefined;
   signedIn: boolean;
   boardId: string;
+  readOnly: boolean;
+  onCreateNote: () => void;
+  onCreateShape: () => void;
+  onCreateText: () => void;
+  onExample: () => void;
   onSignIn: () => void;
   onRetry: () => void;
   onClaim: () => void;
@@ -212,7 +209,15 @@ export function BoardStateLayer({
   return (
     <>
       {blocked && <OfflineBlocked />}
-      {emptyRoom && <EmptyBoard room={emptyRoom} />}
+      {emptyRoom && (
+        <EmptyRoomStart
+          readOnly={readOnly}
+          onCreateNote={onCreateNote}
+          onCreateShape={onCreateShape}
+          onCreateText={onCreateText}
+          onExample={onExample}
+        />
+      )}
       {denied && (
         <BoardAccessGate
           reason={reason}

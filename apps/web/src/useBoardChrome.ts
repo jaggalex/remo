@@ -59,9 +59,10 @@ export function useBoardChrome({
 
   const [inspectorOpen, setInspectorOpen] = useState(() => {
     try {
-      return window.localStorage.getItem("remo.inspector") !== "closed";
+      // ADR-197: a person with no stored choice starts with the inspector closed.
+      return window.localStorage.getItem("remo.inspector") === "open";
     } catch {
-      return true;
+      return false;
     }
   });
 
