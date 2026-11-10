@@ -60,6 +60,10 @@ export async function waitForBoardEditor(page: Page): Promise<void> {
 /** Select the requested kanban card, or the first card when none is specified. */
 export async function selectKanbanCard(page: Page, cardId?: string): Promise<string> {
   await waitForBoardEditor(page);
+  // ADR-197: a fresh person starts with the inspector closed; these scenarios read
+  // the card fields, tags and links, so open it before selecting the card.
+  const properties = page.getByRole("button", { name: "Properties", exact: true });
+  if ((await properties.getAttribute("aria-pressed")) !== "true") await properties.click();
   // After a reload the document arrives over the socket; the probe is empty until then.
   await page.waitForFunction((wanted) => {
     const probe = window as unknown as {
