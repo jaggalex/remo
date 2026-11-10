@@ -3,6 +3,7 @@ import type { NoteDirection } from "@remo/doc";
 import { minimumSizeOf, type ConnectorSide, type Widget } from "@remo/model";
 import {
   ANCHOR_GAP,
+  BAR_ROOM,
   anchorSlotDecision,
   anchorsOf,
   barTop,
@@ -89,11 +90,11 @@ describe("floating bar placement", () => {
   const viewport = { height: 600 };
 
   it("sits above the object when there is room", () => {
-    expect(barTop({ top: 200, height: 100 }, viewport)).toBe(148);
+    expect(barTop({ top: 200, height: 100 }, viewport)).toBe(200 - BAR_ROOM);
   });
 
   it("drops below the object when the top is too close to the edge", () => {
-    // top 20 leaves no room for a 52px bar, so it goes under the object instead.
+    // top 20 leaves no room for the bar and its edge +, so it goes under the object.
     expect(barTop({ top: 20, height: 100 }, viewport)).toBe(132);
   });
 

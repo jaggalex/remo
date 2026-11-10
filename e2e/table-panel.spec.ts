@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { openBoard, register, seedNote, seedObject } from "./helpers";
+import { openBoard, PASSWORD, register, seedNote, seedObject, startPresentation } from "./helpers";
 
 interface ProbeWidget {
   id: string;
@@ -351,4 +351,58 @@ test("moves a selected object to a named cell from the panel", async ({ page }) 
     })
     .toBe(true);
   await expect(cellPanel.getByRole("button", { name: "Move", exact: true })).toBeDisabled();
+});
+
+
+test("presents a table cell by cell in row order", async ({ page }) => {
+  await openTable(page, "table-present");
+  await startPresentation(page);
+  const panel = page.locator(".presentation-panel");
+  await expect(panel).toBeVisible();
+  await panel.getByRole("button", { name: "Start presentation", exact: true }).click();
+
+  const bar = page.locator(".present-bar");
+  await expect(bar).toContainText("Slide 1 of 2");
+  await expect(bar).toContainText("Column 1 × Row 1");
+  await expect(page.locator(".present-cell-focus")).toBeVisible();
+
+  await bar.getByRole("button", { name: "Next slide" }).click();
+  await expect(bar).toContainText("Slide 2 of 2");
+  await expect(bar).toContainText("Column 2 × Row 1");
+  await expect(page.locator(".present-cell-focus")).toBeVisible();
+
+  await bar.getByRole("button", { name: "Stop" }).click();
+  await expect(page.locator(".present-bar")).toHaveCount(0);
+  await expect(page.locator(".present-cell-focus")).toHaveCount(0);
+});
+
+
+test("a follower follows the presented cell step", async ({ page, browser }) => {
+  const { account } = await openTable(page, "table-follow");
+  await startPresentation(page);
+  await page
+    .locator(".presentation-panel")
+    .getByRole("button", { name: "Start presentation", exact: true })
+    .click();
+  const bar = page.locator(".present-bar");
+  await bar.getByRole("button", { name: "Next slide" }).click();
+  await expect(bar).toContainText("Column 2 × Row 1");
+
+  const second = await browser.newContext();
+  const other = await second.newPage();
+  try {
+    const login = await other.request.post("/api/auth/login", {
+      data: { email: account.email, password: PASSWORD },
+    });
+    expect(login.ok(), await login.text()).toBeTruthy();
+    await other.goto(`/?room=${account.boardId}&lang=en`);
+    await expect(other.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+    const join = other.locator(".present-join");
+    await expect(join).toBeVisible();
+    await join.getByRole("button", { name: "Watch", exact: true }).click();
+    await expect(other.locator(".present-follow")).toContainText("Column 2 × Row 1");
+    await expect(other.locator(".present-cell-focus")).toBeVisible();
+  } finally {
+    await second.close();
+  }
 });

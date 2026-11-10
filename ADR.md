@@ -8178,3 +8178,35 @@ implementations could read the same sentence differently and write incompatible 
 the axis/cell commands; the painter, hit-testing, export, backup and AI projection read
 the same fields. Limits on axes and objects, presentation order beyond "by rows", and the
 default first-axis seeding remain open (ADR-196, H4).
+
+## ADR-200: A table section is presented cell by cell, row by row (extends ADR-196)
+
+**Status:** accepted (2026-11-10).
+
+**Context.** ADR-196 left presentation order beyond "by rows" open. A table section is one
+item in the presentation order, but its material is arranged in cells; showing the whole
+frame at once makes a small cell unreadable on a projector, while treating every cell as a
+separate editable slide would duplicate the table in the order and in the panel.
+
+**Decision.**
+
+- **One item, several steps.** A table section stays one entry in the presentation order.
+  While presenting, it expands into steps in row-major order: the top row left to right,
+  then the next row. An empty cell is still a step; a table with no rows or columns is one
+  step that shows the whole frame.
+- **The step fits the cell with its headers.** The camera fits the union of the cell, its
+  column header and its row header, plus padding, and paints a focus ring around the cell.
+  The audience keeps enough context to know where the cell sits without the whole section
+  shrinking to a stamp. The present bar names the column and row of the current step.
+- **Following follows the step.** Awareness carries the step index, the section id and the
+  optional cell ids. A follower fits the same step, not the presenter's viewport; an older
+  payload without a cell is a whole-frame step.
+- **The order stays the section's.** Moving or removing a table in the presentation panel
+  moves or removes the whole section, not individual cells. Non-table slides remain one
+  step each.
+- **No second ordering rule.** The row-major order is derived from the axes, never stored
+  as a separate slide list. Reordering axes reorders the presentation steps.
+
+**Consequences.** The presentation hook gains a step list and a cell camera box; the
+presentation layer paints one focus ring; awareness stays backward compatible. Per-cell
+speaker notes, skipping empty cells and a custom presentation order remain open.

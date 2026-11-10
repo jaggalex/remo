@@ -7,6 +7,7 @@ Show the room one slide at a time. You can use a frame or another object as a sl
 - The room has objects. A slide can be a frame, a sticky note, a card, a shape or another object.
 - You are a facilitator (editor, co-owner or owner).
 - The frame's size is the slide's size: if a section needs more room, resize the frame by a corner before presenting. The contents are not scaled. For other objects the camera fits their rectangle, and for a connector it fits both ends.
+- When a section is shown as a **table**, it steps through cells: top to bottom by rows and left to right inside a row. The camera shows the cell with its headers, and the bottom bar names the column and row. Followers follow the same cell.
 
 ## Steps
 

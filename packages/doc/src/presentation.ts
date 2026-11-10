@@ -31,6 +31,53 @@ export function presentationSlides(board: BoardDocument): string[] {
   return board.presentation.toArray().filter((id) => existing.has(id));
 }
 
+export interface PresentationStep {
+  /** Unique across cells of one section and across slides. */
+  id: string;
+  /** The ordered slide this step belongs to. */
+  slideId: string;
+  /** The widget whose geometry the camera fits. */
+  frameId: string;
+  /** Present when the slide is a table section; absent means the whole frame. */
+  cell?: { rowId: string; columnId: string };
+}
+
+/**
+ * The presentation as concrete camera steps (ADR-200).
+ *
+ * A table section is one item in the order but several row-major steps: top row left to
+ * right, then the next row. A section without both axes is one whole-frame step. The
+ * order is derived from the axes, never stored as a second list.
+ */
+export function presentationSteps(board: BoardDocument): PresentationStep[] {
+  const steps: PresentationStep[] = [];
+  for (const slideId of presentationSlides(board)) {
+    const widget = board.readWidget(slideId);
+    const layout = widget?.type === "frame" ? widget.layout : undefined;
+    if (
+      widget &&
+      layout?.kind === "table" &&
+      layout.active !== false &&
+      layout.columns.length > 0 &&
+      layout.rows.length > 0
+    ) {
+      for (const row of layout.rows) {
+        for (const column of layout.columns) {
+          steps.push({
+            id: `${slideId}:${row.id}:${column.id}`,
+            slideId,
+            frameId: slideId,
+            cell: { rowId: row.id, columnId: column.id },
+          });
+        }
+      }
+      continue;
+    }
+    if (widget) steps.push({ id: slideId, slideId, frameId: slideId });
+  }
+  return steps;
+}
+
 export function setPresentationOrder(board: BoardDocument, ids: readonly string[]): void {
   const existing = new Set(board.widgets.keys());
   const order = [...new Set(ids)].filter((id) => existing.has(id));

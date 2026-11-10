@@ -129,7 +129,15 @@ export function sideOfDirection(direction: NoteDirection): ConnectorSide {
 }
 
 /** Height reserved for a floating bar, including the gap above the object. */
-export const BAR_ROOM = 52;
+/**
+ * Space above the object for the object bar.
+ *
+ * It must clear the 44 px edge "+" (centred 30 px outside the edge, ADR-195), or the
+ * bar would sit on top of that button and make it unreachable.
+ */
+export const BAR_ROOM = 84;
+/** A bar with no edge "+" to clear — the arrange and connector bars. */
+export const COMPACT_BAR_ROOM = 52;
 
 /**
  * Vertical placement of a floating bar over a box in screen space.
@@ -141,8 +149,9 @@ export const BAR_ROOM = 52;
 export function barTop(
   box: { top: number; height: number },
   viewport: { height: number },
+  room = BAR_ROOM,
 ): number {
-  const above = box.top - BAR_ROOM;
+  const above = box.top - room;
   const below = box.top + box.height + 12;
   const lowest = Math.max(8, viewport.height - 40 - 8);
   if (above >= 8) return Math.min(above, lowest);

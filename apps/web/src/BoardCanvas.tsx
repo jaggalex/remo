@@ -676,7 +676,7 @@ export function BoardCanvas({
       />
       <CanvasHint allowed={hintAllowed} />
       <SelectionBadge
-        selectedIds={selectedIds}
+        selectedIds={presenting ? [] : selectedIds}
         selectedWidget={selectedWidget}
         selectedGroup={selectedGroup}
         selectedGroupName={selectedGroup ? groupNames[selectedGroup] : undefined}
@@ -709,7 +709,7 @@ export function BoardCanvas({
         board={board}
         widgets={widgets}
         selectedIds={selectedIds}
-        camera={camera}
+        camera={camera} viewport={viewport}
         setCamera={setCamera}
         connection={connection}
         presence={presence}
@@ -766,20 +766,20 @@ export function BoardCanvas({
         drop={gestures.tableHover} refused={gestures.tableRefused} cursor={gestures.cursor}
       />
       <InlineEditor
-        target={editorTarget}
+        target={presenting ? null : editorTarget}
         onChange={onSetText}
         onCreateConnected={onCreateConnected}
         onClose={() => onEdit(null)}
       />
       <StickyBar
-        target={stickyBar}
+        target={presenting ? null : stickyBar}
         actions={stickyActions}
         editing={Boolean(editingId)}
         formatSelection={formatSelection}
       />
-      <ArrangeBar target={arrangeBar} actions={arrangeActions} />
+      <ArrangeBar target={presenting ? null : arrangeBar} actions={arrangeActions} />
       <ConnectorBar
-        target={connectorBar}
+        target={presenting ? null : connectorBar}
         actions={connectorActions}
         // The label is text, so it opens in the same editor every other text uses.
         onEditLabel={() => {

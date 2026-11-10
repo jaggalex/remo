@@ -619,3 +619,20 @@
   font-weight: 600;
   word-break: break-word;
 }
+
+/* The cell a table presentation is focused on (ADR-200). */
+.present-cell-focus {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: var(--z-canvas-overlay);
+  border: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+  pointer-events: none;
+}
+
+.present-cell-label {
+  margin-left: var(--space-2);
+  color: var(--muted);
+  font: var(--type-caption);
+}

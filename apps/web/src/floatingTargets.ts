@@ -13,7 +13,7 @@ import type { StickyBarTarget } from "./StickyBar";
 import type { NoteDirection } from "@remo/doc";
 import { GATHERABLE_TYPES } from "@remo/doc";
 import type { BoardSettings } from "./settings";
-import { barTop } from "./canvasGeometry";
+import { COMPACT_BAR_ROOM, barTop } from "./canvasGeometry";
 import { DEFAULT_FILL, DEFAULT_INK } from "./objectDefaults";
 
 /**
@@ -87,14 +87,24 @@ export interface EdgeContinueTarget {
  * area outside the side's midpoint. The caller draws the disc inside the button; the
  * arithmetic here is only where the hit area goes.
  */
+/**
+ * The 44 px hit area sits outside the edge, past the connector anchor.
+ *
+ * The old target was centred on the edge, so its disc and hit area covered the anchor
+ * dot at `ANCHOR_GAP`: two affordances on one point, one of them invisible as a choice.
+ * Moving the quiet + out keeps the anchor on the edge and the + beside it.
+ */
+export const EDGE_CONTINUE_OFFSET = 30;
+
 export function edgeContinueTargets(widget: Widget, frame: Frame): EdgeContinueTarget[] {
   const box = screenBox(widget, frame);
   const half = 22;
+  const gap = EDGE_CONTINUE_OFFSET;
   return [
-    { direction: "left", left: box.left - half, top: box.top + box.height / 2 - half },
-    { direction: "right", left: box.left + box.width - half, top: box.top + box.height / 2 - half },
-    { direction: "up", left: box.left + box.width / 2 - half, top: box.top - half },
-    { direction: "down", left: box.left + box.width / 2 - half, top: box.top + box.height - half },
+    { direction: "left", left: box.left - half - gap, top: box.top + box.height / 2 - half },
+    { direction: "right", left: box.left + box.width - half + gap, top: box.top + box.height / 2 - half },
+    { direction: "up", left: box.left + box.width / 2 - half, top: box.top - half - gap },
+    { direction: "down", left: box.left + box.width / 2 - half, top: box.top + box.height - half + gap },
   ];
 }
 
@@ -235,7 +245,7 @@ export function arrangeBarTarget(args: {
           frame.viewport.width - ARRANGE_BAR_WIDTH - 8,
         ),
       ),
-      top: barTop({ top, height }, frame.viewport),
+      top: barTop({ top, height }, frame.viewport, COMPACT_BAR_ROOM),
     },
   };
 }
@@ -308,7 +318,7 @@ export function connectorBarTarget(args: {
     id: widget.id,
     placement: {
       left: Math.max(8, Math.min(centre - half, viewport.width - half * 2 - 8)),
-      top: barTop({ top, height: bottom - top }, viewport),
+      top: barTop({ top, height: bottom - top }, viewport, COMPACT_BAR_ROOM),
     },
     routing: routingOf(widget),
     strokeStyle: widget.style?.strokeStyle ?? "normal",
