@@ -27,6 +27,7 @@ export * from "./tree";
 export * from "./connectors";
 export * from "./widgets";
 export * from "./gather";
+export * from "./table";
 export * from "./clipboard";
 export * from "./layers";
 export * from "./groups";

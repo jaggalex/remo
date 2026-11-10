@@ -201,6 +201,7 @@ function readLayout(value: unknown): Raw | undefined {
   const rows = axes(value.rows);
   if (!columns.length || !rows.length) return undefined;
   const layout: Raw = { kind: "table", columns, rows };
+  if (typeof value.active === "boolean") layout.active = value.active;
   if (isObject(value.appearance)) {
     const appearance: Raw = {};
     for (const key of ["table", "headers"] as const) {

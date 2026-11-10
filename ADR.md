@@ -8149,7 +8149,10 @@ implementations could read the same sentence differently and write incompatible 
 **Decision.**
 
 - **`frame.layout`** is absent (free) or `{ kind: "table", columns: Axis[], rows:
-  Axis[], appearance?: TableAppearance }`.
+  Axis[], active?: boolean, appearance?: TableAppearance }`.
+- **`active: false`** keeps the axes and cells but paints the free layout, so "Remove
+  table" is reversible: the structure returns when the person turns the table on again.
+  Absent means active.
 - **`Axis = { id: string; title: string; size?: "auto" | "narrow" | "medium" | "wide";
   vertical?: boolean }`.** Ids are stable; order and title are not identity.
 - **A child stores `cell: { rowId: string; columnId: string }`.** The object's `x`/`y`

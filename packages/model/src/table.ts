@@ -35,6 +35,11 @@ export interface TableLayout {
   kind: "table";
   columns: TableAxis[];
   rows: TableAxis[];
+  /**
+   * `false` keeps the axes and cells for a later return to the table; the painter draws
+   * the free layout while it is false. Absent means active.
+   */
+  active?: boolean;
   appearance?: TableAppearance;
 }
 
