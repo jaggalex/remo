@@ -11,6 +11,7 @@ import type { ArrangeBarTarget } from "./ArrangeBar";
 import type { ConnectorBarTarget } from "./ConnectorBar";
 import type { StickyBarTarget } from "./StickyBar";
 import type { NoteDirection } from "@remo/doc";
+import { GATHERABLE_TYPES } from "@remo/doc";
 import type { BoardSettings } from "./settings";
 import { barTop } from "./canvasGeometry";
 import { DEFAULT_FILL, DEFAULT_INK } from "./objectDefaults";
@@ -221,6 +222,7 @@ export function arrangeBarTarget(args: {
     units: units.size,
     objects: selected.length,
     canArrange: units.size >= 2,
+    canGather: selected.filter((widget) => GATHERABLE_TYPES.has(widget.type)).length >= 2,
     types: [...counts.entries()]
       .map(([type, count]) => ({ type, count }))
       .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type)),

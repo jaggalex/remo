@@ -104,6 +104,8 @@ export interface BoardCommandDeps {
   refuseUnlock: (authorName: string) => void;
   /** Open the tidy dialog; the app owns the dialog, the preview and the plan. */
   onTidy: (ids: readonly string[]) => void;
+  /** Gather a compatible selection into one section (ADR-198). */
+  onGather: (ids: readonly string[]) => void;
 }
 
 export function useBoardCommands(deps: BoardCommandDeps) {
@@ -126,6 +128,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     canManage,
     refuseUnlock,
     onTidy,
+    onGather,
   } = deps;
 
   const {
@@ -495,6 +498,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
       ungroup: () => ungroupWidgets(board, [...selectedIds]),
       remove: () => requestDelete(selectedIds),
       tidy: () => onTidy(selectedIds),
+      gather: () => onGather(selectedIds),
       canGroup: isGroupable(commandContext),
       canUngroup: selectionHasGroup(commandContext),
       selectType,
@@ -514,6 +518,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
       commandContext,
       distributeSelection,
       groupIds,
+      onGather,
       onTidy,
       requestDelete,
       selectType,

@@ -21,6 +21,8 @@ export interface ArrangeBarTarget {
   types: Array<{ type: string; count: number }>;
   /** The one colour role every selected object has, or null when they share none. */
   colour: { role: "fill" | "line"; value: string; mixed: boolean } | null;
+  /** Two or more ordinary objects can become one section (ADR-198). */
+  canGather: boolean;
 }
 
 export interface ArrangeBarActions {
@@ -36,6 +38,8 @@ export interface ArrangeBarActions {
   canUngroup: boolean;
   /** Open the tidy preview for the selection (ADR-143). */
   tidy: () => void;
+  /** Gather compatible objects into one section (ADR-198). */
+  gather: () => void;
   /** Narrow the selection to one type; `null` restores the selection before narrowing. */
   selectType: (type: string | null) => void;
   /** Write the shared role to every selected object: one transaction, one undo step. */
@@ -150,6 +154,12 @@ export function ArrangeBar({
           </PanelWindow>
         )}
       </span>
+
+      {target.canGather && (
+        <Button variant="ghost" size="compact" onClick={actions.gather}>
+          {t("selection.gather")}
+        </Button>
+      )}
 
       {target.colour && (
         <span className="sb-anchor">

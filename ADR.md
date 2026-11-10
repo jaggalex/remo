@@ -8100,3 +8100,39 @@ the "example" path needs the new-room dialog to accept a preselected template. T
 state's two buttons call the same creation commands as the rail, so there is no second
 creation mechanism. Help and the guide that describe "choose a template in the More menu"
 must be updated with the first path.
+
+## ADR-198: Gathering a selection into a section is one command (extends ADR-196)
+
+**Status:** accepted (2026-11-10); implementation pending.
+
+**Context.** ADR-196 lets a selection move between table cells, but the first step of the
+table path is still missing: turning several ordinary objects into a section without
+copying them or dragging a frame by hand. The design review of P6/T2 fixed the shape of
+that step: the section is drawn around what is already there, membership is one operation,
+and conflicts are explained before anything moves.
+
+**Decision.**
+
+- **What can be gathered.** Two or more ordinary objects — sticky note, text, shape,
+  image, stamp — can become one section. Connectors, cards, a kanban and a frame itself
+  are not members; connectors between gathered objects stay where they are.
+- **The box.** The section is the union of the gathered objects' boxes plus a fixed
+  padding (the same value the design uses for the preview), placed behind them. The
+  objects keep their world positions, size, text, style, links, comments and ids.
+- **One transaction.** The frame and every membership change are written in one
+  transaction and undo as one step. The section is selected after the command; its title
+  is the localized "Section" and is editable in place.
+- **Conflicts are decided before the write.** A locked object is not moved; the command
+  reports it and the person may gather the rest or cancel. An object that already belongs
+  to another section may be taken out and gathered, or skipped; the choice is explicit.
+  A section inside a section is refused. The UI previews the boundary before the click.
+- **No second creation mechanism.** The command is the same document operation the
+  section panel and the arrange bar call; the rail's "Section" tool still creates an
+  empty frame. The gather action is available only for a compatible selection.
+- **No data loss.** Removing the frame later keeps its objects (ADR-070); gathering does
+  not delete or copy anything.
+
+**Consequences.** A new command in `packages/doc` (one transaction, unit-tested), an action
+in the arrange bar with a boundary preview and a conflict confirmation, and an e2e
+scenario for ids, links and undo. Nested sections, per-cell permissions and converting a
+gathered section to a table remain out of scope; the table itself is ADR-196.

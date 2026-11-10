@@ -29,6 +29,7 @@ import { useInfoCard } from "./useInfoCard";
 import { useApplyAgentPlan } from "./useApplyAgentPlan";
 import { useTidyCommand } from "./useTidyCommand";
 import { useBoardCommands } from "./useBoardCommands";
+import { useGatherSelection } from "./useGatherSelection";
 import { useBoardVote } from "./useBoardVote";
 import { useFollowAttention } from "./useFollowAttention";
 import { useBoardAccess } from "./useBoardAccess";
@@ -322,6 +323,15 @@ export function BoardApp() {
   const { undo, redo, forceRender } = useBoardHistory(board);
   const { info, openInfo, closeInfo } = useInfoCard(typeName, t);
 
+  const gatherSelection = useGatherSelection({
+    board,
+    setSelectedIds,
+    notice: showNotice,
+    title: t("board.frameTitle"),
+    emptyMessage: t("selection.gather.none"),
+    skippedMessage: (count) => t("selection.gather.skipped", { n: String(count) }),
+  });
+
   const commands = useBoardCommands({
     board,
     widgets,
@@ -341,7 +351,7 @@ export function BoardApp() {
     canManage,
     refuseUnlock: (authorName) =>
       showNotice(t("lock.refused", { name: authorName || t("lock.authorUnknown") })),
-    onTidy: tidy.start,
+    onTidy: tidy.start, onGather: gatherSelection,
   });
 
   const {
@@ -672,8 +682,7 @@ export function BoardApp() {
           boardId: currentRoom(),
           readOnly: writeBlocked,
         }}
-        onCreateNote={addStickyAndEdit}
-        onCreateShape={() => addShapeAndEdit("rectangle")}
+        onCreateNote={addStickyAndEdit} onCreateShape={() => addShapeAndEdit("rectangle")}
         onCreateText={addTextAndEdit}
         onExample={() => setTemplateRequest((value) => value + 1)}
         onSignIn={() => setAuthOpen(true)}
