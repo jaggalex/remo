@@ -29,7 +29,36 @@ function finite(value, fallback = 0) {
   return Number.isFinite(number) ? Math.round(number * 10) / 10 : fallback;
 }
 
+function tableOf(widget) {
+  if (widget.layout?.kind !== "table") return null;
+  return {
+    active: widget.layout.active !== false,
+    columns: Array.isArray(widget.layout.columns)
+      ? widget.layout.columns.map((axis) => ({
+          id: String(axis?.id ?? ""),
+          title: String(axis?.title ?? ""),
+        }))
+      : [],
+    rows: Array.isArray(widget.layout.rows)
+      ? widget.layout.rows.map((axis) => ({
+          id: String(axis?.id ?? ""),
+          title: String(axis?.title ?? ""),
+        }))
+      : [],
+  };
+}
+
+function cellOf(widget) {
+  const rowId = widget.cell?.rowId;
+  const columnId = widget.cell?.columnId;
+  return rowId && columnId
+    ? { rowId: String(rowId), columnId: String(columnId) }
+    : null;
+}
+
 function snapshot(widget, texts) {
+  const table = tableOf(widget);
+  const cell = cellOf(widget);
   return {
     id: String(widget.id),
     type: String(widget.type),
@@ -41,6 +70,8 @@ function snapshot(widget, texts) {
     parentId: widget.parentId ? String(widget.parentId) : null,
     groupId: widget.groupId ? String(widget.groupId) : null,
     locked: widget.locked === true,
+    ...(table ? { table } : {}),
+    ...(cell ? { cell } : {}),
   };
 }
 

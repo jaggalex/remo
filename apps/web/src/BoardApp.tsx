@@ -293,7 +293,7 @@ export function BoardApp() {
     shareFallback,
     closeShareFallback,
     inspectorOpen,
-    toggleInspector,
+    toggleInspector, openInspector,
   } = useBoardChrome({ board, t });
 
   const { active, addTemplate, replaceBoard } = useBoardTemplates({
@@ -325,7 +325,7 @@ export function BoardApp() {
 
   const gatherSelection = useGatherSelection({
     board,
-    setSelectedIds,
+    setSelectedIds, openInspector,
     notice: showNotice,
     title: t("board.frameTitle"),
     emptyMessage: t("selection.gather.none"),

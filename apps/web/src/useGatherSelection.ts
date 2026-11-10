@@ -12,6 +12,7 @@ import type { BoardDocument } from "@remo/doc";
 export function useGatherSelection({
   board,
   setSelectedIds,
+  openInspector,
   notice,
   title,
   emptyMessage,
@@ -19,6 +20,8 @@ export function useGatherSelection({
 }: {
   board: BoardDocument;
   setSelectedIds: (ids: string[]) => void;
+  /** A gathered section is the start of a table, so its panel opens with it. */
+  openInspector: () => void;
   notice: (message: string) => void;
   title: string;
   emptyMessage: string;
@@ -32,8 +35,9 @@ export function useGatherSelection({
         return;
       }
       setSelectedIds([result.frameId]);
+      openInspector();
       if (result.skipped.length) notice(skippedMessage(result.skipped.length));
     },
-    [board, emptyMessage, notice, setSelectedIds, skippedMessage, title],
+    [board, emptyMessage, notice, openInspector, setSelectedIds, skippedMessage, title],
   );
 }

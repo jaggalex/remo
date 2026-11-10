@@ -65,6 +65,53 @@ describe("board projection", () => {
     expect(projectKanban(doc)).toEqual({ columns: [], swimlanes: [], cards: [] });
   });
 
+  it("projects table axes and cell membership into props", () => {
+    const doc = boardDoc({
+      widgets: [
+        {
+          id: "table",
+          type: "frame",
+          parentId: null,
+          x: 0,
+          y: 0,
+          width: 600,
+          height: 400,
+          layout: {
+            kind: "table",
+            active: true,
+            columns: [
+              { id: "c1", title: "Now" },
+              { id: "c2", title: "Next" },
+            ],
+            rows: [{ id: "r1", title: "Step" }],
+          },
+        },
+        {
+          id: "note",
+          type: "sticky_note",
+          parentId: "table",
+          x: 0,
+          y: 0,
+          width: 160,
+          height: 180,
+          cell: { rowId: "r1", columnId: "c2" },
+        },
+      ],
+    });
+    const { widgets } = projectBoard(doc);
+    const frame = widgets.find((row) => row.id === "table");
+    const note = widgets.find((row) => row.id === "note");
+    expect(frame.props.table).toEqual({
+      active: true,
+      columns: [
+        { id: "c1", title: "Now" },
+        { id: "c2", title: "Next" },
+      ],
+      rows: [{ id: "r1", title: "Step" }],
+    });
+    expect(note.props.cell).toEqual({ rowId: "r1", columnId: "c2" });
+  });
+
   it("flattens widgets with their style colours", () => {
     const doc = boardDoc({
       widgets: [

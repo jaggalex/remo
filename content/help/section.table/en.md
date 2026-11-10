@@ -4,7 +4,7 @@ A section (frame) can be shown as a table: it gets columns and rows, and objects
 
 ## Steps
 
-1. Select the section and open **Properties**.
+1. Select the section and open **Properties**. A section just created with **Gather into section** opens the panel for you.
 2. In the **View** group choose **Table**. A column with the existing material and an empty column appear, plus a row.
 3. **+ Column** and **+ Row** add axes. Choose an axis in the panel or by clicking its header on the canvas; clicking the header again opens its menu: rename, insert a neighbour, move, turn, size, delete.
 4. A double click on a header (or Enter/F2) edits the title in place: Enter commits, Tab moves to the next header, Esc cancels.

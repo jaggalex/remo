@@ -66,6 +66,15 @@ export function useBoardChrome({
     }
   });
 
+  const openInspector = useCallback(() => {
+    setInspectorOpen(true);
+    try {
+      window.localStorage.setItem("remo.inspector", "open");
+    } catch {
+      // The panel is already open for this visit; persistence is a convenience.
+    }
+  }, []);
+
   const toggleInspector = useCallback(() => {
     setInspectorOpen((open) => {
       const next = !open;
@@ -88,6 +97,7 @@ export function useBoardChrome({
     shareFallback,
     closeShareFallback: () => setShareFallback(null),
     inspectorOpen,
+    openInspector,
     toggleInspector,
   };
 }
