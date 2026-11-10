@@ -3,6 +3,7 @@
  */
 import { kindOf } from "./kinds";
 import type { Tag } from "./tags";
+import type { CellPlacement, TableLayout } from "./table";
 
 export type WidgetType =
   | "frame"
@@ -119,6 +120,20 @@ export interface Widget extends Rect {
    * not nest (ADR-022).
    */
   groupId?: string;
+  /**
+   * The table layout of a section (ADR-196, ADR-199).
+   *
+   * Absent means the free layout. Only a frame carries it; the painter, hit-testing,
+   * export and backup read it through the same type.
+   */
+  layout?: TableLayout;
+  /**
+   * The cell this ordinary object belongs to when its parent frame is a table.
+   *
+   * World coordinates remain the source of truth; the cell is membership, not a second
+   * coordinate system (ADR-199).
+   */
+  cell?: CellPlacement;
   rotation?: number;
   /**
    * The object's text.

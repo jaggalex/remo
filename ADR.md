@@ -8136,3 +8136,42 @@ and conflicts are explained before anything moves.
 in the arrange bar with a boundary preview and a conflict confirmation, and an e2e
 scenario for ids, links and undo. Nested sections, per-cell permissions and converting a
 gathered section to a table remain out of scope; the table itself is ADR-196.
+
+## ADR-199: A table cell keeps the object in world coordinates, and fills are named overrides (extends ADR-196)
+
+**Status:** accepted (2026-11-10); implementation pending. This is the model contract
+E6.1 implements; field names may still change before the first migration.
+
+**Context.** ADR-196 says a child keeps its offset in the cell and that table, header,
+column, row and cell may carry a fill, but the schema did not name either field. Two
+implementations could read the same sentence differently and write incompatible documents.
+
+**Decision.**
+
+- **`frame.layout`** is absent (free) or `{ kind: "table", columns: Axis[], rows:
+  Axis[], appearance?: TableAppearance }`.
+- **`Axis = { id: string; title: string; size?: "auto" | "narrow" | "medium" | "wide";
+  vertical?: boolean }`.** Ids are stable; order and title are not identity.
+- **A child stores `cell: { rowId: string; columnId: string }`.** The object's `x`/`y`
+  remain absolute world coordinates, as everywhere else in the document. The cell box is
+  derived from the axes and the objects it holds; the offset inside the cell is
+  `object centre - cell origin` at paint time. Moving the section moves the children
+  through `parentId`, so their offsets survive; resizing an axis moves the cell edge, not
+  the object, and the object stays in the cell. No second coordinate system is stored.
+- **`TableAppearance`** holds optional hex overrides: `table?: string`, `headers?:
+  string`, `columns?: Record<axisId, string>`, `rows?: Record<axisId, string>`, `cells?:
+  Record<"rowId:columnId", string>`. The most specific wins: cell, then row, then column,
+  then headers/table. An absent key means "as before"; clearing an override deletes the
+  key. Fills never change the object's own style (ADR-127).
+- **Reading.** A missing `layout` is free (no migration of old rooms). A malformed
+  `layout`, axis, cell or fill is dropped by the reader (ADR-171), so a bad value falls
+  back to free/absent instead of blanking the room. A cell that names a missing axis is
+  ignored; the object stays in the section.
+- **Writing.** Axis and cell changes go through the document command layer in one
+  transaction each; exports and backups carry `layout`, `cell` and `appearance`, and an
+  older client must not rewrite an unknown layout (version gate before release).
+
+**Consequences.** `@remo/model` gains the table types and the reader; `@remo/doc` gains
+the axis/cell commands; the painter, hit-testing, export, backup and AI projection read
+the same fields. Limits on axes and objects, presentation order beyond "by rows", and the
+default first-axis seeding remain open (ADR-196, H4).

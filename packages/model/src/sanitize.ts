@@ -159,6 +159,69 @@ function validRun(value: unknown): boolean {
   return isObject(value) && typeof value.text === "string";
 }
 
+const AXIS_SIZES = new Set(["auto", "narrow", "medium", "wide"]);
+
+function validAxis(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    typeof value.id === "string" &&
+    typeof value.title === "string" &&
+    (value.size === undefined ||
+      (typeof value.size === "string" && AXIS_SIZES.has(value.size))) &&
+    (value.vertical === undefined || typeof value.vertical === "boolean")
+  );
+}
+
+function readFillMap(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const [key, fill] of Object.entries(value)) {
+    if (typeof fill === "string") output[key] = fill;
+  }
+  return output;
+}
+
+function readLayout(value: unknown): Raw | undefined {
+  if (!isObject(value) || value.kind !== "table") return undefined;
+  if (!Array.isArray(value.columns) || !Array.isArray(value.rows)) return undefined;
+  const seen = new Set<string>();
+  const axes = (list: unknown[]): Raw[] => {
+    const output: Raw[] = [];
+    for (const entry of list) {
+      if (!validAxis(entry)) continue;
+      const axis = entry as Raw;
+      const id = axis.id as string;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      output.push(axis);
+    }
+    return output;
+  };
+  const columns = axes(value.columns);
+  const rows = axes(value.rows);
+  if (!columns.length || !rows.length) return undefined;
+  const layout: Raw = { kind: "table", columns, rows };
+  if (isObject(value.appearance)) {
+    const appearance: Raw = {};
+    for (const key of ["table", "headers"] as const) {
+      if (typeof value.appearance[key] === "string") appearance[key] = value.appearance[key];
+    }
+    for (const key of ["columns", "rows", "cells"] as const) {
+      const map = readFillMap(value.appearance[key]);
+      if (map) appearance[key] = map;
+    }
+    if (Object.keys(appearance).length) layout.appearance = appearance;
+  }
+  return layout;
+}
+
+function readCell(value: unknown): Raw | undefined {
+  if (!isObject(value) || typeof value.rowId !== "string" || typeof value.columnId !== "string") {
+    return undefined;
+  }
+  return { rowId: value.rowId, columnId: value.columnId };
+}
+
 /** A link this build can open safely, or null. */
 function readLink(value: unknown): Raw | null {
   if (!isObject(value)) return null;
@@ -235,6 +298,18 @@ export function readWidget(raw: unknown, id: string): Widget | null {
   if ("runs" in raw) {
     if (!Array.isArray(raw.runs)) repair.drop("runs");
     else if (!raw.runs.every(validRun)) repair.set("runs", raw.runs.filter(validRun));
+  }
+
+  if ("layout" in raw) {
+    const layout = readLayout(raw.layout);
+    if (!layout) repair.drop("layout");
+    else if (layout !== raw.layout) repair.set("layout", layout);
+  }
+
+  if ("cell" in raw) {
+    const cell = readCell(raw.cell);
+    if (!cell) repair.drop("cell");
+    else if (cell !== raw.cell) repair.set("cell", cell);
   }
 
   for (const key of ["start", "end"] as const) {
