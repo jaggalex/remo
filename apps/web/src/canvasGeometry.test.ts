@@ -8,6 +8,7 @@ import {
   barTop,
   connectTargetAt,
   copySlot,
+  freeConnectedCenter,
   bendAxis,
   cornerAt,
   cornerPoints,
@@ -287,8 +288,14 @@ describe("port click and the copy slot (ADR-137)", () => {
     expect(copySlot(source, "down", gap).center).toEqual({ x: 0, y: 160 });
   });
 
-  it("calls the slot occupied by intersection, not by the object's centre", () => {
-    // A wide note reaches into the slot; its centre (350) is outside the copy (110…210).
+  it("walks past an occupied slot for Create new", () => {
+    const blocker = item("b", 160, 0);
+    const free = freeConnectedCenter(source, "right", [source, blocker], new Map(), gap);
+    expect(free.center).toEqual({ x: 320, y: 0 });
+    expect(free.rect.x).toBe(270);
+  });
+
+  it("calls the slot occupied by intersection, not by the object's centre", () => {    // A wide note reaches into the slot; its centre (350) is outside the copy (110…210).
     const wide = item("wide", 350, 0, 400, 100);
     expect(anchorSlotDecision(source, "right", [source, wide], new Map(), gap)).toMatchObject({
       kind: "connect",

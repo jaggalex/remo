@@ -366,7 +366,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
 
   /** One note beside another, linked, in one undo step; the caret moves there. */
   const addConnectedNote = useCallback(
-    (sourceId: string, direction: NoteDirection) => {
+    (sourceId: string, direction: NoteDirection, center?: { x: number; y: number }) => {
       const created = createConnectedNote(
         board,
         sourceId,
@@ -374,6 +374,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
         { note: newId("sticky"), connector: newId("conn") },
         lastConnector.current,
         { ratio: settings.notes.gapRatio, min: settings.notes.minGap },
+        center,
       );
       if (!created) return;
       setSelectedIds([created]);
@@ -398,10 +399,6 @@ export function useBoardCommands(deps: BoardCommandDeps) {
         setNoteTextAlign(board, selectedIds, align),
       setVAlign: (vAlign: "top" | "middle" | "bottom") =>
         setNoteTextVAlign(board, selectedIds, vAlign),
-      addConnected: (direction: NoteDirection) => {
-        const source = selectedIds[0];
-        if (source) addConnectedNote(source, direction);
-      },
       applyShapePreset: (preset: ShapePreset) =>
         // One `transact` for fill, outline and width: one chip, one undo step. A preset
         // is a complete look, so it also makes the border solid again (ADR-120).
@@ -411,7 +408,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
         }),
       remove: () => requestDelete(selectedIds),
     }),
-    [addConnectedNote, board, requestDelete, selectedIds],
+    [board, requestDelete, selectedIds],
   );
 
   const noteMarks = useCallback((id: string) => noteMarksOf(board, id), [board]);

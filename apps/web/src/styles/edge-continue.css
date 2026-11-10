@@ -1,0 +1,86 @@
+/* The quiet "+" on a selected object's edge (ADR-195). */
+
+.edge-continue-layer {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-bar);
+  pointer-events: none;
+}
+
+.edge-continue {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-primary);
+  pointer-events: auto;
+}
+
+/* The 24 px disc sits inside the 44 px hit area, so a touch still lands. */
+.edge-continue::before {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--bg-panel);
+  opacity: 0.55;
+}
+
+.edge-continue .rm-icon {
+  position: relative;
+  opacity: 0.55;
+}
+
+.edge-continue:hover::before,
+.edge-continue:focus-visible::before,
+.edge-continue.is-selected::before {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.edge-continue:hover .rm-icon,
+.edge-continue:focus-visible .rm-icon,
+.edge-continue.is-selected .rm-icon {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.edge-continue-card {
+  position: absolute;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 240px;
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-bar);
+  pointer-events: auto;
+}
+
+.edge-continue-title,
+.edge-continue-hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+.edge-continue-title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.edge-continue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}

@@ -10,6 +10,7 @@ import { inkFor, routingOf, stickyFill, stickyFontCap, type StickySize, type Tex
 import type { ArrangeBarTarget } from "./ArrangeBar";
 import type { ConnectorBarTarget } from "./ConnectorBar";
 import type { StickyBarTarget } from "./StickyBar";
+import type { NoteDirection } from "@remo/doc";
 import type { BoardSettings } from "./settings";
 import { barTop } from "./canvasGeometry";
 import { DEFAULT_FILL, DEFAULT_INK } from "./objectDefaults";
@@ -68,6 +69,32 @@ function screenBox(widget: Widget, frame: Frame) {
     width: widget.width * camera.zoom,
     height: widget.height * camera.zoom,
   };
+}
+
+/** One quiet "+" on a side of the selected object (ADR-195). */
+export interface EdgeContinueTarget {
+  direction: NoteDirection;
+  /** Top-left of the 44 px hit area, centred on the side. */
+  left: number;
+  top: number;
+}
+
+/**
+ * The four edge targets around a selected note or shape.
+ *
+ * The visual disc is 24 px and the hit area 44 px, so the button is placed half its hit
+ * area outside the side's midpoint. The caller draws the disc inside the button; the
+ * arithmetic here is only where the hit area goes.
+ */
+export function edgeContinueTargets(widget: Widget, frame: Frame): EdgeContinueTarget[] {
+  const box = screenBox(widget, frame);
+  const half = 22;
+  return [
+    { direction: "left", left: box.left - half, top: box.top + box.height / 2 - half },
+    { direction: "right", left: box.left + box.width - half, top: box.top + box.height / 2 - half },
+    { direction: "up", left: box.left + box.width / 2 - half, top: box.top - half },
+    { direction: "down", left: box.left + box.width / 2 - half, top: box.top + box.height - half },
+  ];
 }
 
 /** The note/shape bar: colour, text and size controls for the object itself. */

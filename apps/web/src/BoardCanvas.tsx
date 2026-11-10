@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  boxOf,
   connectorPath,
   pathPolyline,
-  fitToBounds,
   layoutKanban,
   screenToWorld,
-  unionBox,
   visibleWorldRect,
   zoomAt,
   type KanbanLayout,
@@ -29,8 +26,10 @@ import {
   type Widget,
 } from "@remo/model";
 import { InlineEditor } from "./InlineEditor";
+import type { ContinuePreview } from "./canvasGeometry";
 import { useGestures } from "./useGestures";
 import { useCanvasPainting } from "./useCanvasPainting";
+import { useBoardCameraFit } from "./useBoardCameraFit";
 import { useCanvasProbe } from "./useCanvasProbe";
 import { CanvasHud } from "./CanvasHud";
 import { CanvasHint } from "./CanvasHint";
@@ -47,6 +46,7 @@ import { contextTargetAt, type ContextTarget } from "./canvasTargets";
 import { editorTargetFor } from "./editorTarget";
 import { ConnectorBar, type ConnectorBarActions } from "./ConnectorBar";
 import { StickyBar, type StickyBarActions } from "./StickyBar";
+import { EdgeContinueLayer } from "./EdgeContinueLayer";
 import { ArrangeBar, type ArrangeBarActions } from "./ArrangeBar";
 import { useI18n } from "./i18n";
 import { toggleMark as toggleMarkInDom } from "./richText";
@@ -110,7 +110,11 @@ interface Props {
   /** Marks common to the whole note, or null when they differ. */
   noteMarks: (id: string) => TextMarks | null;
   /** Auto-create a connected note beside `id` and start editing it. */
-  onCreateConnected: (id: string, direction: NoteDirection) => void;
+  onCreateConnected: (
+    id: string,
+    direction: NoteDirection,
+    center?: { x: number; y: number },
+  ) => void;
   /** Connector properties shown when a line is selected. */
   connectorActions: ConnectorBarActions;
   /** Arrange the multi-selection: six edges, two distributions, grouping and More. */
@@ -240,6 +244,8 @@ export function BoardCanvas({
   const [viewport, setViewport] = useState({ width: 1, height: 1 });
   /** A live presentation hides state marks that are not content (ADR-193). */
   const [presenting, setPresenting] = useState(false);
+  /** The edge "+" preview, painted by the overlay until the click (ADR-195). */
+  const [continuePreview, setContinuePreview] = useState<ContinuePreview | null>(null);
   // The canvas owns the camera subscription: panning repaints this component, not the
   // forty-four hooks above it in BoardApp (review P6).
   const camera = useCamera();
@@ -361,6 +367,7 @@ export function BoardCanvas({
     kanbanStates,
     clock: timerLeft,
     presenting,
+    continuePreview,
     t,
   });
 
@@ -565,52 +572,16 @@ export function BoardCanvas({
     };
   }, []);
 
-  const fit = useCallback(() => {
-    if (!viewport.width || !viewport.height) return;
-    // Fit what the person is looking at: a selection if there is one, the whole
-    // board otherwise. `widgetById` resolves a card to its cell, so a kanban's cards
-    // are not measured at the origin they do not occupy.
-    const ids = selectedIds.length ? [...selectedIds] : widgets.map((widget) => widget.id);
-    const boxes = ids
-      .map((id) => widgetById(id))
-      .filter((widget): widget is Widget => Boolean(widget))
-      .map((widget) => boxOf(widget));
-    const target = unionBox(boxes);
-    if (target) setCamera(fitToBounds(target, { x: 0, y: 0, ...viewport }));
-  }, [setCamera, selectedIds, viewport, widgetById, widgets]);
-
-  /** Zoom around the middle of the canvas, for the two HUD buttons. */
-  const zoomBy = useCallback(
-    (factor: number) => {
-      setCamera(
-        zoomAt(
-          camera,
-          { x: 0, y: 0, width: viewport.width, height: viewport.height },
-          { x: viewport.width / 2, y: viewport.height / 2 },
-          factor,
-        ),
-      );
-    },
-    [camera, setCamera, viewport.height, viewport.width],
-  );
-
-  const fittedFor = useRef<string | null>(null);
-  const emptyAfterSync = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (viewport.width <= 1 || viewport.height <= 1) return;
-    if (!widgets.length) {
-      if (synced) emptyAfterSync.current = fitKey;
-      return;
-    }
-    const key = `${fitKey}@${Math.round(viewport.width)}x${Math.round(viewport.height)}`;
-    if (fittedFor.current === key) return;
-    fittedFor.current = key;
-    // A server draft arriving in an already open empty room must keep the view in place.
-    if (emptyAfterSync.current === fitKey
-        && widgets.every((widget) => widget.agent?.skill === "room-draft")) return;
-    fit();
-  }, [fit, fitKey, synced, viewport.height, viewport.width, widgets]);
+  const { fit, zoomBy } = useBoardCameraFit({
+    camera,
+    setCamera,
+    viewport,
+    widgets,
+    selectedIds,
+    widgetById,
+    fitKey,
+    synced,
+  });
 
   const worldCursor = cursor ? toWorld({ clientX: cursor.x, clientY: cursor.y }) : null;
   const selectedKanbanId = selectedIds.find((id) => kanbanStates[id]);
@@ -641,6 +612,9 @@ export function BoardCanvas({
     };
   }, [selectedWidget, settings.connectors.stubMax, settings.connectors.stubRatio, widgetById]);
   const selectedGroup = soleSelectedGroup(widgets, selectedIds);
+  const edgeSource = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
+  const edgeBusy =
+    gestures.dragIds.length > 0 || (edgeSource ? gestures.preview.has(edgeSource.id) : false);
 
   /**
    * The note toolbar's target: one note, in screen coordinates.
@@ -707,6 +681,20 @@ export function BoardCanvas({
           []
         }
         selectedLineSize={selectedLineSize}
+      />
+      <EdgeContinueLayer
+        source={edgeSource ?? null}
+        frame={{ camera, viewport }}
+        widgets={widgets}
+        layouts={layouts}
+        settings={settings}
+        readOnly={Boolean(readOnly)}
+        editing={Boolean(editingId)}
+        busy={edgeBusy}
+        presenting={presenting}
+        onPreview={setContinuePreview}
+        onCreate={onCreateConnected}
+        onConnect={onConnect}
       />
       <PresentationLayer
         board={board}

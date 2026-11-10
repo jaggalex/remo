@@ -5,6 +5,8 @@ import {
   cornerPoints,
   placedWidget,
   placementOfCard,
+  sideOfDirection,
+  type ContinuePreview,
 } from "./canvasGeometry";
 import {
   anchorPoint,
@@ -329,6 +331,8 @@ export interface OverlayPaintInput {
   proposal?: ProposalLayout | null;
   /** Presentation hides state marks that are not content (ADR-193). */
   presenting?: boolean;
+  /** The edge "+" preview, painted until the click (ADR-195). */
+  continuePreview?: ContinuePreview | null;
 }
 
 export function paintOverlayLayer(input: OverlayPaintInput): void {
@@ -352,6 +356,7 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     focusedWaypoint,
     proposal,
     presenting,
+    continuePreview,
   } = input;
   const palette = theme.palette;
   const visible = visibleWorldRect(camera, viewport);
@@ -384,6 +389,10 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
         withAlpha(palette.textPrimary, 0.75),
       );
     }
+  }
+
+  if (continuePreview && !presenting) {
+    drawContinuePreview(ctx, continuePreview, camera.zoom, theme);
   }
 
   // Four connector anchors on a single selection, and the link being dragged.
@@ -544,4 +553,62 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   }
 
   ctx.restore();
+}
+
+/**
+ * Paint the result of an edge "+" before the click (ADR-195).
+ *
+ * A free slot shows the dashed copy and the line that will join it; an occupied slot
+ * highlights the target and the future line; a duplicate only highlights the pair and
+ * leaves the action card to say "Already connected". Nothing here writes to the document.
+ */
+function drawContinuePreview(
+  ctx: CanvasRenderingContext2D,
+  preview: ContinuePreview,
+  zoom: number,
+  theme: PaintTheme,
+): void {
+  const { source, direction, decision, freeCenter } = preview;
+  const palette = theme.palette;
+  const from = anchorPoint(boxOf(source), sideOfDirection(direction));
+
+  ctx.save();
+  ctx.strokeStyle = palette.accent;
+  ctx.lineWidth = 2 / zoom;
+  ctx.setLineDash([6 / zoom, 4 / zoom]);
+
+  if (decision.kind === "connect" || decision.kind === "duplicate") {
+    const target = boxOf(decision.target);
+    if (decision.kind === "connect") {
+      const to = anchorPoint(target, decision.endSide);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([4 / zoom, 4 / zoom]);
+    const pad = 4 / zoom;
+    ctx.strokeRect(
+      target.x - pad,
+      target.y - pad,
+      target.width + pad * 2,
+      target.height + pad * 2,
+    );
+  } else if (freeCenter) {
+    const ghost = { ...source, x: freeCenter.x, y: freeCenter.y };
+    const to = anchorPoint(boxOf(ghost), oppositeSide(sideOfDirection(direction)));
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.stroke();
+    ctx.globalAlpha = 0.45;
+    drawWidget(ctx, ghost, zoom, { theme });
+  }
+
+  ctx.restore();
+}
+
+/** The side of the copy that faces the source. */
+function oppositeSide(side: ConnectorSide): ConnectorSide {
+  return side === "left" ? "right" : side === "right" ? "left" : side === "top" ? "bottom" : "top";
 }

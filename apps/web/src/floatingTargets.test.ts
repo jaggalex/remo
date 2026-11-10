@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Widget } from "@remo/model";
-import { arrangeBarTarget, commonColour, connectorBarTarget, noteBarTarget, type Frame } from "./floatingTargets";
+import { arrangeBarTarget, commonColour, connectorBarTarget, edgeContinueTargets, noteBarTarget, type Frame } from "./floatingTargets";
 import { DEFAULT_SETTINGS } from "./settings";
 
 /**
@@ -324,6 +324,26 @@ describe("the connector bar", () => {
       strokeStyle: "dashed",
       hasLabel: true,
       ink: "#305bab",
+    });
+  });
+});
+
+describe("the edge continue targets (ADR-195)", () => {
+  it("puts four 44 px hit areas on the side midpoints", () => {
+    const targets = edgeContinueTargets(note("n", 0, 0), frame);
+    expect(targets.map((target) => target.direction).sort()).toEqual([
+      "down",
+      "left",
+      "right",
+      "up",
+    ]);
+    expect(targets.find((target) => target.direction === "right")).toMatchObject({
+      left: 428,
+      top: 278,
+    });
+    expect(targets.find((target) => target.direction === "left")).toMatchObject({
+      left: 328,
+      top: 278,
     });
   });
 });

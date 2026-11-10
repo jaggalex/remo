@@ -10,7 +10,7 @@ import {
   type ConnectorPath,
   type KanbanLayout,
 } from "@remo/canvas";
-import { connectedNoteCenter, type GapOptions, type NoteDirection } from "@remo/doc";
+import { connectedNoteCenter, noteGap, type GapOptions, type NoteDirection } from "@remo/doc";
 import {
   canConnect,
   joinsWithin,
@@ -388,11 +388,77 @@ function overlaps(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
+/**
+ * The first free copy slot in `direction`, used by "Create new" in an occupied slot
+ * (ADR-195).
+ *
+ * The preview and the command call this same function, so what the person sees before
+ * the click is exactly where the copy lands. The search walks in whole source extents
+ * plus the tuned gap; only connectable leaves block a slot, because a frame or a line
+ * in it still leaves room for a note.
+ */
+export function freeConnectedCenter(
+  source: Widget,
+  direction: NoteDirection,
+  widgets: readonly Widget[],
+  layouts: Map<string, KanbanLayout>,
+  options: GapOptions = {},
+): CopySlot {
+  const gap = noteGap(source.width, source.height, options);
+  const stepX =
+    direction === "right" ? source.width + gap : direction === "left" ? -(source.width + gap) : 0;
+  const stepY =
+    direction === "down" ? source.height + gap : direction === "up" ? -(source.height + gap) : 0;
+  let center = connectedNoteCenter(source, direction, options);
+
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    const rect = {
+      x: center.x - source.width / 2,
+      y: center.y - source.height / 2,
+      width: source.width,
+      height: source.height,
+    };
+    const occupied = widgets.some((widget) => {
+      if (widget.id === source.id || !canConnect(widget)) return false;
+      if (
+        widget.type === "card" &&
+        widget.parentId &&
+        layouts.has(widget.parentId) &&
+        !placementOfCard(layouts, widget.id)
+      ) {
+        return false;
+      }
+      return overlaps(rect, boxOf(placedWidget(widget, layouts)));
+    });
+    if (!occupied) return { center, rect };
+    center = { x: center.x + stepX, y: center.y + stepY };
+  }
+
+  return {
+    center,
+    rect: {
+      x: center.x - source.width / 2,
+      y: center.y - source.height / 2,
+      width: source.width,
+      height: source.height,
+    },
+  };
+}
+
 /** What a port click does with the slot it computed. */
 export type AnchorSlotDecision =
   | { kind: "clone" }
   | { kind: "connect"; target: Widget; endSide: ConnectorSide }
   | { kind: "duplicate"; target: Widget };
+
+/** The transient preview the edge "+" paints before a click (ADR-195). */
+export interface ContinuePreview {
+  source: Widget;
+  direction: NoteDirection;
+  decision: AnchorSlotDecision;
+  /** The free slot for a clone or "Create new"; absent for a pure connect. */
+  freeCenter?: { x: number; y: number };
+}
 
 /**
  * Decide the outcome of a port click (ADR-137).
