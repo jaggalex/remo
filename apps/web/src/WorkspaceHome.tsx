@@ -14,9 +14,11 @@ import { NewBoardDialog } from "./NewBoardDialog";
 import { OrganisationDialog } from "./OrganisationDialog";
 import { SessionsDialog } from "./SessionsDialog";
 import { AccountMenu } from "./topbar/AccountMenu";
+import { InterfaceToggles } from "./topbar/InterfaceToggles";
 import { formatDate, formatDateTime } from "./format";
 import { loadIdentity, type Identity } from "./identity";
 import { useBoardAccess } from "./useBoardAccess";
+import { useAccountPreferences } from "./useAccountPreferences";
 import { useCursorIdentity } from "./useCursorIdentity";
 import { useI18n } from "./i18n";
 import { useTheme } from "./useTheme";
@@ -79,6 +81,7 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
   const { t, lang, setLang } = useI18n();
   const { theme, setTheme } = useTheme();
   const { me, setMe, orgs, refreshOrgs, sessionReady } = useBoardAccess(null);
+  useAccountPreferences({ me, theme, setTheme, lang, setLang });
   const [identity, setIdentity] = useState<Identity>(() => loadIdentity());
   const { renameSelf, forgetAccountName } = useCursorIdentity({
     accountName: me?.name,
@@ -324,10 +327,6 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
             identityName={identity.name}
             onRenameSelf={renameSelf}
             onAccountRenamed={(user: SessionUser) => setMe(user)}
-            theme={theme}
-            onTheme={setTheme}
-            lang={lang}
-            onLang={setLang}
             orgName={activeOrg?.name ?? null}
             onOrg={() => {
               setAccountOpen(false);
@@ -343,6 +342,7 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
             }}
             onSignOut={() => void signOut()}
           />
+          <InterfaceToggles theme={theme} onTheme={setTheme} />
         </div>
       </header>
 

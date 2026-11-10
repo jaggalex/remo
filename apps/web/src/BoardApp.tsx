@@ -661,7 +661,6 @@ export function BoardApp() {
         roleLine={roleLine}
         renameSelf={renameSelf} onAccountRenamed={setMe}
         theme={theme} setTheme={setTheme}
-        lang={lang} setLang={setLang}
         setAccountOpen={(value) => (value ? openAccount("people") : setAccountOpen(false))}
         setAuthOpen={setAuthOpen}
         onSignOut={() => void signOutAndForgetName()}

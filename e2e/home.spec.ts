@@ -42,6 +42,18 @@ test("trashes a board and restores it from the home", async ({ page }) => {
   await expect(home.locator(".home-tile").filter({ hasText: "Trash board" })).toBeVisible();
 });
 
+test("the home header toggles theme and language in place", async ({ page }) => {
+  await freshBoard(page, "home-prefs");
+  await page.getByRole("button", { name: "All rooms" }).click();
+
+  const home = page.locator(".home");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await home.getByRole("button", { name: /Theme: light/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await home.getByRole("button", { name: /Language: English/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+});
+
 test("sorts board tiles and pages them twenty-four at a time", async ({ page }) => {
   const account = await freshBoard(page, "home-pages", { title: "Base board" });
   for (let index = 1; index <= 25; index += 1) {

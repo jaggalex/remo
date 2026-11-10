@@ -5,12 +5,14 @@ import type { Theme } from "./useTheme";
 
 type AccountPreferences = NonNullable<SessionUser["preferences"]>;
 
-const THEMES = new Set<Theme>(["system", "light", "dark"]);
 const LANGS = new Set<Lang>(["ru", "en"]);
 
 function serverTheme(preferences: AccountPreferences | undefined): Theme | null {
   const value = preferences?.theme;
-  return value && THEMES.has(value) ? value : null;
+  // ADR-194: `system` is read as light and stays on the server until the person picks.
+  if (value === "dark") return "dark";
+  if (value === "light" || value === "system") return "light";
+  return null;
 }
 
 function serverLang(preferences: AccountPreferences | undefined): Lang | null {

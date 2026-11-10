@@ -1,19 +1,19 @@
-import { Avatar, Button, Input, Popover, Segmented } from "@remo/ui";
+import { Avatar, Button, Input, Popover } from "@remo/ui";
 import { useEffect, useState } from "react";
 import type { Presence } from "@remo/doc";
 import { api, ApiError, type SessionUser } from "../api";
-import { useI18n, type Lang } from "../i18n";
+import { useI18n } from "../i18n";
 import { ABOUT_LABEL } from "../about";
-import type { Theme } from "../useTheme";
 import { useMenuFocus } from "../useMenuFocus";
 
 /**
  * The account avatar and the interface menu behind it (ADR-119, Ш3/Ш5).
  *
  * The name appears once — on the avatar, with the full name in its tooltip — and the
- * menu answers "who am I here and how is my interface set up": role source, the name on
- * the cursor, theme, language, the organisation and the way out. A link visitor has no
- * account, so the same menu keeps theme and language and offers a sign-in instead.
+ * menu answers "who am I here and where do I go": role source, the name on the cursor,
+ * the organisation and the way out. Theme and language moved to the header's right edge
+ * (ADR-194), so they are not repeated here. A link visitor has no account, so the same
+ * menu offers a sign-in instead.
  */
 export function AccountMenu({
   open,
@@ -27,10 +27,6 @@ export function AccountMenu({
   identityName,
   onRenameSelf,
   onAccountRenamed,
-  theme,
-  onTheme,
-  lang,
-  onLang,
   orgName,
   onOrg,
   onSessions,
@@ -51,17 +47,13 @@ export function AccountMenu({
   identityName: string;
   onRenameSelf: (value: string) => void;
   onAccountRenamed: (user: SessionUser) => void;
-  theme: Theme;
-  onTheme: (value: Theme) => void;
-  lang: Lang;
-  onLang: (value: Lang) => void;
   orgName: string | null;
   onOrg: () => void;
   onSessions: () => void;
   onSignIn: () => void;
   onSignOut: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const anchor = useMenuFocus(open, true, ".rm-popover input");
   const [nameDraft, setNameDraft] = useState(name);
   const [handleDraft, setHandleDraft] = useState(handle);
@@ -181,33 +173,6 @@ export function AccountMenu({
               onChange={(event) => onRenameSelf(event.currentTarget.value)}
             />
           )}
-
-          <div className="account-field">
-            <span className="account-field-label">{t("theme.label")}</span>
-            <Segmented
-              label={t("theme.label")}
-              value={theme}
-              onChange={(value) => onTheme(value as Theme)}
-              options={[
-                { value: "system", label: t("theme.system") },
-                { value: "light", label: t("theme.light") },
-                { value: "dark", label: t("theme.dark") },
-              ]}
-            />
-          </div>
-
-          <div className="account-field">
-            <span className="account-field-label">{t("board.language")}</span>
-            <Segmented
-              label={t("board.language")}
-              value={lang}
-              onChange={(value) => onLang(value as Lang)}
-              options={[
-                { value: "ru", label: t("lang.ru") },
-                { value: "en", label: t("lang.en") },
-              ]}
-            />
-          </div>
 
           <span className="account-sep" role="separator" />
           {signedIn ? (

@@ -4,7 +4,7 @@ import type { Presence, SaveState } from "@remo/doc";
 import { Button, IconButton, Separator, Tooltip } from "@remo/ui";
 import type { SessionUser } from "./api";
 import type { FollowState } from "./follow";
-import { useI18n, type Lang } from "./i18n";
+import { useI18n } from "./i18n";
 import type { Identity } from "./identity";
 import type { Theme } from "./useTheme";
 import { TEMPLATE_KEYS, type TemplateKey } from "@remo/model";
@@ -13,6 +13,7 @@ import { BoardTitleMenu, boardMenuItems } from "./topbar/BoardTitleMenu";
 import { FacilitationMenu } from "./topbar/FacilitationMenu";
 import { MoreMenu } from "./topbar/MoreMenu";
 import { AccountMenu } from "./topbar/AccountMenu";
+import { InterfaceToggles } from "./topbar/InterfaceToggles";
 import { Peers } from "./topbar/Peers";
 import { SyncLine } from "./topbar/SyncLine";
 import { SessionsDialog } from "./SessionsDialog";
@@ -84,8 +85,6 @@ export interface BoardTopbarProps {
   onAccountRenamed: (user: SessionUser) => void;
   theme: Theme;
   setTheme: (value: Theme) => void;
-  lang: Lang;
-  setLang: (value: Lang) => void;
   setAccountOpen: (value: boolean) => void;
   setAuthOpen: (value: boolean) => void;
   onSignOut: () => void;
@@ -115,7 +114,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
     timerRunning, timerHint, setVoteOpen, setTimerOpen, setFollowOpen, setAgentOpen,
     setAppsOpen, onReact, follow, toggleFollow, myFollowers, otherPeers, followOpen,
     roomAgent, canAssignAgent, hasRoomAgentHistory, onOpenRoomAgent,
-    visiblePresence, me, identity, roleLine, renameSelf, onAccountRenamed, theme, setTheme, lang, setLang,
+    visiblePresence, me, identity, roleLine, renameSelf, onAccountRenamed, theme, setTheme,
     setAccountOpen, setAuthOpen, onSignOut, saveState, saveLabel, saveTitle, inspectorOpen,
     toggleInspector, presentOpen, setPresentOpen, commentsOpen, setCommentsOpen,
     commentsUnread, addTemplate,
@@ -307,10 +306,6 @@ export function BoardTopbar(props: BoardTopbarProps) {
             identityName={identity.name}
             onRenameSelf={renameSelf}
             onAccountRenamed={onAccountRenamed}
-            theme={theme}
-            onTheme={setTheme}
-            lang={lang}
-            onLang={setLang}
             orgName={orgName}
             onOrg={() => setAccountOpen(true)}
             onSessions={() => setSessionsOpen(true)}
@@ -373,6 +368,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
         >
           {copied ? t("board.copied") : t("board.share")}
         </Button>
+        <InterfaceToggles theme={theme} onTheme={setTheme} />
       </div>
     </header>
     <SessionsDialog

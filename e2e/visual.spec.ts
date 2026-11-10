@@ -377,8 +377,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
 
   // Both themes: the rail is a panel, not a strip of icons on the canvas edge.
   await page.setViewportSize({ width: 1440, height: 900 });
-  await openAccount(page);
-  await page.getByRole("radio", { name: "Dark" }).click();
+  await page.getByRole("button", { name: /Theme: light/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.keyboard.press("Escape");
   // The same counters in the dark theme: the plate, the accent of my vote and the
@@ -441,9 +440,9 @@ test("the header stays on one row and its menus fit the viewport", async ({ page
   }
 
   // Both themes, with a menu open: the header is one surface, the menu another.
-  await openAccount(page);
-  await page.getByRole("radio", { name: "Dark" }).click();
+  await page.getByRole("button", { name: /Theme: light/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await openAccount(page);
   await capture(page, page.locator(".app"), "topbar-dark");
 });
 

@@ -1,14 +1,13 @@
 import { test, expect } from "@playwright/test";
-import { freshBoard, openAccount } from "./helpers";
+import { freshBoard } from "./helpers";
 
 test("theme switches in the board and survives in help", async ({ page }) => {
   await freshBoard(page, "theme");
 
-  // The board's theme lives in the account menu (spec §10, Ш5); the help portal keeps
-  // the one-button cycle, which the second half of this scenario checks.
-  await openAccount(page);
-  await expect(page.getByRole("radio", { name: "System" })).toBeChecked();
-  await page.getByRole("radio", { name: "Dark" }).click();
+  // Theme and language are the last two controls in the header (ADR-194); a new
+  // account starts light, and the account menu no longer carries the choice.
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByRole("button", { name: /Theme: light/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
   await page.reload();
