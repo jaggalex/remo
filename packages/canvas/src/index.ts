@@ -9,5 +9,7 @@ export * from "./palette";
 export * from "./render";
 export * from "./scene";
 export * from "./spatial";
+export * from "./table";
+export * from "./tablePaint";
 export * from "./textLayout";
 export * from "./proposal";

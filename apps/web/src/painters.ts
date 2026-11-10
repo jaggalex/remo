@@ -19,6 +19,7 @@ import {
   drawKanbanHover,
   drawLockBadge,
   drawProposal,
+  drawTable,
   drawWidget,
   isVisible,
   labelPoint,
@@ -191,6 +192,9 @@ export function paintBoardLayer(input: BoardPaintInput): void {
       theme,
       editingId: editingId ?? undefined,
     });
+    if (widget.type === "frame" && widget.layout?.kind === "table") {
+      drawTable(ctx, widget, widgets, camera.zoom, palette, theme.fontFamily);
+    }
     if (dragging) ctx.restore();
 
     const layout = layouts.get(painted.id);
