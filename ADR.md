@@ -7918,3 +7918,144 @@ documentation lists the cases that actually exist rather than the whole catalogu
 
 **Limits.** No custom user skill upload in this version; no per-skill budgets yet; the
 matrix and graph layouts are fixed, not user-editable templates.
+
+## ADR-193: A locked object shows a lock on the canvas (amends ADR-040, ADR-107)
+
+**Status:** accepted (2026-11-10); implementation pending.
+
+**Context.** A lock (ADR-040, author lock ADR-107) is visible only in the object bar. On the
+canvas a locked note looks like any other, so a person drags it, nothing moves, and the
+reason is not on screen. The owner asked for a lock icon on every locked object, of every
+type, as a general rule of the canvas, not of one mockup (design review of R7, 10.11.2026).
+
+**Decision.**
+
+- Every locked widget — sticky note, shape, text, card, frame, image, connector label —
+  carries the `lock-on` icon in its top-right corner, inside the bounds, 16 screen px, ink at
+  75 %. An author lock (ADR-107) uses the same icon; who locked it stays in the object bar.
+- The badge is painted by the overlay layer in screen pixels, like selection handles, so it
+  keeps its size at every zoom and is not part of the object's own picture.
+- It is state, not content: exports (PNG, PDF) and presentation do not show it.
+- It is not a control: clicking it selects the object as usual; unlocking stays in the object
+  bar, where the rights check lives.
+
+**Consequences.** One painter change and a pure "where is the badge" function with a unit
+test; a visual baseline with a locked object. A small object may have the badge cover a
+corner of its text; the badge yields no space.
+
+## ADR-194: Light theme by default, no "system"; theme and language sit at the right edge of every header (amends ADR-150)
+
+**Status:** accepted (2026-11-10); implementation pending.
+
+**Context.** ADR-150 stores `theme` as `system | light | dark` and puts the theme and the
+language in the account menu. The owner decided (design review of R1, 10.11.2026): the theme
+is the person's explicit choice with light as the default, and both preferences are one click
+from any screen, always in the same place.
+
+**Decision.**
+
+- **Two values.** The theme is `light` or `dark`. An account with no choice, or with the
+  stored value `system`, is read as `light`; the stored value is rewritten only when the
+  person picks a theme. The column keeps accepting `system` for one release so an older
+  client cannot fail the write.
+- **Two icon buttons at the right edge of every header** — the home and the room — after the
+  account (home) or after "Share" (room): the theme (sun / moon) and the language (`RU` /
+  `EN`). Each toggles in one click and names the next state in its accessible name. They are
+  always the last two controls, so they never move between screens.
+- The account menu stops offering the theme and language segments: one place, one
+  mechanism. The values still follow the account (ADR-150's wire shape is unchanged).
+
+**Consequences.** The `system` option and its media-query listener go away; help and guide
+pages that describe the account menu change. A person who relied on the system theme gets
+light once and chooses again.
+
+## ADR-195: Continuing from an object is a quiet "+" on its edge (amends ADR-137, ADR-080)
+
+**Status:** accepted (2026-11-10); implementation pending.
+
+**Context.** The continuation already exists (ADR-137 port click, `Tab`, editor `Tab`) but is
+invisible: ports appear on hover only. The UX package proposed explicit "Continue right /
+below" buttons in the object bar; the owner rejected them as heavy and asked for minimal
+translucent calls to action on the object's edges (design review of R5, 10.11.2026).
+
+**Decision.**
+
+- **A selected, editable sticky note or shape shows a translucent "+" on each side that has a
+  port**: 24 px visual, 44 px hit area, ink at 55 % on a translucent white disc, thin outline.
+  It is visible whenever the object is selected — not on hover only — and is a real button
+  reachable with `Tab` and `Enter`. The object bar no longer carries continue buttons.
+- **Hover or focus reveals it and paints the preview** (ADR-188's overlay layer): a dashed
+  ghost of the copy and a dashed line when the slot is free, or the highlighted target and
+  the dashed line when it is occupied. Nothing is written until the click.
+- **The click is ADR-137's port click**, unchanged: a free slot grows the copy and opens its
+  text; an occupied slot connects to the chosen target; an existing pair does nothing and
+  says "Already connected". In an occupied slot a second action, "Create new", places the copy
+  in the nearest free place in that direction and shows it before the click.
+- **Touch:** the first tap on "+" shows the preview, the second confirms. Shift is never the
+  only way to reach a choice. `Tab` keeps its ADR-137 meaning.
+- The "+" hides while typing, dragging, resizing and on objects the person may not edit.
+
+**Consequences.** Ports and the "+" are one affordance: the drag-from-port gesture stays for
+drawing a line to a chosen object. The preview needs a pure placement function shared by the
+painter and the command, so what is shown is what is created.
+
+## ADR-196: A section can be a table: axes, cells and their actions (extends ADR-070, ADR-110)
+
+**Status:** accepted (2026-11-10); implementation pending. The model below is the contract
+for the T1–T13 designs; field names may still change before the first migration.
+
+**Context.** The MVP's second step is "the same material becomes a structure": a section
+(frame) gets rows and columns, its objects keep their identity, links and comments, and the
+mode can be removed without losing anything. Kanban stays a different tool (cards, statuses,
+WIP); a table holds ordinary objects. In design review (R9, 10.11.2026) the owner added axis
+insertion between neighbours, moving and deleting axes, several objects per cell, and the
+table moving as one piece.
+
+**Decision.**
+
+- **Model.** `frame.layout` is absent (free) or `{ kind: "table", columns: Axis[], rows:
+  Axis[] }`; `Axis = { id, title, size?, vertical? }` with stable ids — order and titles are
+  never identity. A child object may carry `cell: { rowId, columnId }`. A cell holds one or
+  more objects arranged freely inside it: each keeps its offset in the cell, so the arrangement
+  survives a resize, a move of the table and a round trip through free layout. The cell grows to
+  fit them; objects are never scaled or cropped. Absent
+  `layout` reads as free: no migration of existing rooms. An older client that meets an
+  unknown `layout` must not rewrite it (version gate before release).
+- **A selection moves between cells as one**: objects from one or several cells dropped on a
+  cell land in it keeping their relative arrangement; the target cell is the one under the
+  pointer (or the one chosen in "Move to cell…"), a header never accepts objects, and the move
+  is one transaction and one undo.
+- **Fills are optional overrides, kept out of the way.** The table background, the header
+  background and the background of a chosen column, row or cell may be set from the tonal
+  palette (stored as hex, ADR-127); the most specific wins: cell, then row, then column, then
+  table. They live in a folded "Table appearance" group of the section panel, never on the
+  canvas; "As before" clears an override. Text on a fill keeps automatic ink (ADR-038).
+- **Moving the section moves the table**: every object keeps its cell and its offset inside
+  it; nothing is re-laid out.
+- **Axis actions**, each one transaction and one undo: add at the end ("+ Column" right,
+  "+ Row" below); insert between two neighbours (a quiet "+" on the header boundary, as in
+  ADR-195); move left/right (up/down); rename; turn a column header vertical; set its size; delete.
+- **Axis size has two modes.** `auto` (the default): the column width or row height follows
+  the outermost objects in it plus a small fixed padding; an empty axis keeps the minimum that
+  holds one object. `manual`: a preset (narrow, medium, wide) or pixels. Dragging the boundary
+  switches the axis to manual; a double click on the boundary returns it to auto. Objects are
+  never scaled or cropped: manual size cannot go below the objects it holds.
+- **Deleting an axis that holds objects asks first**: move them to the neighbouring column on
+  the left or on the right (row above or below), or delete the axis together with them. The
+  default is the move; a neighbour that does not exist is not offered at all (an edge column
+  offers one side only). An empty axis is deleted without a question.
+- **"Remove table"** returns the section to free layout; objects stay where they are on
+  screen and their cells are kept, so turning the table back on restores the structure.
+  Deleting the section keeps its objects (ADR-070); "delete with contents" is separate.
+- **Concurrency.** Axes and cells live in the shared document with stable ids; two people
+  adding an axis get two axes. If an axis is deleted while someone moves an object into it,
+  the object lands where the deleter's choice sent that axis's objects. Last write wins for
+  titles and sizes; undo is local.
+- **Every mutation goes through the command layer** with the room's edit check, like every
+  other change (ADR-094); exports and backups carry the layout.
+
+**Consequences.** New model fields need read support in `@remo/model`, the document commands,
+the painter, hit-testing, export, backup and the AI projection. A hidden DOM table mirrors
+the canvas grid for screen readers. Not decided here: limits on axes and objects (to be
+measured), presentation order beyond "by rows", and whether first-axis seeding defaults to
+"lay out by position" or "keep in the first cell" (session hypothesis H4).
