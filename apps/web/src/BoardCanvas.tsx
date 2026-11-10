@@ -695,7 +695,12 @@ export function BoardCanvas({
         presenting={presenting}
         onPreview={setContinuePreview}
         onCreate={onCreateConnected}
-        onConnect={onConnect}
+        onConnect={(fromId, toId, sides) => {
+          // The quiet "+" is the same port decision as a click on the anchor: a
+          // connection it creates is selected, exactly as the port click would.
+          const created = onConnect(fromId, toId, sides);
+          if (created) onSelect([created]);
+        }}
       />
       <PresentationLayer
         board={board}

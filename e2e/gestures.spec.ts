@@ -181,7 +181,9 @@ test("a marquee takes the line between the notes it covers", async ({ page }) =>
   expect(selected).toEqual(expect.arrayContaining([left, right, line]));
 
   // One object alone does not carry the line: clear, click a note, and the line stays out.
-  const empty = toClient(view, { x: 0, y: -160 });
+  // Above both notes but still inside the canvas: at this zoom the old point landed
+  // under the top bar, where a click never reaches the pointer handlers.
+  const empty = toClient(view, { x: 0, y: -100 });
   await page.mouse.click(empty.x, empty.y);
   const centre = toClient(view, { x: -150, y: 0 });
   await page.mouse.click(centre.x, centre.y);

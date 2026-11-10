@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { addSticky, freshBoard, savedAfterEdit, watchSave } from "./helpers";
+import { openBoard, register, savedAfterEdit, seedNote, watchSave } from "./helpers";
 
 interface Point {
   x: number;
@@ -56,9 +56,13 @@ async function stickies(page: Page): Promise<Sticky[]> {
 }
 
 test("a named group keeps its label after reload", async ({ page }) => {
-  await freshBoard(page, "group-name");
-  const firstId = await addSticky(page);
-  const secondId = await addSticky(page);
+  const account = await register(page, "group-name");
+  const firstId = await seedNote(page, account.boardId, { x: -200, y: 0 });
+  const secondId = await seedNote(page, account.boardId, { x: 200, y: 0 });
+  await openBoard(page, account.boardId);
+  await expect
+    .poll(async () => (await stickies(page)).length)
+    .toBeGreaterThanOrEqual(2);
 
   const notes = (await stickies(page)).filter(
     (note) => note.id === firstId || note.id === secondId,
@@ -68,17 +72,26 @@ test("a named group keeps its label after reload", async ({ page }) => {
   const geometry = await view(page);
   const a = notes.find((note) => note.id === firstId)!;
   const b = notes.find((note) => note.id === secondId)!;
-  // The notes cascade by 40 px; click each in a strip the other does not cover.
-  const aPoint = client(geometry, { x: a.x - a.width / 2 + 5, y: a.y });
-  const bPoint = client(geometry, { x: b.x + b.width / 2 - 5, y: b.y });
+  // The notes are seeded far apart on an empty board, so a click on each centre
+  // selects the pair without meeting the continuation targets on their edges (ADR-195).
+  const aPoint = client(geometry, { x: a.x, y: a.y });
+  const bPoint = client(geometry, { x: b.x, y: b.y });
   await page.mouse.click(aPoint.x, aPoint.y);
   await page.keyboard.down("Shift");
   await page.mouse.click(bPoint.x, bPoint.y);
   await page.keyboard.up("Shift");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds.length,
+      ),
+    )
+    .toBe(2);
 
   // Grouping lives on the multi-selection bar in front of the selection (ADR-120);
   // the inspector's button is the same command from the side panel.
   await page.locator(".arrange-bar").getByRole("button", { name: "Group", exact: true }).click();
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
   const field = page.locator(".group-name-field input");
   await watchSave(page);
   await expect(field).toBeVisible();
