@@ -1,0 +1,25 @@
+{
+  "id": "section.table",
+  "type": "how-to",
+  "title": {
+    "ru": "Показать раздел таблицей",
+    "en": "Show a section as a table"
+  },
+  "summary": {
+    "ru": "Колонки и строки раздела, размеры осей и два безопасных удаления.",
+    "en": "A section's columns and rows, axis sizes and two safe deletions."
+  },
+  "related": [
+    "rooms.create",
+    "objects.lock"
+  ],
+  "verifiedAgainst": "2026-11-10",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:d75fb1ca060389bfff670961d391b5bdd7a95708c76dda9713ad3e9faf95c8fb",
+      "targetHash": "sha256:952d2141cdbacffdce27faf520e2175ca1de0ef419e2fbd6c9bb8d9ce5f539f1"
+    }
+  }
+}

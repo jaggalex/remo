@@ -14,6 +14,7 @@ import {
   showTable,
   tableLayoutOf,
 } from "./table";
+import { deleteWidgets } from "./widgets";
 
 function boardWith(widgets: Widget[]): BoardDocument {
   const board = new BoardDocument();
@@ -200,5 +201,51 @@ describe("table axes (ADR-196, ADR-199)", () => {
     ).toBe(true);
     expect(tableLayoutOf(board, "f")!.appearance!.cells).toBeUndefined();
     expect(second).toBeDefined();
+  });
+
+  it("deletes a section but keeps its objects on the canvas", () => {
+    const board = withNotes();
+    addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+    const layout = tableLayoutOf(board, "f")!;
+    const before = board.widgets.get("a")!;
+
+    deleteWidgets(board, ["f"], { keepChildren: true });
+
+    expect(board.widgets.get("f")).toBeUndefined();
+    expect(board.widgets.get("a")).toMatchObject({
+      parentId: null,
+      x: before.x,
+      y: before.y,
+      content: "a",
+    });
+    expect(board.widgets.get("a")!.cell).toBeUndefined();
+    expect(board.widgets.get("b")!.parentId).toBeNull();
+
+    board.undoOnce();
+    expect(board.widgets.get("f")).toBeDefined();
+    expect(tableLayoutOf(board, "f")!.columns).toHaveLength(layout.columns.length);
+    expect(board.widgets.get("a")!.parentId).toBe("f");
+    expect(board.widgets.get("a")!.cell).toBeDefined();
+  });
+
+  it("refuses every table edit on a locked section and undo restores nothing", () => {
+    const board = withNotes();
+    addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+    const layout = tableLayoutOf(board, "f")!;
+    const frame = board.widgets.get("f")!;
+    board.widgets.set("f", { ...frame, locked: true });
+
+    expect(addAxis(board, "f", "column", { title: "Later" })).toBeNull();
+    expect(renameAxis(board, "f", layout.columns[0]!.id, "Changed")).toBe(false);
+    expect(setAxisSize(board, "f", layout.columns[0]!.id, "wide")).toBe(false);
+    expect(setAxisVertical(board, "f", layout.columns[0]!.id, true)).toBe(false);
+    expect(moveAxis(board, "f", layout.columns[1]!.id, -1)).toBe(false);
+    expect(deleteAxis(board, "f", layout.columns[1]!.id, { mode: "move" })).toEqual({
+      ok: false,
+      reason: "locked",
+    });
+    expect(removeTable(board, "f")).toBe(false);
+    expect(showTable(board, "f")).toBe(false);
+    expect(setTableFill(board, "f", { kind: "table" }, "#ff0000")).toBe(false);
   });
 });

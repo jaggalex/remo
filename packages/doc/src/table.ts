@@ -38,7 +38,7 @@ export interface MoveToCellOptions {
 
 export type DeleteAxisResult =
   | { ok: true; axisId: string; movedTo?: string; deleted: string[]; tableRemoved?: boolean }
-  | { ok: false; reason: "missing" | "objects" | "no-neighbor" };
+  | { ok: false; reason: "missing" | "locked" | "objects" | "no-neighbor" };
 
 export type TableFillTarget =
   | { kind: "table" }
@@ -50,6 +50,12 @@ export type TableFillTarget =
 function frameFor(board: BoardDocument, frameId: string): Widget | null {
   const frame = board.readWidget(frameId);
   return frame?.type === "frame" ? frame : null;
+}
+
+/** A section accepts table edits unless it is locked (ADR-040). */
+function editableFrame(board: BoardDocument, frameId: string): Widget | null {
+  const frame = frameFor(board, frameId);
+  return frame && !frame.locked ? frame : null;
 }
 
 /** The layout of a section, or null when it is free. */
@@ -113,7 +119,7 @@ export function addAxis(
   kind: TableAxisKind,
   options: AddAxisOptions,
 ): string | null {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame) return null;
   const base = frame.layout?.kind === "table" ? frame.layout : emptyLayout();
   const oppositeKind: TableAxisKind = kind === "column" ? "row" : "column";
@@ -170,7 +176,7 @@ export function renameAxis(
   axisId: string,
   title: string,
 ): boolean {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
   for (const kind of ["column", "row"] as const) {
     const axes = axesOf(frame.layout, kind);
@@ -191,7 +197,7 @@ export function setAxisSize(
   axisId: string,
   size: TableAxisSize,
 ): boolean {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
   for (const kind of ["column", "row"] as const) {
     const axes = axesOf(frame.layout, kind);
@@ -217,7 +223,7 @@ export function setAxisVertical(
   axisId: string,
   vertical: boolean,
 ): boolean {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
   if (!frame.layout.columns.some((axis) => axis.id === axisId)) return false;
   const next = frame.layout.columns.map((axis) => {
@@ -241,7 +247,7 @@ export function moveAxis(
   axisId: string,
   offset: -1 | 1,
 ): boolean {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
   for (const kind of ["column", "row"] as const) {
     const axes = axesOf(frame.layout, kind);
@@ -273,6 +279,7 @@ export function deleteAxis(
   if (!frame?.layout || frame.layout.kind !== "table") {
     return { ok: false, reason: "missing" };
   }
+  if (frame.locked) return { ok: false, reason: "locked" };
   const kind: TableAxisKind = frame.layout.columns.some((axis) => axis.id === axisId)
     ? "column"
     : "row";
@@ -359,7 +366,7 @@ export function moveSelectionToCell(
   ids: readonly string[],
   options: MoveToCellOptions,
 ): { moved: string[]; blocked: string[] } {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   const moved: string[] = [];
   const blocked: string[] = [];
   if (!frame?.layout || frame.layout.kind !== "table") return { moved, blocked };
@@ -391,7 +398,7 @@ export function moveSelectionToCell(
 
 /** Remove the table view but keep the axes, cells and free positions (ADR-196). */
 export function removeTable(board: BoardDocument, frameId: string): boolean {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
   board.transact(() => writeLayout(board, frame, { ...frame.layout!, active: false }));
   return true;
@@ -399,7 +406,7 @@ export function removeTable(board: BoardDocument, frameId: string): boolean {
 
 /** Turn the kept table back on after `removeTable`. */
 export function showTable(board: BoardDocument, frameId: string): boolean {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
   board.transact(() => {
     const { active: _active, ...layout } = frame.layout!;
@@ -415,7 +422,7 @@ export function setTableFill(
   target: TableFillTarget,
   color: string | null,
 ): boolean {
-  const frame = frameFor(board, frameId);
+  const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
   if (target.kind === "column" && !frame.layout.columns.some((axis) => axis.id === target.id)) {
     return false;

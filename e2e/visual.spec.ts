@@ -4,9 +4,13 @@ import {
   agentBoard,
   freshBoard,
   openAccount,
+  openBoard,
   openBoardMenu,
   openFacilitation,
   openMore,
+  register,
+  seedNote,
+  seedObject,
 } from "./helpers";
 
 /**
@@ -568,4 +572,57 @@ test("the tidy preview shows before and after and fits the viewport", async ({ p
 
   await page.waitForTimeout(300);
   await capture(page, page.locator(".app"), "agent-plan-tidy");
+});
+
+test("the section panel shows the table and its axes", async ({ page }) => {
+  const account = await register(page, "visual-section");
+  const frameId = await seedObject(page, account.boardId, {
+    type: "frame",
+    x: 0,
+    y: 0,
+    width: 600,
+    height: 400,
+    title: "Section",
+  });
+  await seedNote(page, account.boardId, { x: 0, y: 0 }, undefined, "Inside", frameId);
+
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
+  const frame = await page.evaluate((id) => {
+    const probe = window as unknown as {
+      __remo: { widgets: Array<{ id: string; x: number; y: number; height: number }> };
+    };
+    return probe.__remo.widgets.find((widget) => widget.id === id)!;
+  }, frameId);
+  const point = await page.evaluate(({ x, y }) => {
+    const probe = (window as unknown as {
+      __remo: { camera: { x: number; y: number; zoom: number } };
+    }).__remo;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2 + (x - probe.camera.x) * probe.camera.zoom,
+      y: rect.top + rect.height / 2 + (y - probe.camera.y) * probe.camera.zoom,
+    };
+  }, { x: frame.x, y: frame.y - frame.height / 2 + 24 });
+  await page.mouse.click(point.x, point.y);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+      ),
+    )
+    .toEqual([frameId]);
+
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  const panel = page.locator(".section-panel");
+  await expect(panel).toBeVisible();
+  await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  await expect(panel.locator(".section-axis-row")).toHaveCount(3);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+    .toBe(true);
+
+  await page.waitForTimeout(300);
+  await capture(page, page.locator(".app"), "section-panel");
 });

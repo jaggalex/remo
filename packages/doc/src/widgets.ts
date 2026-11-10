@@ -302,10 +302,16 @@ export function deletionSummary(
   return { objects, connectors };
 }
 
+export interface DeleteWidgetsOptions {
+  force?: boolean;
+  /** Delete a frame but keep its direct children where they are (ADR-070, ADR-196). */
+  keepChildren?: boolean;
+}
+
 export function deleteWidgets(
   board: BoardDocument,
   ids: string[],
-  options: { force?: boolean } = {},
+  options: DeleteWidgetsOptions = {},
 ): void {
   if (!ids.length) return;
   board.transact(() => {
@@ -313,11 +319,31 @@ export function deleteWidgets(
     // Deleting one member of a group deletes the group: half a group is never a
     // state the user asked for.
     for (const id of expandGroups(board.readWidgets(), ids)) {
+      const widget = board.readWidget(id);
       // A locked object survives the delete key; unlocking it is the way to remove
       // it, which is the whole point of a lock (ADR-040).
-      if (!options.force && board.readWidget(id)?.locked) continue;
+      if (!options.force && widget?.locked) continue;
       doomed.add(id);
+      // A section is a container: deleting it keeps its objects on the canvas
+      // (ADR-070, ADR-196). Deleting with contents stays a separate choice.
+      if (options.keepChildren && widget?.type === "frame") continue;
       for (const childId of descendants(board, id)) doomed.add(childId);
+    }
+
+    // Release the children of a kept frame before the frame itself goes: they keep
+    // world coordinates, text and links, and lose only the table membership.
+    if (options.keepChildren) {
+      const frames = [...doomed].filter(
+        (id) => board.readWidget(id)?.type === "frame",
+      );
+      if (frames.length) {
+        const kept = new Set(frames);
+        for (const child of board.readWidgets()) {
+          if (!child.parentId || !kept.has(child.parentId)) continue;
+          const { cell: _cell, ...rest } = child;
+          board.widgets.set(child.id, { ...rest, parentId: null });
+        }
+      }
     }
 
     // Connectors die with their endpoints: a line to nothing is meaningless.

@@ -791,8 +791,8 @@ export function BoardApp() {
         kanbanStates={kanbanStates}
         replaceBoard={replaceBoard}
         status={status}
-        visiblePresence={visiblePresence}
-        onOpenObject={openBoard}
+        visiblePresence={visiblePresence} onOpenObject={openBoard}
+        onNotice={showNotice}
       />
       </div>
     </div>

@@ -64,6 +64,11 @@ describe("table geometry (ADR-196, ADR-199)", () => {
     expect(grid.cells).toHaveLength(4);
     expect(cellRect(grid, "r1", "c2")).toMatchObject({ width: 340 });
     expect(cellRect(grid, "missing", "c1")).toBeNull();
+    const first = cellRect(grid, "r1", "c1")!;
+    expect(first.x).toBeLessThanOrEqual(-150);
+    expect(first.x + first.width).toBeGreaterThanOrEqual(-50);
+    expect(first.y).toBeLessThanOrEqual(-120);
+    expect(first.y + first.height).toBeGreaterThanOrEqual(-40);
   });
 
   it("keeps an empty axis at the minimum size", () => {

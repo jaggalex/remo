@@ -60,20 +60,18 @@ function objectsIn(
   );
 }
 
-function autoColumnWidth(widgets: Widget[]): number {
+function autoColumnWidth(widgets: Widget[], startX: number): number {
   if (!widgets.length) return TABLE_MIN_COLUMN;
-  const boxes = widgets.map((widget) => boxOf(widget));
-  const left = Math.min(...boxes.map((box) => box.x));
-  const right = Math.max(...boxes.map((box) => box.x + box.width));
-  return Math.max(TABLE_MIN_COLUMN, right - left + TABLE_CELL_PADDING * 2);
+  const right = Math.max(...widgets.map((widget) => boxOf(widget).x + boxOf(widget).width));
+  // The width covers everything from the cell's own left edge to the outermost object,
+  // so an object never spills into the next column (ADR-199: the cell grows to fit them).
+  return Math.max(TABLE_MIN_COLUMN, right - startX + TABLE_CELL_PADDING * 2);
 }
 
-function autoRowHeight(widgets: Widget[]): number {
+function autoRowHeight(widgets: Widget[], startY: number): number {
   if (!widgets.length) return TABLE_MIN_ROW;
-  const boxes = widgets.map((widget) => boxOf(widget));
-  const top = Math.min(...boxes.map((box) => box.y));
-  const bottom = Math.max(...boxes.map((box) => box.y + box.height));
-  return Math.max(TABLE_MIN_ROW, bottom - top + TABLE_CELL_PADDING * 2);
+  const bottom = Math.max(...widgets.map((widget) => boxOf(widget).y + boxOf(widget).height));
+  return Math.max(TABLE_MIN_ROW, bottom - startY + TABLE_CELL_PADDING * 2);
 }
 
 /** The grid of a section, or null when the section is free or the layout is inactive. */
@@ -93,7 +91,7 @@ export function layoutTable(
     const width =
       axis.size && axis.size !== "auto"
         ? (PRESET_COLUMN[axis.size] ?? TABLE_MIN_COLUMN)
-        : autoColumnWidth(objectsIn(widgets, frame.id, "columnId", axis.id));
+        : autoColumnWidth(objectsIn(widgets, frame.id, "columnId", axis.id), x);
     columns.push({ axis, x, width });
     x += width;
   }
@@ -104,7 +102,7 @@ export function layoutTable(
     const height =
       axis.size && axis.size !== "auto"
         ? (PRESET_ROW[axis.size] ?? TABLE_MIN_ROW)
-        : autoRowHeight(objectsIn(widgets, frame.id, "rowId", axis.id));
+        : autoRowHeight(objectsIn(widgets, frame.id, "rowId", axis.id), y);
     rows.push({ axis, y, height });
     y += height;
   }

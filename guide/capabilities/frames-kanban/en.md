@@ -15,6 +15,8 @@ A **frame** is a container. An object inside a frame moves with it and does not 
 
 A **kanban** arrives as the **Kanban room** template from **More ▾ → Templates…**: the columns and swimlanes are already there. A card is created by a double click on a cell; a double click on a card opens it for editing. A card belongs to a cell: its position sets the order in the column, not the coordinates on the canvas.
 
+A **section table** is the frame's second view. Select the frame, open **Properties** and choose **Table** in the **View** group: columns and rows appear while the objects stay in cells. Text, links, comments and the objects themselves are not copied. **+ Column** and **+ Row** add axes; the selected axis can be renamed, sized, have its column header turned, moved or deleted. If an axis holds objects, deleting it asks first: move them to the neighbouring axis (the default) or delete them with the axis. **Remove table** returns the free view and remembers the cells; **Delete section** removes only the frame.
+
 ## Card fields
 
 A card carries more than a title: a status (to do, in progress, done), one assignee, a
@@ -32,6 +34,8 @@ Input: an empty room. Action: add the **Kanban room** template, create a card in
 - A card can be the end of a connector; the line follows its cell.
 - A card filter by assignee and due date exists: it lives in the **Properties** panel and does not hide objects. **Select cards** selects the matches, and the ordinary commands then act on them. There are no saved views.
 - A sticky note dragged into a kanban does not become a card — it stays a sticky note above the grid.
+- Dragging objects between table cells on the canvas and the DOM mirror for screen readers are the next steps; for now objects land in the first cell when the table is turned on.
+- A table does not change access: the room is still the unit of access.
 - A frame and a kanban are never the ends of a connector.
 
 ## Practical instructions

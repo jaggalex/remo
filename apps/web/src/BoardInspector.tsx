@@ -18,6 +18,7 @@ import {
   TagsPanel,
 } from "./BoardObjectPanels";
 import { Contained } from "./ErrorBoundary";
+import { SectionPanel } from "./SectionPanel";
 
 /**
  * The board overview panel.
@@ -31,6 +32,7 @@ export interface BoardInspectorProps {
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
   writeBlocked: boolean;
+  onNotice: (message: string) => void;
   commandContext: CommandContext;
   widgets: Widget[];
   board: BoardDocument;
@@ -69,7 +71,7 @@ function InspectorBody(props: BoardInspectorProps) {
     toggleInspector, selectedIds, setSelectedIds, writeBlocked,
     commandContext, widgets, board, setWidgetPositions, canJoinSelection,
     connectSelection, setEditingId, selectionLocked, counts, kanbanStates,
-    replaceBoard, status, visiblePresence, onOpenObject,
+    replaceBoard, status, visiblePresence, onOpenObject, onNotice,
   } = props;
   const groupId = soleSelectedGroup(widgets, selectedIds);
   const card =
@@ -78,6 +80,8 @@ function InspectorBody(props: BoardInspectorProps) {
       : undefined;
   const selectedWidget =
     selectedIds.length === 1 ? widgets.find((widget) => widget.id === selectedIds[0]) : undefined;
+  const section =
+    selectedWidget?.type === "frame" ? selectedWidget : undefined;
   const [people, setPeople] = useState<Array<{ id: string; name: string }>>([]);
   const [confirmReplace, setConfirmReplace] = useState(false);
 
@@ -230,6 +234,16 @@ function InspectorBody(props: BoardInspectorProps) {
                   groupId={groupId}
                   name={groupNameOf(board, groupId)}
                   disabled={writeBlocked}
+                />
+              )}
+              {section && (
+                <SectionPanel
+                  board={board}
+                  frame={section}
+                  widgets={widgets}
+                  writeBlocked={writeBlocked}
+                  onNotice={onNotice}
+                  onDeleted={() => setSelectedIds([])}
                 />
               )}
               {card && (

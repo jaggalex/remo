@@ -26,11 +26,13 @@ const STORAGE_KEY = "remo.lang";
 import { enCore } from "./i18n/en-core";
 import { enCollab } from "./i18n/en-collab";
 import { enWork } from "./i18n/en-work";
+import { enSection } from "./i18n/en-section";
 import { ruCore } from "./i18n/ru-core";
 import { ruCollab } from "./i18n/ru-collab";
 import { ruWork } from "./i18n/ru-work";
+import { ruSection } from "./i18n/ru-section";
 
-const en = { ...enCore, ...enCollab, ...enWork };
+const en = { ...enCore, ...enCollab, ...enWork, ...enSection };
 
 type Key = keyof typeof en;
 /** Every translation key, for code that builds labels dynamically (commands, menus). */
@@ -40,6 +42,7 @@ const ru: Record<Key, string> = {
   ...ruCore,
   ...ruCollab,
   ...ruWork,
+  ...ruSection,
 };
 
 const STRINGS: Record<Lang, Record<Key, string>> = { en, ru };

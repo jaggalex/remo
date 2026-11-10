@@ -1,0 +1,260 @@
+/* ------------------------------------------------------- section panel --- */
+
+.section-panel {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.section-panel-head,
+.section-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.section-panel-head h2 {
+  margin: 0;
+}
+
+.section-badge {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--ink);
+  font: var(--type-caption);
+}
+
+.section-panel-title {
+  margin: var(--space-1) 0 var(--space-3);
+  font: var(--type-label);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.section-group {
+  margin-top: var(--space-4);
+}
+
+.section-group h3,
+.section-field-label {
+  display: block;
+  margin: 0 0 var(--space-2);
+  font: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.section-panel .rm-segmented {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.section-panel .rm-segment {
+  flex: 1 1 auto;
+  justify-content: center;
+  padding: 0 var(--space-2);
+}
+
+.section-axis-add {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.section-axis-group {
+  margin-top: var(--space-2);
+}
+
+.section-axis-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font: var(--type-caption);
+  color: var(--faint);
+}
+
+.section-axis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.section-axis-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--ink);
+  font: var(--type-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-axis-row:hover {
+  background: var(--bg-hover);
+}
+
+.section-axis-row.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.section-axis-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-axis-meta {
+  flex: none;
+  color: var(--faint);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.section-axis-empty {
+  margin: 0;
+}
+
+.section-axis-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.section-axis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.section-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-label);
+  color: var(--ink);
+}
+
+.section-look-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.section-look {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.section-fill-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--type-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-fill-dot {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+}
+
+.section-fill-dot.is-empty {
+  background: var(--bg-panel);
+}
+
+.section-fill-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-fill-name {
+  flex: none;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.section-fill-window {
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.section-fill-window .cw-grid {
+  grid-template-columns: repeat(7, 26px);
+  gap: 2px;
+}
+
+.section-fill-window .cw-swatch {
+  width: 26px;
+  height: 26px;
+}
+
+.section-remove {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.section-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--type-label);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.section-action:hover {
+  color: var(--accent);
+}
+
+.section-action-danger {
+  color: var(--danger);
+}
+
+.section-action-danger:hover {
+  color: var(--danger);
+}
+
+.section-action.is-disabled {
+  color: var(--faint);
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+.section-caption {
+  margin: 2px 0 var(--space-3);
+}
