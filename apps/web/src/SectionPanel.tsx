@@ -20,11 +20,13 @@ import {
   type TableLayout,
   type Widget,
 } from "@remo/model";
-import { Button, Dialog, Icon, Input, Segmented } from "@remo/ui";
+import { Button, Icon, Input, Segmented } from "@remo/ui";
+import { AxisDeleteDialog } from "./AxisDeleteDialog";
 import { HelpLink } from "./help/HelpLink";
 import { colorName } from "./object-panel/colorWindowData";
 import { ColorGridSection } from "./object-panel/ColorWindow";
 import { useI18n } from "./i18n";
+import { setTableAxisSelection, useTableAxisSelection } from "./tableSelection";
 
 /**
  * The section panel (ADR-196, ADR-199).
@@ -122,7 +124,6 @@ export interface SectionPanelProps {
   frame: Widget;
   widgets: Widget[];
   writeBlocked: boolean;
-  onNotice: (message: string) => void;
   /** The frame is gone; the inspector should drop the selection with it. */
   onDeleted: () => void;
 }
@@ -132,7 +133,6 @@ export function SectionPanel({
   frame,
   widgets,
   writeBlocked,
-  onNotice,
   onDeleted,
 }: SectionPanelProps) {
   const { t, count } = useI18n();
@@ -142,7 +142,11 @@ export function SectionPanel({
   const columns = axesOf(layout, "column");
   const rows = axesOf(layout, "row");
 
-  const [axisId, setAxisId] = useState<string | null>(null);
+  const storedAxis = useTableAxisSelection();
+  const axisId = storedAxis?.frameId === frame.id ? storedAxis.axisId : null;
+  const selectAxis = (id: string | null) => {
+    setTableAxisSelection(id ? { frameId: frame.id, axisId: id } : null);
+  };
   const [lookOpen, setLookOpen] = useState(false);
   const [fillOpen, setFillOpen] = useState<FillTarget | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
@@ -156,7 +160,6 @@ export function SectionPanel({
   const selectedKind: AxisKind | null = column ? "column" : row ? "row" : null;
 
   useEffect(() => {
-    setAxisId(null);
     setLookOpen(false);
     setFillOpen(null);
     setPendingDelete(null);
@@ -166,35 +169,12 @@ export function SectionPanel({
     if (!axisId) return;
     if (columns.some((axis) => axis.id === axisId)) return;
     if (rows.some((axis) => axis.id === axisId)) return;
-    setAxisId(null);
+    selectAxis(null);
   }, [axisId, columns, rows]);
 
   useEffect(() => {
     setFillOpen(null);
   }, [axisId]);
-
-  const pendingAxis = pendingDelete
-    ? pendingDelete.kind === "column"
-      ? columns.find((axis) => axis.id === pendingDelete.axisId)
-      : rows.find((axis) => axis.id === pendingDelete.axisId)
-    : undefined;
-
-  const pendingList = pendingDelete
-    ? pendingDelete.kind === "column"
-      ? columns
-      : rows
-    : [];
-  const pendingIndex = pendingAxis
-    ? pendingList.findIndex((axis) => axis.id === pendingAxis.id)
-    : -1;
-  const pendingBefore = pendingIndex > 0 ? pendingList[pendingIndex - 1] : undefined;
-  const pendingAfter =
-    pendingIndex >= 0 && pendingIndex < pendingList.length - 1
-      ? pendingList[pendingIndex + 1]
-      : undefined;
-  const pendingObjects = pendingAxis
-    ? axisObjects(widgets, frame.id, pendingDelete!.kind, pendingAxis.id)
-    : [];
 
   const add = (kind: AxisKind) => {
     if (readOnly) return;
@@ -209,7 +189,7 @@ export function SectionPanel({
       firstTitle: t(ownName, { n: 1 }),
       oppositeTitle: t(oppositeName, { n: 1 }),
     });
-    if (id) setAxisId(id);
+    if (id) selectAxis(id);
   };
 
   const switchView = (next: string) => {
@@ -226,7 +206,7 @@ export function SectionPanel({
     }
     if (layout && layout.active !== false) {
       removeTable(board, frame.id);
-      setAxisId(null);
+      selectAxis(null);
     }
   };
 
@@ -235,25 +215,10 @@ export function SectionPanel({
     const objects = axisObjects(widgets, frame.id, selectedKind, selected.id);
     if (!objects.length) {
       const result = deleteAxis(board, frame.id, selected.id, { mode: "move" });
-      if (result.ok) setAxisId(null);
+      if (result.ok) selectAxis(null);
       return;
     }
     setPendingDelete({ axisId: selected.id, kind: selectedKind });
-  };
-
-  const finishDelete = (mode: "move" | "withObjects", toAxisId?: string) => {
-    if (!pendingDelete || !pendingAxis) return;
-    const result = deleteAxis(
-      board,
-      frame.id,
-      pendingDelete.axisId,
-      mode === "move" ? { mode, toAxisId } : { mode },
-    );
-    if (result.ok) {
-      setAxisId(null);
-      if (mode === "withObjects") onNotice(t("section.axis.undoHint"));
-    }
-    setPendingDelete(null);
   };
 
   const fillLabel = (target: FillTarget): string => {
@@ -370,7 +335,7 @@ export function SectionPanel({
                       className={`section-axis-row${isSelected ? " is-selected" : ""}`}
                       aria-pressed={isSelected}
                       aria-label={`${title} — ${count("objects", objects)}`}
-                      onClick={() => setAxisId(isSelected ? null : axis.id)}
+                      onClick={() => selectAxis(isSelected ? null : axis.id)}
                     >
                       <span className="section-axis-title">{title}</span>
                       <span className="section-axis-meta" aria-hidden="true">
@@ -536,7 +501,7 @@ export function SectionPanel({
           onClick={() => {
             if (!canRemove) return;
             removeTable(board, frame.id);
-            setAxisId(null);
+            selectAxis(null);
             setFillOpen(null);
           }}
           title={!layout ? t("section.table.removeNone") : t("section.table.removeHint")}
@@ -560,69 +525,17 @@ export function SectionPanel({
         <p className="muted section-caption">{t("section.deleteHint")}</p>
       </div>
 
-      {pendingDelete && pendingAxis && (
-        <Dialog
-          title={
-            pendingDelete.kind === "row"
-              ? t("section.axis.deleteRowTitle", {
-                  name: pendingAxis.title || t("section.axis.untitled"),
-                })
-              : t("section.axis.deleteTitle", {
-                  name: pendingAxis.title || t("section.axis.untitled"),
-                })
-          }
-          size="sm"
+      {pendingDelete && (
+        <AxisDeleteDialog
+          board={board}
+          widgets={widgets}
+          target={{ frameId: frame.id, ...pendingDelete }}
           onClose={() => setPendingDelete(null)}
-          footer={
-            <>
-              <Button size="compact" variant="secondary" onClick={() => setPendingDelete(null)}>
-                {t("delete.cancel")}
-              </Button>
-              {pendingBefore && (
-                <Button
-                  size="compact"
-                  variant="secondary"
-                  onClick={() => finishDelete("move", pendingBefore.id)}
-                >
-                  {t(
-                    pendingDelete.kind === "column"
-                      ? "section.axis.moveToLeft"
-                      : "section.axis.moveToAbove",
-                    { name: pendingBefore.title || t("section.axis.untitled") },
-                  )}
-                </Button>
-              )}
-              {pendingAfter && (
-                <Button
-                  size="compact"
-                  variant="secondary"
-                  onClick={() => finishDelete("move", pendingAfter.id)}
-                >
-                  {t(
-                    pendingDelete.kind === "column"
-                      ? "section.axis.moveToRight"
-                      : "section.axis.moveToBelow",
-                    { name: pendingAfter.title || t("section.axis.untitled") },
-                  )}
-                </Button>
-              )}
-              <Button
-                size="compact"
-                variant="danger"
-                onClick={() => finishDelete("withObjects")}
-              >
-                {t("section.axis.deleteWithObjects", { count: pendingObjects.length })}
-              </Button>
-            </>
-          }
-        >
-          {t(
-            pendingDelete.kind === "row"
-              ? "section.axis.deleteRowBody"
-              : "section.axis.deleteBody",
-            { count: count("objects", pendingObjects.length) },
-          )}
-        </Dialog>
+          onDeleted={() => {
+            setPendingDelete(null);
+            selectAxis(null);
+          }}
+        />
       )}
     </section>
   );

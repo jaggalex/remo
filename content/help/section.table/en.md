@@ -6,10 +6,11 @@ A section (frame) can be shown as a table: it gets columns and rows, and objects
 
 1. Select the section and open **Properties**.
 2. In the **View** group choose **Table**. A column with the existing material and an empty column appear, plus a row.
-3. **+ Column** and **+ Row** add axes. Choose an axis in the list to rename it, set its size, turn its header, move it or delete it.
-4. If an axis holds objects, deleting it asks first: move them to the neighbouring axis (the default) or delete them with the axis.
-5. **Remove table** returns the free view; cells are remembered, and turning the table on again restores the structure.
-6. **Delete section** removes only the frame: the objects stay on the canvas.
+3. **+ Column** and **+ Row** add axes. Choose an axis in the panel or by clicking its header on the canvas; clicking the header again opens its menu: rename, insert a neighbour, move, turn, size, delete.
+4. A double click on a header (or Enter/F2) edits the title in place: Enter commits, Tab moves to the next header, Esc cancels.
+5. If an axis holds objects, deleting it asks first: move them to the neighbouring axis (the default) or delete them with the axis.
+6. **Remove table** returns the free view; cells are remembered, and turning the table on again restores the structure.
+7. **Delete section** removes only the frame: the objects stay on the canvas.
 
 ## Check
 

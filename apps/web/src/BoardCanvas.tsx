@@ -26,6 +26,7 @@ import {
   type Widget,
 } from "@remo/model";
 import { InlineEditor } from "./InlineEditor";
+import { TableHeaderLayer } from "./TableHeaderLayer";
 import type { ContinuePreview } from "./canvasGeometry";
 import { useGestures } from "./useGestures";
 import { useCanvasPainting } from "./useCanvasPainting";
@@ -745,6 +746,15 @@ export function BoardCanvas({
         onCommentsOpen={onCommentsOpen}
         onCommentsUnread={onCommentsUnread}
         reactionRequest={reactionRequest}
+      />
+      <TableHeaderLayer
+        board={board}
+        widgets={widgets}
+        camera={camera}
+        viewport={viewport}
+        readOnly={Boolean(readOnly)}
+        presenting={presenting}
+        onSelect={onSelect}
       />
       <InlineEditor
         target={editorTarget}

@@ -258,3 +258,61 @@
 .section-caption {
   margin: 2px 0 var(--space-3);
 }
+
+/* ------------------------------------------------------- table headers --- */
+
+.table-headers {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-bar);
+  pointer-events: none;
+}
+
+/*
+ * The canvas paints the title; this button is only the hit area, the hover wash and
+ * the selection ring. A visible child would paint the title twice.
+ */
+.table-header {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  pointer-events: auto;
+  cursor: text;
+}
+
+.table-header:hover {
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.table-header.is-selected {
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.table-header.is-editing {
+  visibility: hidden;
+}
+
+.table-header:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.table-header-editor {
+  position: absolute;
+  z-index: var(--z-bar);
+  box-sizing: border-box;
+  padding: 0 var(--space-2);
+  border: 1.5px solid var(--border-focus);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font: var(--type-label);
+  outline: none;
+}
+
+.table-axis-menu {
+  position: fixed;
+  z-index: var(--z-popover);
+}

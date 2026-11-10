@@ -588,6 +588,17 @@ test("the section panel shows the table and its axes", async ({ page }) => {
 
   await openBoard(page, account.boardId);
   await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (id) =>
+          (window as unknown as { __remo: { widgets: Array<{ id: string }> } }).__remo.widgets.some(
+            (widget) => widget.id === id,
+          ),
+        frameId,
+      ),
+    )
+    .toBe(true);
   const frame = await page.evaluate((id) => {
     const probe = window as unknown as {
       __remo: { widgets: Array<{ id: string; x: number; y: number; height: number }> };
@@ -619,6 +630,8 @@ test("the section panel shows the table and its axes", async ({ page }) => {
   await expect(panel).toBeVisible();
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
+  await page.getByRole("button", { name: "Columns: Column 1" }).click();
+  await expect(panel.getByLabel("Axis name")).toHaveValue("Column 1");
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true);

@@ -32,7 +32,6 @@ export interface BoardInspectorProps {
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
   writeBlocked: boolean;
-  onNotice: (message: string) => void;
   commandContext: CommandContext;
   widgets: Widget[];
   board: BoardDocument;
@@ -71,7 +70,7 @@ function InspectorBody(props: BoardInspectorProps) {
     toggleInspector, selectedIds, setSelectedIds, writeBlocked,
     commandContext, widgets, board, setWidgetPositions, canJoinSelection,
     connectSelection, setEditingId, selectionLocked, counts, kanbanStates,
-    replaceBoard, status, visiblePresence, onOpenObject, onNotice,
+    replaceBoard, status, visiblePresence, onOpenObject,
   } = props;
   const groupId = soleSelectedGroup(widgets, selectedIds);
   const card =
@@ -242,7 +241,6 @@ function InspectorBody(props: BoardInspectorProps) {
                   frame={section}
                   widgets={widgets}
                   writeBlocked={writeBlocked}
-                  onNotice={onNotice}
                   onDeleted={() => setSelectedIds([])}
                 />
               )}
