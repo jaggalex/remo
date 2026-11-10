@@ -79,6 +79,26 @@ describe("export scope (ADR-071)", () => {
     expect(box!.x).toBeGreaterThan(1700);
     expect(box!.y).toBeGreaterThan(-100);
   });
+
+  it("covers a table grid that is wider than its frame", () => {
+    const table = widget("frame-table", "frame", {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 150,
+      layout: {
+        kind: "table",
+        columns: [
+          { id: "c1", title: "A", size: "wide" },
+          { id: "c2", title: "B", size: "wide" },
+        ],
+        rows: [{ id: "r1", title: "R" }],
+      },
+    });
+    const box = scopeBounds([table], new Map());
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThan(128 + 340 * 2);
+  });
 });
 
 describe("connectors follow the scope (ADR-138)", () => {

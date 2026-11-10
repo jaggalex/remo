@@ -10,6 +10,7 @@ import {
   register,
   seedConnector,
   seedNote,
+  seedObject,
 } from "./helpers";
 
 test("exports a PNG and downloads and restores a backup with a Cyrillic filename", async ({ page }) => {
@@ -130,4 +131,80 @@ test("exports a PNG with comment pins and the legend", async ({ page }) => {
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.png$/);
   await expect(page.locator(".export-status.done")).toBeVisible({ timeout: 20_000 });
+});
+
+
+test("exports a table grid and carries its layout in the backup", async ({ page }) => {
+  const account = await register(page, "export-table");
+  const frameId = await seedObject(page, account.boardId, {
+    type: "frame",
+    x: 0,
+    y: 0,
+    width: 600,
+    height: 400,
+    title: "Section",
+  });
+  const noteId = await seedNote(
+    page,
+    account.boardId,
+    { x: 0, y: 0 },
+    undefined,
+    "Inside",
+    frameId,
+  );
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(
+    (id) =>
+      (window as unknown as { __remo?: { widgets?: Array<{ id: string }> } }).__remo?.widgets?.some(
+        (widget) => widget.id === id,
+      ),
+    frameId,
+  );
+  const point = await page.evaluate((id) => {
+    const probe = (window as unknown as {
+      __remo: { widgets: Array<{ id: string; x: number; y: number; height: number }>; camera: { x: number; y: number; zoom: number } };
+    }).__remo;
+    const frame = probe.widgets.find((widget) => widget.id === id)!;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2 + (frame.x - probe.camera.x) * probe.camera.zoom,
+      y:
+        rect.top +
+        rect.height / 2 +
+        (frame.y - frame.height / 2 + 24 - probe.camera.y) * probe.camera.zoom,
+    };
+  }, frameId);
+  await page.mouse.click(point.x, point.y);
+  await page.waitForFunction(
+    (id) =>
+      (window as unknown as { __remo?: { selectedIds?: string[] } }).__remo?.selectedIds?.includes(
+        id,
+      ),
+    frameId,
+  );
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  await page.locator(".section-panel").getByRole("radio", { name: "Table", exact: true }).click();
+  await expect(page.locator(".section-axis-row")).toHaveCount(3);
+
+  await openBoardMenu(page);
+  await page.getByRole("menuitem", { name: "Export…" }).click();
+  await page.locator(".export-dialog .export-choice", { hasText: "Whole room" }).click();
+  const pngPromise = page.waitForEvent("download");
+  await page.locator(".export-dialog .share-button").click();
+  const png = await pngPromise;
+  expect(png.suggestedFilename()).toMatch(/\.png$/);
+  const pngBytes = await readFile(await png.path());
+  expect(pngBytes.length).toBeGreaterThan(1000);
+  await expect(page.locator(".export-status.done")).toBeVisible({ timeout: 20_000 });
+
+  const dialog = page.locator(".export-dialog");
+  await dialog.getByRole("radio", { name: /Room backup/ }).click();
+  const [backup] = await Promise.all([
+    page.waitForEvent("download"),
+    dialog.locator(".share-button").click(),
+  ]);
+  const bundle = JSON.parse((await readFile(await backup.path())).toString());
+  expect(bundle.widgets[frameId].layout).toMatchObject({ kind: "table" });
+  expect(bundle.widgets[noteId].cell).toEqual(expect.objectContaining({ rowId: expect.any(String) }));
 });

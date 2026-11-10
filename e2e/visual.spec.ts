@@ -10,6 +10,7 @@ import {
   openMore,
   register,
   seedNote,
+  selectKanbanCard,
   seedObject,
 } from "./helpers";
 
@@ -181,26 +182,10 @@ test("the board, export, timer and vote screens fit the viewport", async ({ page
 
 test("a card with fields is readable", async ({ page }) => {
   await freshBoard(page, "visual-card");
-  // ADR-197: the inspector starts closed; the card fields live in it.
-  await page.getByRole("button", { name: "Properties" }).click();
+  // ADR-197: the helper opens the inspector, then selects a placed card and waits
+  // for the selection to land, so a resize cannot leave the click on a stale point.
+  await selectKanbanCard(page);
 
-  const point = await page.evaluate(() => {
-    const probe = window as unknown as {
-      __remo: {
-        camera: { x: number; y: number; zoom: number };
-        layouts: Array<{ placements: Array<{ x: number; y: number }> }>;
-      };
-    };
-    const layout = probe.__remo.layouts.find((entry) => entry.placements.length > 0)!;
-    const placement = layout.placements[0]!;
-    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: rect.left + rect.width / 2 + (placement.x - probe.__remo.camera.x) * probe.__remo.camera.zoom,
-      y: rect.top + rect.height / 2 + (placement.y - probe.__remo.camera.y) * probe.__remo.camera.zoom,
-    };
-  });
-  await page.mouse.click(point.x, point.y);
   const fields = page.locator(".card-fields");
   await fields.locator("select").first().selectOption("in_progress");
   await fields.locator('input[type="date"]').first().fill("2026-10-30");

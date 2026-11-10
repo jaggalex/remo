@@ -264,7 +264,9 @@
 .table-headers {
   position: absolute;
   inset: 0;
-  z-index: var(--z-bar);
+  /* Canvas chrome, not app chrome: a topbar menu and its popover must stay above a
+     transparent header hit area that happens to overlap them. */
+  z-index: var(--z-canvas-overlay);
   pointer-events: none;
 }
 
@@ -301,7 +303,7 @@
 
 .table-header-editor {
   position: absolute;
-  z-index: var(--z-bar);
+  z-index: var(--z-canvas-overlay);
   box-sizing: border-box;
   padding: 0 var(--space-2);
   border: 1.5px solid var(--border-focus);
@@ -320,7 +322,7 @@
 /* A cell the dragged selection would land in. */
 .table-drop-cell {
   position: absolute;
-  z-index: var(--z-bar);
+  z-index: var(--z-canvas-overlay);
   box-sizing: border-box;
   border: 1.5px dashed var(--accent);
   border-radius: var(--radius-sm);
