@@ -16,6 +16,15 @@ type DragState =
       start: { x: number; y: number };
       /** Union box of the lifted objects, which is what alignment snaps. */
       box: Rect;
+      /** A table cell under the pointer that will take the selection on drop. */
+      table?: {
+        frameId: string;
+        rowId: string;
+        columnId: string;
+        offset: { x: number; y: number };
+      };
+      /** The pointer is over a table header: the drop is refused, not free. */
+      refused?: boolean;
     }
   | {
       mode: "marquee";
@@ -73,6 +82,7 @@ export function useGestureEnv(deps: GestureDeps) {
     onMoveMany,
     onResize,
     onMoveCard,
+    onMoveToCell,
     onAddCard,
     onConnect,
     onConnectorPatch,
@@ -118,6 +128,12 @@ export function useGestureEnv(deps: GestureDeps) {
   const [hoverCell, setHoverCell] = useState<{ columnId: string; swimlaneId: string } | null>(
     null,
   );
+  const [tableHover, setTableHover] = useState<{
+    frameId: string;
+    rowId: string;
+    columnId: string;
+  } | null>(null);
+  const [tableRefused, setTableRefused] = useState(false);
   const [marquee, setMarquee] = useState<Rect | null>(null);
   /**
    * The gesture in flight, as patches on stored widgets (ADR-051).
@@ -395,6 +411,7 @@ export function useGestureEnv(deps: GestureDeps) {
     onMoveMany,
     onResize,
     onMoveCard,
+    onMoveToCell,
     onAddCard,
     onConnect,
     onConnectorPatch,
@@ -419,6 +436,10 @@ export function useGestureEnv(deps: GestureDeps) {
     setDragPreview,
     hoverCell,
     setHoverCell,
+    tableHover,
+    setTableHover,
+    tableRefused,
+    setTableRefused,
     marquee,
     setMarquee,
     preview,

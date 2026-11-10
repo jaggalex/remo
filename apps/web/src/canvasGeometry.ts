@@ -2,15 +2,25 @@ import {
   anchorPoint,
   boxOf,
   cellAt,
+  layoutTable,
   pick,
   placementAt,
   sideNormal,
   simplify,
   stubLength,
+  tableCellPlacement,
+  tableHitAt,
   type ConnectorPath,
   type KanbanLayout,
+  type TableGrid,
 } from "@remo/canvas";
-import { connectedNoteCenter, noteGap, type GapOptions, type NoteDirection } from "@remo/doc";
+import {
+  GATHERABLE_TYPES,
+  connectedNoteCenter,
+  noteGap,
+  type GapOptions,
+  type NoteDirection,
+} from "@remo/doc";
 import {
   canConnect,
   joinsWithin,
@@ -569,4 +579,88 @@ export function internalConnectors(
     out.push(widget);
   }
   return out;
+}
+
+
+/** A data cell that can take a dragged selection, with the grid it came from. */
+export interface TableDropTarget {
+  frameId: string;
+  rowId: string;
+  columnId: string;
+  grid: TableGrid;
+  rect: Rect;
+}
+
+/**
+ * What a drag is over: a data cell, a refused header, or no table at all.
+ *
+ * Read from the same `layoutTable`/`tableHitAt` pair the painter uses, so the cell a
+ * person points at is the cell the drop lands in. Headers are returned as a refusal,
+ * because a header never accepts objects (ADR-196).
+ */
+export function tableDropAt(
+  widgets: readonly Widget[],
+  point: { x: number; y: number },
+): { kind: "cell"; target: TableDropTarget } | { kind: "header" } | null {
+  for (const frame of [...widgets].reverse()) {
+    if (frame.type !== "frame" || frame.layout?.kind !== "table") continue;
+    if (frame.layout.active === false || frame.locked) continue;
+    const grid = layoutTable(frame, widgets);
+    if (!grid) continue;
+    const hit = tableHitAt(grid, point);
+    if (!hit) continue;
+    if (hit.kind === "cell") {
+      return {
+        kind: "cell",
+        target: {
+          frameId: frame.id,
+          rowId: hit.rowId,
+          columnId: hit.columnId,
+          grid,
+          rect: hit.rect,
+        },
+      };
+    }
+    return { kind: "header" };
+  }
+  return null;
+}
+
+/** Whether every dragged object is an ordinary table member that may land in a cell. */
+export function tableDropSelection(
+  widgets: readonly Widget[],
+  ids: readonly string[],
+): boolean {
+  if (!ids.length) return false;
+  return ids.every((id) => {
+    const widget = widgets.find((entry) => entry.id === id);
+    return Boolean(widget && GATHERABLE_TYPES.has(widget.type));
+  });
+}
+
+/** The one world offset that lands the selection in the target cell. */
+export function tableDropOffset(
+  target: TableDropTarget,
+  widgets: readonly Widget[],
+  ids: readonly string[],
+): { x: number; y: number } | null {
+  return tableCellPlacement(
+    target.grid,
+    target.rowId,
+    target.columnId,
+    widgets,
+    ids,
+  );
+}
+
+/** Whether every object already belongs to this exact cell. */
+export function inTableCell(
+  widget: Widget,
+  target: { frameId: string; rowId: string; columnId: string },
+): boolean {
+  return (
+    widget.parentId === target.frameId &&
+    widget.cell?.rowId === target.rowId &&
+    widget.cell?.columnId === target.columnId
+  );
 }

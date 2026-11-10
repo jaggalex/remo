@@ -82,6 +82,8 @@ interface Props {
   selectedIds: readonly string[];
   onSelect: (ids: string[]) => void;
   onMoveMany: (positions: WidgetPosition[]) => void;
+  /** Drop a selection into a table cell (ADR-196). */
+  onMoveToCell: (frameId: string, rowId: string, columnId: string, ids: string[], offset: { x: number; y: number }) => void;
   /** Commit a resize gesture: one transaction, one undo step. */
   onResize: (rect: { id: string; x: number; y: number; width: number; height: number }) => void;
   onMoveCard: (kanbanId: string, cardId: string, columnId: string, swimlaneId: string) => void;
@@ -195,7 +197,7 @@ export function BoardCanvas({
   kanbanStates,
   selectedIds,
   onSelect,
-  onMoveMany,
+  onMoveMany, onMoveToCell,
   onResize,
   onMoveCard,
   onAddCard,
@@ -318,6 +320,7 @@ export function BoardCanvas({
     },
       onSelect,
     onMoveMany,
+    onMoveToCell,
     onResize,
     onMoveCard,
     onAddCard,
@@ -760,6 +763,7 @@ export function BoardCanvas({
         readOnly={Boolean(readOnly)}
         presenting={presenting}
         onSelect={onSelect}
+        drop={gestures.tableHover} refused={gestures.tableRefused} cursor={gestures.cursor}
       />
       <InlineEditor
         target={editorTarget}

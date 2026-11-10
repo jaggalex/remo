@@ -9,6 +9,8 @@ interface ProbeWidget {
   y: number;
   width: number;
   height: number;
+  cell?: { rowId: string; columnId: string } | null;
+  layout?: { columns?: Array<{ id: string; title: string }> } | null;
 }
 
 async function widgets(page: Page): Promise<ProbeWidget[]> {
@@ -35,6 +37,45 @@ async function screenPoint(page: Page, world: { x: number; y: number }) {
       y: rect.top + rect.height / 2 + (y - probe.camera.y) * probe.camera.zoom,
     };
   }, world);
+}
+
+/** A frame with one note inside, opened as a two-column table. */
+async function openTable(page: Page, tag: string) {
+  const account = await register(page, tag);
+  const frameId = await seedObject(page, account.boardId, {
+    type: "frame",
+    x: 0,
+    y: 0,
+    width: 600,
+    height: 400,
+    title: "Section",
+  });
+  const noteId = await seedNote(
+    page,
+    account.boardId,
+    { x: 0, y: 0 },
+    undefined,
+    "Inside",
+    frameId,
+  );
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
+  await waitForWidget(page, frameId);
+  const frame = (await widgets(page)).find((widget) => widget.id === frameId)!;
+  const point = await screenPoint(page, { x: frame.x, y: frame.y - frame.height / 2 + 24 });
+  await page.mouse.click(point.x, point.y);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+      ),
+    )
+    .toEqual([frameId]);
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  const panel = page.locator(".section-panel");
+  await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  await expect(panel.locator(".section-axis-row")).toHaveCount(3);
+  return { account, frameId, noteId, panel };
 }
 
 test("turns a section into a table and deletes it without its objects", async ({ page }) => {
@@ -239,3 +280,64 @@ test("a table header edits its title and opens the axis menu", async ({ page }) 
 });
 
 
+
+
+test("drops an object into another cell and undoes it in one step", async ({ page }) => {
+  const { frameId, noteId } = await openTable(page, "table-drop-cell");
+  const before = (await widgets(page)).find((widget) => widget.id === noteId)!;
+  const header = page.getByRole("button", { name: "Columns: Column 2" });
+  const box = (await header.boundingBox())!;
+  const from = await screenPoint(page, { x: before.x, y: before.y });
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height + 100, { steps: 12 });
+  await page.mouse.up();
+
+  await expect
+    .poll(async () => {
+      const all = await widgets(page);
+      const frame = all.find((widget) => widget.id === frameId)!;
+      const note = all.find((widget) => widget.id === noteId)!;
+      return note.cell?.columnId === frame.layout?.columns?.[1]?.id;
+    })
+    .toBe(true);
+
+  await page.keyboard.press("Meta+z");
+  await expect
+    .poll(async () => {
+      const all = await widgets(page);
+      const frame = all.find((widget) => widget.id === frameId)!;
+      const note = all.find((widget) => widget.id === noteId)!;
+      return note.cell?.columnId === frame.layout?.columns?.[0]?.id;
+    })
+    .toBe(true);
+});
+
+test("moves a selected object to a named cell from the panel", async ({ page }) => {
+  const { frameId, noteId } = await openTable(page, "table-move-cell");
+  const note = (await widgets(page)).find((widget) => widget.id === noteId)!;
+  const point = await screenPoint(page, { x: note.x, y: note.y });
+  await page.mouse.click(point.x, point.y);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+      ),
+    )
+    .toEqual([noteId]);
+
+  const cellPanel = page.locator(".table-cell-panel");
+  await expect(cellPanel).toBeVisible();
+  await cellPanel.locator("select").selectOption({ label: "Column 2 × Row 1" });
+  await cellPanel.getByRole("button", { name: "Move", exact: true }).click();
+
+  await expect
+    .poll(async () => {
+      const all = await widgets(page);
+      const frame = all.find((widget) => widget.id === frameId)!;
+      const moved = all.find((widget) => widget.id === noteId)!;
+      return moved.cell?.columnId === frame.layout?.columns?.[1]?.id;
+    })
+    .toBe(true);
+  await expect(cellPanel.getByRole("button", { name: "Move", exact: true })).toBeDisabled();
+});

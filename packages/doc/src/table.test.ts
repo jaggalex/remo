@@ -161,6 +161,36 @@ describe("table axes (ADR-196, ADR-199)", () => {
     });
   });
 
+  it("lands a selection in a cell with one offset and keeps the arrangement", () => {
+    const board = withNotes();
+    addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+    const layout = tableLayoutOf(board, "f")!;
+    const beforeA = board.widgets.get("a")!;
+    const beforeB = board.widgets.get("b")!;
+    const beforeCell = beforeA.cell;
+    const result = moveSelectionToCell(board, "f", ["a", "b"], {
+      rowId: layout.rows[0]!.id,
+      columnId: layout.columns[1]!.id,
+      offset: { x: 300, y: 120 },
+    });
+    expect(result).toEqual({ moved: ["a", "b"], blocked: [] });
+    expect(board.widgets.get("a")).toMatchObject({
+      x: beforeA.x + 300,
+      y: beforeA.y + 120,
+      parentId: "f",
+    });
+    expect(board.widgets.get("b")).toMatchObject({
+      x: beforeB.x + 300,
+      y: beforeB.y + 120,
+      parentId: "f",
+    });
+    expect(beforeB.x - beforeA.x).toBe(board.widgets.get("b")!.x - board.widgets.get("a")!.x);
+
+    board.undoOnce();
+    expect(board.widgets.get("a")).toMatchObject({ x: beforeA.x, y: beforeA.y });
+    expect(board.widgets.get("a")!.cell).toEqual(beforeCell);
+  });
+
   it("removes the table view but keeps axes and cells for the return", () => {
     const board = withNotes();
     addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });

@@ -88,10 +88,14 @@ export function layoutTable(
   const columns: TableColumn[] = [];
   let x = origin.x + headerWidth;
   for (const axis of layout.columns) {
+    const autoWidth = autoColumnWidth(
+      objectsIn(widgets, frame.id, "columnId", axis.id),
+      x,
+    );
     const width =
       axis.size && axis.size !== "auto"
-        ? (PRESET_COLUMN[axis.size] ?? TABLE_MIN_COLUMN)
-        : autoColumnWidth(objectsIn(widgets, frame.id, "columnId", axis.id), x);
+        ? Math.max(PRESET_COLUMN[axis.size] ?? TABLE_MIN_COLUMN, autoWidth)
+        : autoWidth;
     columns.push({ axis, x, width });
     x += width;
   }
@@ -99,10 +103,14 @@ export function layoutTable(
   const rows: TableRow[] = [];
   let y = origin.y + headerHeight;
   for (const axis of layout.rows) {
+    const autoHeight = autoRowHeight(
+      objectsIn(widgets, frame.id, "rowId", axis.id),
+      y,
+    );
     const height =
       axis.size && axis.size !== "auto"
-        ? (PRESET_ROW[axis.size] ?? TABLE_MIN_ROW)
-        : autoRowHeight(objectsIn(widgets, frame.id, "rowId", axis.id), y);
+        ? Math.max(PRESET_ROW[axis.size] ?? TABLE_MIN_ROW, autoHeight)
+        : autoHeight;
     rows.push({ axis, y, height });
     y += height;
   }
@@ -218,4 +226,34 @@ export function cellFill(frame: Widget, rowId: string, columnId: string): string
   return frame.layout?.kind === "table"
     ? tableCellFill(frame.layout, rowId, columnId)
     : undefined;
+}
+
+
+/**
+ * The world translation that puts a selection inside a cell, keeping its arrangement.
+ *
+ * The top-left of the selection's union box lands at the cell's padding corner. The
+ * caller applies the same offset to every object, so links and offsets between them
+ * survive; the cell then grows to fit them through the normal auto rule (ADR-196).
+ */
+export function tableCellPlacement(
+  grid: TableGrid,
+  rowId: string,
+  columnId: string,
+  widgets: readonly Widget[],
+  ids: readonly string[],
+): { x: number; y: number } | null {
+  const cell = cellRect(grid, rowId, columnId);
+  if (!cell) return null;
+  const boxes = ids
+    .map((id) => widgets.find((widget) => widget.id === id))
+    .filter((widget): widget is Widget => Boolean(widget))
+    .map((widget) => boxOf(widget));
+  if (!boxes.length) return null;
+  const left = Math.min(...boxes.map((box) => box.x));
+  const top = Math.min(...boxes.map((box) => box.y));
+  return {
+    x: cell.x + TABLE_CELL_PADDING - left,
+    y: cell.y + TABLE_CELL_PADDING - top,
+  };
 }

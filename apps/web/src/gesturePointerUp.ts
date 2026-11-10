@@ -11,7 +11,7 @@ import { boxOf, cellAt, facingSide, pickInRect, placementsInRect } from "@remo/c
 import type { ConnectorPatch } from "@remo/doc";
 
 export function pointerUp(env: GestureEnv) {
-  const { anchorPressRef, camera, cardPreviewRef, clearPreview, connectDraftRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onAddWaypoint, onConnect, onCreateConnected, onConnectorPatch, onLimit, onMoveCard, onMoveMany, onMoveWaypoint, onReattachEnd, onResize, onSelect, previewLive, selectedIds, setConnectDraft, setDragGhostIds, setDragIds, setDragPreview, setGuides, setHoverCell, setMarquee, settings, widgetById, widgets } = env;
+  const { anchorPressRef, camera, cardPreviewRef, clearPreview, connectDraftRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onAddWaypoint, onConnect, onCreateConnected, onConnectorPatch, onLimit, onMoveCard, onMoveMany, onMoveToCell, onMoveWaypoint, onReattachEnd, onResize, onSelect, previewLive, selectedIds, setConnectDraft, setDragGhostIds, setDragIds, setDragPreview, setGuides, setHoverCell, setMarquee, setTableHover, setTableRefused, settings, widgetById, widgets } = env;
   const drag = dragRef.current;
   dragRef.current = null;
 
@@ -122,13 +122,26 @@ export function pointerUp(env: GestureEnv) {
   }
 
   if (drag?.mode === "widget") {
-    const delta = dragDeltaRef.current;
-    if (delta && (Math.abs(delta.dx) > 0.5 || Math.abs(delta.dy) > 0.5)) {
-      // One gesture, one transaction.
-      onMoveMany(
-        drag.origins.map((o) => ({ id: o.id, x: o.x + delta.dx, y: o.y + delta.dy })),
+    if (drag.table) {
+      // A cross-cell drop: membership and the landing offset are one transaction.
+      onMoveToCell(
+        drag.table.frameId,
+        drag.table.rowId,
+        drag.table.columnId,
+        drag.origins.map((origin) => origin.id),
+        drag.table.offset,
       );
+    } else if (!drag.refused) {
+      const delta = dragDeltaRef.current;
+      if (delta && (Math.abs(delta.dx) > 0.5 || Math.abs(delta.dy) > 0.5)) {
+        // One gesture, one transaction.
+        onMoveMany(
+          drag.origins.map((o) => ({ id: o.id, x: o.x + delta.dx, y: o.y + delta.dy })),
+        );
+      }
     }
+    setTableHover(null);
+    setTableRefused(false);
   }
 
   const marqueeRect = marqueeRef.current;

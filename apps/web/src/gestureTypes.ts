@@ -33,6 +33,14 @@ export interface GestureDeps {
     columnId: string,
     swimlaneId: string,
   ) => void;
+  /** Drop a selection into a table cell as one transaction (ADR-196). */
+  onMoveToCell: (
+    frameId: string,
+    rowId: string,
+    columnId: string,
+    ids: string[],
+    offset: { x: number; y: number },
+  ) => void;
   onAddCard: (kanbanId: string, columnId: string, swimlaneId: string) => void;
   onConnect: (
     fromId: string,
@@ -79,6 +87,10 @@ export interface Gestures {
   dragPreview: { cardId: string; x: number; y: number } | null;
   draggedCardId: string | null;
   hoverCell: { columnId: string; swimlaneId: string } | null;
+  /** The table cell the dragged selection would land in. */
+  tableHover: { frameId: string; rowId: string; columnId: string } | null;
+  /** The pointer is over a header, which never takes objects. */
+  tableRefused: boolean;
   marquee: Rect | null;
   preview: ReadonlyMap<string, Partial<Widget>>;
   dragIds: string[];

@@ -9,6 +9,7 @@ import {
 } from "@remo/model";
 import type { BoardDocument } from "./board";
 import { deleteWidgets } from "./widgets";
+import { GATHERABLE_TYPES } from "./gather";
 
 /**
  * Table commands for a section (ADR-196, ADR-199).
@@ -34,6 +35,12 @@ export interface AddAxisOptions {
 export interface MoveToCellOptions {
   rowId: string;
   columnId: string;
+  /**
+   * A world translation applied to every moved object, so a selection dropped on a
+   * cell lands inside it keeping its relative arrangement (ADR-196). Absent means
+   * membership only, which is what a caller that already placed the objects wants.
+   */
+  offset?: { x: number; y: number };
 }
 
 export type DeleteAxisResult =
@@ -377,16 +384,15 @@ export function moveSelectionToCell(
   board.transact(() => {
     for (const id of ids) {
       const widget = board.readWidget(id);
-      if (!widget || widget.type === "frame" || widget.type === "connector" || widget.type === "card") {
-        blocked.push(id);
-        continue;
-      }
-      if (widget.locked) {
+      if (!widget || !GATHERABLE_TYPES.has(widget.type) || widget.locked) {
         blocked.push(id);
         continue;
       }
       board.widgets.set(id, {
         ...widget,
+        ...(options.offset
+          ? { x: widget.x + options.offset.x, y: widget.y + options.offset.y }
+          : {}),
         parentId: frame.id,
         cell: { rowId: options.rowId, columnId: options.columnId },
       });

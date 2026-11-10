@@ -22,6 +22,8 @@ export function useGestures(deps: GestureDeps): Gestures {
     dragPreview: env.dragPreview,
     draggedCardId: env.dragPreview?.cardId ?? null,
     hoverCell: env.hoverCell,
+    tableHover: env.tableHover,
+    tableRefused: env.tableRefused,
     marquee: env.marquee,
     preview: env.preview,
     dragIds: env.dragIds,

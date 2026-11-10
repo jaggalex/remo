@@ -19,6 +19,7 @@ import {
 } from "./BoardObjectPanels";
 import { Contained } from "./ErrorBoundary";
 import { SectionPanel } from "./SectionPanel";
+import { TableCellPanel } from "./TableCellPanel";
 
 /**
  * The board overview panel.
@@ -242,6 +243,14 @@ function InspectorBody(props: BoardInspectorProps) {
                   widgets={widgets}
                   writeBlocked={writeBlocked}
                   onDeleted={() => setSelectedIds([])}
+                />
+              )}
+              {!section && (
+                <TableCellPanel
+                  board={board}
+                  widgets={widgets}
+                  selectedIds={selectedIds}
+                  writeBlocked={writeBlocked}
                 />
               )}
               {card && (

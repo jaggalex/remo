@@ -9,6 +9,7 @@ import {
   tableLayoutOf,
 } from "@remo/doc";
 import {
+  cellRect,
   columnHeaderRect,
   layoutTable,
   rowHeaderRect,
@@ -62,6 +63,9 @@ export function TableHeaderLayer({
   readOnly,
   presenting = false,
   onSelect,
+  drop = null,
+  refused = false,
+  cursor = null,
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -71,6 +75,12 @@ export function TableHeaderLayer({
   /** A live presentation is content only; headers are editing chrome. */
   presenting?: boolean;
   onSelect: (ids: string[]) => void;
+  /** The cell a dragged selection would land in. */
+  drop?: { frameId: string; rowId: string; columnId: string } | null;
+  /** The pointer is over a header, which refuses objects. */
+  refused?: boolean;
+  /** Client coordinates, for the refusal hint. */
+  cursor?: { x: number; y: number } | null;
 }) {
   const { t } = useI18n();
   const selection = useTableAxisSelection();
@@ -369,6 +379,15 @@ export function TableHeaderLayer({
     return items;
   };
 
+  const dropRect = (() => {
+    if (!drop) return null;
+    const frame = widgets.find((widget) => widget.id === drop.frameId);
+    if (!frame) return null;
+    const grid = layoutTable(frame, widgets);
+    const rect = grid ? cellRect(grid, drop.rowId, drop.columnId) : null;
+    return rect ? screenRect(rect) : null;
+  })();
+
   if (presenting || headers.length === 0) return null;
 
   return (
@@ -526,6 +545,29 @@ export function TableHeaderLayer({
             items={menuItems(menu.entry)}
             onClose={() => setMenu(null)}
           />
+        </div>
+      )}
+
+      {dropRect && (
+        <div
+          className="table-drop-cell"
+          style={{
+            left: dropRect.left,
+            top: dropRect.top,
+            width: dropRect.width,
+            height: dropRect.height,
+          }}
+          aria-hidden="true"
+        />
+      )}
+
+      {refused && cursor && (
+        <div
+          className="table-drop-refused"
+          style={{ left: cursor.x + 14, top: cursor.y + 18 }}
+          role="status"
+        >
+          {t("section.cell.refuseHeader")}
         </div>
       )}
 

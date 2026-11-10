@@ -9,6 +9,7 @@ import {
   cellFill,
   cellRect,
   layoutTable,
+  tableCellPlacement,
   tableHitAt,
 } from "./table";
 
@@ -75,6 +76,18 @@ describe("table geometry (ADR-196, ADR-199)", () => {
     const grid = layoutTable(frame(), [])!;
     expect(grid.columns[0]!.width).toBe(TABLE_MIN_COLUMN);
     expect(grid.rows[0]!.height).toBe(TABLE_MIN_ROW);
+  });
+
+  it("places a selection at the target cell's padding corner", () => {
+    const notes = [note("a", "r1", "c1", -100, -80), note("b", "r1", "c1", -20, -20)];
+    const grid = layoutTable(frame(), notes)!;
+    const cell = cellRect(grid, "r1", "c2")!;
+    const offset = tableCellPlacement(grid, "r1", "c2", notes, ["a", "b"])!;
+    // The union box starts at a box's left/top, not its centre: 50 and 40 from the centre.
+    expect(offset.x).toBe(cell.x + 16 + 150);
+    expect(offset.y).toBe(cell.y + 16 + 120);
+    expect(tableCellPlacement(grid, "r1", "missing", notes, ["a"])).toBeNull();
+    expect(tableCellPlacement(grid, "r1", "c2", notes, ["missing"])).toBeNull();
   });
 
   it("distinguishes a data cell from a header, and only a cell accepts objects", () => {

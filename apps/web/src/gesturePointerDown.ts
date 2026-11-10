@@ -7,8 +7,10 @@ import type { ConnectorSide } from "@remo/model";
 import { capture } from "./gestureEnv";
 
 export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
-  const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onAddCard, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
+  const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onAddCard, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
   const world = toWorld(event);
+  setTableHover(null);
+  setTableRefused(false);
   const panRequested = event.button === 1 || event.button === 2 || event.altKey;
 
   if (panRequested) {

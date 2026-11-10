@@ -1,4 +1,14 @@
-import { connectTargetAt, hoveredCell, nearestAnchor, placedWidget, resizedBox } from "./canvasGeometry";
+import {
+  connectTargetAt,
+  hoveredCell,
+  inTableCell,
+  nearestAnchor,
+  placedWidget,
+  resizedBox,
+  tableDropAt,
+  tableDropOffset,
+  tableDropSelection,
+} from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import { bendStep, curveStep, flipStep, moveStep } from "./gestureSteps";
 import type { ConnectDraft } from "./gestureTypes";
@@ -14,7 +24,7 @@ import { minimumSizeOf, type Widget } from "@remo/model";
    * matrix, not chosen by dragging a widget.
    */
 export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
-  const { alignmentTargets, anchorNear, anchorPressRef, applyPreview, camera, cardPreviewRef, connectDraftRef, connectPendingRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onCamera, publishCursor, setConnectDraft, setCursor, setDragPreview, setGuides, setHoverAnchor, setHoverCell, setHoverId, setMarquee, settings, toWorld, widgetById, widgets } = env;
+  const { alignmentTargets, anchorNear, anchorPressRef, applyPreview, camera, cardPreviewRef, connectDraftRef, connectPendingRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onCamera, publishCursor, setConnectDraft, setCursor, setDragPreview, setGuides, setHoverAnchor, setHoverCell, setHoverId, setMarquee, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets } = env;
   const drag = dragRef.current;
   setCursor({ x: event.clientX, y: event.clientY });
   const world = toWorld(event);
@@ -83,6 +93,53 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     for (const origin of drag.origins) {
       next.set(origin.id, { x: origin.x + delta.dx, y: origin.y + delta.dy });
     }
+
+    // A table cell under the pointer is a drop target. A cross-cell move lands the
+    // whole selection at the cell's padding corner, so the preview and the command
+    // use one offset; a header refuses the drop and the objects stay put.
+    const ids = drag.origins.map((origin) => origin.id);
+    let tableHover: { frameId: string; rowId: string; columnId: string } | null = null;
+    let refused = false;
+    drag.table = undefined;
+    if (tableDropSelection(widgets, ids)) {
+      const hit = tableDropAt(widgets, world);
+      if (hit?.kind === "cell") {
+        tableHover = {
+          frameId: hit.target.frameId,
+          rowId: hit.target.rowId,
+          columnId: hit.target.columnId,
+        };
+        const alreadyThere = drag.origins.every((origin) => {
+          const widget = widgetById(origin.id);
+          return widget ? inTableCell(widget, hit.target) : false;
+        });
+        if (!alreadyThere) {
+          const offset = tableDropOffset(hit.target, widgets, ids);
+          if (offset) {
+            for (const origin of drag.origins) {
+              next.set(origin.id, {
+                x: origin.x + offset.x,
+                y: origin.y + offset.y,
+              });
+            }
+            drag.table = {
+              frameId: hit.target.frameId,
+              rowId: hit.target.rowId,
+              columnId: hit.target.columnId,
+              offset,
+            };
+          }
+        }
+      } else if (hit?.kind === "header") {
+        refused = true;
+        for (const origin of drag.origins) {
+          next.set(origin.id, { x: origin.x, y: origin.y });
+        }
+      }
+    }
+    drag.refused = refused;
+    setTableHover(tableHover);
+    setTableRefused(refused);
     applyPreview(next);
     setGuides(settings.snapping.guides ? guides : []);
     return;

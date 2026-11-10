@@ -358,7 +358,7 @@ export function BoardApp() {
     textOf,
     deltaOf,
     onSetText,
-    moveMany,
+    moveMany, moveToCell,
     patchConnector,
     selectionLocked,
     resizeNote,
@@ -721,7 +721,7 @@ export function BoardApp() {
           kanbanStates={kanbanStates}
           selectedIds={selectedIds}
           onSelect={setSelectedIds}
-          onMoveMany={moveMany}
+          onMoveMany={moveMany} onMoveToCell={moveToCell}
           onResize={resizeNote}
           onMoveCard={onMoveCard}
           onAddCard={onAddCard}

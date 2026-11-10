@@ -13,6 +13,7 @@ import {
   groupWidgets,
   moveCard,
   moveConnectorWaypoint,
+  moveSelectionToCell,
   moveWidgets,
   noteMarksOf,
   pasteFragment,
@@ -169,6 +170,18 @@ export function useBoardCommands(deps: BoardCommandDeps) {
 
   const moveMany = useCallback(
     (positions: WidgetPosition[]) => moveWidgets(board, positions),
+    [board],
+  );
+
+  /** A drop into a table cell: membership and the landing offset in one transaction. */
+  const moveToCell = useCallback(
+    (
+      frameId: string,
+      rowId: string,
+      columnId: string,
+      ids: string[],
+      offset: { x: number; y: number },
+    ) => moveSelectionToCell(board, frameId, ids, { rowId, columnId, offset }),
     [board],
   );
 
@@ -572,6 +585,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     deltaOf,
     onSetText,
     moveMany,
+    moveToCell,
     alignSelection,
     distributeSelection,
     patchConnector,

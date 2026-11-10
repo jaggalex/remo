@@ -8,13 +8,15 @@ A section (frame) can be shown as a table: it gets columns and rows, and objects
 2. In the **View** group choose **Table**. A column with the existing material and an empty column appear, plus a row.
 3. **+ Column** and **+ Row** add axes. Choose an axis in the panel or by clicking its header on the canvas; clicking the header again opens its menu: rename, insert a neighbour, move, turn, size, delete.
 4. A double click on a header (or Enter/F2) edits the title in place: Enter commits, Tab moves to the next header, Esc cancels.
-5. If an axis holds objects, deleting it asks first: move them to the neighbouring axis (the default) or delete them with the axis.
-6. **Remove table** returns the free view; cells are remembered, and turning the table on again restores the structure.
-7. **Delete section** removes only the frame: the objects stay on the canvas.
+5. Drag an object or a selection to another cell: it lands there keeping its relative arrangement. A header does not take objects. The same move is available as **Move to cell…** in the selected object's properties.
+6. If an axis holds objects, deleting it asks first: move them to the neighbouring axis (the default) or delete them with the axis.
+7. **Remove table** returns the free view; cells are remembered, and turning the table on again restores the structure.
+8. **Delete section** removes only the frame: the objects stay on the canvas.
 
 ## Check
 
 - After any action and after "Remove table" → "Table" the texts, links and positions are intact.
+- A move into a cell keeps the objects' relative arrangement and undoes with one ⌘Z.
 - Deleting an axis with objects asks and moves them to a neighbour by default.
 - "Remove table" does not delete objects.
 - One `⌘Z` / `Ctrl+Z` undoes the whole action.

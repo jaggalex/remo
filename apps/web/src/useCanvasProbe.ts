@@ -92,6 +92,8 @@ export function useCanvasProbe({
         startAt: w.startAt ?? null,
         dueAt: w.dueAt ?? null,
         tagIds: w.tagIds ?? null,
+        cell: w.cell ? { ...w.cell } : null,
+        layout: w.layout ?? null,
       })),
       /** Paint counters: shows that cursor traffic never repaints the board layer. */
       perf: () => ({ ...paintStats.current }),
