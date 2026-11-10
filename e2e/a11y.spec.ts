@@ -4,9 +4,13 @@ import {
   addSticky,
   freshBoard,
   openAccount,
+  openBoard,
   openBoardMenu,
   openFacilitation,
   openMore,
+  register,
+  seedNote,
+  seedObject,
 } from "./helpers";
 
 /**
@@ -143,4 +147,47 @@ test("the named voters of an open session have no serious violations", async ({ 
   await row.click();
   await expect(vote.locator(".vote-voters")).toContainText("Alice");
   await expectNoSerious(page, "open vote results", ".rm-dialog");
+});
+
+
+test("a section table has no serious accessibility violations", async ({ page }) => {
+  const account = await register(page, "a11y-table");
+  const frameId = await seedObject(page, account.boardId, {
+    type: "frame",
+    x: 0,
+    y: 0,
+    width: 600,
+    height: 400,
+    title: "Section",
+  });
+  await seedNote(page, account.boardId, { x: 0, y: 0 }, undefined, "Inside", frameId);
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(
+    (id) =>
+      (window as unknown as { __remo?: { widgets?: Array<{ id: string }> } }).__remo?.widgets?.some(
+        (widget) => widget.id === id,
+      ),
+    frameId,
+  );
+  const point = await page.evaluate((id) => {
+    const probe = (window as unknown as {
+      __remo: { widgets: Array<{ id: string; x: number; y: number; height: number }>; camera: { x: number; y: number; zoom: number } };
+    }).__remo;
+    const frame = probe.widgets.find((widget) => widget.id === id)!;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2 + (frame.x - probe.camera.x) * probe.camera.zoom,
+      y:
+        rect.top +
+        rect.height / 2 +
+        (frame.y - frame.height / 2 + 24 - probe.camera.y) * probe.camera.zoom,
+    };
+  }, frameId);
+  await page.mouse.click(point.x, point.y);
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  await page.locator(".section-panel").getByRole("radio", { name: "Table", exact: true }).click();
+  await expect(page.locator(".table-mirror table")).toHaveCount(1);
+  await expectNoSerious(page, "section panel", ".section-panel");
+  await expectNoSerious(page, "table mirror", ".table-mirror");
 });

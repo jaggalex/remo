@@ -18,6 +18,7 @@ import {
 import type { Rect, TableAxis, Widget } from "@remo/model";
 import { Menu, type MenuItem } from "@remo/ui";
 import { AxisDeleteDialog, type AxisDeleteTarget } from "./AxisDeleteDialog";
+import { TableMirror } from "./TableGrid";
 import { useI18n } from "./i18n";
 import { setTableAxisSelection, useTableAxisSelection } from "./tableSelection";
 
@@ -392,6 +393,7 @@ export function TableHeaderLayer({
 
   return (
     <>
+      <TableMirror widgets={widgets} />
       <div className="table-headers" role="group" aria-label={t("section.axes")}>
         {headers.map((entry) => {
           const rect = screenRect(entry.rect);

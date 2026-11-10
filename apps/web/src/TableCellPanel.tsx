@@ -69,7 +69,9 @@ export function TableCellPanel({
       : "";
 
   const [value, setValue] = useState(current);
+  const [message, setMessage] = useState("");
   useEffect(() => setValue(current), [current, frame?.id]);
+  useEffect(() => setMessage(""), [selectedIds.join(","), frame?.id]);
 
   if (!frame || !layout || !movable) return null;
 
@@ -86,6 +88,8 @@ export function TableCellPanel({
       columnId,
       ...(offset ? { offset } : {}),
     });
+    const target = options.find((option) => option.value === value);
+    setMessage(t("section.cell.moved", { cell: target?.label ?? value }));
   };
 
   return (
@@ -109,6 +113,9 @@ export function TableCellPanel({
       >
         {t("section.cell.move")}
       </Button>
+      <p className="muted" role="status" aria-live="polite">
+        {message}
+      </p>
     </div>
   );
 }

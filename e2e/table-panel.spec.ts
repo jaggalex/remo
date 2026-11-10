@@ -284,6 +284,17 @@ test("a table header edits its title and opens the axis menu", async ({ page }) 
 
 test("drops an object into another cell and undoes it in one step", async ({ page }) => {
   const { frameId, noteId } = await openTable(page, "table-drop-cell");
+  const mirror = page.locator(".table-mirror table");
+  await expect(mirror).toHaveCount(1);
+  await expect(mirror.getByRole("columnheader", { name: "Column 1" })).toHaveCount(1);
+  await expect(mirror.getByRole("columnheader", { name: "Column 2" })).toHaveCount(1);
+  await expect(mirror.getByRole("rowheader", { name: "Row 1" })).toHaveCount(1);
+  await expect(mirror.getByRole("cell", { name: /Inside/ })).toHaveCount(1);
+  const live = page.locator(".table-mirror[role='status']");
+  await expect(live).toContainText("Selected column");
+  await page.getByRole("button", { name: "Columns: Column 1" }).click();
+  await expect(live).toContainText("Column 1");
+
   const before = (await widgets(page)).find((widget) => widget.id === noteId)!;
   const header = page.getByRole("button", { name: "Columns: Column 2" });
   const box = (await header.boundingBox())!;
