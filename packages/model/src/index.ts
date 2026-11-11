@@ -1,5 +1,6 @@
 export * from "./types";
 export * from "./table";
+export * from "./tableGeometry";
 export * from "./connectors";
 export * from "./kinds";
 export * from "./layers";

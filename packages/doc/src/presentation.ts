@@ -47,7 +47,8 @@ export interface PresentationStep {
  *
  * A table section is one item in the order but several row-major steps: top row left to
  * right, then the next row. A section without both axes is one whole-frame step. The
- * order is derived from the axes, never stored as a second list.
+ * order is derived from the axes, never stored as a second list. An empty cell is not a
+ * step, and a table with no objects at all is one whole-frame step (ADR-201).
  */
 export function presentationSteps(board: BoardDocument): PresentationStep[] {
   const steps: PresentationStep[] = [];
@@ -61,8 +62,19 @@ export function presentationSteps(board: BoardDocument): PresentationStep[] {
       layout.columns.length > 0 &&
       layout.rows.length > 0
     ) {
+      const filled = new Set<string>();
+      for (const child of board.readWidgets()) {
+        if (child.parentId === slideId && child.cell) {
+          filled.add(`${child.cell.rowId}:${child.cell.columnId}`);
+        }
+      }
+      if (!filled.size) {
+        steps.push({ id: slideId, slideId, frameId: slideId });
+        continue;
+      }
       for (const row of layout.rows) {
         for (const column of layout.columns) {
+          if (!filled.has(`${row.id}:${column.id}`)) continue;
           steps.push({
             id: `${slideId}:${row.id}:${column.id}`,
             slideId,

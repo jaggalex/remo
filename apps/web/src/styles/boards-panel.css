@@ -125,9 +125,80 @@
 }
 
 .new-board-dialog h2 {
+  /* The help mark sits on the title's line, not under it. */
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   margin: 0 0 2px;
   font-size: 16px;
   font-weight: 600;
+}
+
+.new-board-start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.new-board-start legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+.new-board-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.new-board-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  cursor: pointer;
+}
+
+/* The radio covers the whole card: one hit area, and the native control keeps focus. */
+.new-board-card input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.new-board-card b {
+  color: var(--text-primary);
+  font: var(--type-label);
+  font-weight: 600;
+}
+
+.new-board-card span {
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+/* Selected is a border and weight, not colour alone. */
+.new-board-card.is-checked {
+  border: 2px solid var(--border-focus);
+  padding: calc(var(--space-3) - 1px);
+}
+
+.new-board-card:has(input:focus-visible) {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 .new-board-dialog select {

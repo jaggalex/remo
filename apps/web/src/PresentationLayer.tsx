@@ -69,6 +69,24 @@ export function PresentationLayer({
     onPresentingChange(Boolean(presentation.local || presentation.remote));
   }, [onPresentingChange, presentation.local, presentation.remote]);
 
+  // PageDown / PageUp page the presenter's steps (ADR-108). The arrow keys keep panning
+  // the canvas and nudging objects, so a live edit never turns into a slide change.
+  const presentingLocally = Boolean(presentation.local);
+  const { next, previous } = presentation;
+  useEffect(() => {
+    if (!presentingLocally) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "PageDown" && event.key !== "PageUp") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      event.preventDefault();
+      if (event.key === "PageDown") next();
+      else previous();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [presentingLocally, next, previous]);
+
   const slides = presentation.slides;
   const byId = useMemo(() => new Map(widgets.map((widget) => [widget.id, widget])), [widgets]);
   const labelOf = (id: string) => {

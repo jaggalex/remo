@@ -51,7 +51,14 @@ test("gathers two notes into one section and undoes as one step", async ({ page 
   await page.mouse.click(secondPoint.x, secondPoint.y);
   await page.keyboard.up("Shift");
 
-  await page.getByRole("button", { name: "Gather into section" }).click();
+  // Pointing at the action shows the future section before anything is created.
+  const action = page.getByRole("button", { name: "Gather into section" });
+  await action.hover();
+  await expect(page.locator(".gather-preview")).toBeVisible();
+  expect((await widgets(page)).some((widget) => widget.type === "frame")).toBe(false);
+
+  await action.click();
+  await expect(page.locator(".gather-preview")).toHaveCount(0);
   const framed = await widgets(page);
   const frame = framed.find((widget) => widget.type === "frame")!;
   expect(frame).toBeDefined();

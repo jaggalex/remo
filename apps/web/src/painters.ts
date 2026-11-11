@@ -2,6 +2,7 @@ import {
   ANCHOR_GAP,
   HANDLE_GAP,
   anchorsOf,
+  portsAreEdgePlus,
   cornerPoints,
   placedWidget,
   placementOfCard,
@@ -33,7 +34,7 @@ import {
   type ProposalLayout,
   withAlpha,
 } from "@remo/canvas";
-import { bounds, canConnect, kindOf, soleSelectedGroup, type Widget } from "@remo/model";
+import { bounds, canConnect, kindOf, sizedByTable, soleSelectedGroup, type Widget } from "@remo/model";
 import type { Presence } from "@remo/doc";
 import type { BoardSettings } from "./settings";
 import { drawRemoteCursor } from "./remoteCursor";
@@ -401,7 +402,14 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
 
   // Four connector anchors on a single selection, and the link being dragged.
   const selected = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  if (selected && canConnect(selected) && !editingId && preview.size === 0 && hoverId === selected.id) {
+  if (
+    selected &&
+    canConnect(selected) &&
+    !portsAreEdgePlus(selected) &&
+    !editingId &&
+    preview.size === 0 &&
+    hoverId === selected.id
+  ) {
     for (const anchor of anchorsOf(selected, ANCHOR_GAP / camera.zoom)) {
       const active = hoverAnchor?.id === selected.id && hoverAnchor.side === anchor.side;
       ctx.fillStyle = active ? palette.textPrimary : palette.panel;
@@ -467,7 +475,9 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   // Resize handles: one note selected, to the four corners.
   const single = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
   const box =
-    single && !editingId && kindOf(single.type).resizable ? boxOf(single) : null;
+    single && !editingId && kindOf(single.type).resizable && !sizedByTable(single)
+      ? boxOf(single)
+      : null;
   if (box) {
     const radius = 4.5 / camera.zoom;
     for (const corner of cornerPoints(box, HANDLE_GAP / camera.zoom)) {

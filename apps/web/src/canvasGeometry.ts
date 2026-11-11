@@ -47,6 +47,17 @@ import {
  * source product draws them (ADR-030). Corner handles follow the same rule.
  */
 export const ANCHOR_GAP = 9;
+
+/**
+ * Whether a selected object's ports are its edge "+" buttons (ADR-195, ADR-201).
+ *
+ * A note or a shape gets the DOM "+" on each side, which both continues and starts a
+ * line; painting a port circle beside it would be a second control for the same side.
+ * Other connectable objects keep their painted ports.
+ */
+export function portsAreEdgePlus(widget: Widget): boolean {
+  return (widget.type === "sticky_note" || widget.type === "shape") && !widget.locked;
+}
 export const HANDLE_GAP = 7;
 
 /**

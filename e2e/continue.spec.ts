@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addSticky, freshBoard, seedNote } from "./helpers";
+import { addSticky, freshBoard, openBoard, register, seedNote } from "./helpers";
 
 interface ProbeWidget {
   id: string;
@@ -116,4 +116,55 @@ test("Create new in an occupied, already-linked slot places the copy beyond it",
   // The third note is beyond the second, not stacked on it.
   const xs = notes.map((note) => note.x).sort((a, b) => a - b);
   expect(xs[2]! - xs[1]!).toBeGreaterThan(notes[0]!.width);
+});
+
+test("the edge plus is the port: it names its action and a drag from it draws a line (ADR-201)", async ({
+  page,
+}) => {
+  const account = await register(page, "plus-port");
+  const a = await seedNote(page, account.boardId, { x: -200, y: 0 }, undefined, "A");
+  const b = await seedNote(page, account.boardId, { x: 260, y: 0 }, undefined, "B");
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
+  const all = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as {
+          __remo: { widgets: Array<{ id: string; type: string; x: number; y: number; start?: string | null; end?: string | null }>; camera: { x: number; y: number; zoom: number } };
+        }).__remo,
+    );
+  const toClient = async (x: number, y: number) => {
+    const probe = await all();
+    const rect = (await page.locator(".layer.overlay").boundingBox())!;
+    return {
+      x: rect.x + rect.width / 2 + (x - probe.camera.x) * probe.camera.zoom,
+      y: rect.y + rect.height / 2 + (y - probe.camera.y) * probe.camera.zoom,
+    };
+  };
+  const source = (await all()).widgets.find((widget) => widget.id === a)!;
+  const at = await toClient(source.x, source.y);
+  await page.mouse.click(at.x, at.y);
+
+  // A free side names what Enter makes and that a drag draws a line.
+  await page.getByRole("button", { name: "Continue below", exact: true }).hover();
+  await expect(page.locator(".edge-continue-tip")).toContainText("drag for a line");
+
+  const plus = page.getByRole("button", { name: "Continue to the right", exact: true });
+
+  const target = (await all()).widgets.find((widget) => widget.id === b)!;
+  const box = (await plus.boundingBox())!;
+  const end = await toClient(target.x, target.y);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(end.x, end.y, { steps: 10 });
+  await page.mouse.up();
+  await expect
+    .poll(async () =>
+      (await all()).widgets.some(
+        (widget) => widget.type === "connector" && widget.start === a && widget.end === b,
+      ),
+    )
+    .toBe(true);
+  // No note was created by the click that followed the drag.
+  expect((await all()).widgets.filter((widget) => widget.type === "sticky_note")).toHaveLength(2);
 });

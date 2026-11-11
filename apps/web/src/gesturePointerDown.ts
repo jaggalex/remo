@@ -1,8 +1,8 @@
-import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget } from "./canvasGeometry";
+import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, portsAreEdgePlus, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget } from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import type { ConnectDraft } from "./gestureTypes";
 import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, pick, pickConnector, placementAt, plusHit, resolvedEndSide } from "@remo/canvas";
-import { canConnect, expandGroups, kindOf } from "@remo/model";
+import { canConnect, expandGroups, kindOf, sizedByTable } from "@remo/model";
 import type { ConnectorSide } from "@remo/model";
 import { capture } from "./gestureEnv";
 
@@ -162,7 +162,13 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
   // before the objects themselves.
   const resizable =
     selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  if (!readOnly && resizable && !resizable.locked && kindOf(resizable.type).resizable) {
+  if (
+    !readOnly &&
+    resizable &&
+    !resizable.locked &&
+    kindOf(resizable.type).resizable &&
+    !sizedByTable(resizable)
+  ) {
     const hit = cornerAt(boxOf(resizable), world, 10 / camera.zoom, HANDLE_GAP / camera.zoom);
     if (hit) {
       dragRef.current = { mode: "resize", id: resizable.id, corner: hit, origin: boxOf(resizable) };
@@ -174,7 +180,13 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
   // The connector anchor of the current selection wins over everything: it is a UI
   // affordance sitting on the object's edge.
   const anchorSource = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  if (!readOnly && anchorSource && canConnect(anchorSource) && !anchorSource.locked) {
+  if (
+    !readOnly &&
+    anchorSource &&
+    canConnect(anchorSource) &&
+    !anchorSource.locked &&
+    !portsAreEdgePlus(anchorSource)
+  ) {
     let nearest: { side: ConnectorSide; distance: number } | null = null;
     for (const anchor of anchorsOf(anchorSource, ANCHOR_GAP / camera.zoom)) {
       const screen = worldToScreenPoint({ x: anchor.x, y: anchor.y });

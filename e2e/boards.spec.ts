@@ -14,7 +14,8 @@ test("creates a board from the board list and opens the chosen template", async 
 
   await page.getByRole("button", { name: "All rooms" }).click();
   await page.getByRole("button", { name: "New room" }).click();
-  await page.locator(".new-board-dialog input").fill("M0 launch");
+  await page.locator(".new-board-dialog input").first().fill("M0 launch");
+  await page.locator(".new-board-dialog").getByRole("radio", { name: /With an example/ }).check();
   await page.locator(".new-board-dialog select").selectOption("kanban-framework");
   await page.locator(".new-board-dialog .primary-button").click();
 
@@ -66,8 +67,11 @@ test("an empty board stays empty and a rename reaches the board list", async ({ 
 
   await page.getByRole("button", { name: "All rooms" }).click();
   await page.getByRole("button", { name: "New room" }).click();
-  await page.locator(".new-board-dialog input").fill("Empty launch");
-  await page.locator(".new-board-dialog select").selectOption("empty");
+  await page.locator(".new-board-dialog input").first().fill("Empty launch");
+  // "Empty room" is the default card; there is no example list to choose from.
+  await expect(
+    page.locator(".new-board-dialog").getByRole("radio", { name: /Empty room/ }),
+  ).toBeChecked();
   await page.locator(".new-board-dialog .primary-button").click();
 
   await expect(page).toHaveURL(/room=empty-launch/);

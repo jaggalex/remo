@@ -18,6 +18,7 @@ import {
 import type { Rect, TableAxis, Widget } from "@remo/model";
 import { Menu, type MenuItem } from "@remo/ui";
 import { AxisDeleteDialog, type AxisDeleteTarget } from "./AxisDeleteDialog";
+import { TableAxisControls } from "./TableAxisControls";
 import { TableMirror } from "./TableGrid";
 import { useI18n } from "./i18n";
 import { setTableAxisSelection, useTableAxisSelection } from "./tableSelection";
@@ -67,6 +68,7 @@ export function TableHeaderLayer({
   drop = null,
   refused = false,
   cursor = null,
+  selectedIds = [],
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -82,6 +84,8 @@ export function TableHeaderLayer({
   refused?: boolean;
   /** Client coordinates, for the refusal hint. */
   cursor?: { x: number; y: number } | null;
+  /** The canvas selection; a selected table shows its insert controls. */
+  selectedIds?: readonly string[];
 }) {
   const { t } = useI18n();
   const selection = useTableAxisSelection();
@@ -352,13 +356,24 @@ export function TableHeaderLayer({
       ].map(
         (option): MenuItem => ({
           label: option.label,
-          checked: (entry.axis.size ?? "auto") === option.value,
+          checked:
+            typeof entry.axis.size !== "number" && (entry.axis.size ?? "auto") === option.value,
           onSelect: () => {
             setAxisSize(board, entry.frame.id, entry.axis.id, option.value);
             setMenu(null);
           },
         }),
       ),
+      ...(typeof entry.axis.size === "number"
+        ? [
+            {
+              label: `${t("section.size.manual")} · ${t("section.size.px", { n: entry.axis.size })}`,
+              checked: true,
+              disabled: true,
+              onSelect: () => undefined,
+            } satisfies MenuItem,
+          ]
+        : []),
       { separator: true },
       {
         label: t(
@@ -394,6 +409,23 @@ export function TableHeaderLayer({
   return (
     <>
       <TableMirror widgets={widgets} />
+      <TableAxisControls
+        board={board}
+        widgets={widgets}
+        camera={camera}
+        viewport={viewport}
+        readOnly={readOnly}
+        activeFrameIds={
+          new Set([
+            ...selectedIds.filter((id) => headers.some((entry) => entry.frame.id === id)),
+            ...(selection ? [selection.frameId] : []),
+          ])
+        }
+        onCreated={(frameId, axisId) => {
+          setTableAxisSelection({ frameId, axisId });
+          onSelect([frameId]);
+        }}
+      />
       <div className="table-headers" role="group" aria-label={t("section.axes")}>
         {headers.map((entry) => {
           const rect = screenRect(entry.rect);

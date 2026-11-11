@@ -167,7 +167,8 @@ function validAxis(value: unknown): boolean {
     typeof value.id === "string" &&
     typeof value.title === "string" &&
     (value.size === undefined ||
-      (typeof value.size === "string" && AXIS_SIZES.has(value.size))) &&
+      (typeof value.size === "string" && AXIS_SIZES.has(value.size)) ||
+      (isFiniteNumber(value.size) && value.size > 0)) &&
     (value.vertical === undefined || typeof value.vertical === "boolean")
   );
 }

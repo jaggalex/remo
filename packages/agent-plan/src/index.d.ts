@@ -71,6 +71,8 @@ export interface PlanWarning {
   tempId?: string;
   tempIds?: string[];
   column?: number;
+  /** A section's title, for a warning that names it (ADR-201). */
+  title?: string;
 }
 
 export interface PlanCounts {

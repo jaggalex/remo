@@ -362,7 +362,7 @@ export function SectionPanel({
               <span className="section-field-label">{t("section.size.mode")}</span>
               <Segmented
                 label={t("section.size.mode")}
-                value={selected.size ?? "auto"}
+                value={typeof selected.size === "number" ? "" : (selected.size ?? "auto")}
                 onChange={(size) =>
                   setAxisSize(board, frame.id, selected.id, size as TableAxisSize)
                 }
@@ -380,6 +380,13 @@ export function SectionPanel({
                     disabled: readOnly,
                   },
                 ]}
+              />
+              <AxisPixelField
+                key={`${selected.id}:${String(selected.size ?? "auto")}`}
+                kind={selectedKind}
+                value={typeof selected.size === "number" ? selected.size : null}
+                disabled={readOnly}
+                onCommit={(px) => setAxisSize(board, frame.id, selected.id, px)}
               />
             </div>
             {selectedKind === "column" && (
@@ -435,6 +442,8 @@ export function SectionPanel({
         )}
       </div>
 
+      {/* Fills belong to the table; a free section has no cells to colour. */}
+      {active && (
       <div className="section-group">
         <button
           type="button"
@@ -492,28 +501,27 @@ export function SectionPanel({
           </div>
         )}
       </div>
+      )}
 
       <div className="section-group section-remove">
-        <button
-          type="button"
-          className={`section-action${canRemove ? "" : " is-disabled"}`}
-          aria-disabled={!canRemove || undefined}
+        <Button
+          variant="secondary"
+          size="compact"
+          disabled={!canRemove}
           onClick={() => {
-            if (!canRemove) return;
             removeTable(board, frame.id);
             selectAxis(null);
             setFillOpen(null);
           }}
-          title={!layout ? t("section.table.removeNone") : t("section.table.removeHint")}
         >
           {t("section.table.remove")}
-        </button>
+        </Button>
         <p className="muted section-caption">
-          {!layout ? t("section.table.removeNone") : t("section.table.removeHint")}
+          {active ? t("section.table.removeHint") : t("section.table.removeNone")}
         </p>
-        <button
-          type="button"
-          className="section-action section-action-danger"
+        <Button
+          variant="danger"
+          size="compact"
           disabled={readOnly}
           onClick={() => {
             deleteWidgets(board, [frame.id], { keepChildren: true });
@@ -521,8 +529,13 @@ export function SectionPanel({
           }}
         >
           {t("section.delete")}
-        </button>
-        <p className="muted section-caption">{t("section.deleteHint")}</p>
+        </Button>
+        {/* The consequence sits under the action, with the count it applies to. */}
+        <p className="muted section-caption">
+          {t("section.deleteHint", {
+            n: widgets.filter((widget) => widget.parentId === frame.id).length,
+          })}
+        </p>
       </div>
 
       {pendingDelete && (
@@ -538,5 +551,59 @@ export function SectionPanel({
         />
       )}
     </section>
+  );
+}
+
+/**
+ * The manual pixel size of an axis (ADR-196, ADR-201). Empty means Auto or a preset;
+ * a number is committed on Enter or blur and clamped by the command, Escape restores.
+ */
+function AxisPixelField({
+  kind,
+  value,
+  disabled,
+  onCommit,
+}: {
+  kind: AxisKind;
+  value: number | null;
+  disabled: boolean;
+  onCommit: (px: number) => void;
+}) {
+  const { t } = useI18n();
+  const [draft, setDraft] = useState(value == null ? "" : String(value));
+  const commit = () => {
+    const px = Number(draft);
+    if (!draft.trim() || !Number.isFinite(px) || px <= 0) {
+      setDraft(value == null ? "" : String(value));
+      return;
+    }
+    if (px !== value) onCommit(px);
+  };
+  return (
+    <div className="section-px">
+      <span className="section-field-label" aria-hidden="true">
+        {t("section.size.manual")}
+      </span>
+      <Input
+        inputMode="numeric"
+        size="compact"
+        suffix="px"
+        value={draft}
+        placeholder={kind === "column" ? "220" : "112"}
+        aria-label={t("section.size.pxField")}
+        disabled={disabled}
+        onChange={(event) => setDraft(event.currentTarget.value.replace(/[^0-9]/g, ""))}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            commit();
+          } else if (event.key === "Escape") {
+            event.preventDefault();
+            setDraft(value == null ? "" : String(value));
+          }
+        }}
+      />
+    </div>
   );
 }

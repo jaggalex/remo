@@ -40,7 +40,7 @@ async function screenPoint(page: Page, world: { x: number; y: number }) {
 }
 
 /** A frame with one note inside, opened as a two-column table. */
-async function openTable(page: Page, tag: string) {
+async function openTable(page: Page, tag: string, second = false) {
   const account = await register(page, tag);
   const frameId = await seedObject(page, account.boardId, {
     type: "frame",
@@ -58,6 +58,9 @@ async function openTable(page: Page, tag: string) {
     "Inside",
     frameId,
   );
+  const secondId = second
+    ? await seedNote(page, account.boardId, { x: 200, y: 0 }, { width: 80, height: 80 }, "Second", frameId)
+    : null;
   await openBoard(page, account.boardId);
   await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
   await waitForWidget(page, frameId);
@@ -75,7 +78,28 @@ async function openTable(page: Page, tag: string) {
   const panel = page.locator(".section-panel");
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
-  return { account, frameId, noteId, panel };
+  return { account, frameId, noteId, secondId, panel };
+}
+
+/**
+ * Move a second note into "Column 2 × Row 1" with the cell command in the panel, so the
+ * table has two filled cells: an empty cell is not a presentation step (ADR-201).
+ */
+async function fillColumnTwo(page: Page, noteId: string, frameId: string) {
+  const note = (await widgets(page)).find((widget) => widget.id === noteId)!;
+  const point = await screenPoint(page, { x: note.x, y: note.y });
+  await page.mouse.click(point.x, point.y);
+  const cellPanel = page.locator(".table-cell-panel");
+  await expect(cellPanel).toBeVisible();
+  await cellPanel.locator("select").selectOption({ label: "Column 2 × Row 1" });
+  await cellPanel.getByRole("button", { name: "Move", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const all = await widgets(page);
+      const section = all.find((widget) => widget.id === frameId)!;
+      return all.find((widget) => widget.id === noteId)?.cell?.columnId === section.layout?.columns?.[1]?.id;
+    })
+    .toBe(true);
 }
 
 test("turns a section into a table and deletes it without its objects", async ({ page }) => {
@@ -301,7 +325,8 @@ test("drops an object into another cell and undoes it in one step", async ({ pag
   const from = await screenPoint(page, { x: before.x, y: before.y });
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height + 100, { steps: 12 });
+  // Just under the header: inside the first row at any zoom (the row is as tall as the note).
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height + 12, { steps: 12 });
   await page.mouse.up();
 
   await expect
@@ -355,7 +380,8 @@ test("moves a selected object to a named cell from the panel", async ({ page }) 
 
 
 test("presents a table cell by cell in row order", async ({ page }) => {
-  await openTable(page, "table-present");
+  const { frameId, secondId } = await openTable(page, "table-present", true);
+  await fillColumnTwo(page, secondId!, frameId);
   await startPresentation(page);
   const panel = page.locator(".presentation-panel");
   await expect(panel).toBeVisible();
@@ -366,10 +392,13 @@ test("presents a table cell by cell in row order", async ({ page }) => {
   await expect(bar).toContainText("Column 1 × Row 1");
   await expect(page.locator(".present-cell-focus")).toBeVisible();
 
-  await bar.getByRole("button", { name: "Next slide" }).click();
+  // PageDown pages the presenter's steps; the arrow keys keep panning (ADR-108).
+  await page.keyboard.press("PageDown");
   await expect(bar).toContainText("Slide 2 of 2");
   await expect(bar).toContainText("Column 2 × Row 1");
   await expect(page.locator(".present-cell-focus")).toBeVisible();
+  await page.keyboard.press("PageUp");
+  await expect(bar).toContainText("Slide 1 of 2");
 
   await bar.getByRole("button", { name: "Stop" }).click();
   await expect(page.locator(".present-bar")).toHaveCount(0);
@@ -378,7 +407,8 @@ test("presents a table cell by cell in row order", async ({ page }) => {
 
 
 test("a follower follows the presented cell step", async ({ page, browser }) => {
-  const { account } = await openTable(page, "table-follow");
+  const { account, frameId, secondId } = await openTable(page, "table-follow", true);
+  await fillColumnTwo(page, secondId!, frameId);
   await startPresentation(page);
   await page
     .locator(".presentation-panel")
@@ -405,4 +435,60 @@ test("a follower follows the presented cell step", async ({ page, browser }) => 
   } finally {
     await second.close();
   }
+});
+
+test("the section is its table and the table grows from its own edges (ADR-201)", async ({
+  page,
+}) => {
+  const { frameId } = await openTable(page, "table-edges");
+  const section = async () => (await widgets(page)).find((widget) => widget.id === frameId)!;
+  const before = await section();
+  const corner = { x: before.x - before.width / 2, y: before.y - before.height / 2 };
+
+  // "+ Column" at the right edge adds an axis; the section grows from the same corner.
+  await page.getByRole("button", { name: "Add a column at the right" }).click();
+  await expect.poll(async () => (await section()).width).toBeGreaterThan(before.width);
+  const grown = await section();
+  expect(grown.x - grown.width / 2).toBeCloseTo(corner.x, 5);
+  expect(grown.y - grown.height / 2).toBeCloseTo(corner.y, 5);
+
+  await page.getByRole("button", { name: "Add a row at the bottom" }).click();
+  await expect.poll(async () => (await section()).height).toBeGreaterThan(grown.height);
+
+  // A "+" between two headers inserts a column in the middle.
+  await page.getByRole("button", { name: /Insert a column between/ }).first().click();
+  await expect
+    .poll(async () => (await section()).layout?.columns?.length)
+    .toBe(4);
+
+  // The note never leaves its cell: it is inside the section, right of the row headers.
+  const note = (await widgets(page)).find((widget) => widget.parentId === frameId)!;
+  const box = await section();
+  expect(note.x - note.width / 2).toBeGreaterThanOrEqual(box.x - box.width / 2 + 128);
+  expect(note.x + note.width / 2).toBeLessThanOrEqual(box.x + box.width / 2);
+});
+
+test("a header boundary sets a manual width and a double click returns to Auto", async ({
+  page,
+}) => {
+  const { frameId } = await openTable(page, "table-resize");
+  const column = () =>
+    widgets(page).then(
+      (all) =>
+        (all.find((widget) => widget.id === frameId)!.layout as {
+          columns: Array<{ id: string; size?: unknown }>;
+        }).columns[1]!,
+    );
+  const handle = page.getByRole("separator", { name: /Width of column/ }).nth(1);
+  await handle.focus();
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect.poll(async () => typeof (await column()).size).toBe("number");
+  const box = (await handle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 80, box.y + box.height / 2, { steps: 4 });
+  await expect(page.locator(".table-resize-value")).toContainText("px");
+  await page.mouse.up();
+  await handle.dblclick();
+  await expect.poll(async () => (await column()).size).toBeUndefined();
 });

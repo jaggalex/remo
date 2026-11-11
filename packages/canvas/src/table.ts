@@ -1,143 +1,30 @@
-import type { Rect, TableAxis, Widget } from "@remo/model";
-import { tableCellFill } from "@remo/model";
+import type { Rect, Widget } from "@remo/model";
+import {
+  TABLE_CELL_PADDING,
+  tableCellFill,
+  type TableGrid,
+} from "@remo/model";
 import { boxOf } from "./connectors";
 
 /**
- * Table geometry for a section (ADR-196, ADR-199).
+ * Table hit-testing and placement for a section (ADR-196, ADR-199, ADR-201).
  *
- * The frame is the table's origin; the axes are laid out in order. A column with a preset
- * size keeps it; an `auto` column follows the outermost objects in it, or the minimum when
- * empty. The objects stay at their world coordinates; the grid is a lens over them, not a
- * second copy. Hit-testing and the painter read this one function.
+ * The grid itself is computed in `@remo/model` (`layoutTable`), because the document
+ * commands size the section with the same numbers the painter draws.
  */
 
-export const TABLE_HEADER_HEIGHT = 40;
-export const TABLE_HEADER_WIDTH = 128;
-export const TABLE_CELL_PADDING = 16;
-export const TABLE_MIN_COLUMN = 120;
-export const TABLE_MIN_ROW = 72;
-const PRESET_COLUMN: Record<string, number> = { narrow: 140, medium: 220, wide: 340 };
-const PRESET_ROW: Record<string, number> = { narrow: 72, medium: 112, wide: 168 };
-
-export interface TableColumn {
-  axis: TableAxis;
-  x: number;
-  width: number;
-}
-
-export interface TableRow {
-  axis: TableAxis;
-  y: number;
-  height: number;
-}
-
-export interface TableCell {
-  rowId: string;
-  columnId: string;
-  rect: Rect;
-}
-
-export interface TableGrid {
-  frameId: string;
-  origin: { x: number; y: number };
-  headerWidth: number;
-  headerHeight: number;
-  columns: TableColumn[];
-  rows: TableRow[];
-  cells: TableCell[];
-  width: number;
-  height: number;
-}
-
-function objectsIn(
-  widgets: readonly Widget[],
-  frameId: string,
-  field: "rowId" | "columnId",
-  axisId: string,
-): Widget[] {
-  return widgets.filter(
-    (widget) => widget.parentId === frameId && widget.cell?.[field] === axisId,
-  );
-}
-
-function autoColumnWidth(widgets: Widget[], startX: number): number {
-  if (!widgets.length) return TABLE_MIN_COLUMN;
-  const right = Math.max(...widgets.map((widget) => boxOf(widget).x + boxOf(widget).width));
-  // The width covers everything from the cell's own left edge to the outermost object,
-  // so an object never spills into the next column (ADR-199: the cell grows to fit them).
-  return Math.max(TABLE_MIN_COLUMN, right - startX + TABLE_CELL_PADDING * 2);
-}
-
-function autoRowHeight(widgets: Widget[], startY: number): number {
-  if (!widgets.length) return TABLE_MIN_ROW;
-  const bottom = Math.max(...widgets.map((widget) => boxOf(widget).y + boxOf(widget).height));
-  return Math.max(TABLE_MIN_ROW, bottom - startY + TABLE_CELL_PADDING * 2);
-}
-
-/** The grid of a section, or null when the section is free or the layout is inactive. */
-export function layoutTable(
-  frame: Widget,
-  widgets: readonly Widget[],
-): TableGrid | null {
-  const layout = frame.layout;
-  if (layout?.kind !== "table" || layout.active === false) return null;
-  const origin = { x: frame.x - frame.width / 2, y: frame.y - frame.height / 2 };
-  const headerWidth = TABLE_HEADER_WIDTH;
-  const headerHeight = TABLE_HEADER_HEIGHT;
-
-  const columns: TableColumn[] = [];
-  let x = origin.x + headerWidth;
-  for (const axis of layout.columns) {
-    const autoWidth = autoColumnWidth(
-      objectsIn(widgets, frame.id, "columnId", axis.id),
-      x,
-    );
-    const width =
-      axis.size && axis.size !== "auto"
-        ? Math.max(PRESET_COLUMN[axis.size] ?? TABLE_MIN_COLUMN, autoWidth)
-        : autoWidth;
-    columns.push({ axis, x, width });
-    x += width;
-  }
-
-  const rows: TableRow[] = [];
-  let y = origin.y + headerHeight;
-  for (const axis of layout.rows) {
-    const autoHeight = autoRowHeight(
-      objectsIn(widgets, frame.id, "rowId", axis.id),
-      y,
-    );
-    const height =
-      axis.size && axis.size !== "auto"
-        ? Math.max(PRESET_ROW[axis.size] ?? TABLE_MIN_ROW, autoHeight)
-        : autoHeight;
-    rows.push({ axis, y, height });
-    y += height;
-  }
-
-  const cells: TableCell[] = [];
-  for (const row of rows) {
-    for (const column of columns) {
-      cells.push({
-        rowId: row.axis.id,
-        columnId: column.axis.id,
-        rect: { x: column.x, y: row.y, width: column.width, height: row.height },
-      });
-    }
-  }
-
-  return {
-    frameId: frame.id,
-    origin,
-    headerWidth,
-    headerHeight,
-    columns,
-    rows,
-    cells,
-    width: headerWidth + columns.reduce((total, column) => total + column.width, 0),
-    height: headerHeight + rows.reduce((total, row) => total + row.height, 0),
-  };
-}
+export {
+  TABLE_CELL_PADDING,
+  TABLE_HEADER_HEIGHT,
+  TABLE_HEADER_WIDTH,
+  TABLE_MIN_COLUMN,
+  TABLE_MIN_ROW,
+  layoutTable,
+  type TableCell,
+  type TableColumn,
+  type TableGrid,
+  type TableRow,
+} from "@remo/model";
 
 export function cellRect(
   grid: TableGrid,

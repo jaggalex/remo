@@ -59,13 +59,27 @@ export interface GatherResult {
  * is never moved; an object in another section is skipped unless `takeOut` is true; a
  * frame in the selection is reported as `nested` and never becomes a member.
  */
-export function gatherIntoSection(
-  board: BoardDocument,
+export interface GatherPlan {
+  members: Widget[];
+  objects: Widget[];
+  conflicts: GatherConflict[];
+  /** The future section box (corner + size), or null when fewer than two can join. */
+  box: { x: number; y: number; width: number; height: number } | null;
+}
+
+/**
+ * What a gather would do, without doing it: the members, the conflicts and the section
+ * box. The command and the preview read this one function, so the dashed outline shown
+ * before the click is the box the click creates (ADR-198, ADR-201).
+ */
+export function gatherPlan(
+  widgets: readonly Widget[],
   ids: readonly string[],
-  options: GatherOptions,
-): GatherResult {
+  options: { id?: string; padding?: number; takeOut?: boolean } = {},
+): GatherPlan {
+  const byId = new Map(widgets.map((widget) => [widget.id, widget]));
   const selected = ids
-    .map((id) => board.readWidget(id))
+    .map((id) => byId.get(id))
     .filter((widget): widget is Widget => Boolean(widget));
 
   const conflicts: GatherConflict[] = [];
@@ -80,7 +94,7 @@ export function gatherIntoSection(
       continue;
     }
     if (widget.parentId) {
-      const parent = board.readWidget(widget.parentId);
+      const parent = byId.get(widget.parentId);
       if (parent?.type === "frame" && parent.id !== options.id) {
         conflicts.push({ kind: "otherSection", id: widget.id, sectionId: parent.id });
       }
@@ -100,8 +114,30 @@ export function gatherIntoSection(
     (widget) =>
       !locked.has(widget.id) && (options.takeOut === true || !elsewhere.has(widget.id)),
   );
+  if (members.length < 2) return { members, objects, conflicts, box: null };
+  const box = bounds(members);
+  const padding = options.padding ?? GATHER_PADDING;
+  return {
+    members,
+    objects,
+    conflicts,
+    box: {
+      x: box.x - padding,
+      y: box.y - padding,
+      width: box.width + padding * 2,
+      height: box.height + padding * 2,
+    },
+  };
+}
 
-  if (members.length < 2) {
+export function gatherIntoSection(
+  board: BoardDocument,
+  ids: readonly string[],
+  options: GatherOptions,
+): GatherResult {
+  const { members, objects, conflicts, box } = gatherPlan(board.readWidgets(), ids, options);
+
+  if (!box) {
     return {
       frameId: null,
       gathered: [],
@@ -110,16 +146,14 @@ export function gatherIntoSection(
     };
   }
 
-  const box = bounds(members);
-  const padding = options.padding ?? GATHER_PADDING;
   const frame: Widget = {
     id: options.id,
     type: "frame",
     parentId: null,
     x: box.x + box.width / 2,
     y: box.y + box.height / 2,
-    width: box.width + padding * 2,
-    height: box.height + padding * 2,
+    width: box.width,
+    height: box.height,
     title: options.title,
   };
 

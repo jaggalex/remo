@@ -182,6 +182,7 @@
 .rm-tooltip-bottom { top: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
 .rm-tooltip-top { bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
 .rm-tooltip-right { left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
+.rm-tooltip-bottom.rm-tooltip-end, .rm-tooltip-top.rm-tooltip-end { left: auto; right: 0; transform: none; }
 .rm-tooltip-wrap:hover .rm-tooltip, .rm-tooltip-wrap:focus-within .rm-tooltip, .rm-tooltip-wrap.is-open .rm-tooltip { display: inline-flex; }
 
 /* ---------- Menu ---------- */

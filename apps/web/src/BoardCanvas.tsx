@@ -16,6 +16,8 @@ import type {
   NoteDirection,
   Presence,
 } from "@remo/doc";
+import { GatherPreview } from "./GatherPreview";
+import { useViewportSize } from "./useViewportSize";
 import {
   soleSelectedGroup,
   type Tag,
@@ -244,7 +246,6 @@ export function BoardCanvas({
   reactionRequest,
 }: Props) {
   const { t } = useI18n();
-  const [viewport, setViewport] = useState({ width: 1, height: 1 });
   /** A live presentation hides state marks that are not content (ADR-193). */
   const [presenting, setPresenting] = useState(false);
   /** The edge "+" preview, painted by the overlay until the click (ADR-195). */
@@ -256,6 +257,7 @@ export function BoardCanvas({
   const boardRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const viewport = useViewportSize(wrapRef);
   /** One layout per kanban, shared by painting and hit-testing. */
   const layouts = useMemo(() => {
     const map = new Map<string, KanbanLayout>();
@@ -375,40 +377,7 @@ export function BoardCanvas({
     t,
   });
 
-  // A zero-sized viewport means the wrapper has not been laid out yet (a hidden tab,
-  // a first paint before fonts): measure again once it has a size.
-  useEffect(() => {
-    if (viewport.width > 1 && viewport.height > 1) return;
-    const timer = window.setTimeout(() => measure(), 60);
-    return () => window.clearTimeout(timer);
-  }, [viewport.height, viewport.width]);
 
-  const measure = useCallback(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const rect = wrap.getBoundingClientRect();
-    const width = Math.max(1, Math.round(rect.width));
-    const height = Math.max(1, Math.round(rect.height));
-    setViewport((current) =>
-      current.width === width && current.height === height ? current : { width, height },
-    );
-  }, []);
-
-  useEffect(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(wrap);
-    window.addEventListener("resize", measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [measure]);
-
-
-;
 
   useCanvasProbe({
     boardTitle,
@@ -617,6 +586,8 @@ export function BoardCanvas({
   }, [selectedWidget, settings.connectors.stubMax, settings.connectors.stubRatio, widgetById]);
   const selectedGroup = soleSelectedGroup(widgets, selectedIds);
   const edgeSource = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
+  // "Gather into section" pointed at: the outline of the section it would create.
+  const [gatherPreview, setGatherPreview] = useState(false);
   const edgeBusy =
     gestures.dragIds.length > 0 || (edgeSource ? gestures.preview.has(edgeSource.id) : false);
 
@@ -674,7 +645,8 @@ export function BoardCanvas({
         onFit={fit}
         onZoom={zoomBy}
       />
-      <CanvasHint allowed={hintAllowed} />
+      {/* An empty room shows its start, not tips about objects it does not have. */}
+      <CanvasHint allowed={hintAllowed && widgets.length > 0} />
       <SelectionBadge
         selectedIds={presenting ? [] : selectedIds}
         selectedWidget={selectedWidget}
@@ -704,6 +676,7 @@ export function BoardCanvas({
           const created = onConnect(fromId, toId, sides);
           if (created) onSelect([created]);
         }}
+        connectDrag={gestures}
       />
       <PresentationLayer
         board={board}
@@ -764,6 +737,7 @@ export function BoardCanvas({
         presenting={presenting}
         onSelect={onSelect}
         drop={gestures.tableHover} refused={gestures.tableRefused} cursor={gestures.cursor}
+        selectedIds={selectedIds}
       />
       <InlineEditor
         target={presenting ? null : editorTarget}
@@ -777,7 +751,17 @@ export function BoardCanvas({
         editing={Boolean(editingId)}
         formatSelection={formatSelection}
       />
-      <ArrangeBar target={presenting ? null : arrangeBar} actions={arrangeActions} />
+      <ArrangeBar
+        target={presenting ? null : arrangeBar}
+        actions={{ ...arrangeActions, previewGather: setGatherPreview }}
+      />
+      <GatherPreview
+        on={gatherPreview}
+        widgets={widgets}
+        selectedIds={selectedIds}
+        camera={camera}
+        viewport={viewport}
+      />
       <ConnectorBar
         target={presenting ? null : connectorBar}
         actions={connectorActions}

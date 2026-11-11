@@ -372,3 +372,153 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* On-canvas axis actions of a selected table (ADR-196, ADR-201; T5, T13). */
+.table-axis-controls {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-canvas-overlay);
+  pointer-events: none;
+}
+
+.table-edge-add {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
+  color: var(--text-secondary);
+  font: var(--type-caption);
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.72;
+  transition: opacity var(--dur-1) var(--ease);
+}
+
+.table-edge-add.is-row {
+  justify-content: flex-start;
+}
+
+.table-edge-add:hover,
+.table-edge-add:focus-visible {
+  border-style: solid;
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.table-edge-add:focus-visible,
+.table-insert:focus-visible,
+.table-resize:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.table-insert {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.6;
+  transition: opacity var(--dur-1) var(--ease);
+}
+
+.table-insert:hover,
+.table-insert:focus-visible {
+  border-color: var(--border-focus);
+  color: var(--accent);
+  opacity: 1;
+}
+
+.table-resize {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.table-resize.is-column {
+  cursor: col-resize;
+}
+
+.table-resize.is-row {
+  cursor: row-resize;
+}
+
+.table-resize:hover::after,
+.table-resize:focus-visible::after {
+  content: "";
+  position: absolute;
+  background: var(--border-focus);
+}
+
+.table-resize.is-column:hover::after,
+.table-resize.is-column:focus-visible::after {
+  inset: 0 calc(50% - 1px);
+}
+
+.table-resize.is-row:hover::after,
+.table-resize.is-row:focus-visible::after {
+  inset: calc(50% - 1px) 0;
+}
+
+.table-resize-value {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  font: var(--type-caption);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.table-resize-guide {
+  position: absolute;
+  border: 0 dashed var(--border-focus);
+  pointer-events: none;
+}
+
+.table-resize-guide.is-column {
+  width: 0;
+  border-left-width: 1.5px;
+}
+
+.table-resize-guide.is-row {
+  height: 0;
+  border-top-width: 1.5px;
+}
+
+.section-px {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.section-px .section-field-label {
+  flex: 1;
+}
+
+.section-px .rm-field {
+  width: 96px;
+}

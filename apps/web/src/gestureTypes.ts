@@ -107,4 +107,13 @@ export interface Gestures {
   onPointerMove: (event: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerUp: () => void;
   onDoubleClick: (event: React.MouseEvent<HTMLCanvasElement>) => void;
+  /**
+   * Begin a line from a side of an object, as a press on its port would (ADR-201: the
+   * edge "+" and the port are one handle). The caller forwards the rest of the drag.
+   */
+  startConnect: (
+    fromId: string,
+    side: import("@remo/model").ConnectorSide,
+    client: { x: number; y: number },
+  ) => void;
 }

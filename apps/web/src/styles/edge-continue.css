@@ -84,3 +84,42 @@
   flex-wrap: wrap;
   gap: var(--space-1);
 }
+
+/* The sentence beside an active "+": what Enter does, and that a drag draws a line. */
+.edge-continue-tip {
+  position: absolute;
+  display: flex;
+  pointer-events: none;
+}
+
+.edge-continue-tip > span {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-bar);
+  font: var(--type-caption);
+  white-space: nowrap;
+}
+
+/* The section "Gather into section" would create, before the click (ADR-198). */
+.gather-preview {
+  position: absolute;
+  z-index: var(--z-canvas-overlay);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  pointer-events: none;
+}
+
+.gather-preview > span {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  padding: 0 var(--space-1);
+  color: var(--text-accent);
+  font: var(--type-caption);
+  white-space: nowrap;
+}

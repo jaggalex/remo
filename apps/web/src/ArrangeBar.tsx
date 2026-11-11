@@ -40,6 +40,8 @@ export interface ArrangeBarActions {
   tidy: () => void;
   /** Gather compatible objects into one section (ADR-198). */
   gather: () => void;
+  /** Show or hide the future section's outline while the action is pointed at. */
+  previewGather?: (on: boolean) => void;
   /** Narrow the selection to one type; `null` restores the selection before narrowing. */
   selectType: (type: string | null) => void;
   /** Write the shared role to every selected object: one transaction, one undo step. */
@@ -156,7 +158,18 @@ export function ArrangeBar({
       </span>
 
       {target.canGather && (
-        <Button variant="ghost" size="compact" onClick={actions.gather}>
+        <Button
+          variant="ghost"
+          size="compact"
+          onClick={() => {
+            actions.previewGather?.(false);
+            actions.gather();
+          }}
+          onPointerEnter={() => actions.previewGather?.(true)}
+          onPointerLeave={() => actions.previewGather?.(false)}
+          onFocus={() => actions.previewGather?.(true)}
+          onBlur={() => actions.previewGather?.(false)}
+        >
           {t("selection.gather")}
         </Button>
       )}

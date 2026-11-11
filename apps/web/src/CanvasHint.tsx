@@ -24,11 +24,12 @@ export function CanvasHint({ allowed }: { allowed: boolean }) {
     }
   });
 
+  // Not shown is not seen: in an empty room the hint waits for something to talk about.
   useEffect(() => {
-    if (seen) return;
+    if (seen || !allowed) return;
     const timer = window.setTimeout(() => setSeen(true), 6000);
     return () => window.clearTimeout(timer);
-  }, [seen]);
+  }, [allowed, seen]);
 
   useEffect(() => {
     if (seen) {
@@ -39,13 +40,14 @@ export function CanvasHint({ allowed }: { allowed: boolean }) {
       }
       return;
     }
+    if (!allowed) return;
     // A gesture on the canvas is what the hint talks about: one is enough.
     const onDown = (event: PointerEvent) => {
       if ((event.target as HTMLElement | null)?.closest("canvas")) setSeen(true);
     };
     window.addEventListener("pointerdown", onDown, true);
     return () => window.removeEventListener("pointerdown", onDown, true);
-  }, [seen]);
+  }, [allowed, seen]);
 
   if (!allowed || seen) return null;
   return (

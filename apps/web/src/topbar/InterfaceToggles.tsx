@@ -8,6 +8,7 @@ import type { Theme } from "../useTheme";
  * Theme and language are one click from any screen and never move: home puts them after
  * the account, a room after Share. The account menu no longer carries them. The theme
  * icon shows the current state; the accessible name says what the next click will do.
+ * Their tips align to the right edge, so the sentence is not cut by the window.
  */
 export function InterfaceToggles({
   theme,
@@ -23,7 +24,7 @@ export function InterfaceToggles({
 
   return (
     <>
-      <Tooltip label={themeLabel}>
+      <Tooltip label={themeLabel} align="end">
         <IconButton
           icon={theme === "light" ? "sun" : "moon"}
           label={themeLabel}
@@ -32,7 +33,7 @@ export function InterfaceToggles({
           onClick={() => onTheme(nextTheme)}
         />
       </Tooltip>
-      <Tooltip label={langLabel}>
+      <Tooltip label={langLabel} align="end">
         <Button
           variant="ghost"
           size="compact"

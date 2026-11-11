@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Widget } from "@remo/model";
 import { BoardDocument, loadBoard } from "./board";
-import { GATHER_PADDING, gatherIntoSection } from "./gather";
+import { GATHER_PADDING, gatherIntoSection, gatherPlan } from "./gather";
 
 function boardWith(widgets: Widget[]): BoardDocument {
   const board = new BoardDocument();
@@ -103,5 +103,18 @@ describe("gathering a selection into a section (ADR-198)", () => {
     const result = gatherIntoSection(board, ["a", "f"], { id: "g", title: "Section" });
     expect(result.frameId).toBeNull();
     expect(board.widgets.get("g")).toBeUndefined();
+  });
+
+  it("previews exactly the box the command creates", () => {
+    const board = boardWith([note("a", -100), note("b", 200, 60)]);
+    const plan = gatherPlan(board.readWidgets(), ["a", "b"]);
+    gatherIntoSection(board, ["a", "b"], { id: "g", title: "Section" });
+    const created = board.readWidget("g")!;
+    expect(plan.box).toEqual({
+      x: created.x - created.width / 2,
+      y: created.y - created.height / 2,
+      width: created.width,
+      height: created.height,
+    });
   });
 });

@@ -65,11 +65,13 @@ describe("table geometry (ADR-196, ADR-199)", () => {
     expect(grid.cells).toHaveLength(4);
     expect(cellRect(grid, "r1", "c2")).toMatchObject({ width: 340 });
     expect(cellRect(grid, "missing", "c1")).toBeNull();
+    // The cell is sized by the object's own box plus padding, not by where it lies
+    // (ADR-201): the reflow puts it at the padding corner.
     const first = cellRect(grid, "r1", "c1")!;
-    expect(first.x).toBeLessThanOrEqual(-150);
-    expect(first.x + first.width).toBeGreaterThanOrEqual(-50);
-    expect(first.y).toBeLessThanOrEqual(-120);
-    expect(first.y + first.height).toBeGreaterThanOrEqual(-40);
+    expect(first.x).toBe(-300 + TABLE_HEADER_WIDTH);
+    expect(first.width).toBe(100 + 32);
+    expect(first.y).toBe(-200 + TABLE_HEADER_HEIGHT);
+    expect(first.height).toBe(80 + 32);
   });
 
   it("keeps an empty axis at the minimum size", () => {

@@ -310,11 +310,12 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
         </div>
 
         <div className="home-context">
-          {orgs.length > 0 && activeOrg && (
+          {/* A quiet switcher, and only when there is somewhere to switch to (ADR-197). */}
+          {orgs.length > 1 && activeOrg && (
             <>
               <Select
                 size="compact"
-                label={t("boards.org")}
+                aria-label={t("boards.org")}
                 value={activeOrg.slug}
                 options={orgs.map((org) => ({
                   value: org.slug,
@@ -322,9 +323,6 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
                 }))}
                 onChange={(event) => switchOrg(event.currentTarget.value)}
               />
-              {activeOrg.kind === "personal" && (
-                <span className="org-badge personal">{t("org.personal")}</span>
-              )}
             </>
           )}
         </div>
@@ -393,7 +391,8 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
                 <HelpLink topicId="rooms.home" />
               </h1>
               <p className="muted">
-                {total > 0 ? t("home.count", { from, to, total }) : null}
+                {/* A range is a page position: one page needs no counter. */}
+                {totalPages > 1 ? t("home.count", { from, to, total }) : null}
               </p>
               {directory ? (
                 <div className="home-views" role="group" aria-label={t("boards.title")}>

@@ -13,7 +13,11 @@ export interface TableAxis {
   /** Stable identity: order and title may change without renaming the axis. */
   id: string;
   title: string;
-  size?: TableAxisSize;
+  /**
+   * Absent or `auto`: the axis follows its content. A preset or a whole number of
+   * pixels is a manual floor; content still fits (ADR-196, ADR-201).
+   */
+  size?: TableAxisSize | number;
   /** Column headers only; row headers stay horizontal (ADR-196). */
   vertical?: boolean;
 }

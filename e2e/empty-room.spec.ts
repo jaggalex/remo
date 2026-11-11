@@ -14,9 +14,17 @@ test("an empty room starts with a note or a shape and the inspector closed", asy
   await expect(page.locator(".app")).toHaveClass(/no-inspector/);
   await expect(page.locator(".inspector")).toBeHidden();
 
+  const zoom = () =>
+    page.evaluate(
+      () => (window as unknown as { __remo: { camera: { zoom: number } } }).__remo.camera.zoom,
+    );
+  const before = await zoom();
   await start.getByRole("button", { name: "Note" }).click();
   await expect(page.locator(".inline-editor")).toBeVisible();
   await expect(page.locator(".empty-board")).toHaveCount(0);
+  // The first note does not zoom the room onto itself (ADR-197).
+  await page.waitForTimeout(300);
+  expect(await zoom()).toBeCloseTo(before, 5);
 });
 
 test("the empty room's example opens the template picker", async ({ page }) => {

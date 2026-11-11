@@ -101,6 +101,14 @@ describe("presentation order (ADR-165)", () => {
     };
     board.widgets.set("table", table);
     board.widgets.set("n", note("n", 900));
+    for (const [id, rowId, columnId] of [
+      ["a1", "r1", "c1"],
+      ["a2", "r1", "c2"],
+      ["a3", "r2", "c1"],
+      ["a4", "r2", "c2"],
+    ] as const) {
+      board.widgets.set(id, { ...note(id, 0), parentId: "table", cell: { rowId, columnId } });
+    }
     setPresentationOrder(board, ["table", "n"]);
 
     expect(presentationSlides(board)).toEqual(["table", "n"]);
@@ -115,6 +123,24 @@ describe("presentation order (ADR-165)", () => {
       "table:r2:c2",
       "n",
     ]);
+  });
+
+  it("skips empty cells and shows an empty table whole (ADR-201)", () => {
+    const board = new BoardDocument();
+    const layout = {
+      kind: "table" as const,
+      columns: [
+        { id: "c1", title: "A" },
+        { id: "c2", title: "B" },
+      ],
+      rows: [{ id: "r1", title: "1" }],
+    };
+    board.widgets.set("table", { ...frame("table", 0), layout });
+    board.widgets.set("x", { ...note("x", 0), parentId: "table", cell: { rowId: "r1", columnId: "c2" } });
+    setPresentationOrder(board, ["table"]);
+    expect(presentationSteps(board).map((step) => step.id)).toEqual(["table:r1:c2"]);
+    board.widgets.delete("x");
+    expect(presentationSteps(board).map((step) => step.id)).toEqual(["table"]);
   });
 
   it("keeps a table with no axes as one whole-frame step", () => {

@@ -1,4 +1,5 @@
 import {
+  clampAxisSize,
   newId,
   type CellPlacement,
   type TableAppearance,
@@ -197,12 +198,15 @@ export function renameAxis(
   return false;
 }
 
-/** Set the manual size preset; `auto` removes the override. */
+/**
+ * Set the size mode of one axis: `auto` removes the override; a preset or a pixel
+ * value is a manual floor that content may still exceed (ADR-201).
+ */
 export function setAxisSize(
   board: BoardDocument,
   frameId: string,
   axisId: string,
-  size: TableAxisSize,
+  size: TableAxisSize | number,
 ): boolean {
   const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
@@ -215,7 +219,7 @@ export function setAxisSize(
         const { size: _size, ...rest } = axis;
         return rest;
       }
-      return { ...axis, size };
+      return { ...axis, size: typeof size === "number" ? clampAxisSize(kind, size) : size };
     });
     board.transact(() => writeLayout(board, frame, withAxes(frame.layout!, kind, next)));
     return true;

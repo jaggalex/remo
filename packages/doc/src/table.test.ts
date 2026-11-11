@@ -14,7 +14,8 @@ import {
   showTable,
   tableLayoutOf,
 } from "./table";
-import { deleteWidgets } from "./widgets";
+import { deleteWidgets, moveWidgets, setWidgetRects } from "./widgets";
+import { layoutTable, TABLE_CELL_PADDING } from "@remo/model";
 
 function boardWith(widgets: Widget[]): BoardDocument {
   const board = new BoardDocument();
@@ -174,16 +175,9 @@ describe("table axes (ADR-196, ADR-199)", () => {
       offset: { x: 300, y: 120 },
     });
     expect(result).toEqual({ moved: ["a", "b"], blocked: [] });
-    expect(board.widgets.get("a")).toMatchObject({
-      x: beforeA.x + 300,
-      y: beforeA.y + 120,
-      parentId: "f",
-    });
-    expect(board.widgets.get("b")).toMatchObject({
-      x: beforeB.x + 300,
-      y: beforeB.y + 120,
-      parentId: "f",
-    });
+    expect(board.widgets.get("a")).toMatchObject({ parentId: "f" });
+    expect(board.widgets.get("b")).toMatchObject({ parentId: "f" });
+    expect(beforeB.y - beforeA.y).toBe(board.widgets.get("b")!.y - board.widgets.get("a")!.y);
     expect(beforeB.x - beforeA.x).toBe(board.widgets.get("b")!.x - board.widgets.get("a")!.x);
 
     board.undoOnce();
@@ -277,5 +271,90 @@ describe("table axes (ADR-196, ADR-199)", () => {
     expect(removeTable(board, "f")).toBe(false);
     expect(showTable(board, "f")).toBe(false);
     expect(setTableFill(board, "f", { kind: "table" }, "#ff0000")).toBe(false);
+  });
+
+  describe("the section is its table (ADR-201)", () => {
+    function inside(board: BoardDocument) {
+      const section = board.readWidget("f")!;
+      const widgets = board.readWidgets();
+      const grid = layoutTable(section, widgets)!;
+      // B1: the section box is exactly the grid.
+      expect(section.x - section.width / 2).toBe(grid.origin.x);
+      expect(section.width).toBe(grid.width);
+      expect(section.height).toBe(grid.height);
+      // B2: every member lies inside its own cell, padding included.
+      for (const widget of widgets.filter((entry) => entry.cell)) {
+        const cell = grid.cells.find(
+          (entry) =>
+            entry.rowId === widget.cell!.rowId && entry.columnId === widget.cell!.columnId,
+        )!.rect;
+        expect(widget.x - widget.width / 2).toBeGreaterThanOrEqual(cell.x + TABLE_CELL_PADDING);
+        expect(widget.y - widget.height / 2).toBeGreaterThanOrEqual(cell.y + TABLE_CELL_PADDING);
+        expect(widget.x + widget.width / 2).toBeLessThanOrEqual(cell.x + cell.width);
+        expect(widget.y + widget.height / 2).toBeLessThanOrEqual(cell.y + cell.height);
+      }
+      return { section, grid };
+    }
+
+    it("sizes the section to the table as axes come and go, keeping its corner", () => {
+      const board = withNotes();
+      const corner = { x: -300, y: -200 };
+      addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+      let { section } = inside(board);
+      expect(section.x - section.width / 2).toBe(corner.x);
+      expect(section.y - section.height / 2).toBe(corner.y);
+      const before = section.width;
+      addAxis(board, "f", "column", { title: "Later" });
+      ({ section } = inside(board));
+      expect(section.width).toBeGreaterThan(before);
+      addAxis(board, "f", "row", { title: "Row 2" });
+      const layout = tableLayoutOf(board, "f")!;
+      deleteAxis(board, "f", layout.columns[2]!.id, { mode: "move" });
+      ({ section } = inside(board));
+      expect(section.width).toBe(before);
+      expect(section.x - section.width / 2).toBe(corner.x);
+    });
+
+    it("grows a cell for a large object and never lets it into the header", () => {
+      const board = withNotes();
+      addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+      const layout = tableLayoutOf(board, "f")!;
+      const a = board.readWidget("a")!;
+      setWidgetRects(board, [{ id: "a", x: a.x, y: a.y, width: 420, height: 300 }]);
+      inside(board);
+      // Dragging a member towards the header inside its cell snaps back to the corner.
+      moveWidgets(board, [{ id: "a", x: -900, y: board.readWidget("a")!.y }]);
+      expect(board.readWidget("a")!.cell?.columnId).toBeUndefined();
+      moveSelectionToCell(board, "f", ["a"], {
+        rowId: layout.rows[0]!.id,
+        columnId: layout.columns[1]!.id,
+      });
+      inside(board);
+    });
+
+    it("keeps the box when the table is removed and settles again when shown", () => {
+      const board = withNotes();
+      addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+      const { section } = inside(board);
+      removeTable(board, "f");
+      expect(board.readWidget("f")).toMatchObject({
+        x: section.x,
+        y: section.y,
+        width: section.width,
+        height: section.height,
+      });
+      showTable(board, "f");
+      inside(board);
+    });
+
+    it("undoes an axis and its reflow as one step", () => {
+      const board = withNotes();
+      const before = board.readWidget("f")!;
+      const a = board.readWidget("a")!;
+      addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+      board.undoOnce();
+      expect(board.readWidget("f")).toMatchObject({ width: before.width, height: before.height });
+      expect(board.readWidget("a")).toMatchObject({ x: a.x, y: a.y });
+    });
   });
 });

@@ -8210,3 +8210,70 @@ separate editable slide would duplicate the table in the order and in the panel.
 **Consequences.** The presentation hook gains a step list and a cell camera box; the
 presentation layer paints one focus ring; awareness stays backward compatible. Per-cell
 speaker notes, skipping empty cells and a custom presentation order remain open.
+
+## ADR-201: A table section's edge is the table; tidy leaves tables alone; empty cells are not presented; "+" and the port are one handle (amends ADR-143, ADR-195, ADR-196, ADR-199, ADR-200)
+
+**Status:** accepted (2026-11-10); implemented on `feat/onboarding-e1-e6`.
+
+**Context.** Acceptance of E1–E6 (`docs/design/acceptance-e1-e6.md`) and seven questions from
+development left behaviour the earlier records did not settle: a table drawn past its
+section's frame, objects crossing into the header column, tidy moving objects inside a
+table without regard to cells, empty cells shown as presentation steps, and two handles —
+the continuation "+" and the connection port — about 30 px apart on every side.
+
+**Decision.**
+
+- **The section's edge is the table's edge.** In table mode the section's box is the
+  headers plus the sum of its columns and rows; there is no free margin. The frame's resize
+  handles are hidden; size changes only through the axes (ADR-196, ADR-199). Adding or
+  removing an axis grows or shrinks the section in the same transaction.
+- **An object stays inside its cell.** A cell grows to hold its objects; an object never
+  overlaps a header or a neighbouring cell. Moving an object larger than the target cell
+  into it grows that cell's axes.
+- **"Remove table" keeps the box.** With `active: false` the section becomes free with the
+  bounds the table had; objects do not move; turning the table back on restores axes and
+  cells (ADR-199).
+- **Deleting a table section** keeps its objects on the canvas (ADR-070); the table
+  structure goes with the section; the confirmation names the number of objects; one undo.
+- **A table is a view of a section, not an object.** There is no "Table" tool on the rail.
+  "Table" in the section's properties stays the only entry; once a section is a table, the
+  canvas shows quiet "+ Column" / "+ Row" at its edges and "+" on the header boundaries.
+  "Move to cell…" lives only in the selected object's properties.
+- **Tidy leaves table sections alone.** A section in table mode is a fixed block for tidy:
+  its objects, cells and membership are not changed, and the plan carries a warning that
+  names the table. Laying out by cells is not part of tidy.
+- **Empty cells are not presentation steps.** A table section presents only the cells that
+  hold objects, in row-major order; a table with no objects is one step showing the whole
+  section. The step keeps its frame: the cell with its column and row headers.
+- **The "+" and the port are one handle.** On a selected editable note or shape each side
+  shows one "+": a click or `Enter` continues (ADR-195), a drag from it draws a line to the
+  chosen object as the port did. The separate port circles are not drawn for the selected
+  object.
+- **One settling step keeps a section equal to its table.** Grid sizes depend only on the
+  objects' own dimensions (widest/tallest cell content plus padding, never below the manual
+  size or the minimum), so the layout is a fixed point: each cell's objects move together so
+  their union starts at the cell's padding corner, and the section keeps its top-left corner
+  and takes the grid's size. It runs once at the end of every local transaction that changed
+  a widget, inside it — axis commands, drops, typing that grows a note, deletes — so no
+  command has to remember it and each change stays one undo. A settled table writes nothing;
+  two peers settling the same state agree. A cell that no longer names an axis of the
+  object's own section is forgotten in the same step.
+- **A manual axis size can be pixels.** `TableAxis.size` is `auto`, a preset or a positive
+  number of pixels, clamped to the axis minimum and 2 400 px. Dragging a header boundary
+  sets pixels, a double click or `Delete` on the focused boundary returns to Auto, arrow keys
+  step by 8 px (Shift: 40). A manual size is a floor: content still fits (decision above).
+- **Paging a presentation by keyboard is PageDown / PageUp.** The arrow keys keep panning
+  and nudging, so a live edit never turns into a slide change (refines ADR-108's key list).
+- **"Gather into section" shows the box before the click.** The outline comes from the same
+  pure plan the command uses, so the preview and the result cannot disagree (ADR-198).
+- **The first content of an empty room keeps the view when it is already in sight**
+  (ADR-197); content larger than the view is still fitted once.
+
+**Consequences.** The table painter and hit-testing derive the frame box from the axes; the
+frame command refuses a direct resize in table mode; the cell-fit rule needs a unit test with
+an object larger than its cell; the tidy builder skips table sections and its tests gain a
+table case; the presentation step list filters empty cells; the edge handle gains the drag
+gesture and the port painter skips the selected object. Mockups T5, T8 and T11 are updated
+to match. A client older than this record reads a pixel size as an invalid axis and drops
+it, so the web client and the sync service must be deployed together (they ship as one
+release).

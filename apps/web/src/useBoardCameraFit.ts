@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { boxOf, fitToBounds, unionBox, zoomAt, type Camera } from "@remo/canvas";
+import { boxOf, fitToBounds, unionBox, visibleWorldRect, zoomAt, type Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 
 /**
@@ -57,6 +57,18 @@ export function useBoardCameraFit({
     [camera, setCamera, viewport.height, viewport.width],
   );
 
+  const inView = (content: Widget[]) => {
+    const box = unionBox(content.map((widget) => boxOf(widget)));
+    if (!box) return false;
+    const view = visibleWorldRect(camera, viewport);
+    return (
+      box.x >= view.x &&
+      box.y >= view.y &&
+      box.x + box.width <= view.x + view.width &&
+      box.y + box.height <= view.y + view.height
+    );
+  };
+
   const fittedFor = useRef<string | null>(null);
   const emptyAfterSync = useRef<string | null>(null);
 
@@ -69,10 +81,12 @@ export function useBoardCameraFit({
     const key = `${fitKey}@${Math.round(viewport.width)}x${Math.round(viewport.height)}`;
     if (fittedFor.current === key) return;
     fittedFor.current = key;
-    // A server draft arriving in an already open empty room must keep the view in place.
+    // A room that opened empty keeps its view when its first content is already in
+    // sight — the first note appears where the person is looking, at the current zoom
+    // (ADR-197) — or is a server draft. Content larger than the view is fitted once.
     if (
       emptyAfterSync.current === fitKey &&
-      widgets.every((widget) => widget.agent?.skill === "room-draft")
+      (inView(widgets) || widgets.every((widget) => widget.agent?.skill === "room-draft"))
     ) {
       return;
     }

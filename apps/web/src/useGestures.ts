@@ -41,5 +41,14 @@ export function useGestures(deps: GestureDeps): Gestures {
     onPointerMove: (event) => pointerMove(env, event),
     onPointerUp: () => pointerUp(env),
     onDoubleClick: (event) => doubleClick(env, event),
+    startConnect: (fromId, side, client) => {
+      // The press already travelled past the click threshold on the "+", so this is a
+      // drag from the start; a release then draws the line or ends nowhere.
+      env.anchorPressRef.current = { fromId, side, x: client.x, y: client.y, moved: true };
+      env.dragRef.current = { mode: "connect", fromId, fromSide: side };
+      const world = env.toWorld({ clientX: client.x, clientY: client.y } as React.PointerEvent<HTMLCanvasElement>);
+      env.connectDraftRef.current = { fromId, fromSide: side, x: world.x, y: world.y };
+      env.setConnectDraft(env.connectDraftRef.current);
+    },
   };
 }
