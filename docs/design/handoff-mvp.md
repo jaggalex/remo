@@ -14,7 +14,7 @@
 | Макеты | холст «REMO — визуальные направления» (claude.ai, приватный — владелец открывает доступ через Share): серии **P1–P12**, **T1–T13 + T9b**, их тёмные и 1024-варианты; **R1–R18** — исследовательские эскизы | готовы |
 | Аннотации к макетам | серые стикеры под каждым светлым экраном 1440: задача, правило/ADR, компонент, ключи i18n, состояния | готовы |
 | Требования владельца | документы «Remo — one-page handoff», «P1–P12 текстовые wireframes», «T1–T13 wireframes таблицы», «раздел и таблица: сильная сторона MVP» (вне репозитория, у владельца) | источник |
-| Новые компоненты | `packages/ui/docs/components/`: TablePanel, AxisHeader, AxisMenu, AxisSizeMenu, AxisResizeHandle, CellDropTarget, SeedPreview, EmptyRoomStart, ConstraintNotice, EdgeContinue | карточки, в коде нет |
+| Новые компоненты | `packages/ui/docs/components/`: TablePanel, AxisHeader, AxisMenu, AxisSizeMenu, AxisResizeHandle, TableEdgeAdd, CellDropTarget, SeedPreview, EmptyRoomStart, StartChoice, GatherPreview, ConstraintNotice, EdgeContinue | в коде, кроме SeedPreview и ConstraintNotice |
 | Исследование | «сценарий 6 сессий» (H1–H10) | **не проведено** |
 
 Если макет расходится с ADR — прав ADR; расхождение отметить в PR и сообщить дизайну.
