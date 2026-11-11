@@ -522,3 +522,22 @@
 .section-px .rm-field {
   width: 96px;
 }
+
+/* The delete-axis choices wrap instead of clipping a long neighbour name. */
+.axis-delete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.axis-delete-actions .rm-btn {
+  max-width: 100%;
+}
+
+.axis-delete-actions .rm-btn-label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}

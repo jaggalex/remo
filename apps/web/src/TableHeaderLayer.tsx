@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { BoardDocument } from "@remo/doc";
 import {
   addAxis,
+  deleteAxis,
   moveAxis,
   renameAxis,
   setAxisSize,
@@ -383,11 +384,24 @@ export function TableHeaderLayer({
         ),
         danger: true,
         onSelect: () => {
-          setPendingDelete({
-            frameId: entry.frame.id,
-            axisId: entry.axis.id,
-            kind: entry.kind,
-          });
+          const field = entry.kind === "column" ? "columnId" : "rowId";
+          const objects = widgets.filter(
+            (widget) =>
+              widget.parentId === entry.frame.id &&
+              widget.cell?.[field] === entry.axis.id,
+          );
+          // An empty axis is deleted at once; asking what to do with zero objects is
+          // noise (ADR-201).
+          if (!objects.length) {
+            deleteAxis(board, entry.frame.id, entry.axis.id, { mode: "move" });
+            setTableAxisSelection(null);
+          } else {
+            setPendingDelete({
+              frameId: entry.frame.id,
+              axisId: entry.axis.id,
+              kind: entry.kind,
+            });
+          }
           setMenu(null);
         },
       },

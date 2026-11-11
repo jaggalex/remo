@@ -94,7 +94,9 @@ export function TableAxisControls({
   return (
     <div className="table-axis-controls">
       {tables.map(({ frame, grid }) => {
-        const active = activeFrameIds.has(frame.id);
+        // Only the selected table exposes its boundary handles and insert pills:
+        // every unselected table would otherwise add a row of invisible tab stops.
+        if (!activeFrameIds.has(frame.id)) return null;
         const right = grid.origin.x + grid.width;
         const bottom = grid.origin.y + grid.height;
         const columnPill = toScreen(right, grid.origin.y);
@@ -225,8 +227,7 @@ export function TableAxisControls({
               />
             )}
 
-            {active && (
-              <>
+            <>
                 {grid.columns.slice(1).map((column, index) => {
                   const at = toScreen(column.x, grid.origin.y);
                   const previous = grid.columns[index]!;
@@ -315,8 +316,7 @@ export function TableAxisControls({
                   <Icon name="plus" size={14} />
                   <span>{t("section.axes.addRow")}</span>
                 </button>
-              </>
-            )}
+            </>
           </div>
         );
       })}

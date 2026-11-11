@@ -69,7 +69,7 @@ export function AxisDeleteDialog({
       size="sm"
       onClose={onClose}
       footer={
-        <>
+        <div className="axis-delete-actions">
           <Button size="compact" variant="secondary" onClick={onClose}>
             {t("delete.cancel")}
           </Button>
@@ -104,7 +104,7 @@ export function AxisDeleteDialog({
           <Button size="compact" variant="danger" onClick={() => finish("withObjects")}>
             {t("section.axis.deleteWithObjects", { count: objects.length })}
           </Button>
-        </>
+        </div>
       }
     >
       {t(

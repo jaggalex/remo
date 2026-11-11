@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readWidget } from "./sanitize";
 import { tableCellFill, type TableLayout } from "./table";
+import { headerText, TABLE_HEADER_MAX_TEXT } from "./tableGeometry";
 
 const layout: TableLayout = {
   kind: "table",
@@ -20,6 +21,16 @@ const layout: TableLayout = {
     cells: { "r1:c2": "#0000ff" },
   },
 };
+
+describe("table header text (ADR-201)", () => {
+  it("collapses whitespace and shortens a title past the cap", () => {
+    expect(headerText("  A \n  B ")).toBe("A B");
+    const long = "x".repeat(TABLE_HEADER_MAX_TEXT + 20);
+    const cut = headerText(long);
+    expect(cut).toHaveLength(TABLE_HEADER_MAX_TEXT);
+    expect(cut.endsWith("…")).toBe(true);
+  });
+});
 
 describe("table fills (ADR-199)", () => {
   it("uses the most specific override: cell, row, column, headers, table", () => {

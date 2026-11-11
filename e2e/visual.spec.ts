@@ -617,6 +617,7 @@ test("the section panel shows the table and its axes", async ({ page }) => {
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Columns: Column 1" }).click();
   await expect(panel.getByLabel("Axis name")).toHaveValue("Column 1");
+  await page.getByRole("button", { name: "Fit", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true);

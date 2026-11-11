@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { TableLayout, Widget } from "@remo/model";
 import {
   TABLE_HEADER_HEIGHT,
+  TABLE_HEADER_MAX_HEIGHT,
+  TABLE_HEADER_MAX_WIDTH,
   TABLE_HEADER_WIDTH,
   TABLE_MIN_COLUMN,
   TABLE_MIN_ROW,
@@ -65,19 +67,41 @@ describe("table geometry (ADR-196, ADR-199)", () => {
     expect(grid.cells).toHaveLength(4);
     expect(cellRect(grid, "r1", "c2")).toMatchObject({ width: 340 });
     expect(cellRect(grid, "missing", "c1")).toBeNull();
-    // The cell is sized by the object's own box plus padding, not by where it lies
-    // (ADR-201): the reflow puts it at the padding corner.
+    // The cell covers the object's offset from its own origin as well as its box
+    // (ADR-202): the object keeps its place inside the cell.
     const first = cellRect(grid, "r1", "c1")!;
     expect(first.x).toBe(-300 + TABLE_HEADER_WIDTH);
-    expect(first.width).toBe(100 + 32);
+    expect(first.width).toBe(138);
     expect(first.y).toBe(-200 + TABLE_HEADER_HEIGHT);
-    expect(first.height).toBe(80 + 32);
+    expect(first.height).toBe(136);
   });
 
   it("keeps an empty axis at the minimum size", () => {
     const grid = layoutTable(frame(), [])!;
     expect(grid.columns[0]!.width).toBe(TABLE_MIN_COLUMN);
     expect(grid.rows[0]!.height).toBe(TABLE_MIN_ROW);
+  });
+
+  it("grows the header for a vertical or long row name", () => {
+    const table = {
+      ...frame(),
+      layout: {
+        kind: "table" as const,
+        columns: [
+          {
+            id: "c1",
+            title: "Очень длинный вертикальный заголовок колонки",
+            vertical: true,
+          },
+        ],
+        rows: [{ id: "r1", title: "Очень длинное название строки, которое не помещается" }],
+      },
+    };
+    const grid = layoutTable(table, [])!;
+    expect(grid.headerHeight).toBeGreaterThan(TABLE_HEADER_HEIGHT);
+    expect(grid.headerHeight).toBeLessThanOrEqual(TABLE_HEADER_MAX_HEIGHT);
+    expect(grid.headerWidth).toBeGreaterThan(TABLE_HEADER_WIDTH);
+    expect(grid.headerWidth).toBeLessThanOrEqual(TABLE_HEADER_MAX_WIDTH);
   });
 
   it("places a selection at the target cell's padding corner", () => {

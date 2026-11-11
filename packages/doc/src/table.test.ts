@@ -315,6 +315,25 @@ describe("table axes (ADR-196, ADR-199)", () => {
       expect(section.x - section.width / 2).toBe(corner.x);
     });
 
+    it("keeps an object's own offset inside its cell", () => {
+      const board = withNotes();
+      addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
+      const layout = tableLayoutOf(board, "f")!;
+      const grid = layoutTable(board.readWidget("f")!, board.readWidgets())!;
+      const cell = grid.cells.find(
+        (entry) =>
+          entry.rowId === layout.rows[0]!.id && entry.columnId === layout.columns[0]!.id,
+      )!.rect;
+      const a = board.readWidget("a")!;
+      const target = {
+        x: cell.x + cell.width - a.width / 2 - 8,
+        y: cell.y + cell.height - a.height / 2 - 8,
+      };
+      moveWidgets(board, [{ id: "a", x: target.x, y: target.y }]);
+      expect(board.readWidget("a")).toMatchObject(target);
+      inside(board);
+    });
+
     it("grows a cell for a large object and never lets it into the header", () => {
       const board = withNotes();
       addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });

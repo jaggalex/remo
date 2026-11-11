@@ -9,6 +9,9 @@ function fakeContext() {
   const ctx = new Proxy(state, {
     get(target, key) {
       if (key in target) return target[key];
+      if (key === "measureText") {
+        return (text: string) => ({ width: String(text).length * 6.6 });
+      }
       return (..._args: unknown[]) => {
         calls.push(String(key));
         return undefined;

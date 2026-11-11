@@ -8277,3 +8277,67 @@ gesture and the port painter skips the selected object. Mockups T5, T8 and T11 a
 to match. A client older than this record reads a pixel size as an invalid axis and drops
 it, so the web client and the sync service must be deployed together (they ship as one
 release).
+
+## ADR-202: Table header text wraps, grows its header, and never squeezes (extends ADR-196, ADR-201)
+
+**Status:** accepted (2026-11-11).
+
+**Context.** Design review of the table found two header defects: a vertical column title was
+squeezed back into the fixed 40 px header band, and long row names could not be expanded or
+wrapped. The same review found that deleting an empty axis asked what to do with zero
+objects. A header is readable text, not a fixed-size cell.
+
+**Decision.**
+
+- **A header title is laid out, not clipped.** Whitespace is collapsed; text wraps by
+  words inside the header. A title longer than the header can show ends with an ellipsis,
+  never a horizontally squeezed glyph. A title longer than 100 characters is shortened
+  before wrapping.
+- **A row-header strip grows to its longest row name**, from the 128 px minimum to a
+  260 px cap; a longer name wraps inside the cap.
+- **A horizontal column header grows the header band** when its wrapped title needs more
+  than one line, up to a 260 px cap. A **vertical** column header rotates the full title and
+  grows the band to fit its length, again up to the cap; the painter does not scale or
+  compress it. Past the cap the title is ellipsized.
+- **The table owns the resulting size.** Header growth is part of `layoutTable`, so the
+  section reflow (ADR-201), hit-testing, export and the resize handles use the same numbers.
+- **An empty axis is deleted without a question.** Asking what to do with zero objects is
+  noise; only an axis with objects opens the move-or-delete confirmation. Long neighbour
+  names in that confirmation wrap instead of clipping the button label.
+- **No second text model.** Header text is the axis title; appearance still owns fills,
+  and the screen-reader mirror reads the same title.
+
+**Consequences.** `layoutTable` gains header metrics, the painter gains word wrapping and
+ellipsis, and the header cards describe the behaviour. Rich text in headers, per-header
+font size and manual row-header width are not part of this decision.
+
+## ADR-203: A cell keeps an object's offset; the table may move a locked object (amends ADR-201)
+
+**Status:** accepted (2026-11-11).
+
+**Context.** Acceptance review of ADR-201 asked two follow-up questions. First, a table
+reflow that put every cell's objects at the padding corner on every local change made a
+free arrangement inside a cell impossible: moving a note within a large cell snapped the
+whole cell group back to the top-left. Second, ADR-040 says a lock stops a move, while a
+table's own layout may need to move a locked member to keep it inside its cell.
+
+**Decision.**
+
+- **A cell keeps the object's offset.** The reflow does not recenter a settled cell. Axis
+  sizes cover each object's own box and its right/bottom offset from the cell origin; a
+  deliberate move inside the cell survives. Only a member that crossed the padding into
+  the header or a neighbouring cell is moved back, so the header stays clear (ADR-201).
+- **The table may move a locked object.** Lock guards gestures and direct edits, not the
+  table's own layout. A locked member moves with its cell when the table repairs it or
+  when the group has to shift; the table is the owner of the cell arrangement, as a
+  kanban owns a card's place.
+- **No second coordinate system.** The object still stores world `x`/`y`; the offset is
+  the difference from the cell origin at layout time. Moving or resizing the section moves
+  the children through `parentId`; the offset follows.
+- **The table remains exactly its grid.** The top-left corner stays fixed, the frame takes
+  the grid's size, and a repair that shifts a group is measured again before the frame is
+  written, so one transaction ends at the fixed point (ADR-201, ADR-202).
+
+**Consequences.** `tableReflow` only repairs crossed padding; `tableAxisSizes` measures
+offset-aware extents. Tidy still leaves a table section alone (ADR-201). A locked object
+may move during a table layout change, which is recorded here rather than in ADR-040.

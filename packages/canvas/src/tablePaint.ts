@@ -1,4 +1,9 @@
-import type { Widget } from "@remo/model";
+import {
+  headerText,
+  TABLE_HEADER_LINE_HEIGHT,
+  TABLE_HEADER_PADDING,
+  type Widget,
+} from "@remo/model";
 import type { CanvasPalette } from "./palette";
 import {
   cellFill,
@@ -16,6 +21,56 @@ import {
  * title stays above. Fills are the named overrides; an absent fill leaves the frame's
  * panel showing.
  */
+
+/** A title shortened until it fits in one line, with an ellipsis. */
+function fitHeaderText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let cut = text.length;
+  while (cut > 0 && ctx.measureText(`${text.slice(0, cut)}…`).width > maxWidth) cut -= 1;
+  return cut > 0 ? `${text.slice(0, cut)}…` : "…";
+}
+
+/** Word-wrapped header text, with a hard break for a word wider than the cell. */
+function wrapHeaderText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+): string[] {
+  const words = text.split(" ").filter(Boolean);
+  if (!words.length) return [];
+  const lines: string[] = [];
+  let line = "";
+  const push = (value: string) => {
+    if (value) lines.push(value);
+  };
+  for (const word of words) {
+    let rest = word;
+    while (rest) {
+      const candidate = line ? `${line} ${rest}` : rest;
+      if (ctx.measureText(candidate).width <= maxWidth) {
+        line = candidate;
+        rest = "";
+        continue;
+      }
+      if (line) {
+        push(line);
+        line = "";
+        continue;
+      }
+      let cut = rest.length;
+      while (cut > 1 && ctx.measureText(rest.slice(0, cut)).width > maxWidth) cut -= 1;
+      push(rest.slice(0, cut));
+      rest = rest.slice(cut);
+    }
+  }
+  push(line);
+  if (lines.length <= maxLines) return lines;
+  const kept = lines.slice(0, maxLines);
+  kept[maxLines - 1] = fitHeaderText(ctx, `${kept[maxLines - 1]}…`, maxWidth);
+  return kept;
+}
+
 export function drawTable(
   ctx: CanvasRenderingContext2D,
   frame: Widget,
@@ -52,6 +107,7 @@ export function drawTable(
     ctx.strokeStyle = palette.borderSubtle;
     ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
 
+    const text = headerText(column.axis.title);
     ctx.fillStyle = palette.textSecondary;
     ctx.font = headerFont;
     if (column.axis.vertical) {
@@ -59,11 +115,28 @@ export function drawTable(
       ctx.translate(rect.x + rect.width / 2, rect.y + rect.height / 2);
       ctx.rotate(-Math.PI / 2);
       ctx.textAlign = "center";
-      ctx.fillText(column.axis.title, 0, 0, rect.height - 12 / zoom);
+      // The header band grew to fit the title; only an extreme title is shortened,
+      // never squeezed or scaled (ADR-201).
+      ctx.fillText(fitHeaderText(ctx, text, rect.height - (TABLE_HEADER_PADDING * 2) / zoom), 0, 0);
       ctx.restore();
     } else {
+      const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
+      const maxLines = Math.max(
+        1,
+        Math.floor((rect.height - (TABLE_HEADER_PADDING * 2) / zoom) / lineHeight),
+      );
+      const lines = wrapHeaderText(
+        ctx,
+        text,
+        rect.width - (TABLE_HEADER_PADDING * 2) / zoom,
+        maxLines,
+      );
+      const total = lines.length * lineHeight;
+      const start = rect.y + (rect.height - total) / 2 + lineHeight / 2;
       ctx.textAlign = "left";
-      ctx.fillText(column.axis.title, rect.x + 10 / zoom, rect.y + rect.height / 2);
+      lines.forEach((line, index) =>
+        ctx.fillText(line, rect.x + TABLE_HEADER_PADDING / zoom, start + index * lineHeight),
+      );
     }
   }
 
@@ -75,8 +148,23 @@ export function drawTable(
     ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
     ctx.fillStyle = palette.textSecondary;
     ctx.font = headerFont;
+    const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
+    const maxLines = Math.max(
+      1,
+      Math.floor((rect.height - (TABLE_HEADER_PADDING * 2) / zoom) / lineHeight),
+    );
+    const lines = wrapHeaderText(
+      ctx,
+      headerText(row.axis.title),
+      rect.width - (TABLE_HEADER_PADDING * 2) / zoom,
+      maxLines,
+    );
+    const total = lines.length * lineHeight;
+    const start = rect.y + (rect.height - total) / 2 + lineHeight / 2;
     ctx.textAlign = "left";
-    ctx.fillText(row.axis.title, rect.x + 10 / zoom, rect.y + rect.height / 2);
+    lines.forEach((line, index) =>
+      ctx.fillText(line, rect.x + TABLE_HEADER_PADDING / zoom, start + index * lineHeight),
+    );
   }
 
   const corner = cornerRect(grid);

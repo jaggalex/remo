@@ -13,6 +13,10 @@ A section (frame) can be shown as a table: it gets columns and rows, and objects
 7. **Remove table** returns the free view; cells are remembered, and turning the table on again restores the structure.
 8. **Delete section** removes only the frame: the objects stay on the canvas.
 
+## Long titles
+
+Column and row titles wrap by words; the header grows for a vertical or multi-line title and the row strip grows for a long name. Text longer than 100 characters is shortened with an ellipsis. Text is never squeezed or distorted.
+
 ## Keyboard and screen reader
 
 Table headers are keyboard reachable: `Tab` moves between them, `Enter` or `F2` edits the title, `Enter` commits, `Esc` cancels, and `Shift+F10` opens the axis menu. A screen reader reads the section as a table: columns, rows and cell contents; the selected axis is announced separately. **Move to cell…** also works from the keyboard.

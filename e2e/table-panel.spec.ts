@@ -203,7 +203,7 @@ test("deleting an axis with objects asks and moves them to a neighbour", async (
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("Delete column");
   await expect(dialog).toContainText("The column holds 1 object");
-  await dialog.getByRole("button", { name: /Move to the column on the right/ }).click();
+  await dialog.getByRole("button", { name: /Move right/ }).click();
 
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(1);
   await expect(columnGroup.locator(".section-axis-row").first()).toHaveAttribute(
@@ -298,7 +298,7 @@ test("a table header edits its title and opens the axis menu", async ({ page }) 
     .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("The column holds 1 object");
-  await dialog.getByRole("button", { name: /Move to the column on the right/ }).click();
+  await dialog.getByRole("button", { name: /Move right/ }).click();
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(2);
   expect((await widgets(page)).find((widget) => widget.id === noteId)!.parentId).toBe(frameId);
 });
@@ -491,4 +491,24 @@ test("a header boundary sets a manual width and a double click returns to Auto",
   await page.mouse.up();
   await handle.dblclick();
   await expect.poll(async () => (await column()).size).toBeUndefined();
+});
+
+test("deletes an empty axis without asking about zero objects", async ({ page }) => {
+  const { panel } = await openTable(page, "table-empty-axis");
+  const rowGroup = panel.locator(".section-axis-group").nth(1);
+  await expect(rowGroup.locator(".section-axis-row")).toHaveCount(1);
+
+  await panel.getByRole("button", { name: "Row", exact: true }).click();
+  await expect(rowGroup.locator(".section-axis-row")).toHaveCount(2);
+
+  const rowHeader = page.getByRole("button", { name: "Rows: Row 2" });
+  if ((await rowHeader.getAttribute("aria-pressed")) !== "true") await rowHeader.click();
+  await rowHeader.click();
+  await page
+    .getByRole("menu", { name: /Rows: Row 2/ })
+    .getByRole("menuitem", { name: "Delete row", exact: true })
+    .click();
+
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(rowGroup.locator(".section-axis-row")).toHaveCount(1);
 });
