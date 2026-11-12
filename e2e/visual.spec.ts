@@ -614,6 +614,9 @@ test("the section panel shows the table and its axes", async ({ page }) => {
   const panel = page.locator(".section-panel");
   await expect(panel).toBeVisible();
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  const layoutDialog = page.locator(".section-layout-card");
+  await expect(layoutDialog).toBeVisible();
+  await layoutDialog.getByRole("button", { name: "Apply", exact: true }).click();
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Columns: Column 1" }).click();
   await expect(panel.getByLabel("Axis name")).toHaveValue("Column 1");
