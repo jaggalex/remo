@@ -11,7 +11,7 @@ import { boxOf, cellAt, facingSide, pickInRect, placementsInRect } from "@remo/c
 import type { ConnectorPatch } from "@remo/doc";
 
 export function pointerUp(env: GestureEnv) {
-  const { anchorPressRef, camera, cardPreviewRef, clearPreview, connectDraftRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onAddWaypoint, onConnect, onCreateConnected, onConnectorPatch, onLimit, onMoveCard, onMoveMany, onMoveToCell, onMoveWaypoint, onReattachEnd, onResize, onSelect, previewLive, selectedIds, setConnectDraft, setDragGhostIds, setDragIds, setDragPreview, setGuides, setHoverCell, setMarquee, setTableHover, setTableRefused, settings, widgetById, widgets } = env;
+  const { anchorPressRef, camera, cardPreviewRef, clearPreview, connectDraftRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onAddWaypoint, onConnect, onCreateConnected, onConnectorPatch, onLimit, onMoveCard, onMoveMany, onMoveToCell, onMoveWaypoint, onReattachEnd, onResizeMany, onSelect, previewLive, selectedIds, setConnectDraft, setDragGhostIds, setDragIds, setDragPreview, setGuides, setHoverCell, setMarquee, setTableHover, setTableRefused, settings, widgetById, widgets } = env;
   const drag = dragRef.current;
   dragRef.current = null;
 
@@ -107,17 +107,22 @@ export function pointerUp(env: GestureEnv) {
   }
 
   if (drag?.mode === "resize") {
-    const patch = previewLive.current.get(drag.id);
+    const rects = drag.ids.flatMap((id) => {
+      const widget = widgetById(id);
+      if (!widget) return [];
+      const patch = previewLive.current.get(id);
+      return [
+        {
+          id,
+          x: patch?.x ?? widget.x,
+          y: patch?.y ?? widget.y,
+          width: patch?.width ?? widget.width,
+          height: patch?.height ?? widget.height,
+        },
+      ];
+    });
     clearPreview();
-    if (patch && patch.width != null && patch.height != null) {
-      onResize({
-        id: drag.id,
-        x: patch.x ?? 0,
-        y: patch.y ?? 0,
-        width: patch.width,
-        height: patch.height,
-      });
-    }
+    if (rects.length) onResizeMany(rects);
     return;
   }
 

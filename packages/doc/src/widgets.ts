@@ -1,4 +1,4 @@
-import { expandGroups, kindOf, minimumSizeOf, sizedByTable, type Widget } from "@remo/model";
+import { expandGroups, minimumSizeOf, scalesInBlock, type Widget } from "@remo/model";
 import type { BoardDocument } from "./board";
 import { connectorsTo } from "./connectors";
 import { cardsOf } from "./kanbanState";
@@ -376,11 +376,6 @@ export interface WidgetRect {
   y: number;
   width: number;
   height: number;
-}
-
-/** Whether this widget's size may change in a block transform (ADR-211). */
-function scalesInBlock(widget: Widget): boolean {
-  return kindOf(widget.type).resizable && !widget.locked && !sizedByTable(widget);
 }
 
 /** True when one of the widget's ancestors is written directly by the same gesture. */

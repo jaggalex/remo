@@ -14,7 +14,7 @@ import type {
   BoardDocument,
   ConnectorPatch,
   NoteDirection,
-  Presence,
+  Presence, WidgetRect,
 } from "@remo/doc";
 import { GatherPreview } from "./GatherPreview";
 import { useViewportSize } from "./useViewportSize";
@@ -90,7 +90,7 @@ interface Props {
   /** Drop a selection into a table cell (ADR-196). */
   onMoveToCell: (frameId: string, rowId: string, columnId: string, ids: string[], offset: { x: number; y: number }) => void;
   /** Commit a resize gesture: one transaction, one undo step. */
-  onResize: (rect: { id: string; x: number; y: number; width: number; height: number }) => void;
+  onResizeMany: (rects: WidgetRect[]) => void;
   onMoveCard: (kanbanId: string, cardId: string, columnId: string, swimlaneId: string) => void;
   onAddCard: (kanbanId: string, columnId: string, swimlaneId: string) => void;
   onAddColumn: (kanbanId: string) => void;
@@ -202,7 +202,7 @@ export function BoardCanvas({
   onSelect,
   onNotice,
   onMoveMany, onMoveToCell,
-  onResize,
+  onResizeMany,
   onMoveCard,
   onAddCard,
   onAddColumn,
@@ -326,7 +326,7 @@ export function BoardCanvas({
       onSelect,
     onMoveMany,
     onMoveToCell,
-    onResize,
+    onResizeMany,
     onMoveCard,
     onAddCard,
     onConnect,

@@ -360,7 +360,7 @@ export function BoardApp() {
     moveMany, moveToCell,
     patchConnector,
     selectionLocked,
-    resizeNote,
+    resizeSelection,
     onMoveCard,
     onAddCard,
     onAddColumn,
@@ -722,7 +722,7 @@ export function BoardApp() {
           onSelect={setSelectedIds}
           onNotice={showNotice}
           onMoveMany={moveMany} onMoveToCell={moveToCell}
-          onResize={resizeNote}
+          onResizeMany={resizeSelection}
           onMoveCard={onMoveCard}
           onAddCard={onAddCard}
           onAddColumn={onAddColumn}

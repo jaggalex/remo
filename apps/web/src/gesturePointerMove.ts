@@ -12,8 +12,8 @@ import {
 import type { GestureEnv } from "./gestureEnv";
 import { bendStep, curveStep, flipStep, moveStep } from "./gestureSteps";
 import type { ConnectDraft } from "./gestureTypes";
-import { cellAt, cellGuides, closestOnPath, connectorPath, pick, rectFrom } from "@remo/canvas";
-import { minimumSizeOf, type Widget } from "@remo/model";
+import { cellAt, cellGuides, closestOnPath, connectorPath, pick, rectFrom, scaleBoxes } from "@remo/canvas";
+import type { Widget } from "@remo/model";
 
 /**
    * Boxes a dragged object can line up with.
@@ -146,23 +146,24 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
   }
 
   if (drag.mode === "resize") {
-    // The floor belongs to the kind, not to this gesture: a frame may not collapse
-    // below its title band, a note keeps the generic minimum (ADR-141).
-    const minimum = minimumSizeOf(widgetById(drag.id)?.type ?? "unsupported");
-    const box = resizedBox(drag.origin, drag.corner, world, minimum.width, minimum.height);
-    applyPreview(
-      new Map([
-        [
-          drag.id,
-          {
-            x: box.x + box.width / 2,
-            y: box.y + box.height / 2,
-            width: box.width,
-            height: box.height,
-          },
-        ],
-      ]),
-    );
+    // One box for the whole selection: every centre is mapped through the same
+    // factor, and only a member that can scale changes size (ADR-211). The floor is
+    // per kind and stops the block instead of squeezing one member.
+    const items = drag.members;
+    if (!items.length) return;
+    const target = resizedBox(drag.origin, drag.corner, world, 0, 0);
+    const scaled = scaleBoxes(items, drag.origin, target);
+    const scalable = new Map(items.map((item) => [item.id, item.scalable]));
+    const next = new Map<string, Partial<Widget>>();
+    for (const box of scaled.boxes) {
+      next.set(
+        box.id,
+        scalable.get(box.id)
+          ? { x: box.x, y: box.y, width: box.width, height: box.height }
+          : { x: box.x, y: box.y },
+      );
+    }
+    applyPreview(next);
     return;
   }
 

@@ -41,7 +41,20 @@ type DragState =
       hostId?: string;
     }
   | { mode: "card"; kanbanId: string; cardId: string; offset: { x: number; y: number } }
-  | { mode: "resize"; id: string; corner: ResizeCorner; origin: Rect }
+  | {
+      mode: "resize";
+      id: string;
+      ids: string[];
+      corner: ResizeCorner;
+      origin: Rect;
+      /** The boxes as they were when the gesture started; the preview must not feed itself. */
+      members: Array<{
+        id: string;
+        box: Rect;
+        scalable: boolean;
+        min: { width: number; height: number };
+      }>;
+    }
   | { mode: "connect"; fromId: string; fromSide: ConnectorSide }
   | {
       mode: "reattach";
@@ -87,7 +100,7 @@ export function useGestureEnv(deps: GestureDeps) {
     onCamera,
     onSelect,
     onMoveMany,
-    onResize,
+    onResizeMany,
     onMoveCard,
     onMoveToCell,
     onAddCard,
@@ -445,7 +458,7 @@ export function useGestureEnv(deps: GestureDeps) {
     onCamera,
     onSelect,
     onMoveMany,
-    onResize,
+    onResizeMany,
     onMoveCard,
     onMoveToCell,
     onAddCard,

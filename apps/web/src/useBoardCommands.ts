@@ -30,7 +30,6 @@ import {
   toggleNoteMark,
   ungroupWidgets,
   setWidgetDelta,
-  setWidgetRects,
   setWidgetText,
   swapConnectorEnds,
   type BoardDocument,
@@ -42,6 +41,8 @@ import {
   type NoteDirection,
   type StyleSnapshot,
   type WidgetPosition,
+  type WidgetRect,
+  transformSelection,
 } from "@remo/doc";
 import {
   newId,
@@ -207,9 +208,8 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     [selectedIds, widgets],
   );
 
-  const resizeNote = useCallback(
-    (rect: { id: string; x: number; y: number; width: number; height: number }) =>
-      setWidgetRects(board, [rect]),
+  const resizeSelection = useCallback(
+    (rects: WidgetRect[]) => transformSelection(board, rects),
     [board],
   );
 
@@ -590,7 +590,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     distributeSelection,
     patchConnector,
     selectionLocked,
-    resizeNote,
+    resizeSelection,
     onMoveCard,
     onAddCard,
     onAddColumn,

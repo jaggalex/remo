@@ -442,3 +442,94 @@ test("double-click opens the note for editing", async ({ page }) => {
   await page.mouse.dblclick(centre.x, centre.y);
   await expect(page.locator(".inline-editor")).toBeVisible();
 });
+
+/**
+ * A selection of many objects resizes as one box (ADR-211).
+ *
+ * Three notes, one gesture: every centre is mapped through the same factor, so the
+ * gaps keep their proportion, and one undo brings all three back.
+ */
+test("a block of notes resizes as one box (ADR-211)", async ({ page }) => {
+  const account = await register(page, "gesture-block-resize");
+  await seedNote(page, account.boardId, { x: -320, y: 0 });
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await seedNote(page, account.boardId, { x: 320, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  interface NoteBox {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+  const notes = () =>
+    page.evaluate(() => {
+      const list = (window as unknown as {
+        __remo: { widgets: Array<NoteBox & { type: string }> };
+      }).__remo.widgets;
+      return list
+        .filter((widget) => widget.type === "sticky_note")
+        .map((widget) => ({
+          id: widget.id,
+          x: widget.x,
+          y: widget.y,
+          width: widget.width,
+          height: widget.height,
+        }));
+    });
+
+  const before = await notes();
+  expect(before).toHaveLength(3);
+  const view = await geometry(page);
+
+  await page.mouse.click(...Object.values(toClient(view, before[0]!)) as [number, number]);
+  await page.keyboard.down("Shift");
+  for (const note of before.slice(1)) {
+    const point = toClient(view, note);
+    await page.mouse.click(point.x, point.y);
+  }
+  await page.keyboard.up("Shift");
+
+  const selected = await page.evaluate(
+    () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+  );
+  expect(selected).toHaveLength(3);
+
+  const right = Math.max(...before.map((note) => note.x + note.width / 2));
+  const bottom = Math.max(...before.map((note) => note.y + note.height / 2));
+  const gap = 7 / view.camera.zoom;
+  const corner = toClient(view, { x: right + gap, y: bottom + gap });
+
+  await page.mouse.move(corner.x, corner.y);
+  await page.mouse.down();
+  await page.mouse.move(corner.x + 120, corner.y + 80, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+
+  const after = await notes();
+  for (const [index, note] of before.entries()) {
+    expect(after[index]!.width).toBeGreaterThan(note.width);
+    expect(after[index]!.height).toBeGreaterThan(note.height);
+  }
+
+  // The gap between the first two notes grows with the same factor, not by a fixed
+  // amount: a block keeps its proportions.
+  const gapBefore =
+    before[1]!.x - before[1]!.width / 2 - (before[0]!.x + before[0]!.width / 2);
+  const gapAfter = after[1]!.x - after[1]!.width / 2 - (after[0]!.x + after[0]!.width / 2);
+  expect(gapAfter).toBeGreaterThan(gapBefore);
+
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  const undone = await notes();
+  for (const [index, note] of before.entries()) {
+    expect(Math.round(undone[index]!.width)).toBe(Math.round(note.width));
+    expect(Math.round(undone[index]!.x)).toBe(Math.round(note.x));
+  }
+});

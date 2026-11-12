@@ -27,6 +27,7 @@ import {
   lockBadgeRect,
   paintOrder,
   translateLayout,
+  unionBox,
   visibleWorldRect,
   type Camera,
   type KanbanLayout,
@@ -34,7 +35,7 @@ import {
   type ProposalLayout,
   withAlpha,
 } from "@remo/canvas";
-import { bounds, canConnect, kindOf, sizedByTable, soleSelectedGroup, type Widget } from "@remo/model";
+import { bounds, canConnect, scalesInBlock, soleSelectedGroup, type Widget } from "@remo/model";
 import type { Presence } from "@remo/doc";
 import type { BoardSettings } from "./settings";
 import { drawRemoteCursor } from "./remoteCursor";
@@ -472,11 +473,14 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     }
   }
 
-  // Resize handles: one note selected, to the four corners.
+  // Resize handles: one object or a block, on the union box (ADR-211).
   const single = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
+  const resizeMembers = selectedIds
+    .map((id) => widgetById(id))
+    .filter((widget): widget is Widget => !!widget && widget.type !== "connector");
   const box =
-    single && !editingId && kindOf(single.type).resizable && !sizedByTable(single)
-      ? boxOf(single)
+    !editingId && resizeMembers.some(scalesInBlock)
+      ? unionBox(resizeMembers.map(boxOf))
       : null;
   if (box) {
     const radius = 4.5 / camera.zoom;

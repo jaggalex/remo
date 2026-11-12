@@ -1,9 +1,9 @@
 import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, portsAreEdgePlus, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget } from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import type { ConnectDraft } from "./gestureTypes";
-import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, layoutTable, pick, pickConnector, placementAt, plusHit, resolvedEndSide, tableHitAt } from "@remo/canvas";
-import { canConnect, expandGroups, kindOf, sizedByTable } from "@remo/model";
-import type { ConnectorSide } from "@remo/model";
+import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, layoutTable, pick, pickConnector, placementAt, plusHit, resolvedEndSide, tableHitAt, unionBox } from "@remo/canvas";
+import { canConnect, expandGroups, minimumSizeOf, scalesInBlock } from "@remo/model";
+import type { ConnectorSide, Widget } from "@remo/model";
 import { capture } from "./gestureEnv";
 import {
   clearTableCellSelection,
@@ -194,20 +194,31 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     }
   }
 
-  // A resize handle is a UI affordance on the selection's corner, so it is tried
-  // before the objects themselves.
-  const resizable =
-    selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  if (
-    !readOnly &&
-    resizable &&
-    !resizable.locked &&
-    kindOf(resizable.type).resizable &&
-    !sizedByTable(resizable)
-  ) {
-    const hit = cornerAt(boxOf(resizable), world, 10 / camera.zoom, HANDLE_GAP / camera.zoom);
-    if (hit) {
-      dragRef.current = { mode: "resize", id: resizable.id, corner: hit, origin: boxOf(resizable) };
+  // A resize handle is a UI affordance of the selection, so it is tried before the
+  // objects themselves. One object or a block: the handle sits on the union box and
+  // the gesture scales every member that can scale (ADR-211).
+  const resizeMembers = selectedIds
+    .map((id) => widgetById(id))
+    .filter((widget): widget is Widget => !!widget && widget.type !== "connector" && !isCardOfKanban(widget));
+  if (!readOnly && resizeMembers.some(scalesInBlock)) {
+    const box = unionBox(resizeMembers.map(boxOf));
+    const hit = box ? cornerAt(box, world, 10 / camera.zoom, HANDLE_GAP / camera.zoom) : null;
+    if (box && hit) {
+      dragRef.current = {
+        mode: "resize",
+        id: resizeMembers[0]!.id,
+        ids: resizeMembers.map((widget) => widget.id),
+        corner: hit,
+        origin: box,
+        // Captured once: during the drag every move scales the original boxes, never
+        // the preview it just painted.
+        members: resizeMembers.map((widget) => ({
+          id: widget.id,
+          box: boxOf(widget),
+          scalable: scalesInBlock(widget),
+          min: minimumSizeOf(widget.type),
+        })),
+      };
       capture(event);
       return;
     }

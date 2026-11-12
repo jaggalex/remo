@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_MIN_SIZE, kindOf, minimumSizeOf, WIDGET_KINDS } from "./kinds";
+import { scalesInBlock } from "./transform";
+import type { Widget } from "./types";
 import { layerKey, paintOrder } from "./layers";
 import { canConnect, type Widget, type WidgetType } from "./types";
 
@@ -115,5 +117,46 @@ describe("the capability table", () => {
     const ordered = paintOrder([widget("text"), widget("connector"), widget("frame")]);
     expect(ordered.map((w) => w.type)).toEqual(["frame", "connector", "text"]);
     expect(layerKey({ ...widget("connector"), z: 9999 })).toBe(9999);
+  });
+});
+
+describe("scalesInBlock (ADR-211)", () => {
+  const note = (extra: Partial<Widget> = {}): Widget => ({
+    id: "n",
+    type: "sticky_note",
+    parentId: null,
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    ...extra,
+  });
+
+  it("allows a free, unlocked, resizable object", () => {
+    expect(scalesInBlock(note())).toBe(true);
+  });
+
+  it("refuses a locked object", () => {
+    expect(scalesInBlock(note({ locked: true }))).toBe(false);
+  });
+
+  it("refuses an imported placeholder", () => {
+    expect(scalesInBlock(note({ type: "image" }))).toBe(false);
+    expect(scalesInBlock(note({ type: "unsupported" }))).toBe(false);
+  });
+
+  it("refuses a table section whose size comes from its axes", () => {
+    const frame: Widget = {
+      id: "t",
+      type: "frame",
+      parentId: null,
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 300,
+      layout: { kind: "table", columns: [], rows: [] },
+    };
+    expect(scalesInBlock(frame)).toBe(false);
+    expect(scalesInBlock({ ...frame, layout: undefined })).toBe(true);
   });
 });

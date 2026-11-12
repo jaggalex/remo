@@ -1,5 +1,5 @@
 import type { AlignmentGuide, Camera, KanbanLayout } from "@remo/canvas";
-import type { ConnectorPatch, NoteDirection, WidgetPosition } from "@remo/doc";
+import type { ConnectorPatch, NoteDirection, WidgetPosition, WidgetRect } from "@remo/doc";
 import type { ConnectorSide, Rect, Widget } from "@remo/model";
 import type { BoardSettings } from "./settings";
 
@@ -26,7 +26,8 @@ export interface GestureDeps {
   onCamera: (camera: Camera) => void;
   onSelect: (ids: string[]) => void;
   onMoveMany: (positions: WidgetPosition[]) => void;
-  onResize: (rect: { id: string; x: number; y: number; width: number; height: number }) => void;
+  /** Commit a resize gesture: one object or a block, one transaction, one undo. */
+  onResizeMany: (rects: WidgetRect[]) => void;
   onMoveCard: (
     kanbanId: string,
     cardId: string,
