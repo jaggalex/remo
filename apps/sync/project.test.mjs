@@ -133,7 +133,8 @@ describe("board projection", () => {
 
     const { widgets } = projectBoard(doc);
     expect(widgets.map((row) => row.id)).toEqual(["w1", "w2"]);
-    expect(widgets[0]).toMatchObject({ type: "sticky_note", fillColor: "yellow", rotation: 0 });
+    expect(widgets[0]).toMatchObject({ type: "sticky_note", fillColor: "yellow" });
+    expect(widgets[0]).not.toHaveProperty("rotation");
     expect(widgets[1]).toMatchObject({ parentId: "k1", title: "one" });
   });
 

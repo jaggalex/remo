@@ -48,9 +48,17 @@ const STRING_FIELDS = [
   "lockedByName",
 ] as const;
 
-const NUMBER_FIELDS = ["rotation", "z", "createdAt", "lockedAt", "bend"] as const;
+const NUMBER_FIELDS = ["z", "createdAt", "lockedAt", "bend"] as const;
 
 const BOOLEAN_FIELDS = ["locked", "elbowFlip"] as const;
+
+/**
+ * Fields the model no longer has (ADR-209): a reader drops them instead of preserving
+ * them as unknown data, so an old document gets smaller rather than carrying a value
+ * nothing can read.
+ */
+const REMOVED_FIELDS = ["rotation"] as const;
+const REMOVED_STYLE_FIELDS = ["fontFamily"] as const;
 
 const ENUM_FIELDS: Record<string, ReadonlySet<string>> = {
   status: new Set(["todo", "in_progress", "done"]),
@@ -60,7 +68,7 @@ const ENUM_FIELDS: Record<string, ReadonlySet<string>> = {
   connectorShape: new Set(["straight", "elbowed", "curved"]),
 };
 
-const STYLE_STRINGS = ["fillColor", "cardTheme", "strokeColor", "fontFamily", "color", "textColor"];
+const STYLE_STRINGS = ["fillColor", "cardTheme", "strokeColor", "color", "textColor"];
 const STYLE_POSITIVE = ["strokeWidth", "fontSize"];
 const STYLE_ENUMS: Record<string, ReadonlySet<string>> = {
   strokeStyle: new Set(["normal", "dashed", "dotted"]),
@@ -109,6 +117,7 @@ class Repair {
 function readStyle(value: unknown): Raw | undefined {
   if (!isObject(value)) return undefined;
   const repair = new Repair(value);
+  for (const key of REMOVED_STYLE_FIELDS) repair.drop(key);
   for (const key of STYLE_STRINGS) {
     if (key in value && typeof value[key] !== "string") repair.drop(key);
   }
@@ -382,6 +391,7 @@ export function readWidget(raw: unknown, id: string): Widget | null {
   for (const key of BOOLEAN_FIELDS) {
     if (key in raw && typeof raw[key] !== "boolean") repair.drop(key);
   }
+  for (const key of REMOVED_FIELDS) repair.drop(key);
   for (const [key, allowed] of Object.entries(ENUM_FIELDS)) {
     if (key in raw && !(typeof raw[key] === "string" && allowed.has(raw[key] as string))) {
       repair.drop(key);

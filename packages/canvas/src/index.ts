@@ -7,6 +7,7 @@ export * from "./layout";
 export * from "./lockBadge";
 export * from "./palette";
 export * from "./render";
+export * from "./scale";
 export * from "./scene";
 export * from "./spatial";
 export * from "./table";

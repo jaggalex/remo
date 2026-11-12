@@ -240,12 +240,21 @@ export function cornerAt(
   return best;
 }
 
+/** Modifiers a resize can carry (ADR-212). */
+export interface ResizeOptions {
+  /** Original width / height; present means Shift — keep the proportion. */
+  ratio?: number;
+  /** Alt — grow and shrink around the centre instead of the opposite corner. */
+  fromCenter?: boolean;
+}
+
 /**
  * Box for a corner drag.
  *
  * The corner opposite the one being dragged stays put, which is what makes a resize
  * feel attached to the note rather than to the grid. The minimum keeps a note from
- * collapsing to a line under a fast flick.
+ * collapsing to a line under a fast flick. `ratio` keeps the original proportion and
+ * `fromCenter` anchors the centre instead of the opposite corner (ADR-212).
  */
 export function resizedBox(
   origin: Rect,
@@ -253,17 +262,62 @@ export function resizedBox(
   point: { x: number; y: number },
   minWidth: number,
   minHeight: number,
+  options: ResizeOptions = {},
 ): Rect {
   const west = corner === "nw" || corner === "sw";
   const north = corner === "nw" || corner === "ne";
-
   const right = origin.x + origin.width;
   const bottom = origin.y + origin.height;
 
-  const left = west ? Math.min(point.x, right - minWidth) : origin.x;
-  const top = north ? Math.min(point.y, bottom - minHeight) : origin.y;
-  const newRight = west ? right : Math.max(point.x, origin.x + minWidth);
-  const newBottom = north ? bottom : Math.max(point.y, origin.y + minHeight);
+  if (options.fromCenter) {
+    const centreX = origin.x + origin.width / 2;
+    const centreY = origin.y + origin.height / 2;
+    let halfWidth = Math.max(Math.abs(point.x - centreX), minWidth / 2);
+    let halfHeight = Math.max(Math.abs(point.y - centreY), minHeight / 2);
+    const ratio = options.ratio;
+    if (ratio && ratio > 0) {
+      // One factor for both axes, chosen by the larger half-size so the pointer keeps
+      // the corner it points at.
+      const factor = Math.max(halfWidth / (origin.width / 2), halfHeight / (origin.height / 2));
+      halfWidth = Math.max((origin.width / 2) * factor, minWidth / 2);
+      halfHeight = halfWidth / ratio;
+      if (halfHeight < minHeight / 2) {
+        halfHeight = minHeight / 2;
+        halfWidth = halfHeight * ratio;
+      }
+    }
+    return {
+      x: centreX - halfWidth,
+      y: centreY - halfHeight,
+      width: halfWidth * 2,
+      height: halfHeight * 2,
+    };
+  }
+
+  let left = west ? Math.min(point.x, right - minWidth) : origin.x;
+  let top = north ? Math.min(point.y, bottom - minHeight) : origin.y;
+  let newRight = west ? right : Math.max(point.x, origin.x + minWidth);
+  let newBottom = north ? bottom : Math.max(point.y, origin.y + minHeight);
+
+  const ratio = options.ratio;
+  if (ratio && ratio > 0) {
+    let width = newRight - left;
+    let height = newBottom - top;
+    if (width / height > ratio) height = width / ratio;
+    else width = height * ratio;
+    // The floor must not break the proportion, so one axis is derived from the other.
+    width = Math.max(width, minWidth);
+    height = width / ratio;
+    if (height < minHeight) {
+      height = minHeight;
+      width = height * ratio;
+    }
+    // Keep the anchor edges fixed while the size is re-derived from the proportion.
+    if (west) left = newRight - width;
+    else newRight = left + width;
+    if (north) top = newBottom - height;
+    else newBottom = top + height;
+  }
 
   return { x: left, y: top, width: newRight - left, height: newBottom - top };
 }

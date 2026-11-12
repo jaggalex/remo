@@ -8579,3 +8579,140 @@ uses the resolved border per header and cell; the section panel gains the two ro
 "Table appearance". Tests cover the specificity order, malformed reads, the padding effect on
 a column and the border command's clear path. Per-side borders, per-side padding and rich
 border patterns remain open.
+
+---
+
+## ADR-209: There is no rotation, and the board has one font (removes two dormant fields)
+
+**Status:** accepted (2026-11-12). No mockups: nothing changes on screen.
+
+**Context.** `Widget.rotation` and `WidgetStyle.fontFamily` came over from the source
+product early. Nothing reads them: the painter takes the family from settings and the theme
+(ADR-181), and rotation would have to be honoured by hit-testing, handles, connectors,
+tables, presentation and export. A field nothing reads is a capability the product claims
+and does not have — and a second mechanism waiting to appear.
+
+**Decision.**
+
+- Both fields leave `@remo/model` — `Widget`, `WidgetStyle`, `sanitize.ts` and the template
+  reader. An old file that still carries them opens unchanged: the reader drops unknown
+  fields, and neither field ever affected the picture.
+- The agent projection (`apps/sync/project.mjs`) stops returning `rotation`. The
+  `widgets.rotation` column stays in the projection schema and is written as `0`: dropping
+  a column is a migration, not hygiene, and a later record may do it.
+- The sync style allowlist (`apps/sync/commands.mjs`) and the agent-plan style list stop
+  accepting `fontFamily`. Unknown keys were already ignored, so an old caller loses only
+  the field.
+- Rotation stays out of the product. If it returns, it is a new record with its full
+  consequences: hit-testing, handles, text, connectors, tables, presentation, export.
+
+**Consequences.** A smaller model and one less way for a document to disagree with what the
+painter does. The agent contract loses a field that was always `0`. Tests: a widget carrying
+`rotation` and `fontFamily` keeps its other fields and drops both; the projection test no
+longer expects `rotation`.
+
+---
+
+## ADR-210: A lock protects content, not placement (amends ADR-040)
+
+**Status:** accepted (2026-11-12). No mockups: the lock badge (ADR-193) and the Info row
+already exist.
+
+**Context.** ADR-040 froze a locked object against moving, resizing, editing and deleting.
+That is stricter than the promise the product makes — "do not change what I made" — and it
+makes a block transform impossible: a selection with one locked object either drops it from
+the gesture (`beginWidgetDrag`) or refuses to move at all. The owner's review (12.11.2026)
+chose a lock that protects content but lets the object travel with its neighbours.
+
+**Decision.**
+
+- A locked object **may be moved**: by dragging it alone, and as a member of a multi-selection
+  or a block.
+- It **may not** be resized, re-texted, restyled, re-linked or deleted; connector commands
+  still refuse a locked connector, and the agent plan still refuses to change it.
+- `moveWidgets` no longer skips `locked`; `setWidgetRects` keeps skipping it, because that is
+  the one command that changes a size.
+- Plan operations do not change: tidy and the agent plan still leave locked objects where
+  they are (ADR-188, and the E2 frame in `docs/design/visual`). That is a rule of the
+  operation, not of the lock.
+- One gesture is still one undo step.
+
+**Consequences.** A locked object can now be moved by accident. The lock badge (ADR-193) and
+undo are the mitigation, and the help and guide copy states the new meaning in RU and EN.
+The block transform that follows gets one rule instead of a refusal: everything travels,
+only what can resize is resized. Tests: `moveWidgets` moves a locked widget while
+`setWidgetRects` does not; the lock browser scenario drags a locked note.
+
+---
+
+## ADR-211: A selection of many objects scales as one box (adds the block transform)
+
+**Status:** accepted (2026-11-12). The gesture and its handles wait for the A mockups; the
+geometry and the command are decided here and can land before the pictures.
+
+**Context.** A resize starts only when exactly one object is selected
+(`handlePointerDown`), and a group expands to its members (`expandGroups`), so a group or a
+multi-selection cannot be resized at all. The command layer already writes several boxes in
+one transaction (`setWidgetRects`), clamps per-kind minima and reconciles frame membership;
+what is missing is a rule for "what happens to the objects that cannot scale" and the
+geometry that applies one factor to a whole box.
+
+**Decision.**
+
+- **One box, one factor per axis.** The gesture box is the union of the placed boxes
+  (`placedWidget`, ADR-113). Each member's centre is mapped through the same factor, so
+  gaps between scalable members keep their proportion. The anchor is the opposite corner.
+- **Everything travels; only what can scale is scaled.** A member's size changes only when
+  `kindOf(type).resizable && !locked && !sizedByTable`. Imported placeholders, locked
+  objects and table sections keep their size and move with the block. There is no refusal
+  state: the gesture always works, and a block with nothing scalable simply has no handles.
+- **The minimum stops the block, it does not clip members.** The factor is floored per axis
+  by the largest `min.width / width` (and height) among scalable members, so a block never
+  turns into a mix of frozen and squeezed objects. `scaleBoxes` reports the floor so the
+  gesture can show the "limit" state.
+- **One command, one transaction.** `transformSelection` decides `scale` from the widget, not
+  from the caller: it writes a full rect for scalable members (clamped to
+  `minimumSizeOf`), x/y for the rest, shifts the descendants of a carried container unless
+  they are listed themselves, and reconciles membership for resized frames. One undo step.
+- **Connectors are derived.** Their path follows the endpoints (ADR-006); rigid waypoints of
+  a connector scale only when both of its ends are in the selection.
+- **Text is not written.** Auto is recomputed from the new box (ADR-027); an explicit size
+  stays and clips as before.
+
+**Consequences.** `@remo/canvas` gains a pure `scaleBoxes` (no React, no canvas) and
+`@remo/doc` gains `transformSelection`; both are covered by unit tests. The gesture, the
+handles and the "limit" marker are presentation and land with the A mockups. Sessions,
+export, presentation and the agent projection need no change: they read the resulting rects.
+
+---
+
+## ADR-212: A resize honours proportions, the centre and its neighbours (adds modifiers)
+
+**Status:** accepted (2026-11-12). The cursors wait for the B mockups; the geometry is
+decided here.
+
+**Context.** `resizedBox` knows a corner and a minimum, and nothing else. Moving snaps to
+neighbouring edges and centres (ADR-026), resizing does not; a person who wants a square or
+a centre-anchored change has to measure by eye.
+
+**Decision.**
+
+- **Shift keeps the original aspect.** One factor, derived from the moving axes, is applied
+  to both; the anchor edge does not move.
+- **Alt grows and shrinks around the centre**, not the opposite corner.
+- **Snapping resizes the moving edges** with the same tolerance (`thresholdPx / zoom`) and
+  the same guide language as a move. Only the two edges the corner drags participate; the
+  anchor edges never snap.
+- **Shift turns snapping off for that gesture.** Keeping a ratio and gluing an edge to a
+  neighbour are different promises; applying both would break the ratio silently. Cmd/Ctrl
+  also turns snapping off — one rule for moving and resizing, one habit (owner's decision,
+  12.11.2026).
+- **Order:** the modifier shape first, then the snap, then the floor. A snap that would go
+  below the kind's minimum is skipped rather than clamped, so the edge does not jump.
+- The block transform (ADR-211) reuses the same functions: `snapResize` works on the block's
+  box, and the ratio applies to the block, not to each member.
+
+**Consequences.** `resizedBox` gains an options argument (ratio, from centre) and keeps its
+current behaviour when it is absent; `guides.ts` gains `snapResize` returning the snapped box
+and the guides for it. Both are pure and tested without a browser. The pointer handler wires
+them when the B mockups arrive; no document field changes.

@@ -16,7 +16,6 @@ export interface NormalizedWidget {
   cardTheme?: string;
   strokeColor?: string;
   fontSize?: number;
-  fontFamily?: string;
   color?: string;
   title?: string;
   content?: string;
@@ -101,7 +100,6 @@ function style(w: NormalizedWidget): WidgetStyle | undefined {
   if (w.cardTheme) s.cardTheme = w.cardTheme;
   if (w.strokeColor) s.strokeColor = w.strokeColor;
   if (w.fontSize) s.fontSize = w.fontSize;
-  if (w.fontFamily) s.fontFamily = w.fontFamily;
   if (w.color) s.color = w.color;
   return Object.keys(s).length ? s : undefined;
 }

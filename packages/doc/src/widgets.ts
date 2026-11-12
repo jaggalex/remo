@@ -1,4 +1,4 @@
-import { expandGroups, minimumSizeOf, type Widget } from "@remo/model";
+import { expandGroups, kindOf, minimumSizeOf, sizedByTable, type Widget } from "@remo/model";
 import type { BoardDocument } from "./board";
 import { connectorsTo } from "./connectors";
 import { cardsOf } from "./kanbanState";
@@ -167,9 +167,8 @@ export function moveWidgets(board: BoardDocument, positions: WidgetPosition[]): 
       if (!widget) return;
       // Cards inside a kanban are placed by the matrix, never by coordinates.
       if (widget.type === "card" && widget.parentId) return;
-      // A locked object is a decision, not a decoration: every gesture that would
-      // change it starts here (ADR-040).
-      if (widget.locked) return;
+      // A locked object may be carried (ADR-210); its size, text and links are still
+      // protected by every other command.
       moved.add(id);
       board.widgets.set(id, { ...widget, x, y });
 
@@ -377,6 +376,93 @@ export interface WidgetRect {
   y: number;
   width: number;
   height: number;
+}
+
+/** Whether this widget's size may change in a block transform (ADR-211). */
+function scalesInBlock(widget: Widget): boolean {
+  return kindOf(widget.type).resizable && !widget.locked && !sizedByTable(widget);
+}
+
+/** True when one of the widget's ancestors is written directly by the same gesture. */
+function carriedByListed(
+  board: BoardDocument,
+  widget: Widget,
+  direct: ReadonlySet<string>,
+): boolean {
+  const seen = new Set<string>([widget.id]);
+  let parentId = widget.parentId;
+  while (parentId && !seen.has(parentId)) {
+    if (direct.has(parentId)) return true;
+    seen.add(parentId);
+    parentId = board.readWidget(parentId)?.parentId ?? null;
+  }
+  return false;
+}
+
+/**
+ * Move and resize a selection as one block (ADR-211).
+ *
+ * The boxes come from `scaleBoxes`: centres plus a size computed for a scalable member.
+ * This command decides the size itself — a gesture cannot make a locked object smaller by
+ * passing a smaller width. A member that cannot scale (locked, imported placeholder, a
+ * table section) keeps its size and only travels; a carried container brings its children
+ * along, while a resized one leaves them where they are (ADR-141). One transaction, one
+ * undo step.
+ */
+export function transformSelection(board: BoardDocument, boxes: readonly WidgetRect[]): void {
+  if (!boxes.length) return;
+  board.transact(() => {
+    const direct = new Set(boxes.map((box) => box.id));
+    const before = new Map<string, Widget>();
+    const resized = new Set<string>();
+    const resizedFrames = new Set<string>();
+
+    for (const box of boxes) {
+      const widget = board.readWidget(box.id);
+      if (!widget) continue;
+      // Cards inside a kanban are placed by the matrix, never by coordinates.
+      if (widget.type === "card" && widget.parentId) continue;
+      before.set(widget.id, widget);
+
+      if (scalesInBlock(widget)) {
+        const minimum = minimumSizeOf(widget.type);
+        board.widgets.set(widget.id, {
+          ...widget,
+          x: box.x,
+          y: box.y,
+          width: Math.max(minimum.width, box.width),
+          height: Math.max(minimum.height, box.height),
+        });
+        resized.add(widget.id);
+        if (widget.type === "frame") resizedFrames.add(widget.id);
+      } else {
+        board.widgets.set(widget.id, { ...widget, x: box.x, y: box.y });
+      }
+    }
+
+    for (const [id, widget] of before) {
+      if (resized.has(id)) continue;
+      // A child that the gesture writes itself has its own target; shifting it again
+      // as a descendant would move it twice.
+      if (carriedByListed(board, widget, direct)) continue;
+      const current = board.readWidget(id);
+      if (!current) continue;
+      const dx = current.x - widget.x;
+      const dy = current.y - widget.y;
+      if (dx === 0 && dy === 0) continue;
+      for (const childId of descendants(board, id)) {
+        if (direct.has(childId)) continue;
+        const child = board.readWidget(childId);
+        if (!child || child.type === "card") continue;
+        board.widgets.set(childId, { ...child, x: child.x + dx, y: child.y + dy });
+      }
+    }
+
+    for (const id of resizedFrames) {
+      const frame = board.readWidget(id);
+      if (frame) reconcileFrameMembership(board, frame);
+    }
+  });
 }
 
 /**

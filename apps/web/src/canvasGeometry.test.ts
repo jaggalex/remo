@@ -455,3 +455,60 @@ describe("lines brought in by a selection (ADR-138)", () => {
     expect(internalConnectors(widgets, ["a", "b", "a"]).map((w) => w.id)).toEqual(["l"]);
   });
 });
+
+/**
+ * Modifiers a resize carries (ADR-212): Shift keeps the proportion, Alt anchors the
+ * centre, and the floor never breaks the proportion.
+ */
+describe("resize modifiers (ADR-212)", () => {
+  const ratio = 200 / 120;
+
+  it("keeps the original aspect while the corner moves", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 380, y: 220 }, 40, 30, {
+      ratio,
+    });
+    expect(box.width).toBeCloseTo(380, 6);
+    expect(box.height).toBeCloseTo(228, 6);
+    expect(box.x).toBe(0);
+    expect(box.y).toBe(0);
+  });
+
+  it("keeps the ratio when the opposite corner is the anchor", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "nw", { x: -100, y: -10 }, 40, 30, {
+      ratio,
+    });
+    expect(box).toMatchObject({ x: -100, y: -60 });
+    expect(box.width).toBeCloseTo(300, 6);
+    expect(box.height).toBeCloseTo(180, 6);
+    expect(box.x + box.width).toBe(200);
+    expect(box.y + box.height).toBe(120);
+  });
+
+  it("grows around the centre with Alt", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 300, y: 200 }, 40, 30, {
+      fromCenter: true,
+    });
+    expect(box).toEqual({ x: -100, y: -80, width: 400, height: 280 });
+    expect(box.x + box.width / 2).toBe(100);
+    expect(box.y + box.height / 2).toBe(60);
+  });
+
+  it("keeps the centre and the ratio together", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 300, y: 200 }, 40, 30, {
+      fromCenter: true,
+      ratio,
+    });
+    expect(box.width / box.height).toBeCloseTo(ratio, 6);
+    expect(box.x + box.width / 2).toBe(100);
+    expect(box.y + box.height / 2).toBe(60);
+  });
+
+  it("lets the floor win without breaking the proportion", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 10, y: 10 }, 80, 60, {
+      ratio,
+    });
+    expect(box.width).toBeCloseTo(100, 6);
+    expect(box.height).toBeCloseTo(60, 6);
+    expect(box.width / box.height).toBeCloseTo(ratio, 6);
+  });
+});

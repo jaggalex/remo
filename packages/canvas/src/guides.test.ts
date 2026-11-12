@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellGuides, snapMove, unionBox } from "./guides";
+import { cellGuides, snapMove, snapResize, unionBox } from "./guides";
 import { translateLayout } from "./layout";
 import type { KanbanLayout } from "./layout";
 
@@ -129,5 +129,67 @@ describe("alignment snapping", () => {
       height: 150,
     });
     expect(unionBox([])).toBeNull();
+  });
+});
+
+
+/**
+ * Resizing snaps only the edges the corner drags (ADR-212).
+ *
+ * The anchored side must not move, a guide appears only where the edge really landed,
+ * and a snap that would go below the minimum is skipped rather than clamped.
+ */
+describe("resize snapping (ADR-212)", () => {
+  it("pulls the dragged right edge onto a neighbour's left edge", () => {
+    const result = snapResize(
+      box(0, 0, 190, 100),
+      { x: "right", y: "bottom" },
+      [box(200, 0)],
+      12,
+    );
+
+    expect(result.box).toMatchObject({ x: 0, y: 0, width: 200 });
+    expect(result.guides).toEqual([
+      { axis: "x", position: 200, from: 0, to: 100, kind: "edge" },
+    ]);
+  });
+
+  it("moves the left edge and keeps the right one anchored", () => {
+    const result = snapResize(box(110, 0, 90, 100), { x: "left" }, [box(0, 0)], 12);
+
+    expect(result.box).toMatchObject({ x: 100, width: 100 });
+    expect(result.box.x + result.box.width).toBe(200);
+  });
+
+  it("does nothing when the edge is outside the tolerance", () => {
+    const result = snapResize(box(0, 0, 150, 100), { x: "right" }, [box(200, 0)], 6);
+
+    expect(result.box).toMatchObject({ width: 150 });
+    expect(result.guides).toEqual([]);
+  });
+
+  it("skips a snap that would break the minimum", () => {
+    const result = snapResize(
+      box(0, 0, 120, 100),
+      { x: "right" },
+      [box(40, 0)],
+      12,
+      { width: 80, height: 60 },
+    );
+
+    expect(result.box).toMatchObject({ width: 120 });
+    expect(result.guides).toEqual([]);
+  });
+
+  it("snaps both edges independently", () => {
+    const result = snapResize(
+      box(0, 0, 190, 90),
+      { x: "right", y: "bottom" },
+      [box(200, 100), box(0, 100)],
+      12,
+    );
+
+    expect(result.box).toMatchObject({ width: 200, height: 100 });
+    expect(result.guides.map((guide) => guide.axis).sort()).toEqual(["x", "y"]);
   });
 });

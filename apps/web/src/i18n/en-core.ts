@@ -468,7 +468,7 @@ export const enCore = {
   "canvas.editText": "Edit text",
   "kanban.cardPlaceholder": "Type something",
   "canvas.group": "Group",
-  "canvas.locked": "Locked: it cannot be moved or edited until you unlock it",
+  "canvas.locked": "Locked: its size and text are protected; it can still be moved",
   "canvas.inGroup": "In a group: double-click to edit just this object",
   "canvas.widenHint": "widens the widget by one column · one undo step",
   "preset.shape.plain": "Plain",

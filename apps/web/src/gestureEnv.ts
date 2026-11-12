@@ -155,11 +155,42 @@ export function useGestureEnv(deps: GestureDeps) {
   );
   /** The same map for handlers that must not wait for a render. */
   const previewLive = useRef<ReadonlyMap<string, Partial<Widget>>>(new Map());
-  const applyPreview = useCallback((next: ReadonlyMap<string, Partial<Widget>>) => {
-    previewLive.current = next;
-    setPreview(next);
+  /**
+   * One preview commit per animation frame (ADR-213).
+   *
+   * A trackpad or a gaming mouse sends pointer moves faster than the screen refreshes.
+   * Repainting the board for every event buys nothing visible and spends the frame
+   * budget that the paint itself needs; the last position of the frame is the one a
+   * person can actually see. The handlers keep reading `previewLive`, so hit-testing
+   * and the drop stay exact, and a release cancels the pending frame before it clears.
+   */
+  const previewFrame = useRef<number | null>(null);
+  const paintPreview = useCallback(() => {
+    previewFrame.current = null;
+    setPreview(previewLive.current);
   }, []);
-  const clearPreview = useCallback(() => applyPreview(new Map()), [applyPreview]);
+  const applyPreview = useCallback(
+    (next: ReadonlyMap<string, Partial<Widget>>) => {
+      previewLive.current = next;
+      if (previewFrame.current !== null) return;
+      previewFrame.current = requestAnimationFrame(paintPreview);
+    },
+    [paintPreview],
+  );
+  const clearPreview = useCallback(() => {
+    if (previewFrame.current !== null) {
+      cancelAnimationFrame(previewFrame.current);
+      previewFrame.current = null;
+    }
+    previewLive.current = new Map();
+    setPreview(previewLive.current);
+  }, []);
+  useEffect(
+    () => () => {
+      if (previewFrame.current !== null) cancelAnimationFrame(previewFrame.current);
+    },
+    [],
+  );
 
   /** Ids being dragged right now — the "in hand" shadow applies to exactly these. */
   const [dragIds, setDragIds] = useState<string[]>([]);
@@ -327,12 +358,10 @@ export function useGestureEnv(deps: GestureDeps) {
         }
       }
 
-      // A locked object stays where it is, even when it is selected with others: it
-      // was pinned on purpose (ADR-040).
+      // A locked object travels with the selection: the lock protects what the object
+      // is (size, text, links), not where it stands (ADR-210, amending ADR-040).
       const origins = widgets
-        .filter(
-          (widget) => lifted.has(widget.id) && !isCardOfKanban(widget) && !widget.locked,
-        )
+        .filter((widget) => lifted.has(widget.id) && !isCardOfKanban(widget))
         .map((widget) => ({ id: widget.id, x: widget.x, y: widget.y }));
       if (!origins.length) return;
       const box =

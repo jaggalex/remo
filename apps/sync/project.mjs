@@ -102,7 +102,6 @@ export function projectWidgets(doc) {
       content: widget.type === "card" ? str(widget.content) : text,
       fillColor: str(widget.style?.fillColor),
       cardTheme: str(widget.style?.cardTheme),
-      rotation: num(widget.rotation) ?? 0,
       props: projectProps(widget),
     });
   });

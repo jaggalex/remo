@@ -18,7 +18,6 @@ export interface PlannedStyle {
   strokeStyle?: "normal" | "dashed" | "dotted";
   strokeWidth?: number;
   fontSize?: number;
-  fontFamily?: string;
   color?: string;
   textAlign?: "left" | "center" | "right";
   textVAlign?: "top" | "middle" | "bottom";

@@ -46,7 +46,6 @@ export interface WidgetStyle {
    * size is a deliberate override, so the text may overflow rather than shrink.
    */
   fontSize?: number;
-  fontFamily?: string;
   color?: string;
   textAlign?: "left" | "center" | "right";
   textVAlign?: "top" | "middle" | "bottom";
@@ -134,7 +133,6 @@ export interface Widget extends Rect {
    * coordinate system (ADR-199).
    */
   cell?: CellPlacement;
-  rotation?: number;
   /**
    * The object's text.
    *
