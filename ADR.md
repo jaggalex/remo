@@ -8341,3 +8341,241 @@ table's own layout may need to move a locked member to keep it inside its cell.
 **Consequences.** `tableReflow` only repairs crossed padding; `tableAxisSizes` measures
 offset-aware extents. Tidy still leaves a table section alone (ADR-201). A locked object
 may move during a table layout change, which is recorded here rather than in ADR-040.
+
+## ADR-204: A merged block is a span of axes, not a new cell (extends ADR-196, ADR-199, ADR-201)
+
+**Status:** accepted (2026-11-11). The UI entry point is a design decision still open; the
+model, geometry and commands below are the contract the UI will call.
+
+**Context.** A table section can arrange objects in cells, but a report-like table often
+needs one heading over several columns or one tall cell across rows. The obvious copy of a
+spreadsheet — rewriting the cell matrix with a larger cell and hidden neighbours — would
+introduce a second grid next to the axes and break the rule that geometry is derived
+(ADR-196, ADR-199). The owner asked for merge and split without giving up the section view.
+
+**Decision.**
+
+- **A span is a named block of axes.** `frame.layout.spans?: TableSpan[]` with
+  `TableSpan = { rowId, columnId, rowSpan, columnSpan }`, anchored at its top-left cell.
+  Ids are axis ids; counts are whole numbers ≥ 1. A span with `rowSpan * columnSpan = 1`
+  is not stored. Spans never name coordinates or sizes: the block is the union of the
+  axes between its anchor and its last covered axis.
+- **Covered cells keep their identity.** The axes are unchanged, an object may still carry
+  `cell` naming a covered cell, and `layoutTable` maps it to the anchor. `TableCell` gains
+  `rowSpan`/`columnSpan`; `grid.cells` contains anchors only, so the painter draws no inner
+  lines and hit-testing sees one rectangle. A lookup by a covered axis returns the
+  anchor's rect, not null.
+- **Merging is one explicit command.** It requires at least two cells, an unlocked
+  section, and a complete rectangle; an existing span inside the selection counts as its
+  whole block. Objects in covered cells are re-assigned to the anchor cell (membership only,
+  their world coordinates and offsets stay), nested spans are released, and the new span is
+  written in the same transaction and one undo. A non-rectangular selection does nothing.
+- **Size follows content, not the span.** Underlaying columns and rows keep their own
+  content-driven sizes (ADR-201). When a merged cell's content needs more room than the sum
+  of its axes, the last covered axis grows by the deficit, so `layoutTable` stays a fixed
+  point and two clients agree. Manual sizes remain a floor; axes never shrink below their
+  own content or the minimum.
+- **Splitting releases the span and nothing else.** Covered cells reappear with their own
+  sizes, fills and headers; objects stay in the anchor cell and keep their offsets.
+- **Axis edits keep spans honest.** Inserting an axis inside a span extends it; deleting an
+  axis inside a span shrinks it; deleting the anchor or moving any covered axis releases
+  the span (objects stay in their cells). Releasing a span is a layout change, never a
+  loss of objects.
+- **Presentation and the mirror read the same spans.** A merged cell is one presentation
+  step (objects were re-assigned to the anchor), and the hidden DOM table uses
+  `colspan`/`rowspan` for it (ADR-196).
+- **Fills stay per cell.** A merged cell uses the anchor's fill; covered cells keep their
+  stored overrides so splitting restores the picture.
+
+**Consequences.** `@remo/model` gains the span type, the reader and span-aware geometry;
+`@remo/doc` gains merge/split and span maintenance on axis edits; the painter needs no new
+element because anchors are the only cells; hit-testing, placement, reflow, presentation,
+export, backup and the AI projection read the same fields. The UI (where the merge control
+lives and how a merged cell is marked when selected) is designed separately and must not
+introduce a second table model.
+
+## ADR-205: Duplicating an axis copies its objects, not its identity (extends ADR-196)
+
+**Status:** accepted (2026-11-11). The menu entry is designed with the cell layer; the
+command and its tests land first.
+
+**Context.** Repeating a column or a row is the common way to grow a report-like table:
+"the same structure, one more period". Doing it by hand means re-creating the axis and
+copying every object into it, which loses text formatting and the arrangement inside the
+cell. The model already has a clipboard path that remaps ids, parents, groups and text.
+
+**Decision.**
+
+- **One command, one undo.** `duplicateAxis` inserts the copy directly after the source,
+  copies the source's size mode and header direction, and takes a localized title from
+  the caller. Axis ids are new; a duplicate never aliases the source.
+- **Objects travel through the clipboard path.** Every member of the source axis is
+  copied with `copyFragment`/`pasteFragment`, so ids, group ids and text runs are remapped
+  exactly like a normal paste. The copy keeps each object's row (or column) and lands in
+  the new axis; the table's own settling step puts the group inside the new cell.
+- **Connectors are not duplicated.** A line exists only when both of its ends are copied;
+  duplicating one axis cannot copy a line to an object outside it.
+- **Spans follow the insertion rule.** Duplicating an axis inside a merged block extends
+  the block, exactly as inserting any other axis does (ADR-204).
+- **Locked objects are copied as unlocked.** The copy is a new decision, not a copy of
+  somebody's lock (ADR-107).
+
+**Consequences.** `@remo/doc` gains `duplicateAxis`; the section panel and the axis menu
+get one more action when the design lands. No new model field: the command writes the
+same axes and cells a person would.
+
+## ADR-206: Auto size is a per-axis ratchet; a block follows its axes (extends ADR-196, ADR-201, ADR-204)
+
+**Status:** accepted (2026-11-12). The UI (a switch in the section panel, the block group
+control and the canvas marker) is designed separately; the mechanics and the command are
+the contract.
+
+**Context.** The owner asked for a table mode where a merged block shrinks only when auto
+size is on, and where changing a width or height by hand turns that automatic resizing off
+until it is turned back on. The request meets three accepted rules: an object stays inside
+its cell, an object is never scaled or cropped, and the section is exactly its grid
+(ADR-201). A truly fixed box would force one of them to break.
+
+**Decision.**
+
+- **Auto size follows content both ways; "off" forbids automatic shrink, not growth.**
+  An axis with auto size is `max(minimum, content)`. With auto off it is
+  `max(stored size, content)`: content may still make it grow, because the object must fit,
+  but it never makes the axis smaller on its own. The interface says so: "grows with
+  content, never shrinks on its own".
+- **Turning auto off freezes what the person sees.** `setAxisAutoResize` stores the current
+  visible width or height as the manual size; turning it on removes the stored size and the
+  axis follows content again. One command, one undo, so the panel and the header menu
+  cannot drift.
+- **A preset is manual.** `narrow`/`medium`/`wide` are named manual minimums, not a third
+  state; the switch has two values.
+- **A merged block has no size of its own.** Its rectangle is the sum of the axes it
+  covers, so "block auto size" is a group control over those axes; the model stays
+  per-axis and a mixed block is possible. The group control lives in the section panel;
+  there is no table-wide switch.
+- **Structural edits follow the axes (R1).** Inserting an axis inside a block extends the
+  block; deleting one shrinks it by that axis; the surviving axes keep their width or
+  height and are not recalculated. Deleting the anchor or moving a covered axis releases
+  the block (ADR-204). The outer width of a block is not preserved by redistribution: that
+  would change the neighbouring axes and require a second stored size (ADR-201).
+- **Undo and peers.** A mode change and a structural edit are ordinary commands; geometry
+  stays a pure function of the document, so two peers agree and one undo restores both the
+  mode and the size.
+
+**Consequences.** `@remo/doc` gains `setAxisAutoResize`; the section panel gains the switch
+and the block group control; the canvas gains a quiet manual-size marker. R2 (preserving a
+block's outer size) is rejected. Objects moved out of a deleted axis may still grow the
+receiving axis: that is the content rule, not automatic shrinking.
+
+## ADR-207: A section shows its title and a view badge on the canvas (amends ADR-201; extends ADR-196, ADR-199, ADR-206)
+
+**Status:** accepted (2026-11-12). Mockups are the T series (T1, T4, T5, T9, T10, T13, P7);
+Figma is not required.
+
+**Context.** A table section is met only through the properties panel: `frame.title` is
+stored and exported but never drawn, and the view is switched in the panel alone. The owner
+asked for the name above the section with a "▦ Table" badge beside it; T4 and T10 also show
+two moments the code does not have — a layout dialog and a remove confirmation. ADR-201 says
+"Table" in the section's properties "stays the only entry"; this record amends that sentence
+and keeps its rule: a table is a view of a section, not an object, and there is no Table
+tool on the rail.
+
+**Decision.**
+
+- **The title is chrome, in screen space.** It sits above the section's top-left corner,
+  outside its box, at a screen-constant size that does not scale with zoom. It never enters
+  the table rectangle and is not read by `layoutTable`, tidy, reflow, export, backup or
+  presentation in v1. A long title is clipped with an ellipsis, never wrapped; the full
+  text is in the editor and the tooltip. Below 20 % zoom the strip is hidden rather than
+  drawn over the grid.
+- **A non-empty title is always drawn**, muted; an untitled section shows the placeholder
+  only on hover or selection. The title is content, the badge is an action, and the two have
+  different volume (E2): the badge appears on hover or selection only.
+- **The badge is a menu, not a switch.** In table mode, `▦ Table` follows the title. A click
+  (or `Enter`/`Space` when focused) opens a small menu "Section / Table" with the current
+  view checked. It calls the same helper as `SectionPanel.switchView`, including "the first
+  column creates the axes". There is no badge in free mode; the canvas path there is the
+  context-menu item. The segments stay in the panel — the badge is a state chip that opens
+  a menu.
+- **One command, three surfaces.** The panel switch, the badge menu and the context-menu
+  item call one helper; no surface keeps its own state and no second mechanism appears.
+  The section is selected, the object selection and the camera are untouched by a switch.
+- **Title editing.** A double click, `F2` or `Enter` on a selected section opens the same
+  in-place field as an axis header (ADR-202): all text selected, `Enter` or blur commits,
+  `Esc` cancels, one command and one undo, an empty value clears to the placeholder. While
+  editing, dragging and the badge are off. A single click selects the section; there is no
+  drag by the title in v1 — the body moves the section. The strip accepts no objects and is
+  not a drop target.
+- **Entering the table with material asks how to lay it out (T4).** Turning a free section
+  that holds objects and has no stored axes into a table opens "How to lay out the
+  material?" with "Lay out by current position" / "Keep everything in the first cell", a
+  live preview on the canvas and Cancel/Apply. The preview comes from the same pure plan as
+  the command, so the picture and the result cannot disagree. Apply is one command and one
+  undo. The default is "keep everything in the first cell": it is today's behaviour and
+  creates no axes nobody asked for. An empty section, or one whose `active: false` table is
+  turned back on, opens no dialog. This settles ADR-196 H4 for the manual path.
+- **Removing a table asks in the panel and not in the badge (T10).** "Remove table" in the
+  panel confirms, naming the number of objects that stay on the canvas and that cells are
+  kept so the table can be turned back on. The badge and context menus switch at once and
+  report with a toast "Table removed, cells kept". Both paths run one command; the question
+  belongs to the surface, not to a second mechanism. One undo restores the table.
+- **Locked or read-only.** The title is not editable and the badge menu and context item
+  are disabled with the reason "The section is locked"; the title text is still drawn.
+- **Keyboard and screen reader.** `Tab` goes title → badge → canvas; `Enter`/`Space` on the
+  badge opens the menu, arrows move, `Enter` applies. The title is a text field with the
+  axis header's announcements; the badge announces "Section view: Table". The strip has its
+  own hover, selected and focus ring; selecting the section still outlines the grid.
+- **Tokens and i18n.** Sizes, colours and radii come from the `@remo/ui` chrome tokens,
+  never literals; every string is RU and EN in `apps/web/src/i18n`. The strip and badge must
+  not overlap the "+" handles on header boundaries (ADR-201).
+
+**Consequences.** The painter and hit-testing gain a screen-space chrome layer for the title
+strip and badge; the view switch is extracted into one helper used by the panel, the badge
+and the context menu; the layout dialog reuses the plan-preview mechanism of "Gather into
+section"; the remove confirmation joins the existing axis-deletion dialog pattern. No
+document or schema change: `frame.title` already exists and is exported, so backups and
+older clients are unaffected and the schema version does not move. Product baselines are
+regenerated deliberately (`pnpm baselines`), because every titled section on every board now
+shows a strip. Export and presentation keep ignoring the title; exporting it later is a new
+record. Help (`content/help/section.table`, RU then EN) gains a short "Title and view"
+section. New e2e scenarios: title edit and undo, badge switch equals the panel switch,
+layout dialog preview, remove confirmation versus toast, locked section.
+
+## ADR-208: Borders and cell padding are appearance overrides, and padding is geometry (extends ADR-199, ADR-201)
+
+**Status:** accepted (2026-11-12). The panel follows the T language; no separate mockup
+series was made for this slice.
+
+**Context.** ADR-199 gave a table named fills. A table also needs a visible edge and a
+readable inset: the T series shows framed cells and a padding control, but the model had
+neither. Padding cannot be a painter-only setting: the same number decides where an object
+sits inside its cell and how much the cell grows (ADR-201, ADR-203).
+
+**Decision.**
+
+- **`TableAppearance` gains `borders` and `paddings`.** Each has the same named areas as
+  fills — table, headers, column, row, cell — and the same specificity: cell, row, column,
+  headers, table. An absent key means "as before"; clearing an override deletes the key and
+  the reader drops malformed values (ADR-171).
+- **A border is whole-cell.** `{ color, width, style }` with `solid`, `dashed` or `none`;
+  width is 1–8 screen pixels at 100 % zoom, painted with the same thickness at every zoom.
+  Per-side borders are not part of this record: a cell has one edge, and four independent
+  sides would need a second UI and a larger override map.
+- **Padding is one number in world units**, 0–96, default 16 (`TABLE_CELL_PADDING`). It is
+  read by `layoutTable`, `tableAxisSizes` and `tableReflow`: a cell grows to hold its
+  objects plus its own padding, and a member that crosses the padding is put back. The
+  painter reads the same value implicitly through the geometry; it does not draw padding.
+- **The panel edits the selected area.** The area picker offers table, headers, the selected
+  axis and the selected cell; with one area it edits that area directly. Colour comes from
+  the existing tonal palette, width and style from segmented controls, padding from
+  S/M/L or a number, and every property has "As before".
+- **Export, backup and the agent read the same fields.** No new schema version: the reader
+  accepts the optional maps and older clients drop unknown appearance keys as before.
+  Presentation and the a11y mirror are unchanged; only the painted edge changes.
+
+**Consequences.** `@remo/model` gains the border/padding types, the specificity helpers and
+padding-aware geometry; `@remo/doc` gains `setTableBorder` and `setTablePadding`; the painter
+uses the resolved border per header and cell; the section panel gains the two rows under
+"Table appearance". Tests cover the specificity order, malformed reads, the padding effect on
+a column and the border command's clear path. Per-side borders, per-side padding and rich
+border patterns remain open.

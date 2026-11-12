@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import type { BoardDocument } from "@remo/doc";
 import { rigidWaypoints, type Widget } from "@remo/model";
+import {
+  clearTableCellSelection,
+  setTableCellSelection,
+  tableCellSelection,
+} from "./tableCellSelection";
 import { isEditable } from "./BoardCanvas";
 import { commandForShortcut, type CommandContext } from "./commands";
 import type { RailTool } from "./ToolRail";
@@ -72,8 +77,59 @@ useEffect(() => {
       return;
     }
 
+    // A dialog or an open menu owns the keyboard: a size popover must not let Delete
+    // reach the section behind it, and arrows in a menu must not move a cell.
+    if (document.querySelector('[role="dialog"], [role="menu"]')) return;
+
     const mod = event.metaKey || event.ctrlKey;
     const key = event.key.toLowerCase();
+
+    // A selected cell owns the arrows and Escape (ADR-204). This is transient UI state,
+    // so it works in a read-only room too: looking at a cell is not editing it.
+    const cell = tableCellSelection();
+    if (cell) {
+      const frame = widgets.find((widget) => widget.id === cell.frameId);
+      const layout = frame?.layout?.kind === "table" ? frame.layout : null;
+      if (layout) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          clearTableCellSelection();
+          return;
+        }
+        const rowIndex = layout.rows.findIndex((axis) => axis.id === cell.focus.rowId);
+        const columnIndex = layout.columns.findIndex(
+          (axis) => axis.id === cell.focus.columnId,
+        );
+        const step =
+          event.key === "ArrowLeft"
+            ? [0, -1]
+            : event.key === "ArrowRight"
+              ? [0, 1]
+              : event.key === "ArrowUp"
+                ? [-1, 0]
+                : event.key === "ArrowDown"
+                  ? [1, 0]
+                  : null;
+        if (step && rowIndex >= 0 && columnIndex >= 0) {
+          const row = Math.max(0, Math.min(layout.rows.length - 1, rowIndex + step[0]!));
+          const column = Math.max(
+            0,
+            Math.min(layout.columns.length - 1, columnIndex + step[1]!),
+          );
+          event.preventDefault();
+          const next = {
+            rowId: layout.rows[row]!.id,
+            columnId: layout.columns[column]!.id,
+          };
+          setTableCellSelection({
+            frameId: cell.frameId,
+            anchor: event.shiftKey ? cell.anchor : next,
+            focus: next,
+          });
+          return;
+        }
+      }
+    }
 
     // An offline overflow or a revoked write permission stops every mutating
     // shortcut; copy, the board palette and Escape still work.

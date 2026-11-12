@@ -1,16 +1,28 @@
 import { expect, test, type Page } from "@playwright/test";
+import { layoutTable, type Widget } from "@remo/model";
 import { openBoard, PASSWORD, register, seedNote, seedObject, startPresentation } from "./helpers";
 
 interface ProbeWidget {
   id: string;
   type: string;
+  title?: string | null;
+  text?: string | null;
   parentId: string | null;
   x: number;
   y: number;
   width: number;
   height: number;
   cell?: { rowId: string; columnId: string } | null;
-  layout?: { columns?: Array<{ id: string; title: string }> } | null;
+  layout?: {
+    columns?: Array<{ id: string; title: string; size?: string | number }>;
+    rows?: Array<{ id: string; title: string; size?: string | number }>;
+    spans?: Array<{ rowId: string; columnId: string; rowSpan: number; columnSpan: number }>;
+    active?: boolean;
+    appearance?: {
+      borders?: Record<string, unknown>;
+      paddings?: Record<string, unknown>;
+    };
+  } | null;
 }
 
 async function widgets(page: Page): Promise<ProbeWidget[]> {
@@ -77,8 +89,16 @@ async function openTable(page: Page, tag: string, second = false) {
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   const panel = page.locator(".section-panel");
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  await applyDefaultLayout(page);
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
   return { account, frameId, noteId, secondId, panel };
+}
+
+/** Apply the default T4 layout when turning a section with material into a table. */
+async function applyDefaultLayout(page: Page) {
+  const dialog = page.locator(".section-layout-card");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Apply", exact: true }).click();
 }
 
 /**
@@ -140,6 +160,7 @@ test("turns a section into a table and deletes it without its objects", async ({
   await expect(panel).toBeVisible();
 
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  await applyDefaultLayout(page);
   const columnGroup = panel.locator(".section-axis-group").first();
   const rowGroup = panel.locator(".section-axis-group").nth(1);
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(2);
@@ -195,6 +216,7 @@ test("deleting an axis with objects asks and moves them to a neighbour", async (
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   const panel = page.locator(".section-panel");
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  await applyDefaultLayout(page);
   const columnGroup = panel.locator(".section-axis-group").first();
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(2);
 
@@ -252,6 +274,7 @@ test("a table header edits its title and opens the axis menu", async ({ page }) 
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   const panel = page.locator(".section-panel");
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  await applyDefaultLayout(page);
   const columnGroup = panel.locator(".section-axis-group").first();
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(2);
 
@@ -280,9 +303,13 @@ test("a table header edits its title and opens the axis menu", async ({ page }) 
   await nowHeader.click();
   await page
     .getByRole("menu", { name: /Columns: Now/ })
-    .getByRole("menuitemcheckbox", { name: "Wide", exact: true })
+    .getByRole("menuitem", { name: /^Size/ })
     .click();
-  await expect(panel.getByRole("radio", { name: "Wide", exact: true })).toBeChecked();
+  const sizeDialog = page.getByRole("dialog").filter({ hasText: "Width of column" });
+  await expect(sizeDialog).toBeVisible();
+  await sizeDialog.getByRole("radio", { name: "Wide", exact: true }).click();
+  await expect(panel.locator(".axis-size-anchor").getByRole("button")).toBeVisible();
+  await page.keyboard.press("Escape");
 
   await nowHeader.click();
   await page
@@ -315,7 +342,7 @@ test("drops an object into another cell and undoes it in one step", async ({ pag
   await expect(mirror.getByRole("rowheader", { name: "Row 1" })).toHaveCount(1);
   await expect(mirror.getByRole("cell", { name: /Inside/ })).toHaveCount(1);
   const live = page.locator(".table-mirror[role='status']");
-  await expect(live).toContainText("Selected column");
+  await expect(live).toContainText("Table 2 × 1.");
   await page.getByRole("button", { name: "Columns: Column 1" }).click();
   await expect(live).toContainText("Column 1");
 
@@ -511,4 +538,349 @@ test("deletes an empty axis without asking about zero objects", async ({ page })
 
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(rowGroup.locator(".section-axis-row")).toHaveCount(1);
+});
+
+
+test("auto size can be turned off and back on", async ({ page }) => {
+  const { frameId, noteId } = await openTable(page, "table-auto-size");
+  await page.getByRole("button", { name: "Columns: Column 1" }).click();
+  const panel = page.locator(".section-panel");
+  await panel.locator(".axis-size-anchor").getByRole("button").click();
+  const sizeDialog = page.getByRole("dialog").filter({ hasText: "Width of column" });
+  await expect(sizeDialog).toBeVisible();
+  await sizeDialog.getByText("Manual", { exact: true }).click();
+  await page.keyboard.press("Escape");
+
+  const frozen = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!
+    .columns![0]!.size;
+  expect(typeof frozen).toBe("number");
+
+  const note = (await widgets(page)).find((widget) => widget.id === noteId)!;
+  const point = await screenPoint(page, { x: note.x, y: note.y });
+  await page.mouse.click(point.x, point.y);
+  await page.keyboard.press("Delete");
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Delete", exact: true })
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.columns![0]!.size;
+    })
+    .toBe(frozen);
+
+  let firstHeader = page.getByRole("button", { name: "Columns: Column 1" });
+  if ((await firstHeader.getAttribute("aria-pressed")) !== "true") await firstHeader.click();
+  await firstHeader.click();
+  await page
+    .getByRole("menu", { name: /Columns: Column 1/ })
+    .getByRole("menuitem", { name: /^Size/ })
+    .click();
+  await page
+    .getByRole("dialog").filter({ hasText: "Width of column" })
+    .getByText("Auto", { exact: true })
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.columns![0]!.size;
+    })
+    .toBeUndefined();
+});
+
+
+/** The screen point at the centre of one cell, from the same geometry the canvas uses. */
+async function cellPoint(page: Page, frameId: string, row: number, column: number) {
+  const all = await widgets(page);
+  const frame = all.find((widget) => widget.id === frameId)!;
+  const grid = layoutTable(frame as unknown as Widget, all as unknown as Widget[])!;
+  const rowEntry = grid.rows[row]!;
+  const columnEntry = grid.columns[column]!;
+  return screenPoint(page, {
+    x: columnEntry.x + columnEntry.width / 2,
+    y: rowEntry.y + rowEntry.height / 2,
+  });
+}
+
+test("selects a range, merges it and splits it again", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-merge");
+  await panel
+    .locator(".section-axis-add")
+    .getByRole("button", { name: "Row", exact: true })
+    .click();
+
+  const first = await cellPoint(page, frameId, 1, 0);
+  await page.mouse.click(first.x, first.y);
+  const second = await cellPoint(page, frameId, 1, 1);
+  await page.keyboard.down("Shift");
+  await page.mouse.click(second.x, second.y);
+  await page.keyboard.up("Shift");
+
+  const bar = page.locator(".table-range-bar");
+  await expect(bar).toBeVisible();
+  await bar.getByRole("button", { name: "Merge", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.spans ?? [];
+    })
+    .toEqual([{ rowId: expect.any(String), columnId: expect.any(String), rowSpan: 1, columnSpan: 2 }]);
+
+  await page.mouse.click(first.x, first.y);
+  await expect(bar.getByRole("button", { name: "Split", exact: true })).toBeVisible();
+  await bar.getByRole("button", { name: "Split", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.spans;
+    })
+    .toBeUndefined();
+});
+
+test("the size popover owns Delete and does not delete the section", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-size-guard");
+  await page.getByRole("button", { name: "Columns: Column 1" }).click();
+  await panel.locator(".axis-size-anchor").getByRole("button").click();
+  await expect(page.getByRole("dialog").filter({ hasText: "Width of column" })).toBeVisible();
+  await page.keyboard.press("Delete");
+  await expect
+    .poll(async () => (await widgets(page)).some((widget) => widget.id === frameId))
+    .toBe(true);
+});
+
+test("an object inside a cell keeps its own selection", async ({ page }) => {
+  const { noteId } = await openTable(page, "table-cell-object");
+  const note = (await widgets(page)).find((widget) => widget.id === noteId)!;
+  const point = await screenPoint(page, { x: note.x, y: note.y });
+  await page.mouse.click(point.x, point.y);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+      ),
+    )
+    .toEqual([noteId]);
+});
+
+test("merge is one undo step", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-merge-undo");
+  await panel
+    .locator(".section-axis-add")
+    .getByRole("button", { name: "Row", exact: true })
+    .click();
+  const first = await cellPoint(page, frameId, 1, 0);
+  const second = await cellPoint(page, frameId, 1, 1);
+  await page.mouse.click(first.x, first.y);
+  await page.keyboard.down("Shift");
+  await page.mouse.click(second.x, second.y);
+  await page.keyboard.up("Shift");
+  await page.locator(".table-range-bar").getByRole("button", { name: "Merge" }).click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return (layout.spans ?? []).length;
+    })
+    .toBe(1);
+  await page.keyboard.press("Meta+z");
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.spans;
+    })
+    .toBeUndefined();
+});
+
+test("the block size switch freezes and releases every axis", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-block-size");
+  await panel
+    .locator(".section-axis-add")
+    .getByRole("button", { name: "Row", exact: true })
+    .click();
+  const first = await cellPoint(page, frameId, 1, 0);
+  const second = await cellPoint(page, frameId, 1, 1);
+  await page.mouse.click(first.x, first.y);
+  await page.keyboard.down("Shift");
+  await page.mouse.click(second.x, second.y);
+  await page.keyboard.up("Shift");
+  await page.locator(".table-range-bar").getByRole("button", { name: "Merge" }).click();
+
+  const merged = await cellPoint(page, frameId, 1, 0);
+  await page.mouse.click(merged.x, merged.y);
+  const group = panel.locator(".section-group").filter({ hasText: "Block size" });
+  const box = group.getByRole("checkbox");
+  await expect(box).toBeVisible();
+  await box.click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return [typeof layout.columns![0]!.size, typeof layout.columns![1]!.size];
+    })
+    .toEqual(["number", "number"]);
+  await box.click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return [layout.columns![0]!.size, layout.columns![1]!.size];
+    })
+    .toEqual([undefined, undefined]);
+});
+
+
+test("the section title edits in place and the badge switches the view", async ({ page }) => {
+  const { frameId } = await openTable(page, "table-title");
+  const title = page.getByRole("button", { name: "Rename section" });
+  await expect(title).toContainText("Section");
+  await title.focus();
+  await page.keyboard.press("F2");
+  const input = page.locator(".section-title-input");
+  await expect(input).toBeVisible();
+  await input.fill("Stages");
+  await input.press("Enter");
+  await expect
+    .poll(async () => (await widgets(page)).find((widget) => widget.id === frameId)!.text)
+    .toBe("Stages");
+  await expect(page.getByRole("button", { name: "Rename section" })).toContainText("Stages");
+
+  await page.getByRole("button", { name: "Section view: Table" }).click();
+  await page
+    .getByRole("menu", { name: "Section view" })
+    .getByRole("menuitemcheckbox", { name: "Section", exact: true })
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout;
+      return layout?.active;
+    })
+    .toBe(false);
+});
+
+test("removing a table asks in the panel and keeps the objects", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-remove");
+  await panel.getByRole("button", { name: "Remove table", exact: true }).click();
+  const dialog = page.getByRole("alertdialog").filter({ hasText: "Remove the table?" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout;
+      return layout?.active;
+    })
+    .not.toBe(false);
+
+  await panel.getByRole("button", { name: "Remove table", exact: true }).click();
+  await page
+    .getByRole("alertdialog")
+    .filter({ hasText: "Remove the table?" })
+    .getByRole("button", { name: "Remove table", exact: true })
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout;
+      return layout?.active;
+    })
+    .toBe(false);
+});
+
+test("turning a section with material into a table asks how to lay it out", async ({ page }) => {
+  const account = await register(page, "table-layout-dialog");
+  const frameId = await seedObject(page, account.boardId, {
+    type: "frame",
+    x: 0,
+    y: 0,
+    width: 600,
+    height: 400,
+    title: "Section",
+  });
+  const first = await seedNote(page, account.boardId, { x: -100, y: 0 }, undefined, "One", frameId);
+  const second = await seedNote(page, account.boardId, { x: 100, y: 0 }, undefined, "Two", frameId);
+  const third = await seedNote(page, account.boardId, { x: 300, y: 0 }, undefined, "Three", frameId);
+
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
+  await waitForWidget(page, frameId);
+  const frame = (await widgets(page)).find((widget) => widget.id === frameId)!;
+  const point = await screenPoint(page, { x: frame.x, y: frame.y - frame.height / 2 + 24 });
+  await page.mouse.click(point.x, point.y);
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  const panel = page.locator(".section-panel");
+  await panel.getByRole("radio", { name: "Table", exact: true }).click();
+
+  const dialog = page.locator(".section-layout-card");
+  await expect(dialog).toBeVisible();
+  await expect(page.locator(".section-layout-preview")).toBeVisible();
+  await dialog.getByText("Lay out by current position", { exact: true }).click();
+  await dialog.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout;
+      return layout?.columns?.length;
+    })
+    .toBe(2);
+  const cells = await Promise.all(
+    [first, second, third].map(async (id) =>
+      (await widgets(page)).find((widget) => widget.id === id)?.cell?.columnId,
+    ),
+  );
+  const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+  expect(cells).toEqual([
+    layout.columns![0]!.id,
+    layout.columns![0]!.id,
+    layout.columns![1]!.id,
+  ]);
+});
+
+test("cancelling the layout dialog leaves the section free", async ({ page }) => {
+  const account = await register(page, "table-layout-cancel");
+  const frameId = await seedObject(page, account.boardId, {
+    type: "frame",
+    x: 0,
+    y: 0,
+    width: 600,
+    height: 400,
+    title: "Section",
+  });
+  await seedNote(page, account.boardId, { x: 0, y: 0 }, undefined, "One", frameId);
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
+  await waitForWidget(page, frameId);
+  const frame = (await widgets(page)).find((widget) => widget.id === frameId)!;
+  const point = await screenPoint(page, { x: frame.x, y: frame.y - frame.height / 2 + 24 });
+  await page.mouse.click(point.x, point.y);
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  await page
+    .locator(".section-panel")
+    .getByRole("radio", { name: "Table", exact: true })
+    .click();
+  const dialog = page.locator(".section-layout-card");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(
+    (await widgets(page)).find((widget) => widget.id === frameId)!.layout,
+  ).toBeNull();
+});
+
+
+test("borders and padding are edited in the table appearance group", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-borders");
+  await panel.getByRole("button", { name: "Table appearance", exact: true }).click();
+  await panel.getByRole("button", { name: /Borders/, exact: false }).click();
+  await panel.getByRole("radio", { name: "2 px", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.appearance?.borders?.table;
+    })
+    .toMatchObject({ width: 2, style: "solid" });
+
+  await panel.getByRole("button", { name: /Cell padding/, exact: false }).click();
+  await panel.getByRole("radio", { name: "Large", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.appearance?.paddings?.table;
+    })
+    .toBe(32);
 });

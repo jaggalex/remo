@@ -29,6 +29,8 @@ import {
 } from "@remo/model";
 import { InlineEditor } from "./InlineEditor";
 import { TableHeaderLayer } from "./TableHeaderLayer";
+import { useTableCellMenu } from "./TableCellMenu";
+import { CanvasTableLayer } from "./CanvasTableLayer";
 import type { ContinuePreview } from "./canvasGeometry";
 import { useGestures } from "./useGestures";
 import { useCanvasPainting } from "./useCanvasPainting";
@@ -54,7 +56,6 @@ import { ArrangeBar, type ArrangeBarActions } from "./ArrangeBar";
 import { useI18n } from "./i18n";
 import { toggleMark as toggleMarkInDom } from "./richText";
 import type { BoardSettings } from "./settings";
-
 /** Background grid style. A view preference, not a document property. */
 export type GridStyle = "off" | "lines" | "dots";
 
@@ -83,6 +84,8 @@ interface Props {
   kanbanStates: Record<string, KanbanState>;
   selectedIds: readonly string[];
   onSelect: (ids: string[]) => void;
+  /** A transient line under the canvas; table size and merge messages use it. */
+  onNotice?: (text: string) => void;
   onMoveMany: (positions: WidgetPosition[]) => void;
   /** Drop a selection into a table cell (ADR-196). */
   onMoveToCell: (frameId: string, rowId: string, columnId: string, ids: string[], offset: { x: number; y: number }) => void;
@@ -172,10 +175,8 @@ interface Props {
   onCommentsUnread: (value: number) => void;
   reactionRequest: { emoji: string; at: number } | null;
 }
-
 /** What the pointer was over when the context menu was requested. */
 export type { ContextTarget } from "./canvasTargets";
-
 /**
  * The board is painted on two canvases.
  *
@@ -199,6 +200,7 @@ export function BoardCanvas({
   kanbanStates,
   selectedIds,
   onSelect,
+  onNotice,
   onMoveMany, onMoveToCell,
   onResize,
   onMoveCard,
@@ -258,6 +260,7 @@ export function BoardCanvas({
   const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const viewport = useViewportSize(wrapRef);
+  const cellMenu = useTableCellMenu(widgets, camera, viewport, selectedIds);
   /** One layout per kanban, shared by painting and hit-testing. */
   const layouts = useMemo(() => {
     const map = new Map<string, KanbanLayout>();
@@ -376,8 +379,6 @@ export function BoardCanvas({
     continuePreview,
     t,
   });
-
-
 
   useCanvasProbe({
     boardTitle,
@@ -632,7 +633,9 @@ export function BoardCanvas({
         onDoubleClick={onDoubleClick}
         onContextMenu={(event) => {
           event.preventDefault();
-          onContextMenu(resolveContextTarget(event), {
+          const target = resolveContextTarget(event);
+          if (cellMenu.openForTarget(target, event.clientX, event.clientY)) return;
+          onContextMenu(target, {
             x: event.clientX,
             y: event.clientY,
             world: toWorld(event),
@@ -728,6 +731,18 @@ export function BoardCanvas({
         onCommentsUnread={onCommentsUnread}
         reactionRequest={reactionRequest}
       />
+      <CanvasTableLayer
+        board={board}
+        widgets={widgets}
+        camera={camera}
+        viewport={viewport}
+        selectedIds={selectedIds}
+        onNotice={onNotice}
+        onSelect={onSelect}
+        readOnly={Boolean(readOnly)}
+        presenting={presenting}
+        menu={cellMenu}
+      />
       <TableHeaderLayer
         board={board}
         widgets={widgets}
@@ -738,6 +753,7 @@ export function BoardCanvas({
         onSelect={onSelect}
         drop={gestures.tableHover} refused={gestures.tableRefused} cursor={gestures.cursor}
         selectedIds={selectedIds}
+        onNotice={onNotice}
       />
       <InlineEditor
         target={presenting ? null : editorTarget}

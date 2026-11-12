@@ -1,6 +1,7 @@
 import type { Rect, Widget } from "@remo/model";
 import {
   TABLE_CELL_PADDING,
+  type TableCell,
   tableCellFill,
   type TableGrid,
 } from "@remo/model";
@@ -33,8 +34,35 @@ export function cellRect(
   rowId: string,
   columnId: string,
 ): Rect | null {
+  return tableCellAt(grid, rowId, columnId)?.rect ?? null;
+}
+
+/**
+ * The cell that owns a point of the grid: its anchor, or the merged block that covers a
+ * covered axis (ADR-204). A covered cell has no rectangle of its own, so a lookup by its
+ * ids must still find the block instead of nothing.
+ */
+export function tableCellAt(
+  grid: TableGrid,
+  rowId: string,
+  columnId: string,
+): TableCell | null {
+  const rowAt = grid.rows.findIndex((row) => row.axis.id === rowId);
+  const columnAt = grid.columns.findIndex((column) => column.axis.id === columnId);
+  if (rowAt < 0 || columnAt < 0) return null;
   return (
-    grid.cells.find((cell) => cell.rowId === rowId && cell.columnId === columnId)?.rect ?? null
+    grid.cells.find((cell) => {
+      const top = grid.rows.findIndex((row) => row.axis.id === cell.rowId);
+      const left = grid.columns.findIndex((column) => column.axis.id === cell.columnId);
+      return (
+        top >= 0 &&
+        left >= 0 &&
+        rowAt >= top &&
+        rowAt < top + cell.rowSpan &&
+        columnAt >= left &&
+        columnAt < left + cell.columnSpan
+      );
+    }) ?? null
   );
 }
 

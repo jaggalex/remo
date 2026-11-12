@@ -227,6 +227,20 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     return;
   }
 
+  if (drag.mode === "cellPress") {
+    // A few pixels of travel is still a click on the cell; past that it is a marquee
+    // over the board, so dragging from an empty cell keeps working.
+    if (
+      Math.hypot(event.clientX - drag.startScreen.x, event.clientY - drag.startScreen.y) <= 4
+    ) {
+      return;
+    }
+    dragRef.current = { mode: "marquee", start: drag.start, additive: drag.additive };
+    marqueeRef.current = rectFrom(drag.start, world);
+    setMarquee(marqueeRef.current);
+    return;
+  }
+
   if (drag.mode === "marquee") {
     marqueeRef.current = rectFrom(drag.start, world);
     setMarquee(marqueeRef.current);

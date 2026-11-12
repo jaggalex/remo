@@ -145,3 +145,58 @@ describe("table geometry (ADR-196, ADR-199)", () => {
     expect(cellFill(frame(), "r2", "c2")).toBeUndefined();
   });
 });
+
+describe("merged blocks (ADR-204)", () => {
+  const merged: TableLayout = {
+    ...layout,
+    spans: [{ rowId: "r1", columnId: "c1", rowSpan: 2, columnSpan: 1 }],
+  };
+
+  it("draws one anchor cell and finds it through a covered axis", () => {
+    const grid = layoutTable({ ...frame(), layout: merged }, [])!;
+    const anchors = grid.cells.filter((cell) => cell.columnId === "c1");
+    expect(anchors).toHaveLength(1);
+    expect(anchors[0]).toMatchObject({ rowId: "r1", rowSpan: 2, columnSpan: 1 });
+    const covered = cellRect(grid, "r2", "c1")!;
+    expect(covered).toEqual(cellRect(grid, "r1", "c1"));
+    expect(covered.height).toBe(
+      grid.rows[0]!.height + grid.rows[1]!.height,
+    );
+    const point = { x: covered.x + 10, y: covered.y + covered.height - 10 };
+    expect(tableHitAt(grid, point)).toMatchObject({
+      kind: "cell",
+      rowId: "r1",
+      columnId: "c1",
+    });
+    expect(acceptsObjects(tableHitAt(grid, point))).toBe(true);
+  });
+
+  it("grows the last covered column so the merged cell holds its content", () => {
+    const block: TableLayout = {
+      kind: "table",
+      columns: [
+        { id: "c1", title: "A" },
+        { id: "c2", title: "B" },
+      ],
+      rows: [{ id: "r1", title: "1" }],
+      spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 }],
+    };
+    const table = { ...frame(), layout: block };
+    const grid = layoutTable(table, [])!;
+    const start = grid.columns[0]!.x;
+    const note: Widget = {
+      id: "wide",
+      type: "sticky_note",
+      parentId: "f",
+      x: start + 200,
+      y: grid.origin.y + grid.headerHeight + 50,
+      width: 400,
+      height: 80,
+      cell: { rowId: "r1", columnId: "c1" },
+    };
+    const grown = layoutTable(table, [note])!;
+    expect(grown.cells[0]!.rect.width).toBeGreaterThanOrEqual(400 + 16 * 2);
+    // The first column keeps its own size; only the last covered axis takes the deficit.
+    expect(grown.columns[0]!.width).toBe(grid.columns[0]!.width);
+  });
+});

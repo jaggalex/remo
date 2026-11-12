@@ -54,6 +54,16 @@ export function projectProps(widget) {
     if (rowId && columnId) props.cell = { rowId, columnId };
   }
   if (widget.layout?.kind === "table") {
+    const spans = Array.isArray(widget.layout.spans)
+      ? widget.layout.spans
+          .map((span) => ({
+            rowId: str(span?.rowId) ?? "",
+            columnId: str(span?.columnId) ?? "",
+            rowSpan: Math.max(1, Math.round(Number(span?.rowSpan) || 1)),
+            columnSpan: Math.max(1, Math.round(Number(span?.columnSpan) || 1)),
+          }))
+          .filter((span) => span.rowId && span.columnId)
+      : [];
     props.table = {
       active: widget.layout.active !== false,
       columns: Array.isArray(widget.layout.columns)
@@ -68,6 +78,7 @@ export function projectProps(widget) {
             title: str(axis?.title) ?? "",
           }))
         : [],
+      ...(spans.length ? { spans } : {}),
     };
   }
   return Object.keys(props).length ? props : null;

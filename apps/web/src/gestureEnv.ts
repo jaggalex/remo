@@ -27,6 +27,13 @@ type DragState =
       refused?: boolean;
     }
   | {
+      /** A press on an empty cell: a click selects the cell, a drag becomes a marquee. */
+      mode: "cellPress";
+      start: { x: number; y: number };
+      startScreen: { x: number; y: number };
+      additive: boolean;
+    }
+  | {
       mode: "marquee";
       start: { x: number; y: number };
       additive: boolean;

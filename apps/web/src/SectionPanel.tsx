@@ -3,30 +3,36 @@ import type { BoardDocument } from "@remo/doc";
 import {
   addAxis,
   deleteAxis,
+  setAxisAutoResize,
+  setAxisSize,
   deleteWidgets,
   moveAxis,
   removeTable,
   renameAxis,
-  setAxisSize,
   setAxisVertical,
   setTableFill,
-  showTable,
   tableLayoutOf,
 } from "@remo/doc";
 import {
   FILL_LEVELS,
+  layoutTable,
+  tableSpanAt,
   type TableAxis,
-  type TableAxisSize,
   type TableLayout,
   type Widget,
 } from "@remo/model";
-import { Button, Icon, Input, Segmented } from "@remo/ui";
+import { Button, ConfirmDialog, Icon, Input, Segmented } from "@remo/ui";
+import { AxisSizeButton } from "./AxisSizeControl";
+import { TableAppearanceControls } from "./TableAppearanceControls";
+import { setSectionView } from "./sectionView";
+import { openSectionLayout } from "./sectionLayoutStore";
 import { AxisDeleteDialog } from "./AxisDeleteDialog";
 import { HelpLink } from "./help/HelpLink";
 import { colorName } from "./object-panel/colorWindowData";
 import { ColorGridSection } from "./object-panel/ColorWindow";
 import { useI18n } from "./i18n";
 import { setTableAxisSelection, useTableAxisSelection } from "./tableSelection";
+import { useTableCellSelection } from "./tableCellSelection";
 
 /**
  * The section panel (ADR-196, ADR-199).
@@ -42,7 +48,8 @@ type FillTarget =
   | { kind: "table" }
   | { kind: "headers" }
   | { kind: "column"; id: string }
-  | { kind: "row"; id: string };
+  | { kind: "row"; id: string }
+  | { kind: "cell"; rowId: string; columnId: string };
 
 function axesOf(layout: TableLayout | null | undefined, kind: AxisKind): TableAxis[] {
   if (!layout) return [];
@@ -66,6 +73,7 @@ function fillValue(layout: TableLayout | null | undefined, target: FillTarget): 
   if (!appearance) return undefined;
   if (target.kind === "table") return appearance.table;
   if (target.kind === "headers") return appearance.headers;
+  if (target.kind === "cell") return appearance.cells?.[`${target.rowId}:${target.columnId}`];
   return target.kind === "column"
     ? appearance.columns?.[target.id]
     : appearance.rows?.[target.id];
@@ -74,6 +82,9 @@ function fillValue(layout: TableLayout | null | undefined, target: FillTarget): 
 function fillsEqual(a: FillTarget | null, b: FillTarget): boolean {
   if (!a || a.kind !== b.kind) return false;
   if (a.kind === "table" || a.kind === "headers") return true;
+  if (a.kind === "cell") {
+    return b.kind === "cell" && a.rowId === b.rowId && a.columnId === b.columnId;
+  }
   return "id" in b && a.id === b.id;
 }
 
@@ -143,12 +154,36 @@ export function SectionPanel({
   const rows = axesOf(layout, "row");
 
   const storedAxis = useTableAxisSelection();
+  const cellSelection = useTableCellSelection();
+  const blockSpan =
+    layout && layout.active !== false && cellSelection?.frameId === frame.id
+      ? tableSpanAt(layout, cellSelection.anchor.rowId, cellSelection.anchor.columnId)
+      : null;
+  const blockColumns =
+    blockSpan && layout
+      ? layout.columns.slice(
+          layout.columns.findIndex((axis) => axis.id === blockSpan.columnId),
+          layout.columns.findIndex((axis) => axis.id === blockSpan.columnId) + blockSpan.columnSpan,
+        )
+      : [];
+  const blockRows =
+    blockSpan && layout
+      ? layout.rows.slice(
+          layout.rows.findIndex((axis) => axis.id === blockSpan.rowId),
+          layout.rows.findIndex((axis) => axis.id === blockSpan.rowId) + blockSpan.rowSpan,
+        )
+      : [];
+  const blockAxes = [...blockColumns, ...blockRows];
+  const autoAxis = (axis: TableAxis) => axis.size === undefined || axis.size === "auto";
+  const blockAuto = blockAxes.length > 0 && blockAxes.every(autoAxis);
+  const blockMixed = blockAxes.some(autoAxis) && blockAxes.some((axis) => !autoAxis(axis));
   const axisId = storedAxis?.frameId === frame.id ? storedAxis.axisId : null;
   const selectAxis = (id: string | null) => {
     setTableAxisSelection(id ? { frameId: frame.id, axisId: id } : null);
   };
   const [lookOpen, setLookOpen] = useState(false);
   const [fillOpen, setFillOpen] = useState<FillTarget | null>(null);
+  const [removeOpen, setRemoveOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{
     axisId: string;
     kind: AxisKind;
@@ -194,20 +229,16 @@ export function SectionPanel({
 
   const switchView = (next: string) => {
     if (readOnly) return;
-    if (next === "table") {
-      if (!layout) {
-        // The first column also creates the content axis: old material stays in the
-        // first cell and the new axis is empty (ADR-196, H4 default).
-        add("column");
-      } else if (layout.active === false) {
-        showTable(board, frame.id);
+    if (next === "table" && !layout) {
+      const objects = widgets.filter((widget) => widget.parentId === frame.id);
+      if (objects.length) {
+        openSectionLayout(frame.id);
+        return;
       }
-      return;
     }
-    if (layout && layout.active !== false) {
-      removeTable(board, frame.id);
-      selectAxis(null);
-    }
+    const created = setSectionView(board, frame.id, next as "free" | "table", t);
+    if (created) selectAxis(created);
+    else if (next === "free") selectAxis(null);
   };
 
   const requestDelete = () => {
@@ -224,6 +255,7 @@ export function SectionPanel({
   const fillLabel = (target: FillTarget): string => {
     if (target.kind === "table") return t("section.look.table");
     if (target.kind === "headers") return t("section.look.headers");
+    if (target.kind === "cell") return t("section.look.cell");
     const axis = target.kind === "column"
       ? columns.find((entry) => entry.id === target.id)
       : rows.find((entry) => entry.id === target.id);
@@ -252,6 +284,34 @@ export function SectionPanel({
         ? { kind: "column", id: selected.id }
         : { kind: "row", id: selected.id };
     fillRows.push({ target, label: fillLabel(target), value: fillValue(layout, target) });
+  }
+
+  const lookTargets: Array<{ target: FillTarget; label: string }> = [
+    { target: { kind: "table" }, label: t("section.look.table") },
+    { target: { kind: "headers" }, label: t("section.look.headers") },
+  ];
+  if (selected && selectedKind) {
+    lookTargets.push({
+      target:
+        selectedKind === "column"
+          ? { kind: "column", id: selected.id }
+          : { kind: "row", id: selected.id },
+      label: fillLabel(
+        selectedKind === "column"
+          ? { kind: "column", id: selected.id }
+          : { kind: "row", id: selected.id },
+      ),
+    });
+  }
+  if (cellSelection?.frameId === frame.id) {
+    lookTargets.push({
+      target: {
+        kind: "cell",
+        rowId: cellSelection.anchor.rowId,
+        columnId: cellSelection.anchor.columnId,
+      },
+      label: t("section.look.cell"),
+    });
   }
 
   const canRemove = Boolean(layout) && layout!.active !== false && !readOnly;
@@ -284,6 +344,57 @@ export function SectionPanel({
         />
         <p className="muted">{t("section.view.hint")}</p>
       </div>
+
+      {blockSpan && (
+        <div className="section-group">
+          <h3>{t("section.size.block")}</h3>
+          <label className="section-check">
+            <input
+              type="checkbox"
+              checked={blockAuto}
+              disabled={readOnly}
+              ref={(node) => {
+                if (node) node.indeterminate = blockMixed;
+              }}
+              onChange={(event) => {
+                const auto = event.currentTarget.checked;
+                if (auto) {
+                  board.transact(() => {
+                    for (const axis of blockAxes) {
+                      setAxisAutoResize(board, frame.id, axis.id, true);
+                    }
+                  });
+                  return;
+                }
+                // Freeze what the person sees now, before the first axis changes the
+                // layout, so every axis of the block keeps its visible size (ADR-206).
+                const grid = layoutTable(frame, widgets);
+                const sizes = [
+                  ...blockColumns.map((axis) => ({
+                    axis,
+                    px: Math.round(
+                      grid?.columns.find((column) => column.axis.id === axis.id)?.width ?? 0,
+                    ),
+                  })),
+                  ...blockRows.map((axis) => ({
+                    axis,
+                    px: Math.round(
+                      grid?.rows.find((row) => row.axis.id === axis.id)?.height ?? 0,
+                    ),
+                  })),
+                ];
+                board.transact(() => {
+                  for (const { axis, px } of sizes) {
+                    if (px > 0) setAxisSize(board, frame.id, axis.id, px);
+                  }
+                });
+              }}
+            />
+            <span>{t("section.size.autoResize")}</span>
+          </label>
+          <p className="muted">{t("section.size.blockHint")}</p>
+        </div>
+      )}
 
       <div className="section-group">
         <div className="section-group-head">
@@ -360,33 +471,12 @@ export function SectionPanel({
             />
             <div className="section-field">
               <span className="section-field-label">{t("section.size.mode")}</span>
-              <Segmented
-                label={t("section.size.mode")}
-                value={typeof selected.size === "number" ? "" : (selected.size ?? "auto")}
-                onChange={(size) =>
-                  setAxisSize(board, frame.id, selected.id, size as TableAxisSize)
-                }
-                options={[
-                  { value: "auto", label: t("section.size.auto"), disabled: readOnly },
-                  {
-                    value: "narrow",
-                    label: t(selectedKind === "column" ? "section.size.narrow" : "section.size.low"),
-                    disabled: readOnly,
-                  },
-                  { value: "medium", label: t("section.size.medium"), disabled: readOnly },
-                  {
-                    value: "wide",
-                    label: t(selectedKind === "column" ? "section.size.wide" : "section.size.tall"),
-                    disabled: readOnly,
-                  },
-                ]}
-              />
-              <AxisPixelField
-                key={`${selected.id}:${String(selected.size ?? "auto")}`}
+              <AxisSizeButton
+                board={board}
+                frame={frame}
                 kind={selectedKind}
-                value={typeof selected.size === "number" ? selected.size : null}
+                axis={selected}
                 disabled={readOnly}
-                onCommit={(px) => setAxisSize(board, frame.id, selected.id, px)}
               />
             </div>
             {selectedKind === "column" && (
@@ -498,6 +588,12 @@ export function SectionPanel({
                 </div>
               );
             })}
+            <TableAppearanceControls
+              board={board}
+              frame={frame}
+              targets={lookTargets}
+              disabled={readOnly}
+            />
           </div>
         )}
       </div>
@@ -508,11 +604,7 @@ export function SectionPanel({
           variant="secondary"
           size="compact"
           disabled={!canRemove}
-          onClick={() => {
-            removeTable(board, frame.id);
-            selectAxis(null);
-            setFillOpen(null);
-          }}
+          onClick={() => setRemoveOpen(true)}
         >
           {t("section.table.remove")}
         </Button>
@@ -538,6 +630,32 @@ export function SectionPanel({
         </p>
       </div>
 
+      {removeOpen && (
+        <ConfirmDialog
+          title={t("section.remove.title")}
+          confirmLabel={t("section.table.remove")}
+          tone="accent"
+          onCancel={() => setRemoveOpen(false)}
+          onConfirm={() => {
+            removeTable(board, frame.id);
+            selectAxis(null);
+            setFillOpen(null);
+            setRemoveOpen(false);
+          }}
+        >
+          <p>
+            {t("section.remove.body", {
+              name: frame.title || t("section.axis.untitled"),
+              objects: count(
+                "objects",
+                widgets.filter((widget) => widget.parentId === frame.id).length,
+              ),
+            })}
+          </p>
+          <p className="muted">{t("section.remove.cells")}</p>
+        </ConfirmDialog>
+      )}
+
       {pendingDelete && (
         <AxisDeleteDialog
           board={board}
@@ -551,59 +669,5 @@ export function SectionPanel({
         />
       )}
     </section>
-  );
-}
-
-/**
- * The manual pixel size of an axis (ADR-196, ADR-201). Empty means Auto or a preset;
- * a number is committed on Enter or blur and clamped by the command, Escape restores.
- */
-function AxisPixelField({
-  kind,
-  value,
-  disabled,
-  onCommit,
-}: {
-  kind: AxisKind;
-  value: number | null;
-  disabled: boolean;
-  onCommit: (px: number) => void;
-}) {
-  const { t } = useI18n();
-  const [draft, setDraft] = useState(value == null ? "" : String(value));
-  const commit = () => {
-    const px = Number(draft);
-    if (!draft.trim() || !Number.isFinite(px) || px <= 0) {
-      setDraft(value == null ? "" : String(value));
-      return;
-    }
-    if (px !== value) onCommit(px);
-  };
-  return (
-    <div className="section-px">
-      <span className="section-field-label" aria-hidden="true">
-        {t("section.size.manual")}
-      </span>
-      <Input
-        inputMode="numeric"
-        size="compact"
-        suffix="px"
-        value={draft}
-        placeholder={kind === "column" ? "220" : "112"}
-        aria-label={t("section.size.pxField")}
-        disabled={disabled}
-        onChange={(event) => setDraft(event.currentTarget.value.replace(/[^0-9]/g, ""))}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            commit();
-          } else if (event.key === "Escape") {
-            event.preventDefault();
-            setDraft(value == null ? "" : String(value));
-          }
-        }}
-      />
-    </div>
   );
 }

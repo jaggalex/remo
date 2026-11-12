@@ -29,6 +29,7 @@ export * from "./connectors";
 export * from "./widgets";
 export * from "./gather";
 export * from "./table";
+export * from "./tablePlan";
 export { reflowTable } from "./tableReflow";
 export * from "./clipboard";
 export * from "./layers";

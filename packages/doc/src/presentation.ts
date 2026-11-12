@@ -1,4 +1,4 @@
-import type { Widget } from "@remo/model";
+import { tableSpanAt, type Widget } from "@remo/model";
 import type { BoardDocument } from "./board";
 
 /**
@@ -65,7 +65,11 @@ export function presentationSteps(board: BoardDocument): PresentationStep[] {
       const filled = new Set<string>();
       for (const child of board.readWidgets()) {
         if (child.parentId === slideId && child.cell) {
-          filled.add(`${child.cell.rowId}:${child.cell.columnId}`);
+          // A covered cell belongs to its merged anchor: one block is one step.
+          const span = tableSpanAt(layout, child.cell.rowId, child.cell.columnId);
+          const rowId = span?.rowId ?? child.cell.rowId;
+          const columnId = span?.columnId ?? child.cell.columnId;
+          filled.add(`${rowId}:${columnId}`);
         }
       }
       if (!filled.size) {

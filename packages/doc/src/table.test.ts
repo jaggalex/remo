@@ -1,20 +1,27 @@
 import { describe, expect, it } from "vitest";
-import type { Widget } from "@remo/model";
+import type { TableLayout, Widget } from "@remo/model";
 import { BoardDocument, loadBoard } from "./board";
 import {
   addAxis,
   deleteAxis,
+  duplicateAxis,
+  mergeCells,
   moveAxis,
   moveSelectionToCell,
   removeTable,
   renameAxis,
+  setAxisAutoResize,
   setAxisSize,
   setAxisVertical,
+  setTableBorder,
   setTableFill,
+  setTablePadding,
   showTable,
+  splitCell,
   tableLayoutOf,
 } from "./table";
 import { deleteWidgets, moveWidgets, setWidgetRects } from "./widgets";
+import { applySectionTablePlan, planSectionTable } from "./tablePlan";
 import { layoutTable, TABLE_CELL_PADDING } from "@remo/model";
 
 function boardWith(widgets: Widget[]): BoardDocument {
@@ -374,6 +381,376 @@ describe("table axes (ADR-196, ADR-199)", () => {
       board.undoOnce();
       expect(board.readWidget("f")).toMatchObject({ width: before.width, height: before.height });
       expect(board.readWidget("a")).toMatchObject({ x: a.x, y: a.y });
+    });
+  });
+});
+
+describe("merged blocks (ADR-204)", () => {
+  function boardWithBlock(): BoardDocument {
+    const layout: TableLayout = {
+      kind: "table",
+      columns: [
+        { id: "c1", title: "A" },
+        { id: "c2", title: "B" },
+      ],
+      rows: [
+        { id: "r1", title: "1" },
+        { id: "r2", title: "2" },
+      ],
+    };
+    return boardWith([
+      { ...frame(), layout },
+      { ...note("a", 0), cell: { rowId: "r1", columnId: "c1" } },
+      { ...note("b", 100), cell: { rowId: "r1", columnId: "c2" } },
+    ]);
+  }
+
+  it("merges a rectangle, moves members to the anchor and keeps one undo", () => {
+    const board = boardWithBlock();
+    const result = mergeCells(board, "f", [
+      { rowId: "r1", columnId: "c1" },
+      { rowId: "r1", columnId: "c2" },
+    ]);
+    expect(result).toMatchObject({ ok: true, rowSpan: 1, columnSpan: 2, moved: ["b"] });
+    expect(tableLayoutOf(board, "f")!.spans).toEqual([
+      { rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 },
+    ]);
+    expect(board.widgets.get("b")!.cell).toEqual({ rowId: "r1", columnId: "c1" });
+    expect(board.widgets.get("a")!.cell).toEqual({ rowId: "r1", columnId: "c1" });
+    board.undoOnce();
+    expect(tableLayoutOf(board, "f")!.spans).toBeUndefined();
+    expect(board.widgets.get("b")!.cell).toEqual({ rowId: "r1", columnId: "c2" });
+  });
+
+  it("refuses a single cell and a diagonal pair", () => {
+    const board = boardWithBlock();
+    expect(mergeCells(board, "f", [{ rowId: "r1", columnId: "c1" }])).toEqual({
+      ok: false,
+      reason: "few",
+    });
+    expect(
+      mergeCells(board, "f", [
+        { rowId: "r1", columnId: "c1" },
+        { rowId: "r2", columnId: "c2" },
+      ]),
+    ).toEqual({ ok: false, reason: "shape" });
+    expect(tableLayoutOf(board, "f")!.spans).toBeUndefined();
+  });
+
+  it("merges the whole block when the selection names a covered cell", () => {
+    const board = boardWithBlock();
+    mergeCells(board, "f", [
+      { rowId: "r1", columnId: "c1" },
+      { rowId: "r1", columnId: "c2" },
+    ]);
+    const grown = mergeCells(board, "f", [
+      { rowId: "r1", columnId: "c2" },
+      { rowId: "r2", columnId: "c1" },
+      { rowId: "r2", columnId: "c2" },
+    ]);
+    expect(grown).toMatchObject({ ok: true, rowSpan: 2, columnSpan: 2 });
+    expect(tableLayoutOf(board, "f")!.spans).toEqual([
+      { rowId: "r1", columnId: "c1", rowSpan: 2, columnSpan: 2 },
+    ]);
+  });
+
+  it("splits by a covered cell and keeps the objects in the anchor", () => {
+    const board = boardWithBlock();
+    mergeCells(board, "f", [
+      { rowId: "r1", columnId: "c1" },
+      { rowId: "r1", columnId: "c2" },
+    ]);
+    expect(splitCell(board, "f", "r1", "c2")).toBe(true);
+    expect(tableLayoutOf(board, "f")!.spans).toBeUndefined();
+    expect(board.widgets.get("b")!.cell).toEqual({ rowId: "r1", columnId: "c1" });
+    expect(splitCell(board, "f", "r1", "c2")).toBe(false);
+  });
+
+  it("extends a block on insert, shrinks it on delete and releases it on move", () => {
+    const board = boardWithBlock();
+    mergeCells(board, "f", [
+      { rowId: "r1", columnId: "c1" },
+      { rowId: "r1", columnId: "c2" },
+    ]);
+    addAxis(board, "f", "column", { title: "C", afterId: "c1" });
+    expect(tableLayoutOf(board, "f")!.spans![0]).toMatchObject({ columnSpan: 3 });
+
+    const newest = tableLayoutOf(board, "f")!.columns[1]!.id;
+    deleteAxis(board, "f", newest, { mode: "move" });
+    expect(tableLayoutOf(board, "f")!.spans![0]).toMatchObject({ columnSpan: 2 });
+
+    moveAxis(board, "f", "c2", -1);
+    expect(tableLayoutOf(board, "f")!.spans).toBeUndefined();
+  });
+
+  it("releases the block when its anchor axis is deleted", () => {
+    const board = boardWithBlock();
+    mergeCells(board, "f", [
+      { rowId: "r1", columnId: "c1" },
+      { rowId: "r2", columnId: "c1" },
+    ]);
+    expect(tableLayoutOf(board, "f")!.spans).toHaveLength(1);
+    deleteAxis(board, "f", "r1", { mode: "move" });
+    expect(tableLayoutOf(board, "f")!.spans).toBeUndefined();
+  });
+});
+
+describe("duplicating an axis (ADR-196)", () => {
+  function boardWithColumn(): BoardDocument {
+    const layout: TableLayout = {
+      kind: "table",
+      columns: [
+        { id: "c1", title: "A" },
+        { id: "c2", title: "B" },
+      ],
+      rows: [
+        { id: "r1", title: "1" },
+        { id: "r2", title: "2" },
+        { id: "r3", title: "3" },
+      ],
+    };
+    return boardWith([
+      { ...frame(), layout },
+      { ...note("a", 0), cell: { rowId: "r1", columnId: "c1" } },
+      { ...note("b", 100), cell: { rowId: "r2", columnId: "c1" } },
+    ]);
+  }
+
+  it("copies the column, its objects and their rows in one undo", () => {
+    const board = boardWithColumn();
+    const copy = duplicateAxis(board, "f", "column", "c1", { title: "A copy" })!;
+    const layout = tableLayoutOf(board, "f")!;
+    expect(layout.columns.map((axis) => axis.title)).toEqual(["A", "A copy", "B"]);
+    const copies = board
+      .readWidgets()
+      .filter((widget) => widget.cell?.columnId === copy)
+      .sort((left, right) => left.y - right.y);
+    expect(copies).toHaveLength(2);
+    expect(copies.map((widget) => widget.cell!.rowId)).toEqual(["r1", "r2"]);
+    expect(copies.map((widget) => widget.content)).toEqual(["a", "b"]);
+    expect(copies.some((widget) => widget.id === "a" || widget.id === "b")).toBe(false);
+    board.undoOnce();
+    expect(tableLayoutOf(board, "f")!.columns).toHaveLength(2);
+    expect(board.readWidgets().filter((widget) => widget.cell?.columnId === copy)).toHaveLength(0);
+  });
+
+  it("duplicates an empty row without inventing objects", () => {
+    const board = boardWithColumn();
+    const before = board.readWidgets().length;
+    const copy = duplicateAxis(board, "f", "row", "r3", { title: "3 copy" })!;
+    expect(tableLayoutOf(board, "f")!.rows.map((axis) => axis.id)).toEqual([
+      "r1",
+      "r2",
+      "r3",
+      copy,
+    ]);
+    expect(board.readWidgets()).toHaveLength(before);
+  });
+});
+
+describe("spans and axis moves (ADR-204)", () => {
+  it("releases a block when a move puts another axis under it", () => {
+    const layout: TableLayout = {
+      kind: "table",
+      columns: [
+        { id: "c1", title: "A" },
+        { id: "c2", title: "B" },
+        { id: "c3", title: "C" },
+      ],
+      rows: [{ id: "r1", title: "1" }],
+    };
+    const board = boardWith([{ ...frame(), layout }]);
+    mergeCells(board, "f", [
+      { rowId: "r1", columnId: "c1" },
+      { rowId: "r1", columnId: "c2" },
+    ]);
+    expect(tableLayoutOf(board, "f")!.spans).toHaveLength(1);
+    moveAxis(board, "f", "c3", -1);
+    expect(tableLayoutOf(board, "f")!.columns.map((axis) => axis.id)).toEqual([
+      "c1",
+      "c3",
+      "c2",
+    ]);
+    expect(tableLayoutOf(board, "f")!.spans).toBeUndefined();
+  });
+});
+
+describe("auto resize of an axis (ADR-201)", () => {
+  function boardWithWideNote(): { board: BoardDocument; frameId: string; noteId: string } {
+    const layout: TableLayout = {
+      kind: "table",
+      columns: [
+        { id: "c1", title: "A" },
+        { id: "c2", title: "B" },
+      ],
+      rows: [{ id: "r1", title: "1" }],
+    };
+    const board = boardWith([
+      { ...frame(), layout },
+      { ...note("wide", 0, 0), width: 320, height: 100, cell: { rowId: "r1", columnId: "c1" } },
+    ]);
+    return { board, frameId: "f", noteId: "wide" };
+  }
+
+  it("freezes the visible width when auto is turned off", () => {
+    const { board } = boardWithWideNote();
+    const before = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    const width = Math.round(before.columns[0]!.width);
+    expect(width).toBeGreaterThanOrEqual(320);
+    expect(setAxisAutoResize(board, "f", "c1", false)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.columns[0]!.size).toBe(width);
+    // The same visible size after the switch: nothing jumps on screen.
+    const after = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    expect(Math.round(after.columns[0]!.width)).toBe(width);
+  });
+
+  it("keeps the frozen width when the content shrinks, and follows again when auto returns", () => {
+    const { board } = boardWithWideNote();
+    setAxisAutoResize(board, "f", "c1", false);
+    const frozen = tableLayoutOf(board, "f")!.columns[0]!.size as number;
+    board.widgets.set("wide", { ...board.widgets.get("wide")!, width: 40 });
+    const shrunk = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    expect(Math.round(shrunk.columns[0]!.width)).toBe(frozen);
+    expect(setAxisAutoResize(board, "f", "c1", true)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.columns[0]!.size).toBeUndefined();
+    const auto = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    expect(Math.round(auto.columns[0]!.width)).toBeLessThan(frozen);
+  });
+
+  it("still grows a frozen axis to hold a bigger object", () => {
+    const { board } = boardWithWideNote();
+    setAxisAutoResize(board, "f", "c1", false);
+    const frozen = tableLayoutOf(board, "f")!.columns[0]!.size as number;
+    board.widgets.set("wide", { ...board.widgets.get("wide")!, width: 600 });
+    const grown = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    expect(Math.round(grown.columns[0]!.width)).toBeGreaterThanOrEqual(600);
+    expect(tableLayoutOf(board, "f")!.columns[0]!.size).toBe(frozen);
+  });
+});
+
+describe("R1: a block follows its axes (ADR-206)", () => {
+  it("shrinks the block by the deleted axis and keeps the surviving widths", () => {
+    const layout: TableLayout = {
+      kind: "table",
+      columns: [
+        { id: "c1", title: "A", size: 200 },
+        { id: "c2", title: "B", size: 300 },
+        { id: "c3", title: "C", size: 250 },
+      ],
+      rows: [{ id: "r1", title: "1" }],
+      spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 3 }],
+    };
+    const board = boardWith([{ ...frame(), layout }]);
+    const before = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    const beforeWidths = before.columns.map((column) => Math.round(column.width));
+    expect(beforeWidths).toEqual([200, 300, 250]);
+
+    deleteAxis(board, "f", "c2", { mode: "move" });
+
+    const after = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    expect(after.columns.map((column) => column.axis.id)).toEqual(["c1", "c3"]);
+    expect(after.columns.map((column) => Math.round(column.width))).toEqual([200, 250]);
+    expect(tableLayoutOf(board, "f")!.spans).toEqual([
+      { rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 },
+    ]);
+    expect(after.cells).toHaveLength(1);
+    expect(Math.round(after.cells[0]!.rect.width)).toBe(450);
+  });
+});
+
+describe("section table plan (ADR-207)", () => {
+  const titles = { column1: "Column 1", column2: "Column 2", row1: "Row 1" };
+
+  it("keeps every object in the first cell by default", () => {
+    const board = boardWith([
+      frame(),
+      note("a", -100),
+      note("b", 100),
+      note("c", 300),
+    ]);
+    const plan = planSectionTable(board.widgets.get("f")!, board.readWidgets(), "first", titles);
+    expect(plan.layout.columns.map((axis) => axis.title)).toEqual(["Column 1", "Column 2"]);
+    expect(plan.cells.map((entry) => entry.cell.columnId)).toEqual([
+      plan.layout.columns[0]!.id,
+      plan.layout.columns[0]!.id,
+      plan.layout.columns[0]!.id,
+    ]);
+  });
+
+  it("splits the material into two columns by x when asked", () => {
+    const board = boardWith([
+      frame(),
+      note("a", -100),
+      note("b", 100),
+      note("c", 300),
+    ]);
+    const plan = planSectionTable(board.widgets.get("f")!, board.readWidgets(), "position", titles);
+    const [first, second] = plan.layout.columns;
+    expect(plan.cells.map((entry) => entry.id)).toEqual(["a", "b", "c"]);
+    expect(plan.cells[0]!.cell.columnId).toBe(first!.id);
+    expect(plan.cells[1]!.cell.columnId).toBe(first!.id);
+    expect(plan.cells[2]!.cell.columnId).toBe(second!.id);
+  });
+
+  it("applies the plan as one transaction and refuses an existing table", () => {
+    const board = boardWith([frame(), note("a", -100), note("b", 100)]);
+    const plan = planSectionTable(board.widgets.get("f")!, board.readWidgets(), "position", titles);
+    expect(applySectionTablePlan(board, "f", plan)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.columns).toHaveLength(2);
+    expect(board.widgets.get("b")!.cell!.columnId).toBe(plan.layout.columns[1]!.id);
+    expect(applySectionTablePlan(board, "f", plan)).toBe(false);
+    board.undoOnce();
+    expect(tableLayoutOf(board, "f")).toBeNull();
+  });
+});
+
+describe("borders and paddings (ADR-208)", () => {
+  function boardWithTable(): BoardDocument {
+    const layout: TableLayout = {
+      kind: "table",
+      columns: [{ id: "c1", title: "A" }],
+      rows: [{ id: "r1", title: "1" }],
+    };
+    return boardWith([
+      { ...frame(), layout },
+      { ...note("a", 0), cell: { rowId: "r1", columnId: "c1" } },
+    ]);
+  }
+
+  it("sets and clears one cell border without touching the fills", () => {
+    const board = boardWithTable();
+    setTableFill(board, "f", { kind: "table" }, "#eeeeee");
+    expect(
+      setTableBorder(board, "f", { kind: "cell", rowId: "r1", columnId: "c1" }, {
+        color: "#123456",
+        width: 2,
+        style: "dashed",
+      }),
+    ).toBe(true);
+    expect(tableLayoutOf(board, "f")!.appearance).toEqual({
+      table: "#eeeeee",
+      borders: {
+        cells: { "r1:c1": { color: "#123456", width: 2, style: "dashed" } },
+      },
+    });
+    expect(
+      setTableBorder(board, "f", { kind: "cell", rowId: "r1", columnId: "c1" }, null),
+    ).toBe(true);
+    expect(tableLayoutOf(board, "f")!.appearance?.borders).toBeUndefined();
+    expect(tableLayoutOf(board, "f")!.appearance?.table).toBe("#eeeeee");
+  });
+
+  it("changes the cell width through padding", () => {
+    const board = boardWithTable();
+    const before = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    const beforeWidth = Math.round(before.columns[0]!.width);
+    expect(
+      setTablePadding(board, "f", { kind: "cell", rowId: "r1", columnId: "c1" }, 48),
+    ).toBe(true);
+    const after = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
+    expect(Math.round(after.columns[0]!.width)).toBeGreaterThan(beforeWidth);
+    expect(tableLayoutOf(board, "f")!.appearance?.paddings).toEqual({
+      cells: { "r1:c1": 48 },
     });
   });
 });

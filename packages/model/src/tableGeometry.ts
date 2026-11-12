@@ -1,5 +1,12 @@
 import type { Rect, Widget } from "./types";
-import type { TableAxis, TableAxisSize, TableLayout } from "./table";
+import {
+  tableCellPadding,
+  tableSpans,
+  type TableAxis,
+  type TableAxisSize,
+  type TableLayout,
+  type TableSpan,
+} from "./table";
 
 /**
  * Table geometry for a section (ADR-196, ADR-199, ADR-201).
@@ -52,6 +59,9 @@ export interface TableCell {
   rowId: string;
   columnId: string;
   rect: Rect;
+  /** 2 or more when the cell is a merged anchor (ADR-204). */
+  rowSpan: number;
+  columnSpan: number;
 }
 
 export interface TableGrid {
@@ -181,25 +191,69 @@ function contentColumnWidths(
   widgets: readonly Widget[],
   startX: number,
 ): number[] {
+  const columns = layout.columns;
+  const widths = columns.map((column) =>
+    Math.max(TABLE_MIN_COLUMN, manualFloor("column", column.size)),
+  );
+  const columnIndex = new Map(columns.map((column, index) => [column.id, index]));
+  const rowIndex = new Map(layout.rows.map((row, index) => [row.id, index]));
+  const merged = new Set<string>();
+  const spans: Array<{ span: TableSpan; top: number; left: number }> = [];
+  for (const span of tableSpans(layout)) {
+    const top = rowIndex.get(span.rowId);
+    const left = columnIndex.get(span.columnId);
+    if (top == null || left == null) continue;
+    spans.push({ span, top, left });
+    for (let r = top; r < top + span.rowSpan; r += 1) {
+      for (let c = left; c < left + span.columnSpan; c += 1) merged.add(`${r}:${c}`);
+    }
+  }
+
   let x = startX;
-  return layout.columns.map((column) => {
+  columns.forEach((column, index) => {
     let content = 0;
-    for (const row of layout.rows) {
+    layout.rows.forEach((row, rowAt) => {
+      if (merged.has(`${rowAt}:${index}`)) return;
+      const padding = tableCellPadding(layout, row.id, column.id) ?? TABLE_CELL_PADDING;
       for (const member of cellMembers(widgets, frame.id, row.id, column.id)) {
         // The cell covers the member's full width and its right offset from the cell
         // origin; the member keeps its own offset when it is already inside. A member
         // that strayed left is repaired by tableReflow, and the width still holds it.
         content = Math.max(
           content,
-          member.width + TABLE_CELL_PADDING * 2,
-          member.x + member.width / 2 - x + TABLE_CELL_PADDING,
+          member.width + padding * 2,
+          member.x + member.width / 2 - x + padding,
         );
       }
-    }
-    const width = Math.max(TABLE_MIN_COLUMN, manualFloor("column", column.size), content);
-    x += width;
-    return width;
+    });
+    widths[index] = Math.max(widths[index]!, content);
+    x += widths[index]!;
   });
+
+  // A merged cell is as wide as the sum of its axes; the deficit goes to its last
+  // column, so the layout stays a fixed point (ADR-204, ADR-201).
+  for (const { span, top, left } of spans) {
+    const spanX = startX + widths.slice(0, left).reduce((total, width) => total + width, 0);
+    let content = 0;
+    for (let r = top; r < Math.min(top + span.rowSpan, layout.rows.length); r += 1) {
+      for (let c = left; c < Math.min(left + span.columnSpan, columns.length); c += 1) {
+        const cellPadding =
+          tableCellPadding(layout, layout.rows[r]!.id, columns[c]!.id) ?? TABLE_CELL_PADDING;
+        for (const member of cellMembers(widgets, frame.id, layout.rows[r]!.id, columns[c]!.id)) {
+          content = Math.max(
+            content,
+            member.width + cellPadding * 2,
+            member.x + member.width / 2 - spanX + cellPadding,
+          );
+        }
+      }
+    }
+    const last = Math.min(left + span.columnSpan, columns.length) - 1;
+    let total = 0;
+    for (let c = left; c <= last; c += 1) total += widths[c]!;
+    if (content > total) widths[last] = widths[last]! + (content - total);
+  }
+  return widths;
 }
 
 function contentRowHeights(
@@ -208,22 +262,62 @@ function contentRowHeights(
   widgets: readonly Widget[],
   startY: number,
 ): number[] {
+  const rows = layout.rows;
+  const heights = rows.map((row) => Math.max(TABLE_MIN_ROW, manualFloor("row", row.size)));
+  const rowIndex = new Map(rows.map((row, index) => [row.id, index]));
+  const columnIndex = new Map(layout.columns.map((column, index) => [column.id, index]));
+  const merged = new Set<string>();
+  const spans: Array<{ span: TableSpan; top: number; left: number }> = [];
+  for (const span of tableSpans(layout)) {
+    const top = rowIndex.get(span.rowId);
+    const left = columnIndex.get(span.columnId);
+    if (top == null || left == null) continue;
+    spans.push({ span, top, left });
+    for (let r = top; r < top + span.rowSpan; r += 1) {
+      for (let c = left; c < left + span.columnSpan; c += 1) merged.add(`${r}:${c}`);
+    }
+  }
+
   let y = startY;
-  return layout.rows.map((row) => {
+  rows.forEach((row, index) => {
     let content = 0;
-    for (const column of layout.columns) {
+    layout.columns.forEach((column, columnAt) => {
+      if (merged.has(`${index}:${columnAt}`)) return;
+      const padding = tableCellPadding(layout, row.id, column.id) ?? TABLE_CELL_PADDING;
       for (const member of cellMembers(widgets, frame.id, row.id, column.id)) {
         content = Math.max(
           content,
-          member.height + TABLE_CELL_PADDING * 2,
-          member.y + member.height / 2 - y + TABLE_CELL_PADDING,
+          member.height + padding * 2,
+          member.y + member.height / 2 - y + padding,
         );
       }
-    }
-    const height = Math.max(TABLE_MIN_ROW, manualFloor("row", row.size), content);
-    y += height;
-    return height;
+    });
+    heights[index] = Math.max(heights[index]!, content);
+    y += heights[index]!;
   });
+
+  for (const { span, top, left } of spans) {
+    const spanY = startY + heights.slice(0, top).reduce((total, height) => total + height, 0);
+    let content = 0;
+    for (let r = top; r < Math.min(top + span.rowSpan, rows.length); r += 1) {
+      for (let c = left; c < Math.min(left + span.columnSpan, layout.columns.length); c += 1) {
+        const cellPadding =
+          tableCellPadding(layout, rows[r]!.id, layout.columns[c]!.id) ?? TABLE_CELL_PADDING;
+        for (const member of cellMembers(widgets, frame.id, rows[r]!.id, layout.columns[c]!.id)) {
+          content = Math.max(
+            content,
+            member.height + cellPadding * 2,
+            member.y + member.height / 2 - spanY + cellPadding,
+          );
+        }
+      }
+    }
+    const last = Math.min(top + span.rowSpan, rows.length) - 1;
+    let total = 0;
+    for (let r = top; r <= last; r += 1) total += heights[r]!;
+    if (content > total) heights[last] = heights[last]! + (content - total);
+  }
+  return heights;
 }
 
 /** The header band needed for the current columns (ADR-202). */
@@ -293,15 +387,49 @@ export function layoutTable(
   });
 
   const cells: TableCell[] = [];
-  for (const row of rows) {
-    for (const column of columns) {
+  const rowIndex = new Map(layout.rows.map((axis, index) => [axis.id, index]));
+  const columnIndex = new Map(layout.columns.map((axis, index) => [axis.id, index]));
+  const spans = new Map<string, TableSpan>();
+  const covered = new Set<string>();
+  for (const span of tableSpans(layout)) {
+    const topAt: number | undefined = rowIndex.get(span.rowId);
+    const leftAt: number | undefined = columnIndex.get(span.columnId);
+    if (topAt === undefined || leftAt === undefined) continue;
+    spans.set(`${topAt}:${leftAt}`, span);
+    for (let rowCursor: number = topAt; rowCursor < topAt + span.rowSpan; rowCursor += 1) {
+      for (
+        let columnCursor: number = leftAt;
+        columnCursor < leftAt + span.columnSpan;
+        columnCursor += 1
+      ) {
+        if (rowCursor !== topAt || columnCursor !== leftAt) {
+          covered.add(`${rowCursor}:${columnCursor}`);
+        }
+      }
+    }
+  }
+  rows.forEach((row, rowAt) => {
+    columns.forEach((column, columnAt) => {
+      if (covered.has(`${rowAt}:${columnAt}`)) return;
+      const span = spans.get(`${rowAt}:${columnAt}`);
+      const rowSpan = Math.min(span?.rowSpan ?? 1, rows.length - rowAt);
+      const columnSpan = Math.min(span?.columnSpan ?? 1, columns.length - columnAt);
+      const lastRow = rows[rowAt + rowSpan - 1]!;
+      const lastColumn = columns[columnAt + columnSpan - 1]!;
       cells.push({
         rowId: row.axis.id,
         columnId: column.axis.id,
-        rect: { x: column.x, y: row.y, width: column.width, height: row.height },
+        rect: {
+          x: column.x,
+          y: row.y,
+          width: lastColumn.x + lastColumn.width - column.x,
+          height: lastRow.y + lastRow.height - row.y,
+        },
+        rowSpan,
+        columnSpan,
       });
-    }
-  }
+    });
+  });
 
   return {
     frameId: frame.id,
@@ -337,7 +465,8 @@ export function tableReflow(
   widgets: readonly Widget[],
 ): { frame: Rect; moves: TableReflowMove[] } | null {
   let settled = layoutTable(frame, widgets);
-  if (!settled) return null;
+  if (!settled || !frame.layout) return null;
+  const layout = frame.layout;
   let current = widgets;
   const moved = new Map<string, TableReflowMove>();
 
@@ -353,14 +482,12 @@ export function tableReflow(
       // The object keeps its offset inside the cell. Only a member that crossed the
       // padding into the header or the neighbouring cell is put back; a normal move
       // inside the cell is never undone (ADR-203).
+      const padding =
+        tableCellPadding(layout, cell.rowId, cell.columnId) ?? TABLE_CELL_PADDING;
       const dx =
-        box.x < cell.rect.x + TABLE_CELL_PADDING
-          ? cell.rect.x + TABLE_CELL_PADDING - box.x
-          : 0;
+        box.x < cell.rect.x + padding ? cell.rect.x + padding - box.x : 0;
       const dy =
-        box.y < cell.rect.y + TABLE_CELL_PADDING
-          ? cell.rect.y + TABLE_CELL_PADDING - box.y
-          : 0;
+        box.y < cell.rect.y + padding ? cell.rect.y + padding - box.y : 0;
       if (dx === 0 && dy === 0) continue;
       for (const member of members) {
         passMoves.push({ id: member.id, x: member.x + dx, y: member.y + dy });

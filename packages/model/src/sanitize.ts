@@ -182,6 +182,68 @@ function readFillMap(value: unknown): Raw | undefined {
   return output;
 }
 
+const BORDER_STYLES = new Set(["solid", "dashed", "none"]);
+
+function readBorder(value: unknown): Raw | undefined {
+  if (!isObject(value) || typeof value.color !== "string") return undefined;
+  if (!isFiniteNumber(value.width) || value.width < 0 || value.width > 8) return undefined;
+  if (typeof value.style !== "string" || !BORDER_STYLES.has(value.style)) return undefined;
+  return { color: value.color, width: value.width, style: value.style };
+}
+
+function readBorderMap(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const [key, border] of Object.entries(value)) {
+    const read = readBorder(border);
+    if (read) output[key] = read;
+  }
+  return output;
+}
+
+function readBorders(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const key of ["table", "headers"] as const) {
+    const border = readBorder(value[key]);
+    if (border) output[key] = border;
+  }
+  for (const key of ["columns", "rows", "cells"] as const) {
+    const map = readBorderMap(value[key]);
+    if (map) output[key] = map;
+  }
+  return Object.keys(output).length ? output : undefined;
+}
+
+function readPadding(value: unknown): number | undefined {
+  if (!isFiniteNumber(value) || value < 0 || value > 96) return undefined;
+  return value;
+}
+
+function readPaddingMap(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const [key, padding] of Object.entries(value)) {
+    const read = readPadding(padding);
+    if (read != null) output[key] = read;
+  }
+  return output;
+}
+
+function readPaddings(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const key of ["table", "headers"] as const) {
+    const padding = readPadding(value[key]);
+    if (padding != null) output[key] = padding;
+  }
+  for (const key of ["columns", "rows", "cells"] as const) {
+    const map = readPaddingMap(value[key]);
+    if (map) output[key] = map;
+  }
+  return Object.keys(output).length ? output : undefined;
+}
+
 function readLayout(value: unknown): Raw | undefined {
   if (!isObject(value) || value.kind !== "table") return undefined;
   if (!Array.isArray(value.columns) || !Array.isArray(value.rows)) return undefined;
@@ -212,9 +274,61 @@ function readLayout(value: unknown): Raw | undefined {
       const map = readFillMap(value.appearance[key]);
       if (map) appearance[key] = map;
     }
+    const borders = readBorders(value.appearance.borders);
+    if (borders) appearance.borders = borders;
+    const paddings = readPaddings(value.appearance.paddings);
+    if (paddings) appearance.paddings = paddings;
     if (Object.keys(appearance).length) layout.appearance = appearance;
   }
+  const spans = readSpans(value.spans, columns, rows);
+  if (spans.length) layout.spans = spans;
   return layout;
+}
+
+function positiveInt(value: unknown): number | null {
+  const number = typeof value === "number" ? value : Number.NaN;
+  return Number.isInteger(number) && number >= 1 ? number : null;
+}
+
+/**
+ * Merged blocks that can be drawn (ADR-204): the anchor exists, the block stays inside
+ * the axes, and no cell is covered twice. A malformed span is dropped, never repaired
+ * into a different rectangle.
+ */
+function readSpans(value: unknown, columns: Raw[], rows: Raw[]): Raw[] {
+  if (!Array.isArray(value)) return [];
+  const columnIndex = new Map(columns.map((axis, index) => [axis.id as string, index]));
+  const rowIndex = new Map(rows.map((axis, index) => [axis.id as string, index]));
+  const covered = new Set<string>();
+  const output: Raw[] = [];
+  for (const entry of value) {
+    if (!isObject(entry)) continue;
+    const { rowId, columnId } = entry;
+    if (typeof rowId !== "string" || typeof columnId !== "string") continue;
+    const rowSpan = positiveInt(entry.rowSpan);
+    const columnSpan = positiveInt(entry.columnSpan);
+    if (rowSpan == null || columnSpan == null) continue;
+    if (rowSpan * columnSpan < 2) continue;
+    const top = rowIndex.get(rowId);
+    const left = columnIndex.get(columnId);
+    if (top == null || left == null) continue;
+    if (top + rowSpan > rows.length || left + columnSpan > columns.length) continue;
+    let overlaps = false;
+    for (let r = top; r < top + rowSpan && !overlaps; r += 1) {
+      for (let c = left; c < left + columnSpan; c += 1) {
+        if (covered.has(`${r}:${c}`)) {
+          overlaps = true;
+          break;
+        }
+      }
+    }
+    if (overlaps) continue;
+    for (let r = top; r < top + rowSpan; r += 1) {
+      for (let c = left; c < left + columnSpan; c += 1) covered.add(`${r}:${c}`);
+    }
+    output.push({ rowId, columnId, rowSpan, columnSpan });
+  }
+  return output;
 }
 
 function readCell(value: unknown): Raw | undefined {

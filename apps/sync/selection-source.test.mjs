@@ -116,6 +116,7 @@ describe("selection as source", () => {
           { id: "c2", title: "Next" },
         ],
         rows: [{ id: "r1", title: "Step" }],
+        spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 }],
       },
     };
     const inside = note("cell-note", 0, 0, "Inside", {
@@ -132,6 +133,7 @@ describe("selection as source", () => {
         { id: "c2", title: "Next" },
       ],
       rows: [{ id: "r1", title: "Step" }],
+      spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 }],
     });
     expect(child.cell).toEqual({ rowId: "r1", columnId: "c2" });
   });

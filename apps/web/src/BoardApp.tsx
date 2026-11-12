@@ -139,7 +139,6 @@ export function BoardApp() {
     identityKey: `${me?.id ?? ""}:${access?.aclVersion ?? 0}`,
     openSettings: () => openAccount("agents"),
   });
-
   /** One voting session, shared by the panel and the chips on the board (ADR-115). */
   const { vote, open: voteOpen, setOpen: setVoteOpen, cast, withdraw } = useBoardVote({
     boardId: currentRoom(),
@@ -721,6 +720,7 @@ export function BoardApp() {
           kanbanStates={kanbanStates}
           selectedIds={selectedIds}
           onSelect={setSelectedIds}
+          onNotice={showNotice}
           onMoveMany={moveMany} onMoveToCell={moveToCell}
           onResize={resizeNote}
           onMoveCard={onMoveCard}

@@ -84,6 +84,7 @@ describe("board projection", () => {
               { id: "c2", title: "Next" },
             ],
             rows: [{ id: "r1", title: "Step" }],
+            spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 }],
           },
         },
         {
@@ -108,6 +109,7 @@ describe("board projection", () => {
         { id: "c2", title: "Next" },
       ],
       rows: [{ id: "r1", title: "Step" }],
+      spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 }],
     });
     expect(note.props.cell).toEqual({ rowId: "r1", columnId: "c2" });
   });

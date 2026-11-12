@@ -42,6 +42,7 @@ export function TableAxisControls({
   readOnly,
   activeFrameIds,
   onCreated,
+  onNotice,
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -51,6 +52,7 @@ export function TableAxisControls({
   /** Tables whose section or axis is selected show their insert controls. */
   activeFrameIds: ReadonlySet<string>;
   onCreated: (frameId: string, axisId: string) => void;
+  onNotice?: (text: string) => void;
 }) {
   const { t } = useI18n();
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -80,7 +82,14 @@ export function TableAxisControls({
   };
 
   const commitSize = (frameId: string, axisId: string, kind: AxisKind, px: number) => {
+    const layout = tableLayoutOf(board, frameId);
+    const axis =
+      kind === "column"
+        ? layout?.columns.find((entry) => entry.id === axisId)
+        : layout?.rows.find((entry) => entry.id === axisId);
+    const wasAuto = !axis?.size || axis.size === "auto";
     setAxisSize(board, frameId, axisId, clampAxisSize(kind, px));
+    if (wasAuto) onNotice?.(t("section.size.autoResize.offToast"));
   };
 
   const tables: Array<{ frame: Widget; grid: TableGrid }> = [];

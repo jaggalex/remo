@@ -1,7 +1,9 @@
 import {
   headerText,
+  tableCellBorder,
   TABLE_HEADER_LINE_HEIGHT,
   TABLE_HEADER_PADDING,
+  type TableBorder,
   type Widget,
 } from "@remo/model";
 import type { CanvasPalette } from "./palette";
@@ -89,6 +91,18 @@ export function drawTable(
   const tableFill = appearance?.table;
   const line = 1 / zoom;
   const headerFont = `${12 / zoom}px ${fontFamily}`;
+  const borders = appearance?.borders;
+  const stroke = (border: TableBorder | undefined, fallback: string, fallbackWidth = 1) => {
+    if (border?.style === "none") return false;
+    ctx.strokeStyle = border?.color ?? fallback;
+    ctx.lineWidth = (border?.width ?? fallbackWidth) / zoom;
+    ctx.setLineDash(border?.style === "dashed" ? [4 / zoom, 3 / zoom] : []);
+    return true;
+  };
+  const resetStroke = () => {
+    ctx.setLineDash([]);
+    ctx.lineWidth = line;
+  };
 
   ctx.save();
   ctx.lineWidth = line;
@@ -104,8 +118,10 @@ export function drawTable(
     const rect = columnHeaderRect(grid, column.axis.id)!;
     ctx.fillStyle = appearance?.columns?.[column.axis.id] ?? headerFill;
     ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-    ctx.strokeStyle = palette.borderSubtle;
-    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    const border =
+      borders?.columns?.[column.axis.id] ?? borders?.headers ?? borders?.table;
+    if (stroke(border, palette.borderSubtle)) ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    resetStroke();
 
     const text = headerText(column.axis.title);
     ctx.fillStyle = palette.textSecondary;
@@ -144,8 +160,9 @@ export function drawTable(
     const rect = rowHeaderRect(grid, row.axis.id)!;
     ctx.fillStyle = appearance?.rows?.[row.axis.id] ?? headerFill;
     ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-    ctx.strokeStyle = palette.borderSubtle;
-    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    const border = borders?.rows?.[row.axis.id] ?? borders?.headers ?? borders?.table;
+    if (stroke(border, palette.borderSubtle)) ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    resetStroke();
     ctx.fillStyle = palette.textSecondary;
     ctx.font = headerFont;
     const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
@@ -170,8 +187,10 @@ export function drawTable(
   const corner = cornerRect(grid);
   ctx.fillStyle = headerFill;
   ctx.fillRect(corner.x, corner.y, corner.width, corner.height);
-  ctx.strokeStyle = palette.borderSubtle;
-  ctx.strokeRect(corner.x, corner.y, corner.width, corner.height);
+  if (stroke(borders?.headers ?? borders?.table, palette.borderSubtle)) {
+    ctx.strokeRect(corner.x, corner.y, corner.width, corner.height);
+  }
+  resetStroke();
 
   for (const cell of grid.cells) {
     const fill = cellFill(frame, cell.rowId, cell.columnId);
@@ -179,12 +198,17 @@ export function drawTable(
       ctx.fillStyle = fill;
       ctx.fillRect(cell.rect.x, cell.rect.y, cell.rect.width, cell.rect.height);
     }
-    ctx.strokeStyle = palette.borderSubtle;
-    ctx.strokeRect(cell.rect.x, cell.rect.y, cell.rect.width, cell.rect.height);
+    const border = tableCellBorder(layout, cell.rowId, cell.columnId);
+    if (stroke(border, palette.borderSubtle)) {
+      ctx.strokeRect(cell.rect.x, cell.rect.y, cell.rect.width, cell.rect.height);
+    }
+    resetStroke();
   }
 
-  // The outer edge is stronger than the inner grid, so a table reads as one object.
-  ctx.strokeStyle = palette.borderStrong;
-  ctx.strokeRect(grid.origin.x, grid.origin.y, grid.width, grid.height);
+  // The outer edge is stronger than the inner grid, so a table reads as one object; a
+  // table-level border replaces that emphasis (ADR-208).
+  if (stroke(borders?.table, palette.borderStrong)) {
+    ctx.strokeRect(grid.origin.x, grid.origin.y, grid.width, grid.height);
+  }
   ctx.restore();
 }

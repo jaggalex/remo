@@ -1,10 +1,15 @@
 import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, portsAreEdgePlus, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget } from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import type { ConnectDraft } from "./gestureTypes";
-import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, pick, pickConnector, placementAt, plusHit, resolvedEndSide } from "@remo/canvas";
+import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, layoutTable, pick, pickConnector, placementAt, plusHit, resolvedEndSide, tableHitAt } from "@remo/canvas";
 import { canConnect, expandGroups, kindOf, sizedByTable } from "@remo/model";
 import type { ConnectorSide } from "@remo/model";
 import { capture } from "./gestureEnv";
+import {
+  clearTableCellSelection,
+  setTableCellSelection,
+  tableCellSelection,
+} from "./tableCellSelection";
 
 export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
   const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onAddCard, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
@@ -21,6 +26,37 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     };
     capture(event);
     return;
+  }
+
+  // A click on a table cell selects the cell once its section is selected (click-click,
+  // ADR-204). An object inside the cell keeps its own selection; a click outside clears
+  // the cell so the two selections never compete.
+  if (!readOnly && event.button === 0) {
+    const hit = tableCellAtPoint(world, widgets);
+    const current = tableCellSelection();
+    const frameSelected =
+      hit && selectedIds.length === 1 && selectedIds[0] === hit.frame.id;
+    if (hit?.cell && frameSelected) {
+      const under = pick(widgets, world, isCardOfKanban);
+      const empty = !under || under.id === hit.frame.id;
+      if (empty) {
+        event.preventDefault();
+        const anchor =
+          event.shiftKey && current?.frameId === hit.frame.id
+            ? current.anchor
+            : hit.cell;
+        setTableCellSelection({ frameId: hit.frame.id, anchor, focus: hit.cell });
+        dragRef.current = {
+          mode: "cellPress",
+          start: world,
+          startScreen: { x: event.clientX, y: event.clientY },
+          additive: event.shiftKey,
+        };
+        capture(event);
+        return;
+      }
+    }
+    if (current && (!hit?.cell || !frameSelected)) clearTableCellSelection();
   }
 
   if (!readOnly) {
@@ -301,4 +337,25 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
   marqueeRef.current = { x: world.x, y: world.y, width: 0, height: 0 };
   setMarquee(marqueeRef.current);
   capture(event);
+}
+
+
+/** The table cell under a world point, or null when the point is not over a table. */
+function tableCellAtPoint(
+  world: { x: number; y: number },
+  widgets: Parameters<typeof pick>[0],
+): { frame: (typeof widgets)[number]; cell: { rowId: string; columnId: string } | null } | null {
+  for (const frame of [...widgets].reverse()) {
+    if (frame.type !== "frame" || frame.layout?.kind !== "table") continue;
+    if (frame.layout.active === false) continue;
+    const grid = layoutTable(frame, widgets);
+    if (!grid) continue;
+    const hit = tableHitAt(grid, world);
+    if (!hit) continue;
+    if (hit.kind === "cell") {
+      return { frame, cell: { rowId: hit.rowId, columnId: hit.columnId } };
+    }
+    return { frame, cell: null };
+  }
+  return null;
 }

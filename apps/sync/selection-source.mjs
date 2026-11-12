@@ -31,6 +31,16 @@ function finite(value, fallback = 0) {
 
 function tableOf(widget) {
   if (widget.layout?.kind !== "table") return null;
+  const spans = Array.isArray(widget.layout.spans)
+    ? widget.layout.spans
+        .map((span) => ({
+          rowId: String(span?.rowId ?? ""),
+          columnId: String(span?.columnId ?? ""),
+          rowSpan: Math.max(1, Math.round(Number(span?.rowSpan) || 1)),
+          columnSpan: Math.max(1, Math.round(Number(span?.columnSpan) || 1)),
+        }))
+        .filter((span) => span.rowId && span.columnId)
+    : [];
   return {
     active: widget.layout.active !== false,
     columns: Array.isArray(widget.layout.columns)
@@ -45,6 +55,7 @@ function tableOf(widget) {
           title: String(axis?.title ?? ""),
         }))
       : [],
+    ...(spans.length ? { spans } : {}),
   };
 }
 

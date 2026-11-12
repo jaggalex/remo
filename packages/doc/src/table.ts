@@ -1,16 +1,40 @@
 import {
   clampAxisSize,
+  layoutTable,
   newId,
+  tableSpanAt,
   type CellPlacement,
   type TableAppearance,
   type TableAxis,
   type TableAxisSize,
+  type TableBorder,
   type TableLayout,
   type Widget,
 } from "@remo/model";
 import type { BoardDocument } from "./board";
 import { deleteWidgets } from "./widgets";
 import { GATHERABLE_TYPES } from "./gather";
+import { copyFragment, pasteFragment } from "./clipboard";
+import {
+  axesOf,
+  axisTitle,
+  childrenOf,
+  editableFrame,
+  emptyLayout,
+  frameFor,
+  insertIndex,
+  withAxes,
+  writeLayout,
+  type TableAxisKind,
+} from "./tableContext";
+import {
+  spansAfterDelete,
+  spansAfterInsert,
+  spansAfterMove,
+  withSpans,
+} from "./tableSpans";
+
+export { mergeCells, splitCell, type MergeCellsResult } from "./tableSpans";
 
 /**
  * Table commands for a section (ADR-196, ADR-199).
@@ -19,8 +43,6 @@ import { GATHERABLE_TYPES } from "./gather";
  * are not identity. Objects keep their world coordinates; `cell` is membership, and the
  * painter derives the cell box. The commands never invent a second coordinate system.
  */
-
-export type TableAxisKind = "column" | "row";
 
 export interface AddAxisOptions {
   /** Localized placeholder for the new axis. */
@@ -55,64 +77,10 @@ export type TableFillTarget =
   | { kind: "row"; id: string }
   | { kind: "cell"; rowId: string; columnId: string };
 
-function frameFor(board: BoardDocument, frameId: string): Widget | null {
-  const frame = board.readWidget(frameId);
-  return frame?.type === "frame" ? frame : null;
-}
-
-/** A section accepts table edits unless it is locked (ADR-040). */
-function editableFrame(board: BoardDocument, frameId: string): Widget | null {
-  const frame = frameFor(board, frameId);
-  return frame && !frame.locked ? frame : null;
-}
-
 /** The layout of a section, or null when it is free. */
 export function tableLayoutOf(board: BoardDocument, frameId: string): TableLayout | null {
   const frame = frameFor(board, frameId);
   return frame?.layout?.kind === "table" ? frame.layout : null;
-}
-
-function axesOf(layout: TableLayout, kind: TableAxisKind): TableAxis[] {
-  return kind === "column" ? layout.columns : layout.rows;
-}
-
-function withAxes(
-  layout: TableLayout,
-  kind: TableAxisKind,
-  axes: TableAxis[],
-): TableLayout {
-  return kind === "column" ? { ...layout, columns: axes } : { ...layout, rows: axes };
-}
-
-function writeLayout(board: BoardDocument, frame: Widget, layout: TableLayout): void {
-  board.widgets.set(frame.id, { ...frame, layout });
-}
-
-function emptyLayout(): TableLayout {
-  return { kind: "table", columns: [], rows: [] };
-}
-
-function childrenOf(board: BoardDocument, frameId: string): Widget[] {
-  return board.readWidgets().filter((widget) => widget.parentId === frameId);
-}
-
-function axisTitle(title: string, count: number): string {
-  return title || String(count);
-}
-
-function insertIndex(
-  axes: TableAxis[],
-  options: { beforeId?: string; afterId?: string },
-): number {
-  if (options.beforeId) {
-    const index = axes.findIndex((axis) => axis.id === options.beforeId);
-    if (index >= 0) return index;
-  }
-  if (options.afterId) {
-    const index = axes.findIndex((axis) => axis.id === options.afterId);
-    if (index >= 0) return index + 1;
-  }
-  return axes.length;
 }
 
 /**
@@ -171,9 +139,68 @@ export function addAxis(
     title: axisTitle(options.title, existing.length + 1),
   };
   const axes = [...existing];
-  axes.splice(insertIndex(axes, options), 0, axis);
+  const at = insertIndex(axes, options);
+  axes.splice(at, 0, axis);
   const next = withAxes(base, kind, axes);
-  board.transact(() => writeLayout(board, frame, next));
+  const spans = spansAfterInsert(base, kind, at);
+  board.transact(() => writeLayout(board, frame, withSpans(next, spans)));
+  return axis.id;
+}
+
+export interface DuplicateAxisOptions {
+  /** Localized title for the copy; the copy never inherits the source title. */
+  title: string;
+}
+
+/**
+ * Duplicate one axis together with the objects in it (ADR-196).
+ *
+ * The copy sits next to the source, keeps its size mode and header direction, and takes
+ * new object ids through the clipboard path, so text, links inside a copied group and
+ * formatting survive. Connectors are not duplicated: a line needs both ends, as always.
+ */
+export function duplicateAxis(
+  board: BoardDocument,
+  frameId: string,
+  kind: TableAxisKind,
+  axisId: string,
+  options: DuplicateAxisOptions,
+): string | null {
+  const frame = editableFrame(board, frameId);
+  if (!frame?.layout || frame.layout.kind !== "table") return null;
+  const layout = frame.layout;
+  const axes = axesOf(layout, kind);
+  const index = axes.findIndex((axis) => axis.id === axisId);
+  if (index < 0) return null;
+  const field = kind === "column" ? "columnId" : "rowId";
+  const ids = childrenOf(board, frame.id)
+    .filter((child) => child.cell?.[field] === axisId && GATHERABLE_TYPES.has(child.type))
+    .map((child) => child.id);
+  const fragment = ids.length ? copyFragment(board, ids) : null;
+  const axis: TableAxis = {
+    ...axes[index]!,
+    id: newId(kind === "column" ? "col" : "row"),
+    title: options.title,
+  };
+  const at = index + 1;
+  const nextAxes = [...axes];
+  nextAxes.splice(at, 0, axis);
+  const next = withSpans(
+    withAxes(layout, kind, nextAxes),
+    spansAfterInsert(layout, kind, at),
+  );
+  board.transact(() => {
+    writeLayout(board, frame, next);
+    if (!fragment) return;
+    for (const id of pasteFragment(board, fragment, { offset: { x: 0, y: 0 } })) {
+      const widget = board.readWidget(id);
+      if (!widget?.cell) continue;
+      board.widgets.set(id, {
+        ...widget,
+        cell: { ...widget.cell, [field]: axis.id } as CellPlacement,
+      });
+    }
+  });
   return axis.id;
 }
 
@@ -227,6 +254,32 @@ export function setAxisSize(
   return false;
 }
 
+/**
+ * Turn the content-driven size of one axis on or off (ADR-196, ADR-201).
+ *
+ * Turning it off freezes the size the person currently sees, so shrinking content no
+ * longer moves the axis; it can still grow to hold an object. Turning it on removes the
+ * manual floor and lets the content decide again. One command, one undo, so the panel and
+ * the header menu cannot drift.
+ */
+export function setAxisAutoResize(
+  board: BoardDocument,
+  frameId: string,
+  axisId: string,
+  auto: boolean,
+): boolean {
+  const frame = editableFrame(board, frameId);
+  if (!frame?.layout || frame.layout.kind !== "table") return false;
+  if (auto) return setAxisSize(board, frameId, axisId, "auto");
+  const grid = layoutTable(frame, board.readWidgets());
+  if (!grid) return false;
+  const column = grid.columns.find((entry) => entry.axis.id === axisId);
+  if (column) return setAxisSize(board, frameId, axisId, Math.round(column.width));
+  const row = grid.rows.find((entry) => entry.axis.id === axisId);
+  if (row) return setAxisSize(board, frameId, axisId, Math.round(row.height));
+  return false;
+}
+
 /** A column header can be vertical; row headers stay horizontal (ADR-196). */
 export function setAxisVertical(
   board: BoardDocument,
@@ -268,7 +321,9 @@ export function moveAxis(
     if (target < 0 || target >= axes.length) return false;
     const next = [...axes];
     [next[index], next[target]] = [next[target]!, next[index]!];
-    board.transact(() => writeLayout(board, frame, withAxes(frame.layout!, kind, next)));
+    const nextLayout = withAxes(frame.layout!, kind, next);
+    const spans = spansAfterMove(frame.layout!, nextLayout, kind);
+    board.transact(() => writeLayout(board, frame, withSpans(nextLayout, spans)));
     return true;
   }
   return false;
@@ -312,7 +367,10 @@ export function deleteAxis(
       return { ok: false, reason: "no-neighbor" };
     }
     const nextAxes = axes.filter((axis) => axis.id !== axisId);
-    const next = withAxes(frame.layout, kind, nextAxes);
+    const next = withSpans(
+      withAxes(frame.layout, kind, nextAxes),
+      spansAfterDelete(frame.layout, kind, index),
+    );
     board.transact(() => {
       for (const child of objects) {
         const cell = child.cell;
@@ -343,7 +401,10 @@ export function deleteAxis(
   }
 
   if (objects.length && options.mode === "withObjects") {
-    const next = withAxes(frame.layout, kind, axes.filter((axis) => axis.id !== axisId));
+    const next = withSpans(
+      withAxes(frame.layout, kind, axes.filter((axis) => axis.id !== axisId)),
+      spansAfterDelete(frame.layout, kind, index),
+    );
     board.transact(() => {
       deleteWidgets(board, objects.map((child) => child.id));
       if (!next.columns.length || !next.rows.length) {
@@ -358,7 +419,10 @@ export function deleteAxis(
 
   if (objects.length) return { ok: false, reason: "objects" };
 
-  const next = withAxes(frame.layout, kind, axes.filter((axis) => axis.id !== axisId));
+  const next = withSpans(
+    withAxes(frame.layout, kind, axes.filter((axis) => axis.id !== axisId)),
+    spansAfterDelete(frame.layout, kind, index),
+  );
   board.transact(() => {
     if (!next.columns.length || !next.rows.length) {
       const { layout: _layout, ...rest } = frame;
@@ -384,6 +448,11 @@ export function moveSelectionToCell(
   const row = frame.layout.rows.find((axis) => axis.id === options.rowId);
   const column = frame.layout.columns.find((axis) => axis.id === options.columnId);
   if (!row || !column) return { moved, blocked };
+  // A merged block is one cell: dropping onto a covered axis lands in its anchor, so
+  // the object is never a member of a cell the painter does not draw (ADR-204).
+  const span = tableSpanAt(frame.layout, options.rowId, options.columnId);
+  const rowId = span?.rowId ?? options.rowId;
+  const columnId = span?.columnId ?? options.columnId;
 
   board.transact(() => {
     for (const id of ids) {
@@ -398,7 +467,7 @@ export function moveSelectionToCell(
           ? { x: widget.x + options.offset.x, y: widget.y + options.offset.y }
           : {}),
         parentId: frame.id,
-        cell: { rowId: options.rowId, columnId: options.columnId },
+        cell: { rowId, columnId },
       });
       moved.push(id);
     }
@@ -479,5 +548,107 @@ export function setTableFill(
       ...(Object.keys(appearance).length ? { appearance } : { appearance: undefined }),
     }),
   );
+  return true;
+}
+
+function editableTableTarget(
+  board: BoardDocument,
+  frameId: string,
+  target: TableFillTarget,
+): Widget | null {
+  const frame = editableFrame(board, frameId);
+  if (!frame?.layout || frame.layout.kind !== "table") return null;
+  if (
+    target.kind === "column" &&
+    !frame.layout.columns.some((axis) => axis.id === target.id)
+  ) {
+    return null;
+  }
+  if (target.kind === "row" && !frame.layout.rows.some((axis) => axis.id === target.id)) {
+    return null;
+  }
+  if (
+    target.kind === "cell" &&
+    (!frame.layout.rows.some((axis) => axis.id === target.rowId) ||
+      !frame.layout.columns.some((axis) => axis.id === target.columnId))
+  ) {
+    return null;
+  }
+  return frame;
+}
+
+function borderValue(border: TableBorder): TableBorder | null {
+  if (typeof border.color !== "string" || !border.color) return null;
+  const width = Math.round(Math.min(8, Math.max(0, border.width)));
+  const style = border.style;
+  if (style !== "solid" && style !== "dashed" && style !== "none") return null;
+  return { color: border.color, width, style };
+}
+
+function paddingValue(padding: number): number {
+  return Math.round(Math.min(96, Math.max(0, padding)));
+}
+
+function setAppearanceValue<Value>(
+  board: BoardDocument,
+  frame: Widget,
+  target: TableFillTarget,
+  key: "borders" | "paddings",
+  value: Value | null,
+): void {
+  const layout = frame.layout!;
+  const appearance: TableAppearance = { ...(layout.appearance ?? {}) };
+  const record = { ...(appearance[key] as Record<string, unknown> | undefined) };
+  const setMap = (field: string, id: string) => {
+    const map = { ...((record[field] as Record<string, Value> | undefined) ?? {}) };
+    if (value == null) delete map[id];
+    else map[id] = value;
+    if (Object.keys(map).length) record[field] = map;
+    else delete record[field];
+  };
+  if (target.kind === "table" || target.kind === "headers") {
+    if (value == null) delete record[target.kind];
+    else record[target.kind] = value;
+  } else if (target.kind === "column") {
+    setMap("columns", target.id);
+  } else if (target.kind === "row") {
+    setMap("rows", target.id);
+  } else {
+    setMap("cells", `${target.rowId}:${target.columnId}`);
+  }
+  if (Object.keys(record).length) {
+    appearance[key] = record as never;
+  } else {
+    delete appearance[key];
+  }
+  writeLayout(board, frame, { ...layout, appearance });
+}
+
+/** Set or clear one border; `null` restores the default (ADR-208). */
+export function setTableBorder(
+  board: BoardDocument,
+  frameId: string,
+  target: TableFillTarget,
+  border: TableBorder | null,
+): boolean {
+  const frame = editableTableTarget(board, frameId, target);
+  if (!frame) return false;
+  const value = border ? borderValue(border) : null;
+  if (border && !value) return false;
+  board.transact(() => setAppearanceValue(board, frame, target, "borders", value));
+  return true;
+}
+
+/** Set or clear the padding of one area; `null` restores the default (ADR-208). */
+export function setTablePadding(
+  board: BoardDocument,
+  frameId: string,
+  target: TableFillTarget,
+  padding: number | null,
+): boolean {
+  const frame = editableTableTarget(board, frameId, target);
+  if (!frame) return false;
+  const value = padding == null ? null : paddingValue(padding);
+  board.transact(() => setAppearanceValue(board, frame, target, "paddings", value));
   return true;
 }

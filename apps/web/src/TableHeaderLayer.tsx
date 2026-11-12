@@ -1,11 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { BoardDocument } from "@remo/doc";
 import {
-  addAxis,
   deleteAxis,
   moveAxis,
   renameAxis,
-  setAxisSize,
   setAxisVertical,
   tableLayoutOf,
 } from "@remo/doc";
@@ -19,6 +18,9 @@ import {
 import type { Rect, TableAxis, Widget } from "@remo/model";
 import { Menu, type MenuItem } from "@remo/ui";
 import { AxisDeleteDialog, type AxisDeleteTarget } from "./AxisDeleteDialog";
+import { AxisSizePopover, axisIsManual, axisSizeValue } from "./AxisSizeControl";
+import { insertAxisNear } from "./tableActions";
+import { PanelWindow } from "./object-panel/PanelWindow";
 import { TableAxisControls } from "./TableAxisControls";
 import { TableMirror } from "./TableGrid";
 import { useI18n } from "./i18n";
@@ -70,6 +72,7 @@ export function TableHeaderLayer({
   refused = false,
   cursor = null,
   selectedIds = [],
+  onNotice,
 }: {
   board: BoardDocument;
   widgets: Widget[];
@@ -87,13 +90,29 @@ export function TableHeaderLayer({
   cursor?: { x: number; y: number } | null;
   /** The canvas selection; a selected table shows its insert controls. */
   selectedIds?: readonly string[];
+  onNotice?: (text: string) => void;
 }) {
   const { t } = useI18n();
   const selection = useTableAxisSelection();
   const [editing, setEditing] = useState<EditState | null>(null);
   const [draft, setDraft] = useState("");
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [sizeEntry, setSizeEntry] = useState<HeaderEntry | null>(null);
+  useEffect(() => {
+    if (!sizeEntry) return;
+    const node = document.querySelector<HTMLElement>(".axis-size-portal .rm-popover");
+    node?.setAttribute("tabindex", "-1");
+    node?.focus();
+    const onDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (document.querySelector(".axis-size-portal")?.contains(target)) return;
+      setSizeEntry(null);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, [sizeEntry]);
   const [pendingDelete, setPendingDelete] = useState<AxisDeleteTarget | null>(null);
+  const deletedInSpan = useRef(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const editingRef = useRef<EditState | null>(null);
@@ -265,19 +284,42 @@ export function TableHeaderLayer({
     const layout = tableLayoutOf(board, entry.frame.id);
     if (!layout) return;
     const axes = entry.kind === "column" ? layout.columns : layout.rows;
-    const opposite = entry.kind === "column" ? "section.axis.placeholderRow" : "section.axis.placeholderColumn";
-    const created = addAxis(board, entry.frame.id, entry.kind, {
-      title: placeholder(entry.kind, axes.length + 1),
-      firstTitle: placeholder(entry.kind, 1),
-      oppositeTitle: t(opposite, { n: 1 }),
-      ...(position === "before"
-        ? { beforeId: entry.axis.id }
-        : { afterId: entry.axis.id }),
-    });
+    const created = insertAxisNear(
+      board,
+      entry.frame.id,
+      entry.kind,
+      entry.axis.id,
+      position,
+      placeholder(entry.kind, axes.length + 1),
+    );
     if (created) {
       setTableAxisSelection({ frameId: entry.frame.id, axisId: created });
       onSelect([entry.frame.id]);
     }
+  };
+
+  const axisInSpan = (
+    layout: NonNullable<ReturnType<typeof tableLayoutOf>>,
+    kind: AxisKind,
+    axisId: string,
+  ): boolean => {
+    const spans = layout.spans ?? [];
+    const axes = kind === "column" ? layout.columns : layout.rows;
+    const index = axes.findIndex((axis) => axis.id === axisId);
+    if (index < 0) return false;
+    return spans.some((span) => {
+      const start = axes.findIndex(
+        (axis) => axis.id === (kind === "column" ? span.columnId : span.rowId),
+      );
+      const count = kind === "column" ? span.columnSpan : span.rowSpan;
+      return start >= 0 && index >= start && index < start + count;
+    });
+  };
+
+  const sizeLabel = (entry: HeaderEntry): string => {
+    if (!axisIsManual(entry.axis)) return t("section.size.content");
+    const size = axisSizeValue(board, entry.frame, entry.kind, entry.axis.id);
+    return `${t("section.size.manual")} · ${t("section.size.px", { n: size })}`;
   };
 
   const menuItems = (entry: HeaderEntry): MenuItem[] => {
@@ -285,7 +327,6 @@ export function TableHeaderLayer({
     if (!layout) return [];
     const axes = entry.kind === "column" ? layout.columns : layout.rows;
     const index = axes.findIndex((axis) => axis.id === entry.axis.id);
-    const kindName = entry.kind === "column" ? t("section.columns") : t("section.rows");
     const items: MenuItem[] = [
       {
         label: t("section.axis.rename"),
@@ -342,39 +383,14 @@ export function TableHeaderLayer({
           ]
         : []),
       { separator: true },
-      { heading: `${kindName} · ${t("section.size.mode")}` },
-      ...[
-        { value: "auto" as const, label: t("section.size.auto") },
-        {
-          value: "narrow" as const,
-          label: t(entry.kind === "column" ? "section.size.narrow" : "section.size.low"),
+      {
+        label: t("section.size.mode"),
+        hint: sizeLabel(entry),
+        onSelect: () => {
+          setMenu(null);
+          setSizeEntry(entry);
         },
-        { value: "medium" as const, label: t("section.size.medium") },
-        {
-          value: "wide" as const,
-          label: t(entry.kind === "column" ? "section.size.wide" : "section.size.tall"),
-        },
-      ].map(
-        (option): MenuItem => ({
-          label: option.label,
-          checked:
-            typeof entry.axis.size !== "number" && (entry.axis.size ?? "auto") === option.value,
-          onSelect: () => {
-            setAxisSize(board, entry.frame.id, entry.axis.id, option.value);
-            setMenu(null);
-          },
-        }),
-      ),
-      ...(typeof entry.axis.size === "number"
-        ? [
-            {
-              label: `${t("section.size.manual")} · ${t("section.size.px", { n: entry.axis.size })}`,
-              checked: true,
-              disabled: true,
-              onSelect: () => undefined,
-            } satisfies MenuItem,
-          ]
-        : []),
+      },
       { separator: true },
       {
         label: t(
@@ -396,6 +412,11 @@ export function TableHeaderLayer({
             deleteAxis(board, entry.frame.id, entry.axis.id, { mode: "move" });
             setTableAxisSelection(null);
           } else {
+            deletedInSpan.current = axisInSpan(
+              layout,
+              entry.kind,
+              entry.axis.id,
+            );
             setPendingDelete({
               frameId: entry.frame.id,
               axisId: entry.axis.id,
@@ -439,6 +460,7 @@ export function TableHeaderLayer({
           setTableAxisSelection({ frameId, axisId });
           onSelect([frameId]);
         }}
+        onNotice={onNotice}
       />
       <div className="table-headers" role="group" aria-label={t("section.axes")}>
         {headers.map((entry) => {
@@ -596,6 +618,40 @@ export function TableHeaderLayer({
         </div>
       )}
 
+      {sizeEntry &&
+        (() => {
+          const rect = screenRect(sizeEntry.rect);
+          const liveFrame = widgets.find((widget) => widget.id === sizeEntry.frame.id);
+          const liveLayout =
+            liveFrame?.layout?.kind === "table" ? liveFrame.layout : null;
+          const liveAxis = liveLayout
+            ? (sizeEntry.kind === "column" ? liveLayout.columns : liveLayout.rows).find(
+                (axis) => axis.id === sizeEntry.axis.id,
+              )
+            : undefined;
+          if (!liveFrame || !liveAxis) return null;
+          return (
+            createPortal(
+              <div
+                className="axis-size-portal"
+                style={{ left: rect.left + rect.width + 12, top: rect.top }}
+              >
+                <PanelWindow>
+                  <AxisSizePopover
+                    board={board}
+                    frame={liveFrame}
+                    kind={sizeEntry.kind}
+                    axis={liveAxis}
+                    disabled={!canWrite(sizeEntry)}
+                    onClose={() => setSizeEntry(null)}
+                  />
+                </PanelWindow>
+              </div>,
+              document.body,
+            )
+          );
+        })()}
+
       {dropRect && (
         <div
           className="table-drop-cell"
@@ -628,6 +684,10 @@ export function TableHeaderLayer({
           onDeleted={() => {
             setPendingDelete(null);
             setTableAxisSelection(null);
+            if (deletedInSpan.current) {
+              deletedInSpan.current = false;
+              onNotice?.(t("section.axis.deleteKeepsWidths"));
+            }
           }}
         />
       )}

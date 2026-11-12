@@ -23,6 +23,24 @@ export function TableGrid({
   const children = widgets.filter(
     (widget) => widget.parentId === frame.id && widget.cell,
   );
+  // A merged block is one cell for a screen reader too (ADR-204): the anchor carries
+  // colspan/rowspan and the covered cells are not emitted, exactly like the painter.
+  const spans = layout.spans ?? [];
+  const blockAt = (rowId: string, columnId: string) =>
+    spans.find((span) => {
+      const top = layout.rows.findIndex((axis) => axis.id === span.rowId);
+      const left = layout.columns.findIndex((axis) => axis.id === span.columnId);
+      const row = layout.rows.findIndex((axis) => axis.id === rowId);
+      const column = layout.columns.findIndex((axis) => axis.id === columnId);
+      return (
+        top >= 0 &&
+        left >= 0 &&
+        row >= top &&
+        row < top + span.rowSpan &&
+        column >= left &&
+        column < left + span.columnSpan
+      );
+    }) ?? null;
   const inCell = (rowId: string, columnId: string) =>
     children
       .filter(
@@ -59,9 +77,17 @@ export function TableGrid({
           <tr key={row.id}>
             <th scope="row">{row.title || t("section.axis.untitled")}</th>
             {layout.columns.map((column) => {
+              const block = blockAt(row.id, column.id);
+              if (block && (block.rowId !== row.id || block.columnId !== column.id)) {
+                return null;
+              }
               const objects = inCell(row.id, column.id);
               return (
-                <td key={column.id}>
+                <td
+                  key={column.id}
+                  colSpan={block?.columnSpan}
+                  rowSpan={block?.rowSpan}
+                >
                   {objects.length === 0 ? (
                     <span>{t("section.mirror.empty")}</span>
                   ) : (
