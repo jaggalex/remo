@@ -674,12 +674,11 @@ test("a block selection shows one box and its composition", async ({ page }) => 
 
   const notes = await page.evaluate(() => {
     const list = (window as unknown as {
-      __remo: { widgets: Array<{ type: string; x: number; y: number }> };
+      __remo: { widgets: Array<{ type: string; x: number; y: number; width: number; height: number }> };
     }).__remo.widgets;
-    return list.filter((widget) => widget.type === "sticky_note").map((widget) => ({
-      x: widget.x,
-      y: widget.y,
-    }));
+    return list
+      .filter((widget) => widget.type === "sticky_note")
+      .map((widget) => ({ x: widget.x, y: widget.y, width: widget.width, height: widget.height }));
   });
   const view = await canvasView(page);
   for (const [index, note] of notes.entries()) {
@@ -690,6 +689,19 @@ test("a block selection shows one box and its composition", async ({ page }) => 
   }
   await expect(page.locator(".selection-badge")).toContainText("3 objects");
   await capture(page, page.locator(".canvas-wrap"), "selection-block");
+
+  // The same block pressed against its minimum: the plate names the limit, the badge
+  // repeats it in words, and the box stops instead of squeezing one member.
+  const right = Math.max(...notes.map((note) => note.x + note.width / 2));
+  const bottom = Math.max(...notes.map((note) => note.y + note.height / 2));
+  const gap = 7 / view.camera.zoom;
+  const corner = clientPoint(view, { x: right + gap, y: bottom + gap });
+  await page.mouse.move(corner.x, corner.y);
+  await page.mouse.down();
+  await page.mouse.move(corner.x - 300, corner.y - 200, { steps: 10 });
+  await expect(page.locator(".canvas-limit")).toBeVisible();
+  await capture(page, page.locator("body"), "selection-min-stop");
+  await page.mouse.up();
 });
 
 /**
