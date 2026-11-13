@@ -407,7 +407,7 @@ function carriedByListed(
 export function transformSelection(
   board: BoardDocument,
   boxes: readonly WidgetRect[],
-  scale?: { from: Rect; to: Rect },
+  scale?: { from: Rect; kx: number; ky: number },
 ): void {
   if (!boxes.length) return;
   board.transact(() => {
@@ -469,9 +469,8 @@ export function transformSelection(
 
     // A connector whose both ends travel keeps its bends in the same place relative to
     // the block (ADR-211); a half-selected connector keeps its world points.
-    if (scale && scale.from.width > 0 && scale.from.height > 0) {
-      const kx = scale.to.width / scale.from.width;
-      const ky = scale.to.height / scale.from.height;
+    if (scale) {
+      const { from, kx, ky } = scale;
       for (const connector of board.readWidgets()) {
         if (connector.type !== "connector" || !connector.waypoints?.length) continue;
         const start = connector.start?.item;
@@ -481,8 +480,8 @@ export function transformSelection(
           ...connector,
           waypoints: connector.waypoints.map((point) => ({
             ...point,
-            x: scale.from.x + (point.x - scale.from.x) * kx,
-            y: scale.from.y + (point.y - scale.from.y) * ky,
+            x: from.x + (point.x - from.x) * kx,
+            y: from.y + (point.y - from.y) * ky,
           })),
         });
       }

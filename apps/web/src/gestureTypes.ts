@@ -27,7 +27,7 @@ export interface GestureDeps {
   onSelect: (ids: string[]) => void;
   onMoveMany: (positions: WidgetPosition[]) => void;
   /** Commit a resize gesture: one object or a block, one transaction, one undo. */
-  onResizeMany: (rects: WidgetRect[], scale?: { from: Rect; to: Rect }) => void;
+  onResizeMany: (rects: WidgetRect[], scale?: { from: Rect; kx: number; ky: number }) => void;
   onMoveCard: (
     kanbanId: string,
     cardId: string,

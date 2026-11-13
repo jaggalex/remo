@@ -49,6 +49,8 @@ type DragState =
       origin: Rect;
       /** The last target box, so the release can pass the factors to the command. */
       target?: Rect;
+      /** The factors actually applied (after the minimum floor). */
+      factors?: { x: number; y: number };
       /** The boxes as they were when the gesture started; the preview must not feed itself. */
       members: Array<{
         id: string;

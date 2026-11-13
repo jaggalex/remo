@@ -407,10 +407,7 @@ describe("transformSelection: connectors and no-ops (ADR-211)", () => {
         { id: "a", x: 50, y: 50, width: 160, height: 120 },
         { id: "b", x: 350, y: 50, width: 160, height: 120 },
       ],
-      {
-        from: { x: 0, y: 0, width: 200, height: 100 },
-        to: { x: 0, y: 0, width: 400, height: 100 },
-      },
+      { from: { x: 0, y: 0, width: 200, height: 100 }, kx: 2, ky: 1 },
     );
 
     expect(board.widgets.get("c")!.waypoints?.[0]).toMatchObject({ x: 200, y: 50 });
@@ -437,10 +434,7 @@ describe("transformSelection: connectors and no-ops (ADR-211)", () => {
     transformSelection(
       board,
       [{ id: "a", x: 250, y: 50, width: 160, height: 120 }],
-      {
-        from: { x: 0, y: 0, width: 200, height: 100 },
-        to: { x: 0, y: 0, width: 400, height: 100 },
-      },
+      { from: { x: 0, y: 0, width: 200, height: 100 }, kx: 2, ky: 1 },
     );
 
     expect(board.widgets.get("c")!.waypoints?.[0]).toMatchObject({ x: 100, y: 50 });

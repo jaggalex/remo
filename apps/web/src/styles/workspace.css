@@ -135,6 +135,13 @@
   white-space: nowrap;
   pointer-events: none;
   box-shadow: var(--shadow-bar);
+  /* Step away from the cursor; the flip keeps it inside the viewport. */
+  margin: var(--space-3) 0 0 var(--space-4);
+}
+
+.canvas-limit--flip {
+  transform: translateX(-100%);
+  margin-left: calc(-1 * var(--space-5));
 }
 
 .selection-badge {

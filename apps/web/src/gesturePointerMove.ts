@@ -188,6 +188,7 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
 
     drag.target = target;
     const scaled = scaleBoxes(items, drag.origin, target);
+    drag.factors = scaled.factors;
     setResizeLimit(
       scaled.stopped
         ? {

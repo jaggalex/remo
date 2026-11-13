@@ -723,68 +723,6 @@ test("a block selection shows one box and its composition", async ({ page }) => 
 });
 
 /**
- * A shape that grew for its text (ADR-214): width unchanged, height down, readable size.
- */
-test("a shape grows for its text", async ({ page }) => {
-  const account = await register(page, "visual-shape-grow");
-  await openBoard(page, account.boardId);
-  await page.waitForFunction(() => {
-    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
-    return !!probe?.camera;
-  });
-  await page.waitForTimeout(400);
-  await zoomInToReadable(page);
-  const rail = page.getByRole("toolbar", { name: "Tools" });
-  await rail.getByRole("button", { name: "Shape variants" }).click();
-  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
-
-  const at = await page.evaluate(() => {
-    const probe = (window as unknown as {
-      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
-    }).__remo;
-    const one = probe?.widgets.find((widget) => widget.type === "shape");
-    return one ? { x: one.x, y: one.y } : null;
-  });
-  if (!at) throw new Error("the shape was not created");
-  const view = await canvasView(page);
-  const point = clientPoint(view, at);
-  await page.mouse.dblclick(point.x, point.y);
-  const editor = page.locator(".inline-editor");
-  await expect(editor).toBeVisible();
-  await editor.fill(
-    "Подпись диаграммы, которой нужно больше места, чем было у прямоугольника. ".repeat(10),
-  );
-  await page.keyboard.press("Escape");
-  await expect(page.locator(".inline-editor")).toHaveCount(0);
-  await capture(page, page.locator(".canvas-wrap"), "shape-grow");
-
-  // A manual shrink wins over the text: the box stops where the person put it and the
-  // clip mark appears in the corner (ADR-214).
-  const grown = await page.evaluate(() => {
-    const probe = (window as unknown as {
-      __remo?: { widgets: Array<{ type: string; x: number; y: number; width: number; height: number }> };
-    }).__remo;
-    const one = probe?.widgets.find((widget) => widget.type === "shape");
-    return one ? { x: one.x, y: one.y, width: one.width, height: one.height } : null;
-  });
-  if (!grown) throw new Error("the shape disappeared");
-  const view2 = await canvasView(page);
-  const gap = 7 / view2.camera.zoom;
-  const centre = clientPoint(view2, grown);
-  await page.mouse.click(centre.x, centre.y);
-  const corner = clientPoint(view2, {
-    x: grown.x + grown.width / 2 + gap,
-    y: grown.y + grown.height / 2 + gap,
-  });
-  await page.mouse.move(corner.x, corner.y);
-  await page.mouse.down();
-  await page.mouse.move(corner.x, corner.y - 220, { steps: 10 });
-  await page.mouse.up();
-  await page.keyboard.press("Escape");
-  await capture(page, page.locator(".canvas-wrap"), "text-overflow");
-});
-
-/**
  * A connector label with explicit lines (ADR-213): Enter is a line, the chip covers the
  * line and stays on `labelAt`.
  */

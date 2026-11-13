@@ -126,7 +126,12 @@ export function pointerUp(env: GestureEnv) {
     // The command skips values that did not change, so a click on a handle that never
     // moved costs no undo step without a second comparison here.
     if (rects.length) {
-      onResizeMany(rects, drag.target ? { from: drag.origin, to: drag.target } : undefined);
+      onResizeMany(
+        rects,
+        drag.target
+          ? { from: drag.origin, kx: drag.factors?.x ?? 1, ky: drag.factors?.y ?? 1 }
+          : undefined,
+      );
     }
     return;
   }

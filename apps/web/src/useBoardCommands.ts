@@ -226,7 +226,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
   );
 
   const resizeSelection = useCallback(
-    (rects: WidgetRect[], scale?: { from: Rect; to: Rect }) =>
+    (rects: WidgetRect[], scale?: { from: Rect; kx: number; ky: number }) =>
       transformSelection(board, rects, scale),
     [board],
   );

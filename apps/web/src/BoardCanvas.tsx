@@ -88,7 +88,7 @@ interface Props {
   /** Drop a selection into a table cell (ADR-196). */
   onMoveToCell: (frameId: string, rowId: string, columnId: string, ids: string[], offset: { x: number; y: number }) => void;
   /** Commit a resize gesture: one transaction, one undo step. */
-  onResizeMany: (rects: WidgetRect[], scale?: { from: Rect; to: Rect }) => void;
+  onResizeMany: (rects: WidgetRect[], scale?: { from: Rect; kx: number; ky: number }) => void;
   onMoveCard: (kanbanId: string, cardId: string, columnId: string, swimlaneId: string) => void;
   onAddCard: (kanbanId: string, columnId: string, swimlaneId: string) => void;
   onAddColumn: (kanbanId: string) => void;
