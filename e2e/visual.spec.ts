@@ -628,3 +628,96 @@ test("the section panel shows the table and its axes", async ({ page }) => {
   await page.waitForTimeout(300);
   await capture(page, page.locator(".app"), "section-panel");
 });
+
+/** World point → client point for the canvas, the same inverse the handlers use. */
+async function canvasView(page: Page) {
+  return page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { camera: { x: number; y: number; zoom: number } };
+    }).__remo;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      camera: probe?.camera ?? { x: 0, y: 0, zoom: 1 },
+      rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+    };
+  });
+}
+
+function clientPoint(
+  view: Awaited<ReturnType<typeof canvasView>>,
+  world: { x: number; y: number },
+) {
+  return {
+    x: view.rect.left + view.rect.width / 2 + (world.x - view.camera.x) * view.camera.zoom,
+    y: view.rect.top + view.rect.height / 2 + (world.y - view.camera.y) * view.camera.zoom,
+  };
+}
+
+/**
+ * A block selection: one box with handles, quiet rings on the members (ADR-211).
+ *
+ * The badge is the written form of the same state, so the baseline shows both the chrome
+ * and the sentence a person reads.
+ */
+test("a block selection shows one box and its composition", async ({ page }) => {
+  const account = await freshBoard(page, "visual-block");
+  await seedNote(page, account.boardId, { x: -320, y: 0 });
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await seedNote(page, account.boardId, { x: 320, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  const notes = await page.evaluate(() => {
+    const list = (window as unknown as {
+      __remo: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo.widgets;
+    return list.filter((widget) => widget.type === "sticky_note").map((widget) => ({
+      x: widget.x,
+      y: widget.y,
+    }));
+  });
+  const view = await canvasView(page);
+  for (const [index, note] of notes.entries()) {
+    const point = clientPoint(view, note);
+    if (index > 0) await page.keyboard.down("Shift");
+    await page.mouse.click(point.x, point.y);
+    if (index > 0) await page.keyboard.up("Shift");
+  }
+  await expect(page.locator(".selection-badge")).toContainText("3 objects");
+  await capture(page, page.locator(".canvas-wrap"), "selection-block");
+});
+
+/**
+ * A shape that grew for its text (ADR-214): width unchanged, height down, readable size.
+ */
+test("a shape grows for its text", async ({ page }) => {
+  await freshBoard(page, "visual-shape-grow");
+  const rail = page.getByRole("toolbar", { name: "Tools" });
+  await rail.getByRole("button", { name: "Shape variants" }).click();
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+
+  const at = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y } : null;
+  });
+  if (!at) throw new Error("the shape was not created");
+  const view = await canvasView(page);
+  const point = clientPoint(view, at);
+  await page.mouse.dblclick(point.x, point.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill(
+    "Подпись диаграммы, которой нужно больше места, чем было у прямоугольника. ".repeat(10),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+  await capture(page, page.locator(".canvas-wrap"), "shape-grow");
+});
