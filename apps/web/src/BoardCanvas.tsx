@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  connectorPath,
-  pathPolyline,
   layoutKanban,
   screenToWorld,
   visibleWorldRect,
@@ -19,7 +17,6 @@ import type {
 import { GatherPreview } from "./GatherPreview";
 import { useViewportSize } from "./useViewportSize";
 import {
-  soleSelectedGroup,
   type Tag,
   type ConnectorSide,
   type KanbanState,
@@ -38,7 +35,7 @@ import { useBoardCameraFit } from "./useBoardCameraFit";
 import { useCanvasProbe } from "./useCanvasProbe";
 import { CanvasHud } from "./CanvasHud";
 import { CanvasHint } from "./CanvasHint";
-import { SelectionBadge } from "./SelectionBadge";
+import { BoardSelectionBadge } from "./BoardSelectionBadge";
 import { PresentationLayer } from "./PresentationLayer";
 import { SocialLayer } from "./SocialLayer";
 import { VoteLayer } from "./VoteLayer";
@@ -346,6 +343,7 @@ export function BoardCanvas({
     cursor,
     connectDraft,
     hoverAnchor,
+    resizeLimit,
     resolve: widgetById,
     clearHover,
     onPointerDown,
@@ -560,32 +558,6 @@ export function BoardCanvas({
   const worldCursor = cursor ? toWorld({ clientX: cursor.x, clientY: cursor.y }) : null;
   const selectedKanbanId = selectedIds.find((id) => kanbanStates[id]);
   const selectedKanban = selectedKanbanId ? kanbanStates[selectedKanbanId] : undefined;
-  const selectedWidget =
-    selectedIds.length === 1 ? widgets.find((w) => w.id === selectedIds[0]) : undefined;
-
-  /**
-   * Size of the selected line as it is drawn, not as it was stored.
-   *
-   * A connector's box is a leftover of its creation: moving an endpoint changes the
-   * path without rewriting it, so the badge used to report the shape of a line that no
-   * longer exists.
-   */
-  const selectedLineSize = useMemo(() => {
-    if (!selectedWidget || selectedWidget.type !== "connector") return null;
-    const path = connectorPath(selectedWidget, widgetById, {
-      max: settings.connectors.stubMax,
-      ratio: settings.connectors.stubRatio,
-    });
-    if (!path) return null;
-    const points = pathPolyline(path);
-    const xs = points.map((point) => point.x);
-    const ys = points.map((point) => point.y);
-    return {
-      width: Math.round(Math.max(...xs) - Math.min(...xs)),
-      height: Math.round(Math.max(...ys) - Math.min(...ys)),
-    };
-  }, [selectedWidget, settings.connectors.stubMax, settings.connectors.stubRatio, widgetById]);
-  const selectedGroup = soleSelectedGroup(widgets, selectedIds);
   const edgeSource = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
   // "Gather into section" pointed at: the outline of the section it would create.
   const [gatherPreview, setGatherPreview] = useState(false);
@@ -650,16 +622,14 @@ export function BoardCanvas({
       />
       {/* An empty room shows its start, not tips about objects it does not have. */}
       <CanvasHint allowed={hintAllowed && widgets.length > 0} />
-      <SelectionBadge
+      <BoardSelectionBadge
+        widgets={widgets}
         selectedIds={presenting ? [] : selectedIds}
-        selectedWidget={selectedWidget}
-        selectedGroup={selectedGroup}
-        selectedGroupName={selectedGroup ? groupNames[selectedGroup] : undefined}
-        selectedTags={
-          selectedWidget?.tagIds?.map((id) => tags[id]).filter((tag): tag is Tag => Boolean(tag)) ??
-          []
-        }
-        selectedLineSize={selectedLineSize}
+        groupNames={groupNames}
+        tags={tags}
+        resizeLimit={resizeLimit}
+        widgetById={widgetById}
+        settings={settings}
       />
       <EdgeContinueLayer
         source={edgeSource ?? null}

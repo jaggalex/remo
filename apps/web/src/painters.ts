@@ -193,6 +193,7 @@ export function paintBoardLayer(input: BoardPaintInput): void {
       resolve: resolveForDrag,
       theme,
       editingId: editingId ?? undefined,
+      memberRing: outlined.length > 1,
     });
     if (widget.type === "frame" && widget.layout?.kind === "table") {
       drawTable(ctx, widget, widgets, camera.zoom, palette, theme.fontFamily);

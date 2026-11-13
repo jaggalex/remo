@@ -62,6 +62,8 @@ type CountKey =
   | "widgets"
   | "grants"
   | "selected"
+  | "scalable"
+  | "pinned"
   | "cards"
   | "columns"
   | "swimlanes"
@@ -79,6 +81,8 @@ const COUNTS: Record<Lang, Record<CountKey, [string, string, string]>> = {
     widgets: ["{n} widget", "{n} widgets", "{n} widgets"],
     grants: ["{n} grant", "{n} grants", "{n} grants"],
     selected: ["{n} selected", "{n} selected", "{n} selected"],
+    scalable: ["{n} changes size", "{n} change size", "{n} change size"],
+    pinned: ["{n} pinned", "{n} pinned", "{n} pinned"],
     cards: ["{n} card", "{n} cards", "{n} cards"],
     columns: ["{n} column", "{n} columns", "{n} columns"],
     swimlanes: ["{n} swimlane", "{n} swimlanes", "{n} swimlanes"],
@@ -95,6 +99,8 @@ const COUNTS: Record<Lang, Record<CountKey, [string, string, string]>> = {
     widgets: ["{n} объект", "{n} объекта", "{n} объектов"],
     grants: ["{n} доступ", "{n} доступа", "{n} доступов"],
     selected: ["Выбрано: {n}", "Выбрано: {n}", "Выбрано: {n}"],
+    scalable: ["{n} меняет размер", "{n} меняют размер", "{n} меняют размер"],
+    pinned: ["{n} закреплён", "{n} закреплены", "{n} закреплены"],
     cards: ["{n} карточка", "{n} карточки", "{n} карточек"],
     columns: ["{n} колонка", "{n} колонки", "{n} колонок"],
     swimlanes: ["{n} дорожка", "{n} дорожки", "{n} дорожек"],

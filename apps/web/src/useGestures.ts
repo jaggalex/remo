@@ -29,6 +29,8 @@ export function useGestures(deps: GestureDeps): Gestures {
     dragIds: env.dragIds,
     dragGhostIds: env.dragGhostIds,
     guides: env.guides,
+    resizeLimit: env.resizeLimit,
+    setResizeLimit: env.setResizeLimit,
     hoverId: env.hoverId,
     connectDraft: env.connectDraft,
     hoverAnchor: env.hoverAnchor,

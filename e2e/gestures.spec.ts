@@ -500,6 +500,9 @@ test("a block of notes resizes as one box (ADR-211)", async ({ page }) => {
     () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
   );
   expect(selected).toHaveLength(3);
+  // The badge names the composition of the block (ADR-211): total and how many scale.
+  await expect(page.locator(".selection-badge")).toContainText("3 objects");
+  await expect(page.locator(".selection-badge")).toContainText("3 change size");
 
   const right = Math.max(...before.map((note) => note.x + note.width / 2));
   const bottom = Math.max(...before.map((note) => note.y + note.height / 2));

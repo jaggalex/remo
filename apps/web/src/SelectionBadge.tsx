@@ -1,4 +1,5 @@
 import type { Tag, Widget } from "@remo/model";
+import { scalesInBlock } from "@remo/model";
 import { useI18n } from "./i18n";
 
 /**
@@ -15,6 +16,8 @@ export function SelectionBadge({
   selectedGroupName,
   selectedTags,
   selectedLineSize,
+  selectedWidgets = [],
+  resizeLimit,
 }: {
   selectedIds: readonly string[];
   selectedWidget: Widget | undefined;
@@ -24,6 +27,10 @@ export function SelectionBadge({
   selectedGroupName?: string;
   selectedTags?: Tag[];
   selectedLineSize: { width: number; height: number } | null;
+  /** Every selected object, so a block can name its composition (ADR-211). */
+  selectedWidgets?: readonly Widget[];
+  /** While a block is stopped at a minimum, the size the person is pressing against. */
+  resizeLimit?: { width: number; height: number } | null;
 }) {
   const { t, count, typeName } = useI18n();
   if (!selectedIds.length) return null;
@@ -65,7 +72,32 @@ export function SelectionBadge({
           <span className="muted">{count("objects", selectedIds.length)}</span>
         </>
       ) : (
-        <strong>{count("selected", selectedIds.length)}</strong>
+        <>
+          <strong>{count("objects", selectedIds.length)}</strong>
+          {(() => {
+            const scalable = selectedWidgets.filter(scalesInBlock).length;
+            const pinned = selectedWidgets.filter((widget) => widget.locked).length;
+            return (
+              <>
+                {scalable > 0 && (
+                  <span className="muted"> · {count("scalable", scalable)}</span>
+                )}
+                {pinned > 0 && <span className="muted"> · {count("pinned", pinned)}</span>}
+                {scalable === 0 && (
+                  <span className="muted"> · {t("canvas.resize.moveOnly")}</span>
+                )}
+                {resizeLimit && (
+                  <span className="muted">
+                    {" "}
+                    · {t("canvas.resize.limit", {
+                      size: `${Math.round(resizeLimit.width)} × ${Math.round(resizeLimit.height)}`,
+                    })}
+                  </span>
+                )}
+              </>
+            );
+          })()}
+        </>
       )}
     </div>
   );

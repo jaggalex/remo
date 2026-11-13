@@ -97,6 +97,9 @@ export interface Gestures {
   dragIds: string[];
   dragGhostIds: string[];
   guides: AlignmentGuide[];
+  /** The floored size while a resize is stopped at a minimum, or null. */
+  resizeLimit: { width: number; height: number } | null;
+  setResizeLimit: (limit: { width: number; height: number } | null) => void;
   hoverId: string | null;
   connectDraft: ConnectDraft | null;
   hoverAnchor: { id: string; side: ConnectorSide } | null;

@@ -211,6 +211,8 @@ export function useGestureEnv(deps: GestureDeps) {
   const [dragGhostIds, setDragGhostIds] = useState<string[]>([]);
   /** Alignment lines for the current drag; empty when nothing is near enough. */
   const [guides, setGuides] = useState<AlignmentGuide[]>([]);
+  /** The floored block size while a resize is stopped at a minimum (ADR-211). */
+  const [resizeLimit, setResizeLimit] = useState<{ width: number; height: number } | null>(null);
 
   /**
    * Object under the pointer.
@@ -501,6 +503,8 @@ export function useGestureEnv(deps: GestureDeps) {
     dragGhostIds,
     setDragGhostIds,
     guides,
+    resizeLimit,
+    setResizeLimit,
     setGuides,
     hoverId,
     setHoverId,

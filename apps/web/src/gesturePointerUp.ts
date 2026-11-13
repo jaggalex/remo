@@ -11,7 +11,7 @@ import { boxOf, cellAt, facingSide, pickInRect, placementsInRect } from "@remo/c
 import type { ConnectorPatch } from "@remo/doc";
 
 export function pointerUp(env: GestureEnv) {
-  const { anchorPressRef, camera, cardPreviewRef, clearPreview, connectDraftRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onAddWaypoint, onConnect, onCreateConnected, onConnectorPatch, onLimit, onMoveCard, onMoveMany, onMoveToCell, onMoveWaypoint, onReattachEnd, onResizeMany, onSelect, previewLive, selectedIds, setConnectDraft, setDragGhostIds, setDragIds, setDragPreview, setGuides, setHoverCell, setMarquee, setTableHover, setTableRefused, settings, widgetById, widgets } = env;
+  const { anchorPressRef, camera, cardPreviewRef, clearPreview, connectDraftRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onAddWaypoint, onConnect, onCreateConnected, onConnectorPatch, onLimit, onMoveCard, onMoveMany, onMoveToCell, onMoveWaypoint, onReattachEnd, onResizeMany, onSelect, setResizeLimit, previewLive, selectedIds, setConnectDraft, setDragGhostIds, setDragIds, setDragPreview, setGuides, setHoverCell, setMarquee, setTableHover, setTableRefused, settings, widgetById, widgets } = env;
   const drag = dragRef.current;
   dragRef.current = null;
 
@@ -122,6 +122,7 @@ export function pointerUp(env: GestureEnv) {
       ];
     });
     clearPreview();
+    setResizeLimit(null);
     if (rects.length) onResizeMany(rects);
     return;
   }

@@ -467,6 +467,8 @@ export const ruCore = {
   "canvas.editText": "Редактирование текста",
   "kanban.cardPlaceholder": "Введите текст",
   "canvas.group": "Группа",
+  "canvas.resize.moveOnly": "Можно перенести, но не изменить размер",
+  "canvas.resize.limit": "Предел размера · {size}",
   "canvas.locked": "Закреплено: размер и текст защищены, но объект можно переместить",
   "canvas.inGroup": "В группе: двойной клик — работать только с этим объектом",
   "canvas.widenHint": "добавляет одну колонку к виджету · один шаг отмены",

@@ -28,6 +28,8 @@ export interface CanvasPalette {
   accentSoft: string;
   selectionStroke: string;
   selectionFill: string;
+  /** The 1 px ring around a member of a block (ADR-211). */
+  selectionMember: string;
   /** The "···" plate for a clipped label (ADR-214). */
   markBg: string;
   markLine: string;
@@ -56,6 +58,7 @@ export const DEFAULT_PALETTE: CanvasPalette = {
   accentSoft: "#eef1ff",
   selectionStroke: "#4262ff",
   selectionFill: "rgba(66,98,255,0.10)",
+  selectionMember: "rgba(23,23,22,0.45)",
   markBg: "rgba(255,255,255,0.88)",
   markLine: "rgba(30,33,54,0.28)",
   danger: "#d92d20",

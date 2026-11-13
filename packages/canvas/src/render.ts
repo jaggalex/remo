@@ -218,6 +218,12 @@ export interface DrawWidgetOptions {
    * canvas does not paint a second copy behind it (ADR-033).
    */
   editingId?: string;
+  /**
+   * True when the selection has many members: the member is drawn with the quiet 1 px
+   * ring instead of the active 2 px outline, because the handles belong to the block
+   * (ADR-211).
+   */
+  memberRing?: boolean;
 }
 
 /** Visual defaults that come from the person's settings. */
@@ -775,8 +781,15 @@ function paintWidget(
 
   // A connector shows its selection along the path (above), so it never gets a box.
   if (selected && widget.type !== "connector") {
-    ctx.strokeStyle = palette.selectionStroke;
-    ctx.lineWidth = 2 / zoom;
-    ctx.strokeRect(left - 2 / zoom, top - 2 / zoom, widget.width + 4 / zoom, widget.height + 4 / zoom);
+    const member = options.memberRing === true;
+    const inset = (member ? 3 : 2) / zoom;
+    ctx.strokeStyle = member ? palette.selectionMember : palette.selectionStroke;
+    ctx.lineWidth = (member ? 1 : 2) / zoom;
+    ctx.strokeRect(
+      left - inset,
+      top - inset,
+      widget.width + inset * 2,
+      widget.height + inset * 2,
+    );
   }
 }

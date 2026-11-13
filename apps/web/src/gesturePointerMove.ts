@@ -24,7 +24,7 @@ import type { Widget } from "@remo/model";
    * matrix, not chosen by dragging a widget.
    */
 export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
-  const { alignmentTargets, anchorNear, anchorPressRef, applyPreview, camera, cardPreviewRef, connectDraftRef, connectPendingRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onCamera, publishCursor, setConnectDraft, setCursor, setDragPreview, setGuides, setHoverAnchor, setHoverCell, setHoverId, setMarquee, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets } = env;
+  const { alignmentTargets, anchorNear, anchorPressRef, applyPreview, camera, cardPreviewRef, connectDraftRef, connectPendingRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onCamera, publishCursor, setConnectDraft, setCursor, setDragPreview, setGuides, setHoverAnchor, setHoverCell, setHoverId, setMarquee, setResizeLimit, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets } = env;
   const drag = dragRef.current;
   setCursor({ x: event.clientX, y: event.clientY });
   const world = toWorld(event);
@@ -180,6 +180,14 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     }
 
     const scaled = scaleBoxes(items, drag.origin, target);
+    setResizeLimit(
+      scaled.stopped
+        ? {
+            width: drag.origin.width * scaled.factors.x,
+            height: drag.origin.height * scaled.factors.y,
+          }
+        : null,
+    );
     const scalable = new Map(items.map((item) => [item.id, item.scalable]));
     const next = new Map<string, Partial<Widget>>();
     for (const box of scaled.boxes) {
