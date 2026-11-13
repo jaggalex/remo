@@ -805,6 +805,7 @@ test("a shape grows for its text", async ({ page }) => {
         (window as unknown as { __remo?: { camera: { zoom: number } } }).__remo?.camera.zoom ?? 0,
     );
   const fitted = await zoom();
+  // Two steps of 1.2 are 1.44; the poll only has to see most of that, not an exact value.
   await page.getByRole("button", { name: "Zoom out" }).click();
   await page.getByRole("button", { name: "Zoom out" }).click();
   await expect.poll(zoom).toBeLessThan(fitted / 1.35);
@@ -812,8 +813,9 @@ test("a shape grows for its text", async ({ page }) => {
   await expect(page.locator(".selection-badge")).toHaveCount(0);
   // Fit keeps focus, and its tooltip would land in the frame: blur it, park the
   // cursor on the grid, and wait for the tooltip to be gone rather than for a delay.
+  const canvas = await canvasView(page);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.mouse.move(1200, 400);
+  await page.mouse.move(canvas.rect.left + canvas.rect.width - 40, canvas.rect.top + 100);
   await expect(page.getByRole("tooltip")).toHaveCount(0);
   await capture(page, page.locator(".canvas-wrap"), "shape-grow");
 });
