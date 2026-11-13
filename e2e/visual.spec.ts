@@ -845,3 +845,69 @@ test("a shape grows for its text", async ({ page }) => {
   await expect(page.getByRole("tooltip")).toHaveCount(0);
   await capture(page, page.locator(".canvas-wrap"), "shape-grow");
 });
+
+/**
+ * A note that cannot show all its text (ADR-214): the mark sits in the corner and the
+ * badge says it in words, so the state is not colour-only.
+ */
+test("a clipped label is marked and named", async ({ page }) => {
+  const account = await register(page, "visual-text-overflow");
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+  await page.evaluate(() => document.fonts.ready);
+  await zoomInToReadable(page);
+
+  const id = await addSticky(page);
+  const at = await page.evaluate((noteId) => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ id: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.id === noteId);
+    return one ? { x: one.x, y: one.y } : null;
+  }, id);
+  if (!at) throw new Error("the note was not created");
+  const view = await canvasView(page);
+  const point = clientPoint(view, at);
+  await page.mouse.dblclick(point.x, point.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill(
+    "Заметка, в которую не помещается весь текст, и это видно по знаку в углу. ".repeat(16),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+
+  // Fit frames the note closely; step back until the mark and the letters are readable.
+  await zoomInToReadable(page);
+  const zoom = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __remo?: { camera: { zoom: number } } }).__remo?.camera.zoom ?? 0,
+    );
+  for (let step = 0; step < 8 && (await zoom()) > 1.8; step += 1) {
+    await page.getByRole("button", { name: "Zoom out" }).click();
+  }
+  await expect.poll(zoom).toBeLessThanOrEqual(1.8);
+
+  const framed = await page.evaluate((noteId) => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ id: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.id === noteId);
+    return one ? { x: one.x, y: one.y } : null;
+  }, id);
+  if (!framed) throw new Error("the note disappeared");
+  const framedView = await canvasView(page);
+  const spot = clientPoint(framedView, framed);
+  await page.mouse.click(spot.x, spot.y);
+  const badge = page.locator(".selection-badge");
+  await expect(badge).toContainText("Sticky note");
+  await expect(badge).toContainText("Text does not fit");
+  await page.mouse.move(framedView.rect.left + framedView.rect.width - 40, framedView.rect.top + 100);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await capture(page, page.locator(".canvas-wrap"), "text-overflow");
+});

@@ -364,9 +364,9 @@ export function noteFontSizeFor(
   width: number,
   height: number,
   cap: number,
-  explicit?: number,
+  explicit: number | undefined,
+  floor: number,
   family: string = DEFAULT_FONT_FAMILY,
-  floor?: number,
 ): number | null {
   if (explicit) return explicit;
   const ctx = measureContext();

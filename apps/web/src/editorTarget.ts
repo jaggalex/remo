@@ -93,8 +93,8 @@ export function editorTargetFor({
         height,
         textCapFor(widget, settings.notes.fontCap),
         widget.style?.fontSize,
-        settings.text.fontFamily,
         textFloorFor(widget),
+        settings.text.fontFamily,
       ) ?? 16);
 
   // The note's own fill and the ink that goes with it, so the editor shows the

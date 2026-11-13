@@ -152,8 +152,8 @@ export function noteBarTarget(args: {
       widget.height,
       textCapFor(widget, settings.notes.fontCap),
       undefined,
-      settings.text.fontFamily,
       textFloorFor(widget),
+      settings.text.fontFamily,
     ) ?? 16;
 
   const fill =

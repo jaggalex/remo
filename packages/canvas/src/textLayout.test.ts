@@ -55,7 +55,7 @@ describe("auto text size", () => {
   });
 
   it("respects an explicit size instead of fitting", () => {
-    expect(noteFontSizeFor([{ text: "x" }], 160, 180, 16, 24)).toBe(24);
+    expect(noteFontSizeFor([{ text: "x" }], 160, 180, 16, 24, MIN_NOTE_FONT)).toBe(24);
   });
 
   it("gives Auto nothing to do with an empty note", () => {
