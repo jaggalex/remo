@@ -8839,3 +8839,41 @@ badge's clip word agrees with the mark for every shape. ADR-214's consequence ab
 `shapeHeightFor` remains superseded by ADR-215; its "grows down" is now literal. A future
 widget that paints text in a box must add its rule to `textCapFor` / `textFloorFor` rather
 than pick a cap at the call site.
+
+## ADR-217: Header lines are intentional, a row header may be vertical, and the header band is sizeable (amends ADR-202; extends ADR-196, ADR-201)
+
+**Status:** accepted (2026-11-13).
+
+**Context.** ADR-202 wrapped header titles by words and kept row headers horizontal, with
+fixed caps. Owners of wide tables found three gaps: a vertical column title could not be
+given more band height (Auto ellipsized it at 260), a header title could not hold an
+intentional line break, and a row header could neither turn vertical nor get a wider strip.
+The caps exist to keep a table from swallowing the board, not to forbid the person from
+choosing a larger band.
+
+**Decision.**
+
+- **A header title keeps intentional line breaks.** The editor is a text area; `Enter`
+  commits, `Shift+Enter` inserts a line break, `Esc` cancels, `Tab` moves on. The painter
+  wraps each explicit paragraph by words; the 100-character cap and the ellipsis stay.
+  Geometry counts explicit lines when it sizes the band and the strip.
+- **A row header may be vertical.** `axis.vertical` is read for columns and rows; the menu
+  item and the panel checkbox apply to either. A vertical row title runs along its row
+  height and is shortened with an ellipsis when the row is too short; it does not widen the
+  row-header strip.
+- **The header band has manual sizes.** `TableLayout.headerWidth` (row strip) and
+  `headerHeight` (column band) are optional world-unit numbers; absent means Auto. A manual
+  size is exact, so a title that no longer fits is ellipsized exactly as past the Auto cap;
+  it is never squeezed or scaled. The panel offers two numeric fields with an empty "Auto"
+  placeholder, and the same command clears an override.
+- **Auto still has caps.** `TABLE_HEADER_MAX_WIDTH` and `TABLE_HEADER_MAX_HEIGHT` remain the
+  Auto ceiling; a vertical column needs height for its longest explicit line, and the column
+  width grows to fit the number of explicit lines. A manual size may exceed the cap.
+- **No second text model.** The title remains the axis title string; the painter, a11y
+  mirror, export and the reader use the same value. Newlines are ordinary characters in the
+  document.
+
+**Consequences.** `@remo/model` keeps the header metrics with the new fields and line-aware
+wrapping; `@remo/doc` allows vertical rows and gains `setTableHeaderSize`; the header editor
+becomes a text area; the panel gains the two header fields. Tests cover line preservation,
+manual sizes and a vertical row. Per-side headers and rich text in headers remain open.

@@ -24,6 +24,7 @@ import {
 import { Button, ConfirmDialog, Icon, Input, Segmented } from "@remo/ui";
 import { AxisSizeButton } from "./AxisSizeControl";
 import { TableAppearanceControls } from "./TableAppearanceControls";
+import { TableHeaderSize } from "./TableHeaderSize";
 import { setSectionView } from "./sectionView";
 import { openSectionLayout } from "./sectionLayoutStore";
 import { AxisDeleteDialog } from "./AxisDeleteDialog";
@@ -460,6 +461,8 @@ export function SectionPanel({
           </div>
         ))}
 
+        <TableHeaderSize board={board} frame={frame} disabled={readOnly} />
+
         {selected && selectedKind && (
           <div className="section-axis-detail">
             <AxisNameField
@@ -479,8 +482,7 @@ export function SectionPanel({
                 disabled={readOnly}
               />
             </div>
-            {selectedKind === "column" && (
-              <label className="section-check">
+            <label className="section-check">
                 <input
                   type="checkbox"
                   checked={Boolean(selected.vertical)}
@@ -489,9 +491,8 @@ export function SectionPanel({
                     setAxisVertical(board, frame.id, selected.id, event.currentTarget.checked)
                   }
                 />
-                <span>{t("section.axis.rotate")}</span>
-              </label>
-            )}
+              <span>{t("section.axis.rotate")}</span>
+            </label>
             <div className="section-axis-actions">
               <Button
                 size="compact"

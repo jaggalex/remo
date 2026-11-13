@@ -274,6 +274,12 @@ function readLayout(value: unknown): Raw | undefined {
   if (!columns.length || !rows.length) return undefined;
   const layout: Raw = { kind: "table", columns, rows };
   if (typeof value.active === "boolean") layout.active = value.active;
+  if (isFiniteNumber(value.headerWidth) && value.headerWidth >= 64 && value.headerWidth <= 2000) {
+    layout.headerWidth = value.headerWidth;
+  }
+  if (isFiniteNumber(value.headerHeight) && value.headerHeight >= 40 && value.headerHeight <= 2000) {
+    layout.headerHeight = value.headerHeight;
+  }
   if (isObject(value.appearance)) {
     const appearance: Raw = {};
     for (const key of ["table", "headers"] as const) {

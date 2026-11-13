@@ -289,19 +289,23 @@ export function setAxisVertical(
 ): boolean {
   const frame = editableFrame(board, frameId);
   if (!frame?.layout || frame.layout.kind !== "table") return false;
-  if (!frame.layout.columns.some((axis) => axis.id === axisId)) return false;
-  const next = frame.layout.columns.map((axis) => {
-    if (axis.id !== axisId) return axis;
-    if (!vertical) {
-      const { vertical: _vertical, ...rest } = axis;
-      return rest;
-    }
-    return { ...axis, vertical };
-  });
-  board.transact(() =>
-    writeLayout(board, frame, { ...frame.layout!, columns: next }),
-  );
-  return true;
+  for (const kind of ["column", "row"] as const) {
+    const axes = axesOf(frame.layout, kind);
+    if (!axes.some((axis) => axis.id === axisId)) continue;
+    const next = axes.map((axis) => {
+      if (axis.id !== axisId) return axis;
+      if (!vertical) {
+        const { vertical: _vertical, ...rest } = axis;
+        return rest;
+      }
+      return { ...axis, vertical };
+    });
+    board.transact(() =>
+      writeLayout(board, frame, withAxes(frame.layout!, kind, next)),
+    );
+    return true;
+  }
+  return false;
 }
 
 /** Move an axis one place left/right (up/down). Cells keep their axis ids. */
@@ -650,5 +654,27 @@ export function setTablePadding(
   if (!frame) return false;
   const value = padding == null ? null : paddingValue(padding);
   board.transact(() => setAppearanceValue(board, frame, target, "paddings", value));
+  return true;
+}
+
+
+/** Set or clear the row-header strip width or the column-header band height (ADR-217). */
+export function setTableHeaderSize(
+  board: BoardDocument,
+  frameId: string,
+  which: "width" | "height",
+  px: number | null,
+): boolean {
+  const frame = editableFrame(board, frameId);
+  if (!frame?.layout || frame.layout.kind !== "table") return false;
+  const field = which === "width" ? "headerWidth" : "headerHeight";
+  const next = { ...frame.layout };
+  if (px == null) {
+    delete next[field];
+  } else {
+    const minimum = which === "width" ? 64 : 40;
+    next[field] = Math.round(Math.min(2000, Math.max(minimum, px)));
+  }
+  board.transact(() => writeLayout(board, frame, next));
   return true;
 }

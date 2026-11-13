@@ -887,3 +887,54 @@ test("borders and padding are edited in the table appearance group", async ({ pa
     })
     .toBe(32);
 });
+
+test("header lines, vertical rows and manual header size", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-header-lines");
+  const header = page.getByRole("button", { name: "Columns: Column 1" });
+  await header.focus();
+  await page.keyboard.press("F2");
+  const editor = page.locator(".table-header-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill("First");
+  await editor.press("Shift+Enter");
+  await editor.type("second");
+  await editor.press("Enter");
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.columns![0]!.title;
+    })
+    .toBe("First\nsecond");
+
+  await panel.getByLabel("Header height").fill("160");
+  await panel.getByLabel("Header height").press("Enter");
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.headerHeight;
+    })
+    .toBe(160);
+
+  const rowHeader = page.getByRole("button", { name: "Rows: Row 1" });
+  if ((await rowHeader.getAttribute("aria-pressed")) !== "true") await rowHeader.click();
+  await rowHeader.click();
+  await page
+    .getByRole("menu", { name: /Rows: Row 1/ })
+    .getByRole("menuitemcheckbox", { name: "Vertical header", exact: true })
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.rows![0]!.vertical;
+    })
+    .toBe(true);
+
+  await panel.getByLabel("Header width").fill("200");
+  await panel.getByLabel("Header width").press("Enter");
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.headerWidth;
+    })
+    .toBe(200);
+});

@@ -15,6 +15,7 @@ import {
   setAxisVertical,
   setTableBorder,
   setTableFill,
+  setTableHeaderSize,
   setTablePadding,
   showTable,
   splitCell,
@@ -104,7 +105,7 @@ describe("table axes (ADR-196, ADR-199)", () => {
     expect(renameAxis(board, "f", column.id, "  Later  ")).toBe(true);
     expect(setAxisSize(board, "f", column.id, "wide")).toBe(true);
     expect(setAxisVertical(board, "f", column.id, true)).toBe(true);
-    expect(setAxisVertical(board, "f", row.id, true)).toBe(false);
+    expect(setAxisVertical(board, "f", row.id, true)).toBe(true);
 
     const next = tableLayoutOf(board, "f")!;
     expect(next.columns[1]).toMatchObject({ title: "Later", size: "wide", vertical: true });
@@ -752,5 +753,28 @@ describe("borders and paddings (ADR-208)", () => {
     expect(tableLayoutOf(board, "f")!.appearance?.paddings).toEqual({
       cells: { "r1:c1": 48 },
     });
+  });
+});
+
+describe("header size and vertical rows (ADR-217)", () => {
+  it("allows a vertical row header and a manual header size", () => {
+    const board = boardWith([
+      {
+        ...frame(),
+        layout: {
+          kind: "table",
+          columns: [{ id: "c1", title: "A" }],
+          rows: [{ id: "r1", title: "1" }],
+        },
+      },
+    ]);
+    expect(setAxisVertical(board, "f", "r1", true)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.rows[0]!.vertical).toBe(true);
+    expect(setTableHeaderSize(board, "f", "width", 220)).toBe(true);
+    expect(setTableHeaderSize(board, "f", "height", 140)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.headerWidth).toBe(220);
+    expect(tableLayoutOf(board, "f")!.headerHeight).toBe(140);
+    expect(setTableHeaderSize(board, "f", "width", null)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.headerWidth).toBeUndefined();
   });
 });

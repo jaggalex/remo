@@ -788,3 +788,10 @@
   border-radius: var(--radius-sm);
   opacity: 0.35;
 }
+
+/* A header title may hold explicit lines (ADR-217). */
+.table-header-editor {
+  resize: none;
+  white-space: pre-wrap;
+  line-height: 1.25;
+}
