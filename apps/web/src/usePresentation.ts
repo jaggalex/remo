@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoardConnection, Presence } from "@remo/doc";
-import { presentationSlides } from "@remo/doc";
+import { presentationSlides, presentationSteps } from "@remo/doc";
 import type { BoardDocument } from "@remo/doc";
-import type { Camera } from "@remo/canvas";
+import type { PresentationStep } from "@remo/doc";
+import {
+  cellRect,
+  columnHeaderRect,
+  layoutTable,
+  rowHeaderRect,
+  type Camera,
+} from "@remo/canvas";
 import type { Widget } from "@remo/model";
 import type { TranslationKey } from "./i18n";
 
@@ -43,6 +50,28 @@ function slideBox(
 
 function widgetsById(widgets: Widget[]): Map<string, Widget> {
   return new Map(widgets.map((widget) => [widget.id, widget]));
+}
+
+/** A stable key for one presentation step, used to avoid re-fitting the same cell. */
+function stepKey(step: Pick<PresentationStep, "frameId" | "cell">): string {
+  return step.cell
+    ? `${step.frameId}:${step.cell.rowId}:${step.cell.columnId}`
+    : step.frameId;
+}
+
+/** The step described by an awareness payload; old payloads have no cell. */
+function stepFromState(state: {
+  frameId: string;
+  cell?: { rowId: string; columnId: string };
+}): PresentationStep {
+  return state.cell
+    ? {
+        id: stepKey({ frameId: state.frameId, cell: state.cell }),
+        slideId: state.frameId,
+        frameId: state.frameId,
+        cell: state.cell,
+      }
+    : { id: state.frameId, slideId: state.frameId, frameId: state.frameId };
 }
 
 /**
@@ -87,28 +116,60 @@ export function usePresentation({
   const remote = remotePeer?.presenting ?? null;
   const slides = presentationSlides(board);
 
-  const fitSlide = useCallback(
-    (slideId: string) => {
-      const slide = widgets.find((widget) => widget.id === slideId);
+  const steps = useMemo<PresentationStep[]>(() => presentationSteps(board), [board, widgets]);
+
+  const fitStep = useCallback(
+    (step: PresentationStep) => {
+      const slide = widgets.find((widget) => widget.id === step.frameId);
       if (!slide) return;
-      const box = slideBox(slide, widgetsById(widgets));
+      let box = slideBox(slide, widgetsById(widgets));
+      if (step.cell) {
+        const grid =
+          slide.layout?.kind === "table" && slide.layout.active !== false
+            ? layoutTable(slide, widgets)
+            : null;
+        const rect = grid ? cellRect(grid, step.cell.rowId, step.cell.columnId) : null;
+        const column = grid ? columnHeaderRect(grid, step.cell.columnId) : null;
+        const row = grid ? rowHeaderRect(grid, step.cell.rowId) : null;
+        const frames = [rect, column, row].filter(
+          (entry): entry is NonNullable<typeof entry> => Boolean(entry),
+        );
+        if (frames.length) {
+          // The cell plus its own column and row headers: the audience sees which cell
+          // is speaking without the whole table shrinking to a stamp. Padding keeps the
+          // focus ring away from the present bar and the screen edge.
+          const left = Math.min(...frames.map((entry) => entry.x));
+          const top = Math.min(...frames.map((entry) => entry.y));
+          const right = Math.max(...frames.map((entry) => entry.x + entry.width));
+          const bottom = Math.max(...frames.map((entry) => entry.y + entry.height));
+          box = {
+            x: left + (right - left) / 2,
+            y: top + (bottom - top) / 2,
+            width: right - left + 120,
+            height: bottom - top + 120,
+          };
+        }
+      }
       const width = Math.max(320, window.innerWidth - 120);
       const height = Math.max(240, window.innerHeight - 180);
+      const maxZoom = step.cell ? 1.6 : 2.5;
       const zoom = Math.max(
         0.1,
-        Math.min(2.5, width / Math.max(box.width, 1), height / Math.max(box.height, 1)),
+        Math.min(maxZoom, width / Math.max(box.width, 1), height / Math.max(box.height, 1)),
       );
       setCamera({ x: box.x, y: box.y, zoom });
-      lastFit.current = slideId;
+      lastFit.current = stepKey(step);
     },
     [setCamera, widgets],
   );
 
-  // A follower follows the slide, not the presenter's every pan.
+  // A follower follows the step, not the presenter's every pan.
   useEffect(() => {
-    if (!watching || !remote || remote.frameId === lastFit.current) return;
-    fitSlide(remote.frameId);
-  }, [fitSlide, remote?.frameId, watching]);
+    if (!watching || !remote) return;
+    const step = stepFromState(remote);
+    if (stepKey(step) === lastFit.current) return;
+    fitStep(step);
+  }, [fitStep, remote?.cell?.rowId, remote?.cell?.columnId, remote?.frameId, watching]);
 
   // The presenter stopped: the follower stays where the last slide was.
   useEffect(() => {
@@ -136,15 +197,17 @@ export function usePresentation({
       return;
     }
     savedCamera.current = camera;
+    const first = steps[0]!;
     connection?.awareness?.setLocalStateField("presenting", {
-      frameId: slides[0],
+      frameId: first.frameId,
       index: 0,
+      ...(first.cell ? { cell: first.cell } : {}),
       startedAt: Date.now(),
     });
-    fitSlide(slides[0]!);
+    fitStep(first);
     setPanelOpen(false);
     setNotice(null);
-  }, [camera, canFacilitate, connection, fitSlide, presence, slides, t]);
+  }, [camera, canFacilitate, connection, fitStep, presence, steps, t]);
 
   const stop = useCallback(() => {
     if (!local) return;
@@ -157,32 +220,34 @@ export function usePresentation({
 
   const go = useCallback(
     (direction: 1 | -1) => {
-      if (!local || !slides.length) return;
-      const index = (local.index + direction + slides.length) % slides.length;
-      const frameId = slides[index]!;
+      if (!local || !steps.length) return;
+      const index = (local.index + direction + steps.length) % steps.length;
+      const step = steps[index]!;
       connection?.awareness?.setLocalStateField("presenting", {
-        frameId,
+        frameId: step.frameId,
         index,
+        ...(step.cell ? { cell: step.cell } : {}),
         startedAt: local.startedAt,
       });
-      fitSlide(frameId);
+      fitStep(step);
     },
-    [connection, fitSlide, local, slides],
+    [connection, fitStep, local, steps],
   );
 
   const join = useCallback(() => {
     if (!remote) return;
     setWatching(true);
-    if (remote.frameId !== lastFit.current) fitSlide(remote.frameId);
-  }, [fitSlide, remote]);
+    const step = stepFromState(remote);
+    if (stepKey(step) !== lastFit.current) fitStep(step);
+  }, [fitStep, remote]);
 
   const leave = useCallback(() => setWatching(false), []);
   const returnToPresenter = useCallback(() => {
     if (remote) {
       setWatching(true);
-      fitSlide(remote.frameId);
+      fitStep(stepFromState(remote));
     }
-  }, [fitSlide, remote]);
+  }, [fitStep, remote]);
 
   return {
     panelOpen,
@@ -191,8 +256,11 @@ export function usePresentation({
     notice,
     setNotice,
     slides,
+    steps,
     local,
     remote,
+    localStep: local ? stepFromState(local) : null,
+    remoteStep: remote ? stepFromState(remote) : null,
     presenterName: local ? self?.label : remotePeer?.label,
     start,
     stop,

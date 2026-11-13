@@ -541,6 +541,8 @@ export const enCollab = {
   "tidy.plan.warn.fallback": "The model was unavailable: the layout is by prefix and type.",
   "tidy.plan.warn.notSelectedFrame": "{n} objects belong to a frame you did not select and stayed put.",
   "tidy.plan.warn.groupEmpty": "Everything in this block is locked: it stayed as it was.",
+  "tidy.plan.warn.tableSkipped": "Table “{name}” was not changed: its layout is its cells.",
+  "tidy.plan.err.tableOnly": "A table keeps its cells: tidy does not rearrange it. Select objects outside the table.",
   "tidy.plan.warn.doesNotFit": "The selection does not fit inside the frame: enlarge the frame or select fewer objects.",
   "tidy.plan.warn.blocked": "There is no free space beside the selection: move what is in the way.",
   "tidy.plan.err.tidyOnly": "Only a tidy plan can change its strategy.",

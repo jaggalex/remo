@@ -1,5 +1,5 @@
 import type { AlignmentGuide, Camera, KanbanLayout } from "@remo/canvas";
-import type { ConnectorPatch, NoteDirection, WidgetPosition } from "@remo/doc";
+import type { ConnectorPatch, NoteDirection, WidgetPosition, WidgetRect } from "@remo/doc";
 import type { ConnectorSide, Rect, Widget } from "@remo/model";
 import type { BoardSettings } from "./settings";
 
@@ -26,12 +26,21 @@ export interface GestureDeps {
   onCamera: (camera: Camera) => void;
   onSelect: (ids: string[]) => void;
   onMoveMany: (positions: WidgetPosition[]) => void;
-  onResize: (rect: { id: string; x: number; y: number; width: number; height: number }) => void;
+  /** Commit a resize gesture: one object or a block, one transaction, one undo. */
+  onResizeMany: (rects: WidgetRect[], scale?: { from: Rect; kx: number; ky: number }) => void;
   onMoveCard: (
     kanbanId: string,
     cardId: string,
     columnId: string,
     swimlaneId: string,
+  ) => void;
+  /** Drop a selection into a table cell as one transaction (ADR-196). */
+  onMoveToCell: (
+    frameId: string,
+    rowId: string,
+    columnId: string,
+    ids: string[],
+    offset: { x: number; y: number },
   ) => void;
   onAddCard: (kanbanId: string, columnId: string, swimlaneId: string) => void;
   onConnect: (
@@ -79,11 +88,18 @@ export interface Gestures {
   dragPreview: { cardId: string; x: number; y: number } | null;
   draggedCardId: string | null;
   hoverCell: { columnId: string; swimlaneId: string } | null;
+  /** The table cell the dragged selection would land in. */
+  tableHover: { frameId: string; rowId: string; columnId: string } | null;
+  /** The pointer is over a header, which never takes objects. */
+  tableRefused: boolean;
   marquee: Rect | null;
   preview: ReadonlyMap<string, Partial<Widget>>;
   dragIds: string[];
   dragGhostIds: string[];
   guides: AlignmentGuide[];
+  /** The floored size while a resize is stopped at a minimum, or null. */
+  resizeLimit: { width: number; height: number } | null;
+  setResizeLimit: (limit: { width: number; height: number } | null) => void;
   hoverId: string | null;
   connectDraft: ConnectDraft | null;
   hoverAnchor: { id: string; side: ConnectorSide } | null;
@@ -95,4 +111,13 @@ export interface Gestures {
   onPointerMove: (event: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerUp: () => void;
   onDoubleClick: (event: React.MouseEvent<HTMLCanvasElement>) => void;
+  /**
+   * Begin a line from a side of an object, as a press on its port would (ADR-201: the
+   * edge "+" and the port are one handle). The caller forwards the rest of the drag.
+   */
+  startConnect: (
+    fromId: string,
+    side: import("@remo/model").ConnectorSide,
+    client: { x: number; y: number },
+  ) => void;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Widget } from "@remo/model";
-import { arrangeBarTarget, commonColour, connectorBarTarget, noteBarTarget, type Frame } from "./floatingTargets";
+import { arrangeBarTarget, commonColour, connectorBarTarget, edgeContinueTargets, noteBarTarget, type Frame } from "./floatingTargets";
+import { BAR_ROOM, COMPACT_BAR_ROOM } from "./canvasGeometry";
 import { DEFAULT_SETTINGS } from "./settings";
 
 /**
@@ -53,7 +54,7 @@ describe("the note bar", () => {
     })!;
     expect(target.rect).toMatchObject({ left: 670, top: 250, width: 100, height: 100 });
     expect(target.placement.left).toBe(720 - 258);
-    expect(target.placement.top).toBe(198);
+    expect(target.placement.top).toBe(250 - BAR_ROOM);
   });
 
   it("goes below a note that is too close to the top", () => {
@@ -152,7 +153,7 @@ describe("the arrange bar", () => {
     expect(target.canArrange).toBe(true);
     // Union box centre (400) minus half of the 500 px arrange bar.
     expect(target.placement.left).toBe(400 - 250);
-    expect(target.placement.top).toBe(198);
+    expect(target.placement.top).toBe(250 - COMPACT_BAR_ROOM);
   });
 
   it("names the selection by type, the biggest group first", () => {
@@ -324,6 +325,26 @@ describe("the connector bar", () => {
       strokeStyle: "dashed",
       hasLabel: true,
       ink: "#305bab",
+    });
+  });
+});
+
+describe("the edge continue targets (ADR-195)", () => {
+  it("puts four 44 px hit areas on the side midpoints", () => {
+    const targets = edgeContinueTargets(note("n", 0, 0), frame);
+    expect(targets.map((target) => target.direction).sort()).toEqual([
+      "down",
+      "left",
+      "right",
+      "up",
+    ]);
+    expect(targets.find((target) => target.direction === "right")).toMatchObject({
+      left: 458,
+      top: 278,
+    });
+    expect(targets.find((target) => target.direction === "left")).toMatchObject({
+      left: 298,
+      top: 278,
     });
   });
 });

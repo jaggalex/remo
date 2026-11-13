@@ -60,6 +60,10 @@ export async function waitForBoardEditor(page: Page): Promise<void> {
 /** Select the requested kanban card, or the first card when none is specified. */
 export async function selectKanbanCard(page: Page, cardId?: string): Promise<string> {
   await waitForBoardEditor(page);
+  // ADR-197: a fresh person starts with the inspector closed; these scenarios read
+  // the card fields, tags and links, so open it before selecting the card.
+  const properties = page.getByRole("button", { name: "Properties", exact: true });
+  if ((await properties.getAttribute("aria-pressed")) !== "true") await properties.click();
   // After a reload the document arrives over the socket; the probe is empty until then.
   await page.waitForFunction((wanted) => {
     const probe = window as unknown as {
@@ -320,4 +324,15 @@ export async function seedConnector(
   expect(response.ok(), await response.text()).toBeTruthy();
   const body = (await response.json()) as { result: { id: string } };
   return body.result.id;
+}
+
+/**
+ * Turning a section that already holds material into a table asks how to lay it out
+ * (ADR-206, T4). Every scenario that flips the view must accept the default layout;
+ * skipping it leaves the section a frame with no axes and no mirror.
+ */
+export async function applyDefaultTableLayout(page: Page): Promise<void> {
+  const card = page.locator(".section-layout-card");
+  await expect(card).toBeVisible();
+  await card.getByRole("button", { name: "Apply", exact: true }).click();
 }

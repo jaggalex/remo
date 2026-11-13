@@ -18,6 +18,8 @@ import {
   TagsPanel,
 } from "./BoardObjectPanels";
 import { Contained } from "./ErrorBoundary";
+import { SectionPanel } from "./SectionPanel";
+import { TableCellPanel } from "./TableCellPanel";
 
 /**
  * The board overview panel.
@@ -78,6 +80,8 @@ function InspectorBody(props: BoardInspectorProps) {
       : undefined;
   const selectedWidget =
     selectedIds.length === 1 ? widgets.find((widget) => widget.id === selectedIds[0]) : undefined;
+  const section =
+    selectedWidget?.type === "frame" ? selectedWidget : undefined;
   const [people, setPeople] = useState<Array<{ id: string; name: string }>>([]);
   const [confirmReplace, setConfirmReplace] = useState(false);
 
@@ -230,6 +234,23 @@ function InspectorBody(props: BoardInspectorProps) {
                   groupId={groupId}
                   name={groupNameOf(board, groupId)}
                   disabled={writeBlocked}
+                />
+              )}
+              {section && (
+                <SectionPanel
+                  board={board}
+                  frame={section}
+                  widgets={widgets}
+                  writeBlocked={writeBlocked}
+                  onDeleted={() => setSelectedIds([])}
+                />
+              )}
+              {!section && (
+                <TableCellPanel
+                  board={board}
+                  widgets={widgets}
+                  selectedIds={selectedIds}
+                  writeBlocked={writeBlocked}
                 />
               )}
               {card && (

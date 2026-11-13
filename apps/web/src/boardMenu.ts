@@ -10,6 +10,8 @@ import {
   renameSwimlane,
   type BoardDocument,
 } from "@remo/doc";
+import { setSectionView } from "./sectionView";
+import { openSectionLayout } from "./sectionLayoutStore";
 import type { KanbanState } from "@remo/model";
 import type { ContextTarget } from "./BoardCanvas";
 import type { MenuState } from "./ContextMenu";
@@ -199,6 +201,49 @@ export function buildBoardMenu({
     // `menuPoint` is for.
     result.point = { x, y };
     const context: CommandContext = { ...commandContext, ids: target.ids };
+    const frame =
+      target.ids.length === 1 ? board.readWidget(target.ids[0]!) : undefined;
+    const table =
+      frame?.type === "frame" &&
+      frame.layout?.kind === "table" &&
+      frame.layout.active !== false;
+    const items = commandsFor("menu", context)
+      .filter(
+        (command) =>
+          !writeBlocked ||
+          command.id === "copy" ||
+          command.id === "copyLink" ||
+          command.id === "copyStyle" ||
+          command.id === "info",
+      )
+      .map((command) => ({
+        label: t(command.label(context) as TranslationKey),
+        action: () => command.run(context),
+        disabled: !command.enabled(context),
+        danger: command.danger,
+      }));
+    if (frame?.type === "frame" && !writeBlocked && !frame.locked) {
+      items.unshift(
+        {
+          label: t("section.view.toTable"),
+          action: () => {
+            const objects = board
+              .readWidgets()
+              .filter((widget) => widget.parentId === frame.id);
+            if (!frame.layout && objects.length) openSectionLayout(frame.id);
+            else setSectionView(board, frame.id, "table", t);
+          },
+          disabled: Boolean(table),
+          danger: undefined,
+        },
+        {
+          label: t("section.view.toFree"),
+          action: () => setSectionView(board, frame.id, "free", t),
+          disabled: !table,
+          danger: undefined,
+        },
+      );
+    }
     menu({
       x,
       y,
@@ -206,21 +251,7 @@ export function buildBoardMenu({
         target.ids.length === 1
           ? t("menu.object")
           : t("menu.objects", { count: target.ids.length }),
-      items: commandsFor("menu", context)
-        .filter(
-          (command) =>
-            !writeBlocked ||
-            command.id === "copy" ||
-            command.id === "copyLink" ||
-            command.id === "copyStyle" ||
-            command.id === "info",
-        )
-        .map((command) => ({
-        label: t(command.label(context) as TranslationKey),
-        action: () => command.run(context),
-        disabled: !command.enabled(context),
-        danger: command.danger,
-      })),
+      items,
     });
     return result;
   }

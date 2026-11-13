@@ -1,7 +1,9 @@
 import {
   drawKanban,
+  drawTable,
   drawWidget,
   layoutKanban,
+  layoutTable,
   type KanbanLayout,
   type PaintTheme,
 } from "@remo/canvas";
@@ -200,6 +202,17 @@ export function scopeBounds(
     const y = placement ? placement.y - placement.height / 2 : widget.y - widget.height / 2;
     const width = placement ? placement.width : widget.width;
     const height = placement ? placement.height : widget.height;
+    if (widget.type === "frame" && widget.layout?.kind === "table") {
+      // The grid can be wider or taller than the frame's plate (manual axes, cells
+      // that grew around their objects), so the picture must cover the grid too.
+      const grid = widget.layout.active === false ? null : layoutTable(widget, widgets);
+      if (grid) {
+        minX = Math.min(minX, grid.origin.x);
+        minY = Math.min(minY, grid.origin.y);
+        maxX = Math.max(maxX, grid.origin.x + grid.width);
+        maxY = Math.max(maxY, grid.origin.y + grid.height);
+      }
+    }
     if (widget.type === "connector") {
       lineX = Math.min(lineX, x);
       lineY = Math.min(lineY, y);
@@ -403,6 +416,9 @@ export function renderScope(input: ExportRenderInput): ExportRenderResult | null
       resolve,
       theme: input.theme,
     });
+    if (widget.type === "frame" && widget.layout?.kind === "table") {
+      drawTable(ctx, widget, scoped, scale, palette, input.theme.fontFamily);
+    }
     const layout = layouts.get(painted.id);
     if (layout) {
       drawKanban(ctx, layout, scale, cardTitles, {

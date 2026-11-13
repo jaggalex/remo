@@ -1,6 +1,6 @@
 ## Result
 
-A locked object cannot be moved, edited or deleted, but it can still be selected. The lock records its author: only the author or a room manager can release it.
+A locked object cannot be resized, edited or deleted, but it can still be selected and moved. The lock records its author: only the author or a room manager can release it.
 
 ## Steps
 
@@ -11,7 +11,7 @@ A locked object cannot be moved, edited or deleted, but it can still be selected
 
 ## Check
 
-- A second editor cannot move, edit or delete the object.
+- A second editor can move the object but cannot resize, edit or delete it.
 - The author releases their lock; a room manager releases somebody else's.
 - A copy or duplicate of a locked object appears unlocked.
 - The object's info shows who locked it.

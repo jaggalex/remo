@@ -10,7 +10,9 @@
  */
 .topbar {
   position: relative;
-  z-index: var(--z-bar);
+  /* The header is a stacking context that carries its own open menus, so it sits on the
+     popover rung (ADR-139): a selection bar just below it must not cover "More". */
+  z-index: var(--z-popover);
   display: flex;
   align-items: center;
   gap: var(--space-2);

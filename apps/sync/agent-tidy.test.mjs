@@ -37,6 +37,37 @@ const scattered = [
 ];
 
 describe("buildTidyOperations", () => {
+  it("leaves a table section alone and says so (ADR-201)", () => {
+    const table = {
+      id: "t",
+      type: "frame",
+      parentId: null,
+      x: 0,
+      y: 0,
+      width: 600,
+      height: 400,
+      title: "Stages",
+      layout: {
+        kind: "table",
+        columns: [{ id: "c1", title: "Now" }],
+        rows: [{ id: "r1", title: "Row" }],
+      },
+    };
+    const inCell = note("in", 0, 0, "US-1: in", { parentId: "t", cell: { rowId: "r1", columnId: "c1" } });
+    const doc = board([table, inCell, ...scattered]);
+    const built = buildTidyOperations(doc, {
+      selectionIds: ["t", ...scattered.map((item) => item.id)],
+      strategy: "prefix",
+    });
+    expect(built.placements.some((item) => item.id === "in")).toBe(false);
+    expect(built.warnings).toContainEqual(
+      expect.objectContaining({ code: "TIDY_TABLE_SKIPPED", tempId: "t", title: "Stages" }),
+    );
+    expect(() =>
+      buildTidyOperations(board([table, inCell]), { selectionIds: ["t"], strategy: "grid" }),
+    ).toThrow(expect.objectContaining({ code: "TIDY_TABLE_ONLY" }));
+  });
+
   it("creates one US frame and places every note inside it in natural order", () => {
     const built = buildTidyOperations(board(scattered), {
       selectionIds: scattered.map((item) => item.id),

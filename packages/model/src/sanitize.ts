@@ -48,9 +48,17 @@ const STRING_FIELDS = [
   "lockedByName",
 ] as const;
 
-const NUMBER_FIELDS = ["rotation", "z", "createdAt", "lockedAt", "bend"] as const;
+const NUMBER_FIELDS = ["z", "createdAt", "lockedAt", "bend"] as const;
 
 const BOOLEAN_FIELDS = ["locked", "elbowFlip"] as const;
+
+/**
+ * Fields the model no longer has (ADR-209): a reader drops them instead of preserving
+ * them as unknown data, so an old document gets smaller rather than carrying a value
+ * nothing can read.
+ */
+const REMOVED_FIELDS = ["rotation"] as const;
+const REMOVED_STYLE_FIELDS = ["fontFamily"] as const;
 
 const ENUM_FIELDS: Record<string, ReadonlySet<string>> = {
   status: new Set(["todo", "in_progress", "done"]),
@@ -60,7 +68,7 @@ const ENUM_FIELDS: Record<string, ReadonlySet<string>> = {
   connectorShape: new Set(["straight", "elbowed", "curved"]),
 };
 
-const STYLE_STRINGS = ["fillColor", "cardTheme", "strokeColor", "fontFamily", "color", "textColor"];
+const STYLE_STRINGS = ["fillColor", "cardTheme", "strokeColor", "color", "textColor"];
 const STYLE_POSITIVE = ["strokeWidth", "fontSize"];
 const STYLE_ENUMS: Record<string, ReadonlySet<string>> = {
   strokeStyle: new Set(["normal", "dashed", "dotted"]),
@@ -109,6 +117,7 @@ class Repair {
 function readStyle(value: unknown): Raw | undefined {
   if (!isObject(value)) return undefined;
   const repair = new Repair(value);
+  for (const key of REMOVED_STYLE_FIELDS) repair.drop(key);
   for (const key of STYLE_STRINGS) {
     if (key in value && typeof value[key] !== "string") repair.drop(key);
   }
@@ -159,6 +168,185 @@ function validRun(value: unknown): boolean {
   return isObject(value) && typeof value.text === "string";
 }
 
+const AXIS_SIZES = new Set(["auto", "narrow", "medium", "wide"]);
+
+function validAxis(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    typeof value.id === "string" &&
+    typeof value.title === "string" &&
+    (value.size === undefined ||
+      (typeof value.size === "string" && AXIS_SIZES.has(value.size)) ||
+      (isFiniteNumber(value.size) && value.size > 0)) &&
+    (value.vertical === undefined || typeof value.vertical === "boolean")
+  );
+}
+
+function readFillMap(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const [key, fill] of Object.entries(value)) {
+    if (typeof fill === "string") output[key] = fill;
+  }
+  return output;
+}
+
+const BORDER_STYLES = new Set(["solid", "dashed", "none"]);
+
+function readBorder(value: unknown): Raw | undefined {
+  if (!isObject(value) || typeof value.color !== "string") return undefined;
+  if (!isFiniteNumber(value.width) || value.width < 0 || value.width > 8) return undefined;
+  if (typeof value.style !== "string" || !BORDER_STYLES.has(value.style)) return undefined;
+  return { color: value.color, width: value.width, style: value.style };
+}
+
+function readBorderMap(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const [key, border] of Object.entries(value)) {
+    const read = readBorder(border);
+    if (read) output[key] = read;
+  }
+  return output;
+}
+
+function readBorders(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const key of ["table", "headers"] as const) {
+    const border = readBorder(value[key]);
+    if (border) output[key] = border;
+  }
+  for (const key of ["columns", "rows", "cells"] as const) {
+    const map = readBorderMap(value[key]);
+    if (map) output[key] = map;
+  }
+  return Object.keys(output).length ? output : undefined;
+}
+
+function readPadding(value: unknown): number | undefined {
+  if (!isFiniteNumber(value) || value < 0 || value > 96) return undefined;
+  return value;
+}
+
+function readPaddingMap(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const [key, padding] of Object.entries(value)) {
+    const read = readPadding(padding);
+    if (read != null) output[key] = read;
+  }
+  return output;
+}
+
+function readPaddings(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  for (const key of ["table", "headers"] as const) {
+    const padding = readPadding(value[key]);
+    if (padding != null) output[key] = padding;
+  }
+  for (const key of ["columns", "rows", "cells"] as const) {
+    const map = readPaddingMap(value[key]);
+    if (map) output[key] = map;
+  }
+  return Object.keys(output).length ? output : undefined;
+}
+
+function readLayout(value: unknown): Raw | undefined {
+  if (!isObject(value) || value.kind !== "table") return undefined;
+  if (!Array.isArray(value.columns) || !Array.isArray(value.rows)) return undefined;
+  const seen = new Set<string>();
+  const axes = (list: unknown[]): Raw[] => {
+    const output: Raw[] = [];
+    for (const entry of list) {
+      if (!validAxis(entry)) continue;
+      const axis = entry as Raw;
+      const id = axis.id as string;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      output.push(axis);
+    }
+    return output;
+  };
+  const columns = axes(value.columns);
+  const rows = axes(value.rows);
+  if (!columns.length || !rows.length) return undefined;
+  const layout: Raw = { kind: "table", columns, rows };
+  if (typeof value.active === "boolean") layout.active = value.active;
+  if (isObject(value.appearance)) {
+    const appearance: Raw = {};
+    for (const key of ["table", "headers"] as const) {
+      if (typeof value.appearance[key] === "string") appearance[key] = value.appearance[key];
+    }
+    for (const key of ["columns", "rows", "cells"] as const) {
+      const map = readFillMap(value.appearance[key]);
+      if (map) appearance[key] = map;
+    }
+    const borders = readBorders(value.appearance.borders);
+    if (borders) appearance.borders = borders;
+    const paddings = readPaddings(value.appearance.paddings);
+    if (paddings) appearance.paddings = paddings;
+    if (Object.keys(appearance).length) layout.appearance = appearance;
+  }
+  const spans = readSpans(value.spans, columns, rows);
+  if (spans.length) layout.spans = spans;
+  return layout;
+}
+
+function positiveInt(value: unknown): number | null {
+  const number = typeof value === "number" ? value : Number.NaN;
+  return Number.isInteger(number) && number >= 1 ? number : null;
+}
+
+/**
+ * Merged blocks that can be drawn (ADR-204): the anchor exists, the block stays inside
+ * the axes, and no cell is covered twice. A malformed span is dropped, never repaired
+ * into a different rectangle.
+ */
+function readSpans(value: unknown, columns: Raw[], rows: Raw[]): Raw[] {
+  if (!Array.isArray(value)) return [];
+  const columnIndex = new Map(columns.map((axis, index) => [axis.id as string, index]));
+  const rowIndex = new Map(rows.map((axis, index) => [axis.id as string, index]));
+  const covered = new Set<string>();
+  const output: Raw[] = [];
+  for (const entry of value) {
+    if (!isObject(entry)) continue;
+    const { rowId, columnId } = entry;
+    if (typeof rowId !== "string" || typeof columnId !== "string") continue;
+    const rowSpan = positiveInt(entry.rowSpan);
+    const columnSpan = positiveInt(entry.columnSpan);
+    if (rowSpan == null || columnSpan == null) continue;
+    if (rowSpan * columnSpan < 2) continue;
+    const top = rowIndex.get(rowId);
+    const left = columnIndex.get(columnId);
+    if (top == null || left == null) continue;
+    if (top + rowSpan > rows.length || left + columnSpan > columns.length) continue;
+    let overlaps = false;
+    for (let r = top; r < top + rowSpan && !overlaps; r += 1) {
+      for (let c = left; c < left + columnSpan; c += 1) {
+        if (covered.has(`${r}:${c}`)) {
+          overlaps = true;
+          break;
+        }
+      }
+    }
+    if (overlaps) continue;
+    for (let r = top; r < top + rowSpan; r += 1) {
+      for (let c = left; c < left + columnSpan; c += 1) covered.add(`${r}:${c}`);
+    }
+    output.push({ rowId, columnId, rowSpan, columnSpan });
+  }
+  return output;
+}
+
+function readCell(value: unknown): Raw | undefined {
+  if (!isObject(value) || typeof value.rowId !== "string" || typeof value.columnId !== "string") {
+    return undefined;
+  }
+  return { rowId: value.rowId, columnId: value.columnId };
+}
+
 /** A link this build can open safely, or null. */
 function readLink(value: unknown): Raw | null {
   if (!isObject(value)) return null;
@@ -203,6 +391,7 @@ export function readWidget(raw: unknown, id: string): Widget | null {
   for (const key of BOOLEAN_FIELDS) {
     if (key in raw && typeof raw[key] !== "boolean") repair.drop(key);
   }
+  for (const key of REMOVED_FIELDS) repair.drop(key);
   for (const [key, allowed] of Object.entries(ENUM_FIELDS)) {
     if (key in raw && !(typeof raw[key] === "string" && allowed.has(raw[key] as string))) {
       repair.drop(key);
@@ -235,6 +424,18 @@ export function readWidget(raw: unknown, id: string): Widget | null {
   if ("runs" in raw) {
     if (!Array.isArray(raw.runs)) repair.drop("runs");
     else if (!raw.runs.every(validRun)) repair.set("runs", raw.runs.filter(validRun));
+  }
+
+  if ("layout" in raw) {
+    const layout = readLayout(raw.layout);
+    if (!layout) repair.drop("layout");
+    else if (layout !== raw.layout) repair.set("layout", layout);
+  }
+
+  if ("cell" in raw) {
+    const cell = readCell(raw.cell);
+    if (!cell) repair.drop("cell");
+    else if (cell !== raw.cell) repair.set("cell", cell);
   }
 
   for (const key of ["start", "end"] as const) {

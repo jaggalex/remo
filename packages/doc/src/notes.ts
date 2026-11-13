@@ -167,6 +167,8 @@ export function createConnectedNote(
   connectorStyle: ConnectorOptions = {},
   /** Where the next note lands; the caller passes the tuned gap. */
   gapOptions: GapOptions = {},
+  /** An explicit free slot for "Create new" (ADR-195); absent uses the tuned gap. */
+  centerOverride?: { x: number; y: number },
 ): string | null {
   let created: string | null = null;
 
@@ -176,7 +178,7 @@ export function createConnectedNote(
 
     const width = source.width;
     const height = source.height;
-    const center = connectedNoteCenter(source, direction, gapOptions);
+    const center = centerOverride ?? connectedNoteCenter(source, direction, gapOptions);
 
     // The "+" chain clones the object it grows from: a note makes a note, a shape
     // makes the same shape with the same style, text makes text.

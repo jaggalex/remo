@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addAllFrames,
   addPresentationSlide,
@@ -9,7 +9,7 @@ import {
   type BoardDocument,
 } from "@remo/doc";
 import type { BoardConnection, Presence } from "@remo/doc";
-import type { Camera } from "@remo/canvas";
+import { cellRect, layoutTable, type Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 import { Button, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
@@ -27,23 +27,28 @@ export function PresentationLayer({
   widgets,
   selectedIds,
   camera,
+  viewport,
   setCamera,
   connection,
   presence,
   canFacilitate,
   panelOpen,
   onPanelOpen,
+  onPresentingChange,
 }: {
   board: BoardDocument;
   widgets: Widget[];
   selectedIds: readonly string[];
   camera: Camera;
+  viewport: { width: number; height: number };
   setCamera: (camera: Camera) => void;
   connection: BoardConnection | null;
   presence: Presence[];
   canFacilitate: boolean;
   panelOpen: boolean;
   onPanelOpen: (value: boolean) => void;
+  /** Tells the canvas to hide state marks that are not content (ADR-193). */
+  onPresentingChange: (presenting: boolean) => void;
 }) {
   const { t } = useI18n();
   const [filter, setFilter] = useState("");
@@ -59,6 +64,29 @@ export function PresentationLayer({
     setPanelOpen: onPanelOpen,
     t,
   });
+
+  useEffect(() => {
+    onPresentingChange(Boolean(presentation.local || presentation.remote));
+  }, [onPresentingChange, presentation.local, presentation.remote]);
+
+  // PageDown / PageUp page the presenter's steps (ADR-108). The arrow keys keep panning
+  // the canvas and nudging objects, so a live edit never turns into a slide change.
+  const presentingLocally = Boolean(presentation.local);
+  const { next, previous } = presentation;
+  useEffect(() => {
+    if (!presentingLocally) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "PageDown" && event.key !== "PageUp") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      event.preventDefault();
+      if (event.key === "PageDown") next();
+      else previous();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [presentingLocally, next, previous]);
+
   const slides = presentation.slides;
   const byId = useMemo(() => new Map(widgets.map((widget) => [widget.id, widget])), [widgets]);
   const labelOf = (id: string) => {
@@ -67,6 +95,35 @@ export function PresentationLayer({
   };
   // Names are not unique (ADR-165), so a short id keeps two same-named objects apart.
   const shortId = (id: string) => id.slice(0, 8);
+
+  const focusStep =
+    presentation.localStep ?? (presentation.watching ? presentation.remoteStep : null);
+  const cellLabel = (() => {
+    if (!focusStep?.cell) return "";
+    const frame = byId.get(focusStep.frameId);
+    if (!frame || frame.layout?.kind !== "table") return "";
+    const column = frame.layout.columns.find((entry) => entry.id === focusStep.cell!.columnId);
+    const row = frame.layout.rows.find((entry) => entry.id === focusStep.cell!.rowId);
+    return `${column?.title || t("section.axis.untitled")} × ${
+      row?.title || t("section.axis.untitled")
+    }`;
+  })();
+  const focusRect = (() => {
+    if (!focusStep?.cell) return null;
+    const frame = byId.get(focusStep.frameId);
+    if (!frame || frame.layout?.kind !== "table" || frame.layout.active === false) {
+      return null;
+    }
+    const grid = layoutTable(frame, widgets);
+    const rect = grid ? cellRect(grid, focusStep.cell.rowId, focusStep.cell.columnId) : null;
+    if (!rect) return null;
+    return {
+      left: (rect.x - camera.x) * camera.zoom + viewport.width / 2,
+      top: (rect.y - camera.y) * camera.zoom + viewport.height / 2,
+      width: rect.width * camera.zoom,
+      height: rect.height * camera.zoom,
+    };
+  })();
 
   const chosen = new Set(slides);
   const needle = filter.trim().toLowerCase();
@@ -78,13 +135,26 @@ export function PresentationLayer({
 
   return (
     <>
+      {focusRect && (
+        <div
+          className="present-cell-focus"
+          style={{
+            left: focusRect.left,
+            top: focusRect.top,
+            width: focusRect.width,
+            height: focusRect.height,
+          }}
+          aria-hidden="true"
+        />
+      )}
       {presentation.local && (
         <div className="present-bar" role="status">
           <span>
             {t("presentation.slide", {
               current: (presentation.local.index ?? 0) + 1,
-              total: slides.length,
+              total: presentation.steps.length,
             })}
+            {cellLabel && <span className="present-cell-label">{cellLabel}</span>}
           </span>
           <button type="button" onClick={presentation.previous} aria-label={t("presentation.previous")}>
             ‹
@@ -117,6 +187,7 @@ export function PresentationLayer({
             {t("presentation.watching", {
               name: presentation.presenterName ?? t("presentation.someone"),
             })}
+            {cellLabel && <span className="present-cell-label">{cellLabel}</span>}
           </span>
           <button type="button" onClick={presentation.returnToPresenter}>
             {t("presentation.return")}

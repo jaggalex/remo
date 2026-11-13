@@ -2,8 +2,12 @@ import {
   ANCHOR_GAP,
   HANDLE_GAP,
   anchorsOf,
+  portsAreEdgePlus,
   cornerPoints,
+  placedWidget,
   placementOfCard,
+  sideOfDirection,
+  type ContinuePreview,
 } from "./canvasGeometry";
 import {
   anchorPoint,
@@ -14,12 +18,16 @@ import {
   drawGuide,
   drawKanban,
   drawKanbanHover,
+  drawLockBadge,
   drawProposal,
+  drawTable,
   drawWidget,
   isVisible,
   labelPoint,
+  lockBadgeRect,
   paintOrder,
   translateLayout,
+  unionBox,
   visibleWorldRect,
   type Camera,
   type KanbanLayout,
@@ -27,8 +35,9 @@ import {
   type ProposalLayout,
   withAlpha,
 } from "@remo/canvas";
-import { bounds, canConnect, kindOf, soleSelectedGroup, type Widget } from "@remo/model";
+import { bounds, canConnect, scalesInBlock, soleSelectedGroup, type Widget } from "@remo/model";
 import type { Presence } from "@remo/doc";
+import { resizeMembersOf } from "./canvasGeometry";
 import type { BoardSettings } from "./settings";
 import { drawRemoteCursor } from "./remoteCursor";
 import type { ConnectorSide } from "@remo/model";
@@ -185,7 +194,11 @@ export function paintBoardLayer(input: BoardPaintInput): void {
       resolve: resolveForDrag,
       theme,
       editingId: editingId ?? undefined,
+      memberRing: outlined.length > 1,
     });
+    if (widget.type === "frame" && widget.layout?.kind === "table") {
+      drawTable(ctx, widget, widgets, camera.zoom, palette, theme.fontFamily);
+    }
     if (dragging) ctx.restore();
 
     const layout = layouts.get(painted.id);
@@ -297,6 +310,10 @@ export interface OverlayPaintInput {
   viewport: { width: number; height: number };
   settings: BoardSettings;
   layouts: Map<string, KanbanLayout>;
+  /** Every object, so the overlay can mark every locked one (ADR-193). */
+  widgets: readonly Widget[];
+  /** The same predicate the board uses, so both agree on the members of a block. */
+  isCardOfKanban: (widget: Widget) => boolean;
   selectedIds: readonly string[];
   preview: ReadonlyMap<string, Partial<Widget>>;
   editingId: string | null;
@@ -322,15 +339,21 @@ export interface OverlayPaintInput {
   focusedWaypoint?: { connectorId: string; waypointId: string } | null;
   /** A plan under review (ADR-188), drawn under every other overlay mark. */
   proposal?: ProposalLayout | null;
+  /** Presentation hides state marks that are not content (ADR-193). */
+  presenting?: boolean;
+  /** The edge "+" preview, painted until the click (ADR-195). */
+  continuePreview?: ContinuePreview | null;
 }
 
 export function paintOverlayLayer(input: OverlayPaintInput): void {
   const { ctx, camera, viewport, settings, layouts } = input;
   const { width, height } = viewport;
   const {
+    widgets,
     selectedIds,
     preview,
     editingId,
+    isCardOfKanban,
     hoverId,
     hoverAnchor,
     hoverCell,
@@ -343,8 +366,11 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     theme,
     focusedWaypoint,
     proposal,
+    presenting,
+    continuePreview,
   } = input;
   const palette = theme.palette;
+  const visible = visibleWorldRect(camera, viewport);
 
   ctx.save();
   ctx.translate(width / 2, height / 2);
@@ -361,9 +387,35 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     }
   }
 
+  // A lock is state, not content: every locked object carries the mark, and the
+  // overlay keeps it out of exports and presentations (ADR-193).
+  if (!presenting) {
+    for (const widget of widgets) {
+      if (!widget.locked) continue;
+      const placed = placedWidget(widget, layouts);
+      if (!isVisible(placed, visible)) continue;
+      drawLockBadge(
+        ctx,
+        lockBadgeRect(boxOf(placed), camera.zoom),
+        withAlpha(palette.textPrimary, 0.75),
+      );
+    }
+  }
+
+  if (continuePreview && !presenting) {
+    drawContinuePreview(ctx, continuePreview, camera.zoom, theme);
+  }
+
   // Four connector anchors on a single selection, and the link being dragged.
   const selected = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  if (selected && canConnect(selected) && !editingId && preview.size === 0 && hoverId === selected.id) {
+  if (
+    selected &&
+    canConnect(selected) &&
+    !portsAreEdgePlus(selected) &&
+    !editingId &&
+    preview.size === 0 &&
+    hoverId === selected.id
+  ) {
     for (const anchor of anchorsOf(selected, ANCHOR_GAP / camera.zoom)) {
       const active = hoverAnchor?.id === selected.id && hoverAnchor.side === anchor.side;
       ctx.fillStyle = active ? palette.textPrimary : palette.panel;
@@ -426,10 +478,13 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     }
   }
 
-  // Resize handles: one note selected, to the four corners.
+  // Resize handles: one object or a block, on the union box (ADR-211).
   const single = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
+  const resizeMembers = resizeMembersOf(widgets, selectedIds, isCardOfKanban);
   const box =
-    single && !editingId && kindOf(single.type).resizable ? boxOf(single) : null;
+    !editingId && resizeMembers.some(scalesInBlock)
+      ? unionBox(resizeMembers.map(boxOf))
+      : null;
   if (box) {
     const radius = 4.5 / camera.zoom;
     for (const corner of cornerPoints(box, HANDLE_GAP / camera.zoom)) {
@@ -493,7 +548,6 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   // rather than only the two boxes: an alignment is a line across the board, and a
   // segment hidden under the object being dragged would not explain anything.
   if (guides.length && settings.snapping.guides) {
-    const visible = visibleWorldRect(camera, viewport);
     for (const guide of guides) {
       drawGuide(
         ctx,
@@ -520,4 +574,62 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   }
 
   ctx.restore();
+}
+
+/**
+ * Paint the result of an edge "+" before the click (ADR-195).
+ *
+ * A free slot shows the dashed copy and the line that will join it; an occupied slot
+ * highlights the target and the future line; a duplicate only highlights the pair and
+ * leaves the action card to say "Already connected". Nothing here writes to the document.
+ */
+function drawContinuePreview(
+  ctx: CanvasRenderingContext2D,
+  preview: ContinuePreview,
+  zoom: number,
+  theme: PaintTheme,
+): void {
+  const { source, direction, decision, freeCenter } = preview;
+  const palette = theme.palette;
+  const from = anchorPoint(boxOf(source), sideOfDirection(direction));
+
+  ctx.save();
+  ctx.strokeStyle = palette.accent;
+  ctx.lineWidth = 2 / zoom;
+  ctx.setLineDash([6 / zoom, 4 / zoom]);
+
+  if (decision.kind === "connect" || decision.kind === "duplicate") {
+    const target = boxOf(decision.target);
+    if (decision.kind === "connect") {
+      const to = anchorPoint(target, decision.endSide);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([4 / zoom, 4 / zoom]);
+    const pad = 4 / zoom;
+    ctx.strokeRect(
+      target.x - pad,
+      target.y - pad,
+      target.width + pad * 2,
+      target.height + pad * 2,
+    );
+  } else if (freeCenter) {
+    const ghost = { ...source, x: freeCenter.x, y: freeCenter.y };
+    const to = anchorPoint(boxOf(ghost), oppositeSide(sideOfDirection(direction)));
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.stroke();
+    ctx.globalAlpha = 0.45;
+    drawWidget(ctx, ghost, zoom, { theme });
+  }
+
+  ctx.restore();
+}
+
+/** The side of the copy that faces the source. */
+function oppositeSide(side: ConnectorSide): ConnectorSide {
+  return side === "left" ? "right" : side === "right" ? "left" : side === "top" ? "bottom" : "top";
 }

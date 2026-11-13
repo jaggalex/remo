@@ -1,6 +1,7 @@
 import * as Y from "yjs";
 import { deltaOf, plainOf, runsOf, seedTextField, withMaterializedText } from "./text";
 import { readKanban, writeKanbanState } from "./kanbanState";
+import { settleTables } from "./tableReflow";
 import {
   isTemplateTitle,
   MAX_TEXT_CHARS,
@@ -26,6 +27,10 @@ export * from "./text";
 export * from "./tree";
 export * from "./connectors";
 export * from "./widgets";
+export * from "./gather";
+export * from "./table";
+export * from "./tablePlan";
+export { reflowTable } from "./tableReflow";
 export * from "./clipboard";
 export * from "./layers";
 export * from "./groups";
@@ -217,8 +222,27 @@ export class BoardDocument {
    */
   transact(fn: () => void, origin: string = LOCAL_ORIGIN, options: { merge?: boolean } = {}): void {
     if (!options.merge) this.undo.stopCapturing();
-    this.doc.transact(fn, origin);
+    this.doc.transact((transaction) => {
+      this.depth += 1;
+      try {
+        fn();
+      } finally {
+        this.depth -= 1;
+      }
+      // The outermost call settles tables once; nested commands share it (ADR-201).
+      if (this.depth > 0) return;
+      const changed = transaction.changed.get(this.widgets as never);
+      if (!changed?.size) return;
+      this.depth += 1;
+      try {
+        settleTables(this, [...changed].filter((key): key is string => key !== null));
+      } finally {
+        this.depth -= 1;
+      }
+    }, origin);
   }
+
+  private depth = 0;
 
   /**
    * Start a new undo step.

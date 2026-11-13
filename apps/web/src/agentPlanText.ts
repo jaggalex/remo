@@ -87,6 +87,10 @@ export function warningText(
       return t("tidy.plan.warn.fallback");
     case "TIDY_NOT_SELECTED_FRAME":
       return t("tidy.plan.warn.notSelectedFrame", { n: warning.tempIds?.length ?? 1 });
+    case "TIDY_TABLE_SKIPPED":
+      return t("tidy.plan.warn.tableSkipped", {
+        name: warning.title || t("section.axis.untitled"),
+      });
     case "TIDY_GROUP_EMPTY":
       return t("tidy.plan.warn.groupEmpty");
     case "TIDY_DOES_NOT_FIT":
@@ -103,6 +107,7 @@ export function warningText(
 }
 
 const FAILURE_KEYS: Record<string, TranslationKey> = {
+  TIDY_TABLE_ONLY: "tidy.plan.err.tableOnly",
   PLAN_NOT_READY: "agents.plan.err.notReady",
   PLAN_REJECTED: "agents.plan.err.rejected",
   PLAN_ALREADY_APPROVED: "agents.plan.err.alreadyApproved",

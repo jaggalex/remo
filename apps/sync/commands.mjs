@@ -106,7 +106,7 @@ export function commandObjectId({ boardId, actorId, key, prefix }) {
 }
 
 function sanitizeStyle(style) {
-  const allowed = ["fillColor", "textColor", "strokeColor", "strokeWidth", "fontSize", "fontFamily"];
+  const allowed = ["fillColor", "textColor", "strokeColor", "strokeWidth", "fontSize"];
   const out = {};
   for (const [key, value] of Object.entries(style ?? {})) {
     if (!allowed.includes(key)) continue;

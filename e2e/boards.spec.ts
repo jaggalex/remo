@@ -14,7 +14,8 @@ test("creates a board from the board list and opens the chosen template", async 
 
   await page.getByRole("button", { name: "All rooms" }).click();
   await page.getByRole("button", { name: "New room" }).click();
-  await page.locator(".new-board-dialog input").fill("M0 launch");
+  await page.locator(".new-board-dialog input").first().fill("M0 launch");
+  await page.locator(".new-board-dialog").getByRole("radio", { name: /With an example/ }).check();
   await page.locator(".new-board-dialog select").selectOption("kanban-framework");
   await page.locator(".new-board-dialog .primary-button").click();
 
@@ -53,6 +54,8 @@ test("copies a deep link to the selected object", async ({ page, context }) => {
   await page.keyboard.press("Escape");
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
+  // ADR-197: the inspector starts closed; open it to reach the deep-link action.
+  await page.getByRole("button", { name: "Properties" }).click();
   await page.getByRole("button", { name: "Copy link" }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain(`room=${account.boardId}`);
@@ -64,8 +67,11 @@ test("an empty board stays empty and a rename reaches the board list", async ({ 
 
   await page.getByRole("button", { name: "All rooms" }).click();
   await page.getByRole("button", { name: "New room" }).click();
-  await page.locator(".new-board-dialog input").fill("Empty launch");
-  await page.locator(".new-board-dialog select").selectOption("empty");
+  await page.locator(".new-board-dialog input").first().fill("Empty launch");
+  // "Empty room" is the default card; there is no example list to choose from.
+  await expect(
+    page.locator(".new-board-dialog").getByRole("radio", { name: /Empty room/ }),
+  ).toBeChecked();
   await page.locator(".new-board-dialog .primary-button").click();
 
   await expect(page).toHaveURL(/room=empty-launch/);
@@ -158,12 +164,14 @@ test("switches the organisation and leaves the previous board", async ({ page })
   const create = page.locator(".new-board-dialog");
   await create.locator("input").first().fill("Second org board");
   await create.getByLabel("Organisation").selectOption({ label: "Second team" });
-  await create.getByRole("button", { name: "Create", exact: true }).click();
+  await create.getByRole("button", { name: "Create room", exact: true }).click();
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
   await page.getByRole("button", { name: "All rooms" }).click();
   const home = page.locator(".home");
-  // The board belongs to the second organisation, so leaving it shows that context.
+  // Switch to the organisation that holds the new board. The board's own org is not
+  // assumed here: the point is that the list follows the organisation context.
+  await home.getByLabel("Organisation").selectOption({ label: "Second team" });
   await expect(home).toContainText("Second org board");
   await expect(home).not.toContainText("First org board");
 
@@ -178,9 +186,16 @@ test("switches the organisation and leaves the previous board", async ({ page })
 });
 
 test("finds a board by its name on the home", async ({ page }) => {
-  await freshBoard(page, "title-search", { title: "Quarterly planning" });
+  const account = await freshBoard(page, "title-search", { title: "Quarterly planning" });
+  for (let index = 1; index <= 24; index += 1) {
+    const created = await page.request.post(`/api/orgs/${account.orgId}/boards`, {
+      data: { title: `Search page ${String(index).padStart(2, "0")}` },
+    });
+    expect(created.ok(), await created.text()).toBeTruthy();
+  }
   await page.getByRole("button", { name: "All rooms" }).click();
   await page.locator(".home-search").fill("Quarterly");
+  await expect(page.locator(".home-tile")).toHaveCount(1);
   await expect(page.locator(".home-tile")).toContainText("Quarterly planning");
 });
 
@@ -262,7 +277,9 @@ test("a public-link viewer cannot add kanban columns or replace the board", asyn
   try {
     await viewer.goto(`/?room=${account.boardId}&lang=en`);
     await expect(viewer.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
-    // The inspector is open by default in a fresh context.
+    // ADR-197: the inspector starts closed; open it to read the read-only controls.
+    await expect(viewer.locator(".inspector")).toBeHidden();
+    await viewer.getByRole("button", { name: "Properties" }).click();
     const inspector = viewer.locator(".inspector");
     await expect(inspector).toBeVisible();
     await expect(inspector.getByRole("button", { name: "+ column" })).toBeDisabled();

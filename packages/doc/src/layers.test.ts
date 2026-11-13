@@ -95,15 +95,16 @@ describe("stacking order", () => {
 });
 
 describe("locking", () => {
-  it("refuses to move, resize or delete a locked object", () => {
+  it("lets a locked object move but refuses to resize or delete it", () => {
     const board = boardWith(note("a", "sticky_note", { x: 100, y: 100 }), note("b", "sticky_note", { x: 300, y: 100 }));
     setLocked(board, ["a"], true);
     expect(board.widgets.get("a")!.locked).toBe(true);
 
+    // ADR-210: the lock protects content and size, not placement.
     moveWidgets(board, [{ id: "a", x: 500, y: 500 }]);
-    expect(board.widgets.get("a")!.x).toBe(100);
+    expect(board.widgets.get("a")!.x).toBe(500);
 
-    setWidgetRects(board, [{ id: "a", x: 100, y: 100, width: 400, height: 400 }]);
+    setWidgetRects(board, [{ id: "a", x: 500, y: 500, width: 400, height: 400 }]);
     expect(board.widgets.get("a")!.width).toBe(100);
 
     deleteWidgets(board, ["a"]);

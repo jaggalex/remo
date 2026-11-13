@@ -17,11 +17,11 @@
     "capabilities/collaboration",
     "start/first-scenario"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-10",
   "translations": {
     "en": {
-      "sourceHash": "sha256:62206fc50061bf40edd4359cc71c813b542b104eabeeb47abe18ce2dcd53cc62",
-      "targetHash": "sha256:290055a9d49f17a6c7454b09d999b56f04e164b0f0347b710e2ebe5964081f73"
+      "sourceHash": "sha256:b5126af31695385959399be0df24d0365e08ac4f88d405a5d7676fcf360edc15",
+      "targetHash": "sha256:7c709d41df466227cec302cabc7a1fa4013469290528779f826436ec17f78dcc"
     }
   }
 }

@@ -6,7 +6,6 @@ import {
   type StickySize,
   type TextMarks,
 } from "@remo/model";
-import type { NoteDirection } from "@remo/doc";
 import { useI18n } from "../i18n";
 import { useMenuFocus } from "../useMenuFocus";
 import { usePopover } from "../usePopover";
@@ -25,7 +24,7 @@ import { HelpLink } from "../help/HelpLink";
 
 export type { StickyBarActions, StickyBarTarget };
 
-type PopoverName = "colour" | "align" | "link" | "more" | null;
+type PopoverName = "colour" | "align" | "more" | null;
 
 const SIZES: StickySize[] = ["S", "M", "L"];
 const MARKS: Array<{ mark: keyof TextMarks; glyph: string; key: string }> = [
@@ -33,12 +32,6 @@ const MARKS: Array<{ mark: keyof TextMarks; glyph: string; key: string }> = [
   { mark: "italic", glyph: "I", key: "sticky.italic" },
   { mark: "underline", glyph: "U", key: "sticky.underline" },
   { mark: "strike", glyph: "S", key: "sticky.strike" },
-];
-const DIRECTIONS: Array<{ dir: NoteDirection; glyph: string; key: string }> = [
-  { dir: "left", glyph: "←", key: "sticky.addLeft" },
-  { dir: "up", glyph: "↑", key: "sticky.addUp" },
-  { dir: "down", glyph: "↓", key: "sticky.addDown" },
-  { dir: "right", glyph: "→", key: "sticky.addRight" },
 ];
 const ALIGN_H = ["left", "center", "right"] as const;
 const ALIGN_V = ["top", "middle", "bottom"] as const;
@@ -301,47 +294,6 @@ export function StickyPanel({
                     ))}
                   </div>
                 ))}
-              </div>
-            </Popover>
-          </PanelWindow>
-        )}
-      </span>
-
-      <span className="sb-anchor">
-        <Button
-          variant="ghost"
-          size="compact"
-          className="sb-icon"
-          aria-label={t("sticky.connections")}
-          aria-haspopup="dialog"
-          aria-expanded={open === "link"}
-          selected={open === "link"}
-          onClick={() => setOpen(open === "link" ? null : "link")}
-        >
-          <span aria-hidden="true">＋</span>
-        </Button>
-        {open === "link" && (
-          <PanelWindow>
-            <Popover label={t("sticky.connections")} width={168} onClose={() => setOpen(null)}>
-              <div className="sb-links" role="group" aria-label={t("sticky.connections")}>
-                {DIRECTIONS.map((entry) => {
-                  const name = t(entry.key as "sticky.addRight");
-                  return (
-                    <Tooltip key={entry.dir} label={name}>
-                      <Button
-                        variant="ghost"
-                        size="compact"
-                        aria-label={name}
-                        onClick={() => {
-                          actions.addConnected(entry.dir);
-                          setOpen(null);
-                        }}
-                      >
-                        {entry.glyph}
-                      </Button>
-                    </Tooltip>
-                  );
-                })}
               </div>
             </Popover>
           </PanelWindow>

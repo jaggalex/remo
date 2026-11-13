@@ -94,7 +94,16 @@ export function buildTidyOperations(ydoc, {
   let usedStrategy = tidyStrategy(strategy);
   const lockedSkipped = [];
 
+  const widgetsMap = ydoc.getMap("widgets");
+  const tablesSkipped = [];
   for (const group of facts.groups) {
+    // A table section is a fixed block: its objects live in cells, so tidy leaves the
+    // section, its members and their cells exactly as they are (ADR-201).
+    const section = group.kind === "frame" ? widgetsMap.get(group.frameId) : null;
+    if (section?.layout?.kind === "table" && section.layout.active !== false) {
+      tablesSkipped.push({ id: group.frameId, title: String(section.title ?? "") });
+      continue;
+    }
     const locked = group.items.filter((item) => item.locked);
     for (const item of locked) lockedSkipped.push(item.id);
     const items = group.items.filter((item) => !item.locked);
@@ -151,6 +160,21 @@ export function buildTidyOperations(ydoc, {
         `${facts.skipped.length} object(s) belong to a frame you did not select and were left alone`,
         { tempIds: facts.skipped },
       ),
+    );
+  }
+  for (const table of tablesSkipped) {
+    warnings.push(
+      warning(
+        "TIDY_TABLE_SKIPPED",
+        `table "${table.title}" was not changed: its layout is its cells`,
+        { tempId: table.id, title: table.title },
+      ),
+    );
+  }
+  if (!frames.length && !placements.length && tablesSkipped.length) {
+    throw new PlanError(
+      "TIDY_TABLE_ONLY",
+      "a table section keeps its cells; tidy does not rearrange it",
     );
   }
   if (!frames.length && !placements.length) {

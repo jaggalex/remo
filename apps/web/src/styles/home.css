@@ -292,6 +292,14 @@
   margin: 0;
 }
 
+.home-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
 .home-state {
   color: var(--text-muted);
   font: var(--type-body);

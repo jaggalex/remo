@@ -15,6 +15,10 @@ A **frame** is a container. An object inside a frame moves with it and does not 
 
 A **kanban** arrives as the **Kanban room** template from **More ▾ → Templates…**: the columns and swimlanes are already there. A card is created by a double click on a cell; a double click on a card opens it for editing. A card belongs to a cell: its position sets the order in the column, not the coordinates on the canvas.
 
+A **section table** is the frame's second view. The section's title sits above it on the left; a double click, `F2` or `Enter` renames it, and the **Table** badge after the title opens the **Section / Table** menu. The same switch is in **Properties** and in the context menu. If a free section holds objects, turning the table on asks how to lay out the material — by its current position or everything in the first cell — and shows a preview on the canvas.
+
+In the table the objects stay in cells; text, links and comments are not copied. **+ Column** and **+ Row** add axes; an axis can be renamed, sized, have its column header turned, moved or deleted. Each axis has **Auto** (follows the content) and **Manual** (never shrinks on its own); dragging a boundary turns Manual on and a double click returns to Auto. A cell is selected with a second click, `Shift+click` makes a range; a range can be **merged**, and a merged cell **split**. Objects can be dragged between cells keeping their relative arrangement; a header does not take objects, and **Move to cell…** does the same without dragging. **Table appearance** holds fills, borders and padding for the table, headers, the selected axis or cell. **Remove table** asks for confirmation and remembers the cells; the badge switches at once and says the cells are kept. **Delete section** removes only the frame.
+
 ## Card fields
 
 A card carries more than a title: a status (to do, in progress, done), one assignee, a
@@ -32,6 +36,8 @@ Input: an empty room. Action: add the **Kanban room** template, create a card in
 - A card can be the end of a connector; the line follows its cell.
 - A card filter by assignee and due date exists: it lives in the **Properties** panel and does not hide objects. **Select cards** selects the matches, and the ordinary commands then act on them. There are no saved views.
 - A sticky note dragged into a kanban does not become a card — it stays a sticky note above the grid.
+- A border applies to the whole cell; there are no per-side borders.
+- A table does not change access: the room is still the unit of access.
 - A frame and a kanban are never the ends of a connector.
 
 ## Practical instructions

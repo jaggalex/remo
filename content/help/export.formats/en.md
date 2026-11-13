@@ -6,7 +6,8 @@ You get a file with the chosen scope: a PNG for a chat or a document, or a one-p
 
 - **PNG** — lossless, no transparency is needed, the background comes from the theme. Good for chat, slides and documents.
 - **PDF** — the same picture on one page. Proportions are kept; text in the PDF is not editable or searchable.
-- **Room backup** — a separate format for moving data, not a picture. See the Backup and restore topic.
+- **Room backup** — a separate format for moving data, not a picture. See the Backup and restore topic. A backup keeps the table layout and each object's cell.
+- **A section table** in PNG/PDF is drawn with its grid, headers and fills: it is part of the section, not screen chrome.
 
 ## Who may export
 

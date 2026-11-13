@@ -31,6 +31,39 @@ function fixture() {
   return state;
 }
 
+function tableState() {
+  const doc = new Y.Doc();
+  const widgets = doc.getMap("widgets");
+  const frame = new Y.Map();
+  frame.set("id", "frame-1");
+  frame.set("type", "frame");
+  frame.set("x", 0);
+  frame.set("y", 0);
+  frame.set("width", 600);
+  frame.set("height", 400);
+  frame.set("layout", {
+    kind: "table",
+    columns: [
+      { id: "col-1", title: "Now", size: "wide" },
+      { id: "col-2", title: "Next" },
+    ],
+    rows: [{ id: "row-1", title: "Step" }],
+    appearance: { headers: "#f3f1ec", cells: { "row-1:col-2": "#d8c79e" } },
+  });
+  widgets.set("frame-1", frame);
+  const note = new Y.Map();
+  note.set("id", "note-1");
+  note.set("type", "sticky_note");
+  note.set("parentId", "frame-1");
+  note.set("x", 10);
+  note.set("y", 20);
+  note.set("cell", { rowId: "row-1", columnId: "col-1" });
+  widgets.set("note-1", note);
+  const state = Y.encodeStateAsUpdate(doc);
+  doc.destroy();
+  return state;
+}
+
 describe("board backup (ADR-071)", () => {
   it("is plain JSON with a verifiable checksum and connector waypoints", () => {
     const backup = buildBoardBackup({
@@ -51,6 +84,24 @@ describe("board backup (ADR-071)", () => {
     expect(backup.tags["tag-1"]).toMatchObject({ name: "Priority", color: "blue" });
     expect(backup.presentation).toEqual(["frame-1"]);
     expect(backup.manifest.version).toBe(2);
+    expect(verifyBoardBackup(JSON.parse(JSON.stringify(backup)))).toBe(true);
+  });
+
+  it("carries the table layout and cell membership", () => {
+    const backup = buildBoardBackup({ state: tableState(), boardId: "board-1" });
+    expect(backup.widgets["frame-1"].layout).toMatchObject({
+      kind: "table",
+      columns: [
+        { id: "col-1", title: "Now", size: "wide" },
+        { id: "col-2", title: "Next" },
+      ],
+      rows: [{ id: "row-1", title: "Step" }],
+      appearance: { headers: "#f3f1ec", cells: { "row-1:col-2": "#d8c79e" } },
+    });
+    expect(backup.widgets["note-1"].cell).toEqual({
+      rowId: "row-1",
+      columnId: "col-1",
+    });
     expect(verifyBoardBackup(JSON.parse(JSON.stringify(backup)))).toBe(true);
   });
 

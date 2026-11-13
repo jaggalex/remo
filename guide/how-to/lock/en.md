@@ -9,14 +9,14 @@ You need to protect an object from accidental edits and deletion while the team 
 
 ## Steps
 
-1. Click **Lock** in the object menu or press `⌘⇧L` / `Ctrl+Shift+L`. Result: the object can be selected but not moved or edited; its info shows the author of the lock.
+1. Click **Lock** in the object menu or press `⌘⇧L` / `Ctrl+Shift+L`. Result: the object can be selected and moved, but its size and text are locked; its info shows the author.
 2. To release it, click **Unlock**. The author or a room manager can do this.
 3. If the lock belongs to somebody else, the interface names the author and refuses the action.
 4. **Unlock everything you can** releases your locks; for a manager, every lock.
 
 ## Check
 
-- A second editor cannot move the object, change its text or delete it.
+- A second editor can move the object, but cannot change its size or text, or delete it.
 - The author releases the lock; a room manager releases somebody else's.
 - A copy and a duplicate appear unlocked.
 - After a reload the lock and its author are still there.

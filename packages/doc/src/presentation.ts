@@ -1,4 +1,4 @@
-import type { Widget } from "@remo/model";
+import { tableSpanAt, type Widget } from "@remo/model";
 import type { BoardDocument } from "./board";
 
 /**
@@ -29,6 +29,69 @@ export function presentationSlides(board: BoardDocument): string[] {
   if (!presentationConfigured(board)) return frameWidgets(board).map((frame) => frame.id);
   const existing = new Set(board.widgets.keys());
   return board.presentation.toArray().filter((id) => existing.has(id));
+}
+
+export interface PresentationStep {
+  /** Unique across cells of one section and across slides. */
+  id: string;
+  /** The ordered slide this step belongs to. */
+  slideId: string;
+  /** The widget whose geometry the camera fits. */
+  frameId: string;
+  /** Present when the slide is a table section; absent means the whole frame. */
+  cell?: { rowId: string; columnId: string };
+}
+
+/**
+ * The presentation as concrete camera steps (ADR-200).
+ *
+ * A table section is one item in the order but several row-major steps: top row left to
+ * right, then the next row. A section without both axes is one whole-frame step. The
+ * order is derived from the axes, never stored as a second list. An empty cell is not a
+ * step, and a table with no objects at all is one whole-frame step (ADR-201).
+ */
+export function presentationSteps(board: BoardDocument): PresentationStep[] {
+  const steps: PresentationStep[] = [];
+  for (const slideId of presentationSlides(board)) {
+    const widget = board.readWidget(slideId);
+    const layout = widget?.type === "frame" ? widget.layout : undefined;
+    if (
+      widget &&
+      layout?.kind === "table" &&
+      layout.active !== false &&
+      layout.columns.length > 0 &&
+      layout.rows.length > 0
+    ) {
+      const filled = new Set<string>();
+      for (const child of board.readWidgets()) {
+        if (child.parentId === slideId && child.cell) {
+          // A covered cell belongs to its merged anchor: one block is one step.
+          const span = tableSpanAt(layout, child.cell.rowId, child.cell.columnId);
+          const rowId = span?.rowId ?? child.cell.rowId;
+          const columnId = span?.columnId ?? child.cell.columnId;
+          filled.add(`${rowId}:${columnId}`);
+        }
+      }
+      if (!filled.size) {
+        steps.push({ id: slideId, slideId, frameId: slideId });
+        continue;
+      }
+      for (const row of layout.rows) {
+        for (const column of layout.columns) {
+          if (!filled.has(`${row.id}:${column.id}`)) continue;
+          steps.push({
+            id: `${slideId}:${row.id}:${column.id}`,
+            slideId,
+            frameId: slideId,
+            cell: { rowId: row.id, columnId: column.id },
+          });
+        }
+      }
+      continue;
+    }
+    if (widget) steps.push({ id: slideId, slideId, frameId: slideId });
+  }
+  return steps;
 }
 
 export function setPresentationOrder(board: BoardDocument, ids: readonly string[]): void {

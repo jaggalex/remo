@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
-import type { TextRun } from "@remo/model";
+import { stickyFontCap, type TextRun, type Widget } from "@remo/model";
 import {
+  MAX_SHAPE_HEIGHT,
   MIN_NOTE_FONT,
+  MIN_SHAPE_FONT,
   fitNoteFont,
   layoutRuns,
   lineHeightFor,
   noteFontSizeFor,
   notePadding,
+  textCapFor,
+  textClipped,
+  textFloorFor,
 } from "./textLayout";
 
 /**
@@ -50,7 +55,7 @@ describe("auto text size", () => {
   });
 
   it("respects an explicit size instead of fitting", () => {
-    expect(noteFontSizeFor([{ text: "x" }], 160, 180, 16, 24)).toBe(24);
+    expect(noteFontSizeFor([{ text: "x" }], 160, 180, 16, 24, MIN_NOTE_FONT)).toBe(24);
   });
 
   it("gives Auto nothing to do with an empty note", () => {
@@ -60,5 +65,77 @@ describe("auto text size", () => {
   it("has a line height the painter and the fitter agree on", () => {
     expect(lineHeightFor(16)).toBe(20);
     expect(lineHeightFor(8)).toBe(10);
+  });
+});
+
+/**
+ * The clip state is one answer for the painter, the badge and the growth (ADR-214), so
+ * these tests pin the predicate itself: growth stops exactly where the mark appears.
+ */
+describe("clip state", () => {
+  const shape = (text: string, height: number): Widget =>
+    ({
+      id: "s",
+      type: "shape",
+      x: 0,
+      y: 0,
+      width: 200,
+      height,
+      content: text,
+      style: { fontSize: 16 },
+    }) as Widget;
+
+  it("keeps the constant the growth and the mark share", () => {
+    expect(MIN_SHAPE_FONT).toBe(10);
+    expect(MAX_SHAPE_HEIGHT).toBe(1280);
+    expect(MIN_SHAPE_FONT).toBeGreaterThan(MIN_NOTE_FONT);
+  });
+
+  it("calls an empty label fitted", () => {
+    expect(textClipped(shape("", 40), 16, "sans", fakeCtx())).toBe(false);
+  });
+
+  it("calls a short label fitted", () => {
+    expect(textClipped(shape("short", 200), 16, "sans", fakeCtx())).toBe(false);
+  });
+
+  it("stops clipping once the box is tall enough — the growth's own question", () => {
+    const text = "word ".repeat(40);
+    expect(textClipped(shape(text, 80), 16, "sans", fakeCtx())).toBe(true);
+    expect(textClipped(shape(text, 600), 16, "sans", fakeCtx())).toBe(false);
+  });
+
+  it("answers null when there is no context to measure with", () => {
+    expect(textClipped(shape("short", 200), 16, "sans", null)).toBeNull();
+  });
+});
+
+/**
+ * One rule picks the cap and the floor for every reader of a widget's text — painter,
+ * badge, editor and growth (ADR-216). These tests pin the rule itself.
+ */
+describe("text size limits", () => {
+  const widget = (type: Widget["type"], stickySize?: "S" | "M" | "L"): Widget =>
+    ({ id: "w", type, x: 0, y: 0, width: 200, height: 160, style: { stickySize } }) as Widget;
+  const caps = { S: 13, M: 16, L: 20 };
+
+  it("sets a shape's label at the M cap whatever size it carries", () => {
+    expect(textCapFor(widget("shape"), caps)).toBe(16);
+    expect(textCapFor(widget("shape", "L"), caps)).toBe(16);
+  });
+
+  it("lets a note follow the size the person picked", () => {
+    expect(textCapFor(widget("sticky_note", "L"), caps)).toBe(20);
+    expect(textCapFor(widget("sticky_note"), caps)).toBe(16);
+  });
+
+  it("falls back to the model's size table when settings do not override", () => {
+    expect(textCapFor(widget("sticky_note", "S"), {})).toBe(stickyFontCap("S"));
+    expect(textCapFor(widget("shape"), {})).toBe(stickyFontCap("M"));
+  });
+
+  it("gives a shape the readable floor and a note the physical one", () => {
+    expect(textFloorFor(widget("shape"))).toBe(MIN_SHAPE_FONT);
+    expect(textFloorFor(widget("sticky_note"))).toBe(MIN_NOTE_FONT);
   });
 });

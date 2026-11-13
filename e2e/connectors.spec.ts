@@ -90,24 +90,24 @@ async function select(page: Page, target: ProbeWidget): Promise<void> {
     .toContain(target.id);
 }
 
-/** Click the drawn port dot, which sits ANCHOR_GAP (9 screen px) outside the edge. */
+/**
+ * Click the port of a selected note: since ADR-201 it is the edge "+" itself, one control
+ * per side that continues on click and draws a line on drag.
+ */
 async function clickPort(
   page: Page,
-  target: ProbeWidget,
+  _target: ProbeWidget,
   side: "left" | "right" | "top" | "bottom",
 ): Promise<void> {
-  const current = await view(page);
-  const gap = 9 / current.camera.zoom;
-  const world =
+  const name =
     side === "left"
-      ? { x: target.x - target.width / 2 - gap, y: target.y }
+      ? "Continue to the left"
       : side === "right"
-        ? { x: target.x + target.width / 2 + gap, y: target.y }
+        ? "Continue to the right"
         : side === "top"
-          ? { x: target.x, y: target.y - target.height / 2 - gap }
-          : { x: target.x, y: target.y + target.height / 2 + gap };
-  const point = toClient(current, world);
-  await page.mouse.click(point.x, point.y);
+          ? "Continue above"
+          : "Continue below";
+  await page.getByRole("button", { name, exact: true }).click();
 }
 
 async function selectedType(page: Page): Promise<string | null> {

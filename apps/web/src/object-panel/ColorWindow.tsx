@@ -148,6 +148,7 @@ export function ColorGridSection({
   mixed,
   role,
   auto,
+  autoLabel,
   onAuto,
   onPick,
   showKeys,
@@ -162,6 +163,8 @@ export function ColorGridSection({
   role?: NamedColorRole;
   /** An absent value means "Auto", which a free text object can be. */
   auto?: boolean;
+  /** The word for the absent value when this role is not the object's ink. */
+  autoLabel?: string;
   /** Writes "no explicit colour"; the Auto swatch is drawn only when this is given. */
   onAuto?: () => void;
   onPick: (hex: string) => void;
@@ -171,6 +174,7 @@ export function ColorGridSection({
   const { t } = useI18n();
   const named = role ? colorExtras(role) : [];
   const name = colorName(value, { mixed, auto, role });
+  const autoWord = autoLabel ?? t("sticky.auto");
   const selected = mixed ? null : markedColor(value);
   const colors = colorsForLevels(levels);
   const marked = colors.findIndex((color) => color.hex === selected);
@@ -206,7 +210,7 @@ export function ColorGridSection({
         {label && <span className="cw-label">{label}</span>}
         {!own && (
           <span className="cw-value" title={name.detail}>
-            {t(name.key)}
+            {!mixed && auto && !value ? autoWord : t(name.key)}
           </span>
         )}
       </div>
@@ -215,7 +219,7 @@ export function ColorGridSection({
           <div className="cw-extras">
             {onAuto && (
               <ColorSwatch
-                word={t("sticky.auto")}
+                word={autoWord}
                 kind="auto"
                 selected={Boolean(auto) && !mixed && selected === null}
                 onClick={onAuto}

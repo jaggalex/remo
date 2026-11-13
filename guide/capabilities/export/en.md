@@ -11,7 +11,7 @@ Two different results: an **artifact** for a person (PNG or PDF) and a **backup*
 
 ## How it works
 
-Artifact export selects a scope: selection, frame or the whole room. A backup always covers the whole room and carries objects, connectors, text, group names, tags, presentation order and the discussion. Backup import **replaces** the room entirely, including comments.
+Artifact export selects a scope: selection, frame or the whole room. When a section is shown as a table, the picture contains its grid, headers and fills, and the backup carries the layout and cells. A backup always covers the whole room and carries objects, connectors, text, group names, tags, presentation order and the discussion. Backup import **replaces** the room entirely, including comments.
 
 A PNG/PDF can include the discussion: enable **Include comments**, and a list of open threads appears below the room with numbered pins on the objects.
 

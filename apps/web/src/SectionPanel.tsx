@@ -1,0 +1,673 @@
+import { useEffect, useState } from "react";
+import type { BoardDocument } from "@remo/doc";
+import {
+  addAxis,
+  deleteAxis,
+  setAxisAutoResize,
+  setAxisSize,
+  deleteWidgets,
+  moveAxis,
+  removeTable,
+  renameAxis,
+  setAxisVertical,
+  setTableFill,
+  tableLayoutOf,
+} from "@remo/doc";
+import {
+  FILL_LEVELS,
+  layoutTable,
+  tableSpanAt,
+  type TableAxis,
+  type TableLayout,
+  type Widget,
+} from "@remo/model";
+import { Button, ConfirmDialog, Icon, Input, Segmented } from "@remo/ui";
+import { AxisSizeButton } from "./AxisSizeControl";
+import { TableAppearanceControls } from "./TableAppearanceControls";
+import { setSectionView } from "./sectionView";
+import { openSectionLayout } from "./sectionLayoutStore";
+import { AxisDeleteDialog } from "./AxisDeleteDialog";
+import { HelpLink } from "./help/HelpLink";
+import { colorName } from "./object-panel/colorWindowData";
+import { ColorGridSection } from "./object-panel/ColorWindow";
+import { useI18n } from "./i18n";
+import { setTableAxisSelection, useTableAxisSelection } from "./tableSelection";
+import { useTableCellSelection } from "./tableCellSelection";
+
+/**
+ * The section panel (ADR-196, ADR-199).
+ *
+ * A section is a frame; this panel is the one place its table is turned on, axes are
+ * managed, fills are chosen and the section itself is removed. Every action calls the
+ * document command and nothing else, so the panel cannot invent a second path to the
+ * table. Transient UI state (which axis is open) is local; the table itself never is.
+ */
+type AxisKind = "column" | "row";
+
+type FillTarget =
+  | { kind: "table" }
+  | { kind: "headers" }
+  | { kind: "column"; id: string }
+  | { kind: "row"; id: string }
+  | { kind: "cell"; rowId: string; columnId: string };
+
+function axesOf(layout: TableLayout | null | undefined, kind: AxisKind): TableAxis[] {
+  if (!layout) return [];
+  return kind === "column" ? layout.columns : layout.rows;
+}
+
+function axisObjects(
+  widgets: readonly Widget[],
+  frameId: string,
+  kind: AxisKind,
+  axisId: string,
+): Widget[] {
+  const field = kind === "column" ? "columnId" : "rowId";
+  return widgets.filter(
+    (widget) => widget.parentId === frameId && widget.cell?.[field] === axisId,
+  );
+}
+
+function fillValue(layout: TableLayout | null | undefined, target: FillTarget): string | undefined {
+  const appearance = layout?.appearance;
+  if (!appearance) return undefined;
+  if (target.kind === "table") return appearance.table;
+  if (target.kind === "headers") return appearance.headers;
+  if (target.kind === "cell") return appearance.cells?.[`${target.rowId}:${target.columnId}`];
+  return target.kind === "column"
+    ? appearance.columns?.[target.id]
+    : appearance.rows?.[target.id];
+}
+
+function fillsEqual(a: FillTarget | null, b: FillTarget): boolean {
+  if (!a || a.kind !== b.kind) return false;
+  if (a.kind === "table" || a.kind === "headers") return true;
+  if (a.kind === "cell") {
+    return b.kind === "cell" && a.rowId === b.rowId && a.columnId === b.columnId;
+  }
+  return "id" in b && a.id === b.id;
+}
+
+/** The axis name commits on blur or Enter: typing is one undo step (ADR-196). */
+function AxisNameField({
+  board,
+  frameId,
+  axis,
+  disabled,
+}: {
+  board: BoardDocument;
+  frameId: string;
+  axis: TableAxis;
+  disabled: boolean;
+}) {
+  const { t } = useI18n();
+  const [value, setValue] = useState(axis.title);
+
+  useEffect(() => setValue(axis.title), [axis.id, axis.title]);
+
+  const commit = () => {
+    if (value.trim() === axis.title.trim()) return;
+    renameAxis(board, frameId, axis.id, value);
+  };
+
+  return (
+    <Input
+      label={t("section.axis.title")}
+      value={value}
+      maxLength={80}
+      disabled={disabled}
+      onChange={(event) => setValue(event.currentTarget.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.currentTarget.blur();
+        } else if (event.key === "Escape") {
+          setValue(axis.title);
+          event.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
+export interface SectionPanelProps {
+  board: BoardDocument;
+  frame: Widget;
+  widgets: Widget[];
+  writeBlocked: boolean;
+  /** The frame is gone; the inspector should drop the selection with it. */
+  onDeleted: () => void;
+}
+
+export function SectionPanel({
+  board,
+  frame,
+  widgets,
+  writeBlocked,
+  onDeleted,
+}: SectionPanelProps) {
+  const { t, count } = useI18n();
+  const layout = tableLayoutOf(board, frame.id);
+  const active = Boolean(layout && layout.active !== false);
+  const readOnly = writeBlocked || Boolean(frame.locked);
+  const columns = axesOf(layout, "column");
+  const rows = axesOf(layout, "row");
+
+  const storedAxis = useTableAxisSelection();
+  const cellSelection = useTableCellSelection();
+  const blockSpan =
+    layout && layout.active !== false && cellSelection?.frameId === frame.id
+      ? tableSpanAt(layout, cellSelection.anchor.rowId, cellSelection.anchor.columnId)
+      : null;
+  const blockColumns =
+    blockSpan && layout
+      ? layout.columns.slice(
+          layout.columns.findIndex((axis) => axis.id === blockSpan.columnId),
+          layout.columns.findIndex((axis) => axis.id === blockSpan.columnId) + blockSpan.columnSpan,
+        )
+      : [];
+  const blockRows =
+    blockSpan && layout
+      ? layout.rows.slice(
+          layout.rows.findIndex((axis) => axis.id === blockSpan.rowId),
+          layout.rows.findIndex((axis) => axis.id === blockSpan.rowId) + blockSpan.rowSpan,
+        )
+      : [];
+  const blockAxes = [...blockColumns, ...blockRows];
+  const autoAxis = (axis: TableAxis) => axis.size === undefined || axis.size === "auto";
+  const blockAuto = blockAxes.length > 0 && blockAxes.every(autoAxis);
+  const blockMixed = blockAxes.some(autoAxis) && blockAxes.some((axis) => !autoAxis(axis));
+  const axisId = storedAxis?.frameId === frame.id ? storedAxis.axisId : null;
+  const selectAxis = (id: string | null) => {
+    setTableAxisSelection(id ? { frameId: frame.id, axisId: id } : null);
+  };
+  const [lookOpen, setLookOpen] = useState(false);
+  const [fillOpen, setFillOpen] = useState<FillTarget | null>(null);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{
+    axisId: string;
+    kind: AxisKind;
+  } | null>(null);
+
+  const column = columns.find((axis) => axis.id === axisId);
+  const row = rows.find((axis) => axis.id === axisId);
+  const selected = column ?? row;
+  const selectedKind: AxisKind | null = column ? "column" : row ? "row" : null;
+
+  useEffect(() => {
+    setLookOpen(false);
+    setFillOpen(null);
+    setPendingDelete(null);
+  }, [frame.id]);
+
+  useEffect(() => {
+    if (!axisId) return;
+    if (columns.some((axis) => axis.id === axisId)) return;
+    if (rows.some((axis) => axis.id === axisId)) return;
+    selectAxis(null);
+  }, [axisId, columns, rows]);
+
+  useEffect(() => {
+    setFillOpen(null);
+  }, [axisId]);
+
+  const add = (kind: AxisKind) => {
+    if (readOnly) return;
+    const ownName =
+      kind === "column" ? "section.axis.placeholderColumn" : "section.axis.placeholderRow";
+    const oppositeName =
+      kind === "column" ? "section.axis.placeholderRow" : "section.axis.placeholderColumn";
+    const axes = axesOf(layout, kind);
+    const id = addAxis(board, frame.id, kind, {
+      // The first axis creates a content axis beside it, so the empty one is second.
+      title: t(ownName, { n: axes.length === 0 ? 2 : axes.length + 1 }),
+      firstTitle: t(ownName, { n: 1 }),
+      oppositeTitle: t(oppositeName, { n: 1 }),
+    });
+    if (id) selectAxis(id);
+  };
+
+  const switchView = (next: string) => {
+    if (readOnly) return;
+    if (next === "table" && !layout) {
+      const objects = widgets.filter((widget) => widget.parentId === frame.id);
+      if (objects.length) {
+        openSectionLayout(frame.id);
+        return;
+      }
+    }
+    const created = setSectionView(board, frame.id, next as "free" | "table", t);
+    if (created) selectAxis(created);
+    else if (next === "free") selectAxis(null);
+  };
+
+  const requestDelete = () => {
+    if (!selected || !selectedKind || readOnly) return;
+    const objects = axisObjects(widgets, frame.id, selectedKind, selected.id);
+    if (!objects.length) {
+      const result = deleteAxis(board, frame.id, selected.id, { mode: "move" });
+      if (result.ok) selectAxis(null);
+      return;
+    }
+    setPendingDelete({ axisId: selected.id, kind: selectedKind });
+  };
+
+  const fillLabel = (target: FillTarget): string => {
+    if (target.kind === "table") return t("section.look.table");
+    if (target.kind === "headers") return t("section.look.headers");
+    if (target.kind === "cell") return t("section.look.cell");
+    const axis = target.kind === "column"
+      ? columns.find((entry) => entry.id === target.id)
+      : rows.find((entry) => entry.id === target.id);
+    const name = axis?.title || t("section.axis.untitled");
+    return t(
+      target.kind === "column" ? "section.look.selectedColumn" : "section.look.selectedRow",
+      { name },
+    );
+  };
+
+  const fillRows: Array<{ target: FillTarget; label: string; value?: string }> = [
+    {
+      target: { kind: "table" },
+      label: t("section.look.table"),
+      value: fillValue(layout, { kind: "table" }),
+    },
+    {
+      target: { kind: "headers" },
+      label: t("section.look.headers"),
+      value: fillValue(layout, { kind: "headers" }),
+    },
+  ];
+  if (selected && selectedKind) {
+    const target: FillTarget =
+      selectedKind === "column"
+        ? { kind: "column", id: selected.id }
+        : { kind: "row", id: selected.id };
+    fillRows.push({ target, label: fillLabel(target), value: fillValue(layout, target) });
+  }
+
+  const lookTargets: Array<{ target: FillTarget; label: string }> = [
+    { target: { kind: "table" }, label: t("section.look.table") },
+    { target: { kind: "headers" }, label: t("section.look.headers") },
+  ];
+  if (selected && selectedKind) {
+    lookTargets.push({
+      target:
+        selectedKind === "column"
+          ? { kind: "column", id: selected.id }
+          : { kind: "row", id: selected.id },
+      label: fillLabel(
+        selectedKind === "column"
+          ? { kind: "column", id: selected.id }
+          : { kind: "row", id: selected.id },
+      ),
+    });
+  }
+  if (cellSelection?.frameId === frame.id) {
+    lookTargets.push({
+      target: {
+        kind: "cell",
+        rowId: cellSelection.anchor.rowId,
+        columnId: cellSelection.anchor.columnId,
+      },
+      label: t("section.look.cell"),
+    });
+  }
+
+  const canRemove = Boolean(layout) && layout!.active !== false && !readOnly;
+  const deleteLabel =
+    selectedKind === "row"
+      ? t("section.axis.deleteRow")
+      : t("section.axis.deleteColumn");
+
+  return (
+    <section className="section-panel" aria-label={t("section.title")}>
+      <div className="section-panel-head">
+        <h2>
+          {t("section.title")} <HelpLink topicId="section.table" />
+        </h2>
+        {active && <span className="section-badge">{t("section.badge.table")}</span>}
+      </div>
+      <p className="section-panel-title">{frame.title || t("section.axis.untitled")}</p>
+      {frame.locked && <p className="muted">{t("section.locked")}</p>}
+
+      <div className="section-group">
+        <h3>{t("section.view")}</h3>
+        <Segmented
+          label={t("section.view")}
+          value={active ? "table" : "free"}
+          onChange={switchView}
+          options={[
+            { value: "free", label: t("section.view.free"), disabled: readOnly },
+            { value: "table", label: t("section.view.table"), disabled: readOnly },
+          ]}
+        />
+        <p className="muted">{t("section.view.hint")}</p>
+      </div>
+
+      {blockSpan && (
+        <div className="section-group">
+          <h3>{t("section.size.block")}</h3>
+          <label className="section-check">
+            <input
+              type="checkbox"
+              checked={blockAuto}
+              disabled={readOnly}
+              ref={(node) => {
+                if (node) node.indeterminate = blockMixed;
+              }}
+              onChange={(event) => {
+                const auto = event.currentTarget.checked;
+                if (auto) {
+                  board.transact(() => {
+                    for (const axis of blockAxes) {
+                      setAxisAutoResize(board, frame.id, axis.id, true);
+                    }
+                  });
+                  return;
+                }
+                // Freeze what the person sees now, before the first axis changes the
+                // layout, so every axis of the block keeps its visible size (ADR-206).
+                const grid = layoutTable(frame, widgets);
+                const sizes = [
+                  ...blockColumns.map((axis) => ({
+                    axis,
+                    px: Math.round(
+                      grid?.columns.find((column) => column.axis.id === axis.id)?.width ?? 0,
+                    ),
+                  })),
+                  ...blockRows.map((axis) => ({
+                    axis,
+                    px: Math.round(
+                      grid?.rows.find((row) => row.axis.id === axis.id)?.height ?? 0,
+                    ),
+                  })),
+                ];
+                board.transact(() => {
+                  for (const { axis, px } of sizes) {
+                    if (px > 0) setAxisSize(board, frame.id, axis.id, px);
+                  }
+                });
+              }}
+            />
+            <span>{t("section.size.autoResize")}</span>
+          </label>
+          <p className="muted">{t("section.size.blockHint")}</p>
+        </div>
+      )}
+
+      <div className="section-group">
+        <div className="section-group-head">
+          <h3>{t("section.axes")}</h3>
+          <div className="section-axis-add">
+            <Button
+              size="compact"
+              variant="secondary"
+              icon="plus"
+              disabled={readOnly || Boolean(layout && !active)}
+              onClick={() => add("column")}
+            >
+              {t("section.axes.addColumn")}
+            </Button>
+            <Button
+              size="compact"
+              variant="secondary"
+              icon="plus"
+              disabled={readOnly || Boolean(layout && !active)}
+              onClick={() => add("row")}
+            >
+              {t("section.axes.addRow")}
+            </Button>
+          </div>
+        </div>
+
+        {layout && !active && <p className="muted">{t("section.axis.inactive")}</p>}
+
+        {(
+          [
+            ["column", t("section.columns"), columns],
+            ["row", t("section.rows"), rows],
+          ] as const
+        ).map(([kind, label, axes]) => (
+          <div key={kind} className="section-axis-group">
+            <span className="section-axis-label">{label}</span>
+            {axes.length === 0 ? (
+              <p className="muted section-axis-empty">{t("section.axis.empty")}</p>
+            ) : (
+              <div className="section-axis-list" role="group" aria-label={label}>
+                {axes.map((axis) => {
+                  const objects = axisObjects(widgets, frame.id, kind, axis.id).length;
+                  const isSelected = axis.id === axisId;
+                  const title = axis.title || t("section.axis.untitled");
+                  return (
+                    <button
+                      key={axis.id}
+                      type="button"
+                      className={`section-axis-row${isSelected ? " is-selected" : ""}`}
+                      aria-pressed={isSelected}
+                      aria-label={`${title} — ${count("objects", objects)}`}
+                      onClick={() => selectAxis(isSelected ? null : axis.id)}
+                    >
+                      <span className="section-axis-title">{title}</span>
+                      <span className="section-axis-meta" aria-hidden="true">
+                        {objects}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+
+        {selected && selectedKind && (
+          <div className="section-axis-detail">
+            <AxisNameField
+              key={selected.id}
+              board={board}
+              frameId={frame.id}
+              axis={selected}
+              disabled={readOnly}
+            />
+            <div className="section-field">
+              <span className="section-field-label">{t("section.size.mode")}</span>
+              <AxisSizeButton
+                board={board}
+                frame={frame}
+                kind={selectedKind}
+                axis={selected}
+                disabled={readOnly}
+              />
+            </div>
+            {selectedKind === "column" && (
+              <label className="section-check">
+                <input
+                  type="checkbox"
+                  checked={Boolean(selected.vertical)}
+                  disabled={readOnly}
+                  onChange={(event) =>
+                    setAxisVertical(board, frame.id, selected.id, event.currentTarget.checked)
+                  }
+                />
+                <span>{t("section.axis.rotate")}</span>
+              </label>
+            )}
+            <div className="section-axis-actions">
+              <Button
+                size="compact"
+                variant="secondary"
+                disabled={
+                  readOnly ||
+                  (selectedKind === "column"
+                    ? columns.findIndex((axis) => axis.id === selected.id) === 0
+                    : rows.findIndex((axis) => axis.id === selected.id) === 0)
+                }
+                onClick={() => moveAxis(board, frame.id, selected.id, -1)}
+              >
+                {t(selectedKind === "column" ? "section.axis.moveLeft" : "section.axis.moveUp")}
+              </Button>
+              <Button
+                size="compact"
+                variant="secondary"
+                disabled={
+                  readOnly ||
+                  (selectedKind === "column"
+                    ? columns.findIndex((axis) => axis.id === selected.id) === columns.length - 1
+                    : rows.findIndex((axis) => axis.id === selected.id) === rows.length - 1)
+                }
+                onClick={() => moveAxis(board, frame.id, selected.id, 1)}
+              >
+                {t(selectedKind === "column" ? "section.axis.moveRight" : "section.axis.moveDown")}
+              </Button>
+              <Button
+                size="compact"
+                variant="danger"
+                disabled={readOnly}
+                onClick={requestDelete}
+              >
+                {deleteLabel}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Fills belong to the table; a free section has no cells to colour. */}
+      {active && (
+      <div className="section-group">
+        <button
+          type="button"
+          className="section-look-toggle"
+          aria-expanded={lookOpen}
+          onClick={() => setLookOpen((open) => !open)}
+        >
+          <span>{t("section.look")}</span>
+          <Icon name={lookOpen ? "minus" : "plus"} size={14} />
+        </button>
+        {lookOpen && (
+          <div className="section-look">
+            <p className="muted">{t("section.look.hint")}</p>
+            {fillRows.map((entry) => {
+              const name = entry.value ? t(colorName(entry.value).key) : t("section.look.default");
+              const open = fillsEqual(fillOpen, entry.target);
+              return (
+                <div key={`${entry.target.kind}-${"id" in entry.target ? entry.target.id : ""}`}>
+                  <button
+                    type="button"
+                    className="section-fill-row"
+                    aria-expanded={open}
+                    onClick={() => setFillOpen(open ? null : entry.target)}
+                  >
+                    <span
+                      className={`section-fill-dot${entry.value ? "" : " is-empty"}`}
+                      style={entry.value ? { background: entry.value } : undefined}
+                      aria-hidden="true"
+                    />
+                    <span className="section-fill-label">{entry.label}</span>
+                    <span className="section-fill-name">{name}</span>
+                  </button>
+                  {open && (
+                    <div className="section-fill-window">
+                      <ColorGridSection
+                        ariaLabel={entry.label}
+                        levels={FILL_LEVELS}
+                        value={entry.value}
+                        auto={!entry.value}
+                        autoLabel={t("section.look.default")}
+                        onAuto={() => {
+                          setTableFill(board, frame.id, entry.target, null);
+                          setFillOpen(null);
+                        }}
+                        onPick={(hex) => {
+                          setTableFill(board, frame.id, entry.target, hex);
+                          setFillOpen(null);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <TableAppearanceControls
+              board={board}
+              frame={frame}
+              targets={lookTargets}
+              disabled={readOnly}
+            />
+          </div>
+        )}
+      </div>
+      )}
+
+      <div className="section-group section-remove">
+        <Button
+          variant="secondary"
+          size="compact"
+          disabled={!canRemove}
+          onClick={() => setRemoveOpen(true)}
+        >
+          {t("section.table.remove")}
+        </Button>
+        <p className="muted section-caption">
+          {active ? t("section.table.removeHint") : t("section.table.removeNone")}
+        </p>
+        <Button
+          variant="danger"
+          size="compact"
+          disabled={readOnly}
+          onClick={() => {
+            deleteWidgets(board, [frame.id], { keepChildren: true });
+            onDeleted();
+          }}
+        >
+          {t("section.delete")}
+        </Button>
+        {/* The consequence sits under the action, with the count it applies to. */}
+        <p className="muted section-caption">
+          {t("section.deleteHint", {
+            n: widgets.filter((widget) => widget.parentId === frame.id).length,
+          })}
+        </p>
+      </div>
+
+      {removeOpen && (
+        <ConfirmDialog
+          title={t("section.remove.title")}
+          confirmLabel={t("section.table.remove")}
+          tone="accent"
+          onCancel={() => setRemoveOpen(false)}
+          onConfirm={() => {
+            removeTable(board, frame.id);
+            selectAxis(null);
+            setFillOpen(null);
+            setRemoveOpen(false);
+          }}
+        >
+          <p>
+            {t("section.remove.body", {
+              name: frame.title || t("section.axis.untitled"),
+              objects: count(
+                "objects",
+                widgets.filter((widget) => widget.parentId === frame.id).length,
+              ),
+            })}
+          </p>
+          <p className="muted">{t("section.remove.cells")}</p>
+        </ConfirmDialog>
+      )}
+
+      {pendingDelete && (
+        <AxisDeleteDialog
+          board={board}
+          widgets={widgets}
+          target={{ frameId: frame.id, ...pendingDelete }}
+          onClose={() => setPendingDelete(null)}
+          onDeleted={() => {
+            setPendingDelete(null);
+            selectAxis(null);
+          }}
+        />
+      )}
+    </section>
+  );
+}

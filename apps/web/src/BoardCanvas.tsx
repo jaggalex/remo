@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  boxOf,
-  connectorPath,
-  pathPolyline,
-  fitToBounds,
   layoutKanban,
   screenToWorld,
-  unionBox,
   visibleWorldRect,
   zoomAt,
   type KanbanLayout,
@@ -17,24 +12,31 @@ import type {
   BoardDocument,
   ConnectorPatch,
   NoteDirection,
-  Presence,
+  Presence, WidgetRect,
 } from "@remo/doc";
+import { GatherPreview } from "./GatherPreview";
+import { useViewportSize } from "./useViewportSize";
 import {
-  soleSelectedGroup,
   type Tag,
   type ConnectorSide,
   type KanbanState,
   type TextDeltaOp,
   type TextMarks,
+  type Rect,
   type Widget,
 } from "@remo/model";
 import { InlineEditor } from "./InlineEditor";
+import { TableHeaderLayer } from "./TableHeaderLayer";
+import { useTableCellMenu } from "./TableCellMenu";
+import { CanvasTableLayer } from "./CanvasTableLayer";
+import type { ContinuePreview } from "./canvasGeometry";
 import { useGestures } from "./useGestures";
 import { useCanvasPainting } from "./useCanvasPainting";
+import { useBoardCameraFit } from "./useBoardCameraFit";
 import { useCanvasProbe } from "./useCanvasProbe";
 import { CanvasHud } from "./CanvasHud";
 import { CanvasHint } from "./CanvasHint";
-import { SelectionBadge } from "./SelectionBadge";
+import { BoardSelectionBadge } from "./BoardSelectionBadge";
 import { PresentationLayer } from "./PresentationLayer";
 import { SocialLayer } from "./SocialLayer";
 import { VoteLayer } from "./VoteLayer";
@@ -47,11 +49,11 @@ import { contextTargetAt, type ContextTarget } from "./canvasTargets";
 import { editorTargetFor } from "./editorTarget";
 import { ConnectorBar, type ConnectorBarActions } from "./ConnectorBar";
 import { StickyBar, type StickyBarActions } from "./StickyBar";
+import { EdgeContinueLayer } from "./EdgeContinueLayer";
 import { ArrangeBar, type ArrangeBarActions } from "./ArrangeBar";
 import { useI18n } from "./i18n";
 import { toggleMark as toggleMarkInDom } from "./richText";
 import type { BoardSettings } from "./settings";
-
 /** Background grid style. A view preference, not a document property. */
 export type GridStyle = "off" | "lines" | "dots";
 
@@ -80,9 +82,13 @@ interface Props {
   kanbanStates: Record<string, KanbanState>;
   selectedIds: readonly string[];
   onSelect: (ids: string[]) => void;
+  /** A transient line under the canvas; table size and merge messages use it. */
+  onNotice?: (text: string) => void;
   onMoveMany: (positions: WidgetPosition[]) => void;
+  /** Drop a selection into a table cell (ADR-196). */
+  onMoveToCell: (frameId: string, rowId: string, columnId: string, ids: string[], offset: { x: number; y: number }) => void;
   /** Commit a resize gesture: one transaction, one undo step. */
-  onResize: (rect: { id: string; x: number; y: number; width: number; height: number }) => void;
+  onResizeMany: (rects: WidgetRect[], scale?: { from: Rect; kx: number; ky: number }) => void;
   onMoveCard: (kanbanId: string, cardId: string, columnId: string, swimlaneId: string) => void;
   onAddCard: (kanbanId: string, columnId: string, swimlaneId: string) => void;
   onAddColumn: (kanbanId: string) => void;
@@ -110,7 +116,11 @@ interface Props {
   /** Marks common to the whole note, or null when they differ. */
   noteMarks: (id: string) => TextMarks | null;
   /** Auto-create a connected note beside `id` and start editing it. */
-  onCreateConnected: (id: string, direction: NoteDirection) => void;
+  onCreateConnected: (
+    id: string,
+    direction: NoteDirection,
+    center?: { x: number; y: number },
+  ) => void;
   /** Connector properties shown when a line is selected. */
   connectorActions: ConnectorBarActions;
   /** Arrange the multi-selection: six edges, two distributions, grouping and More. */
@@ -163,10 +173,8 @@ interface Props {
   onCommentsUnread: (value: number) => void;
   reactionRequest: { emoji: string; at: number } | null;
 }
-
 /** What the pointer was over when the context menu was requested. */
 export type { ContextTarget } from "./canvasTargets";
-
 /**
  * The board is painted on two canvases.
  *
@@ -190,8 +198,9 @@ export function BoardCanvas({
   kanbanStates,
   selectedIds,
   onSelect,
-  onMoveMany,
-  onResize,
+  onNotice,
+  onMoveMany, onMoveToCell,
+  onResizeMany,
   onMoveCard,
   onAddCard,
   onAddColumn,
@@ -237,7 +246,10 @@ export function BoardCanvas({
   reactionRequest,
 }: Props) {
   const { t } = useI18n();
-  const [viewport, setViewport] = useState({ width: 1, height: 1 });
+  /** A live presentation hides state marks that are not content (ADR-193). */
+  const [presenting, setPresenting] = useState(false);
+  /** The edge "+" preview, painted by the overlay until the click (ADR-195). */
+  const [continuePreview, setContinuePreview] = useState<ContinuePreview | null>(null);
   // The canvas owns the camera subscription: panning repaints this component, not the
   // forty-four hooks above it in BoardApp (review P6).
   const camera = useCamera();
@@ -245,6 +257,8 @@ export function BoardCanvas({
   const boardRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const viewport = useViewportSize(wrapRef);
+  const cellMenu = useTableCellMenu(widgets, camera, viewport, selectedIds);
   /** One layout per kanban, shared by painting and hit-testing. */
   const layouts = useMemo(() => {
     const map = new Map<string, KanbanLayout>();
@@ -309,7 +323,8 @@ export function BoardCanvas({
     },
       onSelect,
     onMoveMany,
-    onResize,
+    onMoveToCell,
+    onResizeMany,
     onMoveCard,
     onAddCard,
     onConnect,
@@ -329,6 +344,7 @@ export function BoardCanvas({
     cursor,
     connectDraft,
     hoverAnchor,
+    resizeLimit,
     resolve: widgetById,
     clearHover,
     onPointerDown,
@@ -358,43 +374,10 @@ export function BoardCanvas({
     focusedWaypoint,
     kanbanStates,
     clock: timerLeft,
+    presenting,
+    continuePreview,
     t,
   });
-
-  // A zero-sized viewport means the wrapper has not been laid out yet (a hidden tab,
-  // a first paint before fonts): measure again once it has a size.
-  useEffect(() => {
-    if (viewport.width > 1 && viewport.height > 1) return;
-    const timer = window.setTimeout(() => measure(), 60);
-    return () => window.clearTimeout(timer);
-  }, [viewport.height, viewport.width]);
-
-  const measure = useCallback(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const rect = wrap.getBoundingClientRect();
-    const width = Math.max(1, Math.round(rect.width));
-    const height = Math.max(1, Math.round(rect.height));
-    setViewport((current) =>
-      current.width === width && current.height === height ? current : { width, height },
-    );
-  }, []);
-
-  useEffect(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(wrap);
-    window.addEventListener("resize", measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [measure]);
-
-
-;
 
   useCanvasProbe({
     boardTitle,
@@ -562,82 +545,25 @@ export function BoardCanvas({
     };
   }, []);
 
-  const fit = useCallback(() => {
-    if (!viewport.width || !viewport.height) return;
-    // Fit what the person is looking at: a selection if there is one, the whole
-    // board otherwise. `widgetById` resolves a card to its cell, so a kanban's cards
-    // are not measured at the origin they do not occupy.
-    const ids = selectedIds.length ? [...selectedIds] : widgets.map((widget) => widget.id);
-    const boxes = ids
-      .map((id) => widgetById(id))
-      .filter((widget): widget is Widget => Boolean(widget))
-      .map((widget) => boxOf(widget));
-    const target = unionBox(boxes);
-    if (target) setCamera(fitToBounds(target, { x: 0, y: 0, ...viewport }));
-  }, [setCamera, selectedIds, viewport, widgetById, widgets]);
-
-  /** Zoom around the middle of the canvas, for the two HUD buttons. */
-  const zoomBy = useCallback(
-    (factor: number) => {
-      setCamera(
-        zoomAt(
-          camera,
-          { x: 0, y: 0, width: viewport.width, height: viewport.height },
-          { x: viewport.width / 2, y: viewport.height / 2 },
-          factor,
-        ),
-      );
-    },
-    [camera, setCamera, viewport.height, viewport.width],
-  );
-
-  const fittedFor = useRef<string | null>(null);
-  const emptyAfterSync = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (viewport.width <= 1 || viewport.height <= 1) return;
-    if (!widgets.length) {
-      if (synced) emptyAfterSync.current = fitKey;
-      return;
-    }
-    const key = `${fitKey}@${Math.round(viewport.width)}x${Math.round(viewport.height)}`;
-    if (fittedFor.current === key) return;
-    fittedFor.current = key;
-    // A server draft arriving in an already open empty room must keep the view in place.
-    if (emptyAfterSync.current === fitKey
-        && widgets.every((widget) => widget.agent?.skill === "room-draft")) return;
-    fit();
-  }, [fit, fitKey, synced, viewport.height, viewport.width, widgets]);
+  const { fit, zoomBy } = useBoardCameraFit({
+    camera,
+    setCamera,
+    viewport,
+    widgets,
+    selectedIds,
+    widgetById,
+    fitKey,
+    synced,
+  });
 
   const worldCursor = cursor ? toWorld({ clientX: cursor.x, clientY: cursor.y }) : null;
   const selectedKanbanId = selectedIds.find((id) => kanbanStates[id]);
   const selectedKanban = selectedKanbanId ? kanbanStates[selectedKanbanId] : undefined;
-  const selectedWidget =
-    selectedIds.length === 1 ? widgets.find((w) => w.id === selectedIds[0]) : undefined;
-
-  /**
-   * Size of the selected line as it is drawn, not as it was stored.
-   *
-   * A connector's box is a leftover of its creation: moving an endpoint changes the
-   * path without rewriting it, so the badge used to report the shape of a line that no
-   * longer exists.
-   */
-  const selectedLineSize = useMemo(() => {
-    if (!selectedWidget || selectedWidget.type !== "connector") return null;
-    const path = connectorPath(selectedWidget, widgetById, {
-      max: settings.connectors.stubMax,
-      ratio: settings.connectors.stubRatio,
-    });
-    if (!path) return null;
-    const points = pathPolyline(path);
-    const xs = points.map((point) => point.x);
-    const ys = points.map((point) => point.y);
-    return {
-      width: Math.round(Math.max(...xs) - Math.min(...xs)),
-      height: Math.round(Math.max(...ys) - Math.min(...ys)),
-    };
-  }, [selectedWidget, settings.connectors.stubMax, settings.connectors.stubRatio, widgetById]);
-  const selectedGroup = soleSelectedGroup(widgets, selectedIds);
+  const edgeSource = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
+  // "Gather into section" pointed at: the outline of the section it would create.
+  const [gatherPreview, setGatherPreview] = useState(false);
+  const edgeBusy =
+    gestures.dragIds.length > 0 || (edgeSource ? gestures.preview.has(edgeSource.id) : false);
 
   /**
    * The note toolbar's target: one note, in screen coordinates.
@@ -680,7 +606,9 @@ export function BoardCanvas({
         onDoubleClick={onDoubleClick}
         onContextMenu={(event) => {
           event.preventDefault();
-          onContextMenu(resolveContextTarget(event), {
+          const target = resolveContextTarget(event);
+          if (cellMenu.openForTarget(target, event.clientX, event.clientY)) return;
+          onContextMenu(target, {
             x: event.clientX,
             y: event.clientY,
             world: toWorld(event),
@@ -693,29 +621,60 @@ export function BoardCanvas({
         onFit={fit}
         onZoom={zoomBy}
       />
-      <CanvasHint allowed={hintAllowed} />
-      <SelectionBadge
-        selectedIds={selectedIds}
-        selectedWidget={selectedWidget}
-        selectedGroup={selectedGroup}
-        selectedGroupName={selectedGroup ? groupNames[selectedGroup] : undefined}
-        selectedTags={
-          selectedWidget?.tagIds?.map((id) => tags[id]).filter((tag): tag is Tag => Boolean(tag)) ??
-          []
-        }
-        selectedLineSize={selectedLineSize}
+      {/* An empty room shows its start, not tips about objects it does not have. */}
+      <CanvasHint allowed={hintAllowed && widgets.length > 0} />
+      {resizeLimit && cursor && (
+        <div
+          className={`canvas-limit${cursor.x > viewport.width - 220 ? " canvas-limit--flip" : ""}`}
+          aria-hidden="true"
+          style={{ left: cursor.x, top: cursor.y }}
+        >
+          {t("canvas.resize.limitPx", {
+            size: Math.round(Math.min(resizeLimit.width, resizeLimit.height)),
+          })}
+        </div>
+      )}
+      <BoardSelectionBadge
+        widgets={widgets}
+        selectedIds={presenting ? [] : selectedIds}
+        groupNames={groupNames}
+        tags={tags}
+        resizeLimit={resizeLimit}
+        widgetById={widgetById}
+        settings={settings}
+      />
+      <EdgeContinueLayer
+        source={edgeSource ?? null}
+        frame={{ camera, viewport }}
+        widgets={widgets}
+        layouts={layouts}
+        settings={settings}
+        readOnly={Boolean(readOnly)}
+        editing={Boolean(editingId)}
+        busy={edgeBusy}
+        presenting={presenting}
+        onPreview={setContinuePreview}
+        onCreate={onCreateConnected}
+        onConnect={(fromId, toId, sides) => {
+          // The quiet "+" is the same port decision as a click on the anchor: a
+          // connection it creates is selected, exactly as the port click would.
+          const created = onConnect(fromId, toId, sides);
+          if (created) onSelect([created]);
+        }}
+        connectDrag={gestures}
       />
       <PresentationLayer
         board={board}
         widgets={widgets}
         selectedIds={selectedIds}
-        camera={camera}
+        camera={camera} viewport={viewport}
         setCamera={setCamera}
         connection={connection}
         presence={presence}
         canFacilitate={canFacilitate}
         panelOpen={presentationOpen}
         onPanelOpen={onPresentationOpen}
+        onPresentingChange={setPresenting}
       />
       <VoteLayer
         session={voteSession}
@@ -754,21 +713,55 @@ export function BoardCanvas({
         onCommentsUnread={onCommentsUnread}
         reactionRequest={reactionRequest}
       />
+      <CanvasTableLayer
+        board={board}
+        widgets={widgets}
+        camera={camera}
+        viewport={viewport}
+        selectedIds={selectedIds}
+        onNotice={onNotice}
+        onSelect={onSelect}
+        readOnly={Boolean(readOnly)}
+        presenting={presenting}
+        menu={cellMenu}
+      />
+      <TableHeaderLayer
+        board={board}
+        widgets={widgets}
+        camera={camera}
+        viewport={viewport}
+        readOnly={Boolean(readOnly)}
+        presenting={presenting}
+        onSelect={onSelect}
+        drop={gestures.tableHover} refused={gestures.tableRefused} cursor={gestures.cursor}
+        selectedIds={selectedIds}
+        onNotice={onNotice}
+      />
       <InlineEditor
-        target={editorTarget}
+        target={presenting ? null : editorTarget}
         onChange={onSetText}
         onCreateConnected={onCreateConnected}
         onClose={() => onEdit(null)}
       />
       <StickyBar
-        target={stickyBar}
+        target={presenting ? null : stickyBar}
         actions={stickyActions}
         editing={Boolean(editingId)}
         formatSelection={formatSelection}
       />
-      <ArrangeBar target={arrangeBar} actions={arrangeActions} />
+      <ArrangeBar
+        target={presenting ? null : arrangeBar}
+        actions={{ ...arrangeActions, previewGather: setGatherPreview }}
+      />
+      <GatherPreview
+        on={gatherPreview}
+        widgets={widgets}
+        selectedIds={selectedIds}
+        camera={camera}
+        viewport={viewport}
+      />
       <ConnectorBar
-        target={connectorBar}
+        target={presenting ? null : connectorBar}
         actions={connectorActions}
         // The label is text, so it opens in the same editor every other text uses.
         onEditLabel={() => {

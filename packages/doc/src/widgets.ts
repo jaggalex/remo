@@ -1,4 +1,4 @@
-import { expandGroups, minimumSizeOf, type Widget } from "@remo/model";
+import { expandGroups, minimumSizeOf, scalesInBlock, type Rect, type Widget } from "@remo/model";
 import type { BoardDocument } from "./board";
 import { connectorsTo } from "./connectors";
 import { cardsOf } from "./kanbanState";
@@ -167,9 +167,8 @@ export function moveWidgets(board: BoardDocument, positions: WidgetPosition[]): 
       if (!widget) return;
       // Cards inside a kanban are placed by the matrix, never by coordinates.
       if (widget.type === "card" && widget.parentId) return;
-      // A locked object is a decision, not a decoration: every gesture that would
-      // change it starts here (ADR-040).
-      if (widget.locked) return;
+      // A locked object may be carried (ADR-210); its size, text and links are still
+      // protected by every other command.
       moved.add(id);
       board.widgets.set(id, { ...widget, x, y });
 
@@ -302,10 +301,16 @@ export function deletionSummary(
   return { objects, connectors };
 }
 
+export interface DeleteWidgetsOptions {
+  force?: boolean;
+  /** Delete a frame but keep its direct children where they are (ADR-070, ADR-196). */
+  keepChildren?: boolean;
+}
+
 export function deleteWidgets(
   board: BoardDocument,
   ids: string[],
-  options: { force?: boolean } = {},
+  options: DeleteWidgetsOptions = {},
 ): void {
   if (!ids.length) return;
   board.transact(() => {
@@ -313,11 +318,31 @@ export function deleteWidgets(
     // Deleting one member of a group deletes the group: half a group is never a
     // state the user asked for.
     for (const id of expandGroups(board.readWidgets(), ids)) {
+      const widget = board.readWidget(id);
       // A locked object survives the delete key; unlocking it is the way to remove
       // it, which is the whole point of a lock (ADR-040).
-      if (!options.force && board.readWidget(id)?.locked) continue;
+      if (!options.force && widget?.locked) continue;
       doomed.add(id);
+      // A section is a container: deleting it keeps its objects on the canvas
+      // (ADR-070, ADR-196). Deleting with contents stays a separate choice.
+      if (options.keepChildren && widget?.type === "frame") continue;
       for (const childId of descendants(board, id)) doomed.add(childId);
+    }
+
+    // Release the children of a kept frame before the frame itself goes: they keep
+    // world coordinates, text and links, and lose only the table membership.
+    if (options.keepChildren) {
+      const frames = [...doomed].filter(
+        (id) => board.readWidget(id)?.type === "frame",
+      );
+      if (frames.length) {
+        const kept = new Set(frames);
+        for (const child of board.readWidgets()) {
+          if (!child.parentId || !kept.has(child.parentId)) continue;
+          const { cell: _cell, ...rest } = child;
+          board.widgets.set(child.id, { ...rest, parentId: null });
+        }
+      }
     }
 
     // Connectors die with their endpoints: a line to nothing is meaningless.
@@ -353,6 +378,117 @@ export interface WidgetRect {
   height: number;
 }
 
+/** True when one of the widget's ancestors is written directly by the same gesture. */
+function carriedByListed(
+  board: BoardDocument,
+  widget: Widget,
+  direct: ReadonlySet<string>,
+): boolean {
+  const seen = new Set<string>([widget.id]);
+  let parentId = widget.parentId;
+  while (parentId && !seen.has(parentId)) {
+    if (direct.has(parentId)) return true;
+    seen.add(parentId);
+    parentId = board.readWidget(parentId)?.parentId ?? null;
+  }
+  return false;
+}
+
+/**
+ * Move and resize a selection as one block (ADR-211).
+ *
+ * The boxes come from `scaleBoxes`: centres plus a size computed for a scalable member.
+ * This command decides the size itself — a gesture cannot make a locked object smaller by
+ * passing a smaller width. A member that cannot scale (locked, imported placeholder, a
+ * table section) keeps its size and only travels; a carried container brings its children
+ * along, while a resized one leaves them where they are (ADR-141). One transaction, one
+ * undo step.
+ */
+export function transformSelection(
+  board: BoardDocument,
+  boxes: readonly WidgetRect[],
+  scale?: { from: Rect; kx: number; ky: number },
+): void {
+  if (!boxes.length) return;
+  board.transact(() => {
+    const direct = new Set(boxes.map((box) => box.id));
+    const before = new Map<string, Widget>();
+    const resized = new Set<string>();
+    const resizedFrames = new Set<string>();
+
+    for (const box of boxes) {
+      const widget = board.readWidget(box.id);
+      if (!widget) continue;
+      // Cards inside a kanban are placed by the matrix, never by coordinates.
+      if (widget.type === "card" && widget.parentId) continue;
+      before.set(widget.id, widget);
+
+      if (scalesInBlock(widget)) {
+        const minimum = minimumSizeOf(widget.type);
+        const width = Math.max(minimum.width, box.width);
+        const height = Math.max(minimum.height, box.height);
+        if (
+          Math.abs(width - widget.width) < 0.5 &&
+          Math.abs(height - widget.height) < 0.5 &&
+          Math.abs(box.x - widget.x) < 0.5 &&
+          Math.abs(box.y - widget.y) < 0.5
+        ) {
+          continue;
+        }
+        board.widgets.set(widget.id, { ...widget, x: box.x, y: box.y, width, height });
+        resized.add(widget.id);
+        if (widget.type === "frame") resizedFrames.add(widget.id);
+      } else {
+        if (Math.abs(box.x - widget.x) < 0.5 && Math.abs(box.y - widget.y) < 0.5) continue;
+        board.widgets.set(widget.id, { ...widget, x: box.x, y: box.y });
+      }
+    }
+
+    for (const [id, widget] of before) {
+      if (resized.has(id)) continue;
+      // A child that the gesture writes itself has its own target; shifting it again
+      // as a descendant would move it twice.
+      if (carriedByListed(board, widget, direct)) continue;
+      const current = board.readWidget(id);
+      if (!current) continue;
+      const dx = current.x - widget.x;
+      const dy = current.y - widget.y;
+      if (dx === 0 && dy === 0) continue;
+      for (const childId of descendants(board, id)) {
+        if (direct.has(childId)) continue;
+        const child = board.readWidget(childId);
+        if (!child || child.type === "card") continue;
+        board.widgets.set(childId, { ...child, x: child.x + dx, y: child.y + dy });
+      }
+    }
+
+    for (const id of resizedFrames) {
+      const frame = board.readWidget(id);
+      if (frame) reconcileFrameMembership(board, frame);
+    }
+
+    // A connector whose both ends travel keeps its bends in the same place relative to
+    // the block (ADR-211); a half-selected connector keeps its world points.
+    if (scale) {
+      const { from, kx, ky } = scale;
+      for (const connector of board.readWidgets()) {
+        if (connector.type !== "connector" || !connector.waypoints?.length) continue;
+        const start = connector.start?.item;
+        const end = connector.end?.item;
+        if (!start || !end || !direct.has(start) || !direct.has(end)) continue;
+        board.widgets.set(connector.id, {
+          ...connector,
+          waypoints: connector.waypoints.map((point) => ({
+            ...point,
+            x: from.x + (point.x - from.x) * kx,
+            y: from.y + (point.y - from.y) * ky,
+          })),
+        });
+      }
+    }
+  });
+}
+
 /**
  * Resize and place several widgets in one transaction (a resize gesture).
  *
@@ -382,6 +518,7 @@ export function setWidgetRects(board: BoardDocument, rects: WidgetRect[]): void 
       const frame = board.readWidget(id);
       if (frame) reconcileFrameMembership(board, frame);
     }
+
   });
 }
 

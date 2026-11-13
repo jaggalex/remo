@@ -16,6 +16,7 @@ behaviour, the boundaries and the invariants; the numbered decisions behind them
 | [Webhooks](../../spec/webhooks.md) | signed delivery, retries and the dead-letter queue |
 | [Metrics](../../spec/metrics.md) | typed events, no content or PII |
 | [Forms](../../spec/forms.md) | dialog and form rules |
+| [Canvas objects: next steps](canvas-objects-next.md) | what to adopt from Excalidraw, what stays ours, and the plan for selection resize, snapping, shape text and label wrapping |
 | [Agent skills](../../spec/skills/) | the brief-to-room, cards and tidy-selection contracts |
 
 Visual baselines live in `spec/baselines` and `spec/ds-baselines`; they are test assets,

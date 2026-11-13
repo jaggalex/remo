@@ -42,7 +42,7 @@ A sprint plan is laid out deterministically: three columns, one row per task, a 
 
 ## What goes to the model
 
-Only what you selected, the request text and the messages of this thread. A selected frame expands to the objects inside it. The panel shows the number of sources before sending. Comments, other rooms and other tasks are not sent. Cards also carry their status, assignee and due date — without them a plan would have to invent them.
+Only what you selected, the request text and the messages of this thread. A selected frame expands to the objects inside it; when the frame is a table, the agent sees its axes and each object's cell. The panel shows the number of sources before sending. Comments, other rooms and other tasks are not sent. Cards also carry their status, assignee and due date — without them a plan would have to invent them.
 
 ## History
 

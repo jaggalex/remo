@@ -59,11 +59,21 @@ export function useBoardChrome({
 
   const [inspectorOpen, setInspectorOpen] = useState(() => {
     try {
-      return window.localStorage.getItem("remo.inspector") !== "closed";
+      // ADR-197: a person with no stored choice starts with the inspector closed.
+      return window.localStorage.getItem("remo.inspector") === "open";
     } catch {
-      return true;
+      return false;
     }
   });
+
+  const openInspector = useCallback(() => {
+    setInspectorOpen(true);
+    try {
+      window.localStorage.setItem("remo.inspector", "open");
+    } catch {
+      // The panel is already open for this visit; persistence is a convenience.
+    }
+  }, []);
 
   const toggleInspector = useCallback(() => {
     setInspectorOpen((open) => {
@@ -87,6 +97,7 @@ export function useBoardChrome({
     shareFallback,
     closeShareFallback: () => setShareFallback(null),
     inspectorOpen,
+    openInspector,
     toggleInspector,
   };
 }

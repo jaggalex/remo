@@ -229,3 +229,96 @@ export function cellGuides(
     { axis: "x", position: column.left + column.width - layout.padding, from, to, kind: "edge" },
   ];
 }
+
+/* ------------------------------------------------------- resize snapping --- */
+
+/** The two edges a corner drags; the opposite edges are the anchors (ADR-212). */
+export interface ResizeEdges {
+  x?: "left" | "right";
+  y?: "top" | "bottom";
+}
+
+/**
+ * Snap the moving edges of a resize to neighbouring edges and centres.
+ *
+ * Only the edges the corner drags take part: the anchored edges must not move, or the
+ * box would stop being attached to its opposite corner. A snap that would push the box
+ * below its minimum is skipped rather than clamped, so the edge never jumps. Guides are
+ * built from the snapped box, which is why the line tells the truth about where the edge
+ * landed.
+ */
+export function snapResize(
+  box: Rect,
+  edges: ResizeEdges,
+  targets: readonly SnapTarget[],
+  tolerance: number,
+  minimum: { width: number; height: number } = { width: 0, height: 0 },
+): { box: Rect; guides: AlignmentGuide[] } {
+  if (!targets.length || tolerance <= 0) return { box, guides: [] };
+
+  let x = box.x;
+  let y = box.y;
+  let width = box.width;
+  let height = box.height;
+  const guides: AlignmentGuide[] = [];
+
+  const xEdge = edges.x === "right" ? box.x + box.width : box.x;
+  const yEdge = edges.y === "bottom" ? box.y + box.height : box.y;
+
+  const xCandidates = edges.x
+    ? candidatesForAxis({ x: xEdge, y: box.y, width: 0, height: box.height }, targets, "x")
+    : [];
+  const yCandidates = edges.y
+    ? candidatesForAxis({ x: box.x, y: yEdge, width: box.width, height: 0 }, targets, "y")
+    : [];
+
+  const dx = edges.x ? (bestDelta(xCandidates, tolerance) ?? 0) : 0;
+  const dy = edges.y ? (bestDelta(yCandidates, tolerance) ?? 0) : 0;
+
+  if (edges.x === "right") {
+    if (dx !== 0 && width + dx >= minimum.width) width += dx;
+  } else if (edges.x === "left") {
+    if (dx !== 0 && width - dx >= minimum.width) {
+      x += dx;
+      width -= dx;
+    }
+  }
+  if (edges.y === "bottom") {
+    if (dy !== 0 && height + dy >= minimum.height) height += dy;
+  } else if (edges.y === "top") {
+    if (dy !== 0 && height - dy >= minimum.height) {
+      y += dy;
+      height -= dy;
+    }
+  }
+
+  const snapped: Rect = { x, y, width, height };
+  const addGuides = (candidates: readonly Candidate[], delta: number) => {
+    for (const candidate of candidates) {
+      if (!sameOffset(candidate.delta, delta)) continue;
+      const movingFrom = candidate.axis === "x" ? snapped.y : snapped.x;
+      const movingTo = candidate.axis === "x" ? snapped.y + snapped.height : snapped.x + snapped.width;
+      const existing = guides.find(
+        (guide) => guide.axis === candidate.axis && sameOffset(guide.position, candidate.position),
+      );
+      if (existing) {
+        existing.from = Math.min(existing.from, movingFrom, candidate.from);
+        existing.to = Math.max(existing.to, movingTo, candidate.to);
+        continue;
+      }
+      guides.push({
+        axis: candidate.axis,
+        position: candidate.position,
+        from: Math.min(movingFrom, candidate.from),
+        to: Math.max(movingTo, candidate.to),
+        kind: candidate.kind,
+      });
+    }
+  };
+
+  if (edges.x && dx !== 0) addGuides(xCandidates, dx);
+  if (edges.y && dy !== 0) addGuides(yCandidates, dy);
+
+  guides.sort((a, b) => (a.axis === b.axis ? a.position - b.position : a.axis === "x" ? -1 : 1));
+  return { box: snapped, guides };
+}

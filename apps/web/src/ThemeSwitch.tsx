@@ -1,20 +1,19 @@
+import { Icon } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { useTheme, type Theme } from "./useTheme";
 
-const ORDER: Theme[] = ["system", "light", "dark"];
-const ICON: Record<Theme, string> = { system: "◐", light: "☀", dark: "☾" };
-
 /**
- * One button, like the portal: system → light → dark → system.
+ * One button, light ⇄ dark (ADR-194).
  *
- * The accessible name says what the current theme is and what the next click will do, so
- * the icon is never the only carrier of the state.
+ * The help portal has no header of its own, so it keeps this single toggle. The
+ * accessible name says what the current theme is and what the next click will do, so the
+ * icon is never the only carrier of the state.
  */
 export function ThemeSwitch() {
   const { t } = useI18n();
   const { theme, setTheme } = useTheme();
-  const next = ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length]!;
-  const label = t(`theme.${theme}Action` as const);
+  const next: Theme = theme === "light" ? "dark" : "light";
+  const label = t(theme === "light" ? "theme.lightAction" : "theme.darkAction");
 
   return (
     <button
@@ -24,7 +23,7 @@ export function ThemeSwitch() {
       aria-label={label}
       title={label}
     >
-      <span aria-hidden="true">{ICON[theme]}</span>
+      <Icon name={theme === "light" ? "sun" : "moon"} size={16} />
     </button>
   );
 }

@@ -32,6 +32,7 @@ test("starts, advances and stops a presentation, restoring the camera", async ({
 test("names any object and puts it into the presentation", async ({ page }) => {
   const account = await freshBoard(page, "present-object");
   const id = await addSticky(page);
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
 
   const inspector = page.locator(".inspector");
   await inspector.getByLabel("Name").fill("Intro note");

@@ -181,7 +181,9 @@ test("a marquee takes the line between the notes it covers", async ({ page }) =>
   expect(selected).toEqual(expect.arrayContaining([left, right, line]));
 
   // One object alone does not carry the line: clear, click a note, and the line stays out.
-  const empty = toClient(view, { x: 0, y: -160 });
+  // Above both notes but still inside the canvas: at this zoom the old point landed
+  // under the top bar, where a click never reaches the pointer handlers.
+  const empty = toClient(view, { x: 0, y: -100 });
   await page.mouse.click(empty.x, empty.y);
   const centre = toClient(view, { x: -150, y: 0 });
   await page.mouse.click(centre.x, centre.y);
@@ -439,4 +441,271 @@ test("double-click opens the note for editing", async ({ page }) => {
 
   await page.mouse.dblclick(centre.x, centre.y);
   await expect(page.locator(".inline-editor")).toBeVisible();
+});
+
+/**
+ * A selection of many objects resizes as one box (ADR-211).
+ *
+ * Three notes, one gesture: every centre is mapped through the same factor, so the
+ * gaps keep their proportion, and one undo brings all three back.
+ */
+test("a block of notes resizes as one box (ADR-211)", async ({ page }) => {
+  const account = await register(page, "gesture-block-resize");
+  await seedNote(page, account.boardId, { x: -320, y: 0 });
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await seedNote(page, account.boardId, { x: 320, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  interface NoteBox {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+  const notes = () =>
+    page.evaluate(() => {
+      const list = (window as unknown as {
+        __remo: { widgets: Array<NoteBox & { type: string }> };
+      }).__remo.widgets;
+      return list
+        .filter((widget) => widget.type === "sticky_note")
+        .map((widget) => ({
+          id: widget.id,
+          x: widget.x,
+          y: widget.y,
+          width: widget.width,
+          height: widget.height,
+        }));
+    });
+
+  const before = await notes();
+  expect(before).toHaveLength(3);
+  const view = await geometry(page);
+
+  await page.mouse.click(...Object.values(toClient(view, before[0]!)) as [number, number]);
+  await page.keyboard.down("Shift");
+  for (const note of before.slice(1)) {
+    const point = toClient(view, note);
+    await page.mouse.click(point.x, point.y);
+  }
+  await page.keyboard.up("Shift");
+
+  const selected = await page.evaluate(
+    () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+  );
+  expect(selected).toHaveLength(3);
+  // The badge names the composition of the block (ADR-211): total and how many scale.
+  await expect(page.locator(".selection-badge")).toContainText("3 objects");
+  await expect(page.locator(".selection-badge")).toContainText("3 change size");
+
+  const right = Math.max(...before.map((note) => note.x + note.width / 2));
+  const bottom = Math.max(...before.map((note) => note.y + note.height / 2));
+  const gap = 7 / view.camera.zoom;
+  const corner = toClient(view, { x: right + gap, y: bottom + gap });
+
+  await page.mouse.move(corner.x, corner.y);
+  await page.mouse.down();
+  await page.mouse.move(corner.x + 120, corner.y + 80, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+
+  const after = await notes();
+  for (const [index, note] of before.entries()) {
+    expect(after[index]!.width).toBeGreaterThan(note.width);
+    expect(after[index]!.height).toBeGreaterThan(note.height);
+  }
+
+  // The gap between the first two notes grows with the same factor, not by a fixed
+  // amount: a block keeps its proportions.
+  const gapBefore =
+    before[1]!.x - before[1]!.width / 2 - (before[0]!.x + before[0]!.width / 2);
+  const gapAfter = after[1]!.x - after[1]!.width / 2 - (after[0]!.x + after[0]!.width / 2);
+  expect(gapAfter).toBeGreaterThan(gapBefore);
+
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  const undone = await notes();
+  for (const [index, note] of before.entries()) {
+    expect(Math.round(undone[index]!.width)).toBe(Math.round(note.width));
+    expect(Math.round(undone[index]!.x)).toBe(Math.round(note.x));
+  }
+
+  // Shrink far past the minimum: the block stops and names the limit beside the pointer.
+  const current = await notes();
+  const cRight = Math.max(...current.map((note) => note.x + note.width / 2));
+  const cBottom = Math.max(...current.map((note) => note.y + note.height / 2));
+  const stopCorner = toClient(view, { x: cRight + gap, y: cBottom + gap });
+  await page.mouse.move(stopCorner.x, stopCorner.y);
+  await page.mouse.down();
+  await page.mouse.move(stopCorner.x - 600, stopCorner.y - 600, { steps: 10 });
+  await expect(page.locator(".canvas-limit")).toBeVisible();
+  await expect(page.locator(".canvas-limit")).toContainText("Size limit");
+  await page.mouse.up();
+  await expect(page.locator(".canvas-limit")).toHaveCount(0);
+});
+
+/**
+ * Modifiers a resize carries (ADR-212).
+ *
+ * Shift keeps the proportion and Alt anchors the centre; both are read from the
+ * pointer event during the gesture, not from a mode.
+ */
+test("Shift keeps the note's proportion (ADR-212)", async ({ page }) => {
+  const account = await register(page, "gesture-shift-ratio");
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  const before = await note(page);
+  const view = await geometry(page);
+  const gap = 7 / view.camera.zoom;
+  const corner = toClient(view, {
+    x: before.x + before.width / 2 + gap,
+    y: before.y + before.height / 2 + gap,
+  });
+
+  const centre = toClient(view, before);
+  await page.mouse.click(centre.x, centre.y);
+
+  await page.mouse.move(corner.x, corner.y);
+  await page.keyboard.down("Shift");
+  await page.mouse.down();
+  await page.mouse.move(corner.x + 120, corner.y + 20, { steps: 10 });
+  await page.mouse.up();
+  await page.keyboard.up("Shift");
+  await expect.poll(async () => (await note(page)).width).toBeGreaterThan(before.width);
+
+  const after = await note(page);
+  expect(after.width / after.height).toBeCloseTo(before.width / before.height, 1);
+});
+
+test("Alt resizes around the centre (ADR-212)", async ({ page }) => {
+  const account = await register(page, "gesture-alt-centre");
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  const before = await note(page);
+  const view = await geometry(page);
+  const gap = 7 / view.camera.zoom;
+  const corner = toClient(view, {
+    x: before.x + before.width / 2 + gap,
+    y: before.y + before.height / 2 + gap,
+  });
+
+  const centre = toClient(view, before);
+  await page.mouse.click(centre.x, centre.y);
+
+  await page.mouse.move(corner.x, corner.y);
+  await page.keyboard.down("Alt");
+  await page.mouse.down();
+  await page.mouse.move(corner.x + 80, corner.y + 40, { steps: 10 });
+  await page.mouse.up();
+  await page.keyboard.up("Alt");
+  await expect.poll(async () => (await note(page)).width).toBeGreaterThan(before.width);
+
+  const after = await note(page);
+  expect(after.height).toBeGreaterThan(before.height);
+  // The centre is the anchor: a pixel of rounding is allowed, a drift is not.
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
+});
+
+/**
+ * A shape grows down when its text no longer fits at the readable floor (ADR-214).
+ *
+ * The width is the person's decision and stays; the height follows the text until the
+ * 1280 px cap. The height merges into the editing session, so one undo restores both.
+ */
+test("a shape grows down for its text (ADR-214)", async ({ page }) => {
+  await freshBoard(page, "gesture-shape-grow");
+  const rail = page.getByRole("toolbar", { name: "Tools" });
+  await rail.getByRole("button", { name: "Shape variants" }).click();
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+
+  // A tolerant read: the probe is refreshed on every render, and a poll must not fail
+  // because it looked during a re-render.
+  const box = () =>
+    page.evaluate(() => {
+      const probe = (window as unknown as {
+        __remo?: {
+          widgets: Array<{ type: string; x: number; y: number; width: number; height: number; text: string }>;
+        };
+      }).__remo;
+      const one = probe?.widgets.find((widget) => widget.type === "shape");
+      return one ? { x: one.x, y: one.y, width: one.width, height: one.height, text: one.text } : null;
+    });
+
+  const before = await box();
+  if (!before) throw new Error("the shape was not created");
+  // Creation is its own decision: let it close before typing, so the undo below targets
+  // the label and not the shape (undo capture is 400 ms).
+  await page.waitForTimeout(600);
+  const view = await geometry(page);
+  const at = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y } : null;
+  });
+  if (!at) throw new Error("the shape has no position");
+  const point = toClient(view, at);
+  await page.mouse.dblclick(point.x, point.y);
+
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill(
+    "Очень длинная подпись шейпа, которая заведомо не помещается в исходный прямоугольник. ".repeat(14),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+
+  await expect.poll(async () => (await box())?.height ?? 0).toBeGreaterThan(before.height);
+  const grown = await box();
+  if (!grown) throw new Error("the shape disappeared");
+  expect(grown.width).toBe(before.width);
+  expect(grown.height).toBeLessThanOrEqual(1280);
+  expect(grown.height).toBeGreaterThan(before.height + 40);
+  // The box is centre-anchored, so growing the height alone would lift the top edge.
+  // It stays put: the shape grows down from where the person put it (ADR-214).
+  const top = (box: { y: number; height: number }) => box.y - box.height / 2;
+  expect(Math.abs(top(grown) - top(before))).toBeLessThanOrEqual(1);
+
+  // The badge must not call it clipped once the shape has grown for the settled text.
+  await page.waitForTimeout(500);
+  const centre = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y } : null;
+  });
+  if (!centre) throw new Error("the shape disappeared");
+  const click = toClient(view, centre);
+  await page.mouse.click(click.x, click.y);
+  const badge = page.locator(".selection-badge");
+  await expect(badge).toContainText("Shape");
+  await expect(badge).toContainText("×");
+  await expect(badge).not.toContainText("Text does not fit");
+
+  // One undo restores the text and the height it needed together (ADR-215).
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(async () => (await box())?.height ?? 0).toBe(before.height);
+  const undone = await box();
+  expect(undone?.text ?? "").toBe("");
 });

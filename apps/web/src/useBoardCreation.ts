@@ -187,6 +187,7 @@ export function useBoardCreation({
         strokeWidth: settings.shapes.strokeWidth,
       });
       setSelectedIds([id]);
+      return id;
     },
     [board, nextSpot],
   );
