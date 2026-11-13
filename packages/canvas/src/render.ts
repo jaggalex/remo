@@ -23,18 +23,8 @@ import { roundRect } from "./path";
 import { layoutLabel } from "./labelLayout";
 export { roundRect } from "./path";
 import { DEFAULT_PALETTE, withAlpha, type CanvasPalette } from "./palette";
-import {
-  DEFAULT_FONT_FAMILY,
-  fontFor,
-  layoutRuns,
-  lineHeightFor,
-  fitNoteFont,
-  notePadding,
-  textCapFor,
-  textClipped,
-  textFloorFor,
-  type RichLine,
-} from "./textLayout";
+import { layoutRuns, textCapFor } from "./textLayout";
+import { drawRichLine, drawTextInBox } from "./textPaint";
 
 /**
  * Stacking order.
@@ -46,59 +36,6 @@ import {
  */
 export { PAINT_RANK, layerKey, paintOrder, rankOf } from "@remo/model";
 
-/**
- * Draw one line of formatted text.
- *
- * `align` matters for the widget being painted: a sticky note is left-aligned, a
- * text block is centred, so the line is measured twice — once per segment to place
- * it, once in total to shift it.
- */
-function drawRichLine(
-  ctx: CanvasRenderingContext2D,
-  line: RichLine,
-  x: number,
-  /** Top of the line box, or its vertical centre when `centre` is set. */
-  y: number,
-  fontPx: number,
-  align: "left" | "center" | "right",
-  centre = false,
-  family: string = DEFAULT_FONT_FAMILY,
-): void {
-  let cursor = align === "center" ? x - line.width / 2 : align === "right" ? x - line.width : x;
-
-  // Underline and strikethrough belong to the text's baseline, not to the line box:
-  // with the baseline guessed from the box top they drifted into the letters.
-  // The ascent must be measured with the font this line is drawn in: measuring it
-  // before setting the font used whichever widget painted last, and the first line of
-  // every block landed a few pixels off (a fitted label then looked clipped at the top).
-  ctx.font = fontFor(fontPx, line.segments[0], family);
-  // The ascent is measured against the baseline, so the baseline mode must be set
-  // before the probe: with the caller's `top` still active the ascent came out
-  // negative and the first line of every block was drawn a few pixels too high.
-  ctx.textBaseline = "alphabetic";
-  const probe = ctx.measureText("Mg");
-  const ascent = probe.actualBoundingBoxAscent || fontPx * 0.8;
-  const descent = probe.actualBoundingBoxDescent || fontPx * 0.2;
-  const baseline = centre ? y + (ascent - descent) / 2 : y + ascent;
-
-  for (const segment of line.segments) {
-    ctx.font = fontFor(fontPx, segment, family);
-    ctx.fillText(segment.text, cursor, baseline);
-    const width = ctx.measureText(segment.text).width;
-
-    if (segment.underline || segment.strike) {
-      ctx.strokeStyle = ctx.fillStyle as string;
-      ctx.lineWidth = Math.max(1, fontPx / 14);
-      const at = segment.underline ? baseline + fontPx * 0.13 : baseline - fontPx * 0.3;
-      ctx.beginPath();
-      ctx.moveTo(cursor, at);
-      ctx.lineTo(cursor + width, at);
-      ctx.stroke();
-    }
-
-    cursor += width;
-  }
-}
 
 /**
  * Outline left where a dragged object used to be.
@@ -292,65 +229,6 @@ function fillHead(ctx: CanvasRenderingContext2D, head: ArrowHead, colour: string
   ctx.restore();
 }
 
-/**
- * Draw a widget's text inside its box.
- *
- * Shared by sticky notes and shapes so both get the same Auto sizing, the same three
- * alignments, the same runs and the same underline placement. `clip` keeps text from
- * spilling over a physical object's edge.
- */
-function drawTextInBox(
-  ctx: CanvasRenderingContext2D,
-  widget: Widget,
-  box: { x: number; y: number; width: number; height: number },
-  theme: PaintTheme,
-  options: {
-    cap: number;
-    align: "left" | "center" | "right";
-    vAlign: "top" | "middle" | "bottom";
-    clip?: boolean;
-  },
-): boolean {
-  const content = widget.content ?? "";
-  const runs: TextRun[] = widget.runs?.length ? widget.runs : content ? [{ text: content }] : [];
-  if (!runs.length) return false;
-
-  const explicit = widget.style?.fontSize;
-  const size =
-    explicit ??
-    fitNoteFont(ctx, runs, box.width, box.height, options.cap, textFloorFor(widget), theme.fontFamily);
-
-  const padding = notePadding(size);
-  const lines = layoutRuns(ctx, runs, Math.max(box.width - padding * 2, 8), size, theme.fontFamily);
-  const lineHeight = lineHeightFor(size);
-  const total = lines.length * lineHeight;
-  const startY =
-    options.vAlign === "top"
-      ? box.y + padding
-      : options.vAlign === "bottom"
-        ? box.y + box.height - padding - total
-        : box.y + (box.height - total) / 2;
-  const lineX =
-    options.align === "left"
-      ? box.x + padding
-      : options.align === "right"
-        ? box.x + box.width - padding
-        : box.x + box.width / 2;
-
-  ctx.save();
-  if (options.clip) {
-    ctx.beginPath();
-    ctx.rect(box.x, box.y, box.width, box.height);
-    ctx.clip();
-  }
-  ctx.textAlign = "left";
-  lines.forEach((line, i) => {
-    drawRichLine(ctx, line, lineX, startY + i * lineHeight, size, options.align, false, theme.fontFamily);
-  });
-  ctx.restore();
-  // The caller shows the clip mark from the same answer the badge reads (ADR-214).
-  return textClipped(widget, options.cap, theme.fontFamily) === true;
-}
 
 /** Widgets whose paint already failed once; logged once each, not every frame. */
 const failedPaints = new Set<string>();
@@ -488,7 +366,7 @@ function paintWidget(
       // Notes and shapes share one text block: same Auto sizing, same alignment,
       // same runs. Two implementations would drift (ADR-033).
       if (!editing) {
-        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
+        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme.fontFamily, {
           cap: textCapFor(widget, theme.fontCap),
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",
@@ -619,7 +497,7 @@ function paintWidget(
 
       if (!editing && (widget.content || widget.runs?.length)) {
         ctx.fillStyle = inkFor(fill, widget.style?.textColor);
-        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
+        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme.fontFamily, {
           cap: textCapFor(widget, theme.fontCap),
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",

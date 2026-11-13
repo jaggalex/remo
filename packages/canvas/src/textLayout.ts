@@ -376,6 +376,22 @@ export function noteFontSizeFor(
 
 
 /**
+ * The one clip question: do `count` lines of `lineHeight` fit the box inside `padding`?
+ *
+ * The painter asks it with the lines it has already laid out, the badge and the tester
+ * ask it through `textClipped`; one formula means the mark, the word and the growth can
+ * never disagree (ADR-214). The tolerance absorbs fractional line heights.
+ */
+export function linesClipped(
+  count: number,
+  lineHeight: number,
+  height: number,
+  padding: number,
+): boolean {
+  return count * lineHeight > Math.max(height - padding * 2, lineHeight) + 0.5;
+}
+
+/**
  * Whether the widget's text is clipped at the size it paints at (ADR-214).
  *
  * The badge needs the same answer the painter has; `null` means no canvas is available
@@ -407,10 +423,7 @@ export function textClipped(
       textFloorFor(widget),
       family,
     );
-  // The painter compares the lines' own height with the box inside its padding; adding
-  // the padding on both sides would call a fitting label clipped (ADR-214).
   const padding = notePadding(size);
   const lines = layoutRuns(ctx, runs, Math.max(widget.width - padding * 2, 8), size, family);
-  return lines.length * lineHeightFor(size) >
-    Math.max(widget.height - padding * 2, lineHeightFor(size)) + 0.5;
+  return linesClipped(lines.length, lineHeightFor(size), widget.height, padding);
 }
