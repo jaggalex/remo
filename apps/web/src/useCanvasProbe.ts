@@ -47,6 +47,10 @@ export function useCanvasProbe({
       get proposal() {
         return paintedProposal();
       },
+      /** Paint counters, read by a scenario that measures the gesture cadence (ADR-213). */
+      get paintStats() {
+        return paintStats.current;
+      },
       boardTitle,
       camera,
       viewport,
