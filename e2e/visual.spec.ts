@@ -784,5 +784,6 @@ test("a shape grows for its text", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(page.locator(".inline-editor")).toHaveCount(0);
   await page.waitForTimeout(500);
+  await page.keyboard.press("Escape");
   await capture(page, page.locator(".canvas-wrap"), "shape-grow");
 });

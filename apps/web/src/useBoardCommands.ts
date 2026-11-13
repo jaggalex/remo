@@ -174,17 +174,22 @@ export function useBoardCommands(deps: BoardCommandDeps) {
       setWidgetDelta(board, id, delta);
       // The editor streams a delta on every keystroke; the shared text settles a moment
       // later. Measuring immediately reads a partial text, so the check waits for a
-      // pause and then grows until the painter's own check says it fits (ADR-214).
+      // pause and then grows until the painter's own check says it fits (ADR-215).
       const pending = growthTimers.current.get(id);
       if (pending) clearTimeout(pending);
+      growthHeights.current.set(id, board.readWidget(id)?.height ?? 0);
       growthTimers.current.set(
         id,
         setTimeout(() => {
           growthTimers.current.delete(id);
+          const expected = growthHeights.current.get(id);
+          growthHeights.current.delete(id);
           const current = board.readWidget(id);
           if (!current || current.type !== "shape" || current.cell || current.style?.fontSize) {
             return;
           }
+          // A manual resize while the check was pending is a decision: it wins.
+          if (expected != null && Math.abs(current.height - expected) > 0.5) return;
           const text = board.textOf(id);
           if (!text) return;
           const runs = board
@@ -259,6 +264,8 @@ export function useBoardCommands(deps: BoardCommandDeps) {
 
   /** One pending growth check per shape: typing streams, the measure waits for calm. */
   const growthTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  /** The height the widget had when the check was scheduled: a resize wins over text. */
+  const growthHeights = useRef(new Map<string, number>());
   useEffect(() => {
     const timers = growthTimers.current;
     return () => {

@@ -629,7 +629,7 @@ test("Alt resizes around the centre (ADR-212)", async ({ page }) => {
  * A shape grows down when its text no longer fits at the readable floor (ADR-214).
  *
  * The width is the person's decision and stays; the height follows the text until the
- * 1280 px cap. The growth rides the keystroke, so one undo restores both.
+ * 1280 px cap. The height merges into the editing session, so one undo restores both.
  */
 test("a shape grows down for its text (ADR-214)", async ({ page }) => {
   await freshBoard(page, "gesture-shape-grow");
@@ -686,12 +686,13 @@ test("a shape grows down for its text (ADR-214)", async ({ page }) => {
     const one = probe?.widgets.find((widget) => widget.type === "shape");
     return one ? { x: one.x, y: one.y } : null;
   });
-  if (centre) {
-    const view = await geometry(page);
-    const point = toClient(view, centre);
-    await page.mouse.click(point.x, point.y);
-    await expect(page.locator(".selection-badge")).not.toContainText("Text does not fit");
-  }
+  if (!centre) throw new Error("the shape disappeared");
+  const click = toClient(view, centre);
+  await page.mouse.click(click.x, click.y);
+  const badge = page.locator(".selection-badge");
+  await expect(badge).toContainText("Shape");
+  await expect(badge).toContainText("×");
+  await expect(badge).not.toContainText("Text does not fit");
 
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(async () => (await box())?.height ?? 0).toBeLessThan(grown.height);

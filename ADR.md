@@ -8784,3 +8784,27 @@ transaction as the keystroke, so typing stays one undo step. The painter draws t
 both notes and shapes from `canvas-mark-bg` / `canvas-mark-line`. Tests cover the height at
 the floor and the growth in the browser. Rich text marks on a clipped line remain clipped the
 same way.
+
+---
+
+## ADR-215: A shape grows after its text settles (amends the mechanism of ADR-214)
+
+**Status:** accepted (2026-11-13).
+
+**Context.** ADR-214 said the height "rides along in the same transaction as the keystroke".
+That was true for the first implementation, which measured the input delta — but `readWidget`
+carries no text: the content lives in `texts` and is materialised for the painter. The delta
+and the materialised string can differ by a line, so a shape stopped one line short and the
+painter still clipped.
+
+**Decision.** After a keystroke writes the text, one check is scheduled **120 ms** after the
+last keystroke. It reads `board.textOf`, grows the shape line by line while `textClipped` —
+the same predicate the painter and the badge use — reports a clipped label, and writes the
+height with `merge: true`, so the correction joins the editing session instead of becoming a
+second undo step. A manual resize while the check is pending wins: the check records the
+height it saw and does nothing if the height changed.
+
+**Consequences.** Growth appears a moment after typing rather than per keystroke, which is
+invisible at typing speed and avoids measuring a partial string. `shapeHeightFor` and
+`runsBlockHeight` are removed: the clip predicate is the only measure. The tests assert that
+the grown shape's badge names the object and does not report a clipped label.

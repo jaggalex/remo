@@ -68,7 +68,7 @@
 ## 5. Эталоны (кадр F3) — финально
 
 Новые: `selection-block.png`, `selection-min-stop.png`, `shape-grow.png`,
-`text-overflow.png`, `label-wrap.png`, `shape-grow.png` — сняты на пустой доске после «Fit».
+`text-overflow.png`, `label-wrap.png` — сняты на пустой доске после «Fit».
 `connectors.png` и `board.png` не изменились: подпись в эталонном кадре короткая, а
 однообъектное выделение осталось прежним.
 

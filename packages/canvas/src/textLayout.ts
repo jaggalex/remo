@@ -277,36 +277,6 @@ export const MIN_SHAPE_FONT = 10;
 /** How tall a shape may grow for its text before the label is clipped (ADR-214). */
 export const MAX_SHAPE_HEIGHT = 1280;
 
-/** Height `runs` need at `fontPx`, padding included — the growth rule and the clip mark. */
-export function runsBlockHeight(
-  ctx: CanvasRenderingContext2D,
-  runs: readonly TextRun[],
-  width: number,
-  fontPx: number,
-  family: string = DEFAULT_FONT_FAMILY,
-): number {
-  const padding = notePadding(fontPx);
-  const lines = layoutRuns(ctx, runs, Math.max(width - padding * 2, 8), fontPx, family);
-  return lines.length * lineHeightFor(fontPx) + padding * 2;
-}
-
-/**
- * Height a shape needs at the readable floor, measured off-screen.
- *
- * The caller compares it with the shape's height and grows the box when the text no
- * longer fits; `null` means no canvas is available (server-side render).
- */
-export function shapeHeightFor(
-  runs: readonly TextRun[],
-  width: number,
-  fontPx: number = MIN_SHAPE_FONT,
-  family: string = DEFAULT_FONT_FAMILY,
-): number | null {
-  const ctx = measureContext();
-  if (!ctx) return null;
-  return runsBlockHeight(ctx, runs, width, fontPx, family);
-}
-
 /** Line box for a text size; the painter and the fitter must agree exactly. */
 export function lineHeightFor(fontPx: number): number {
   return Math.round(fontPx * 1.25);
