@@ -535,6 +535,19 @@ test("a block of notes resizes as one box (ADR-211)", async ({ page }) => {
     expect(Math.round(undone[index]!.width)).toBe(Math.round(note.width));
     expect(Math.round(undone[index]!.x)).toBe(Math.round(note.x));
   }
+
+  // Shrink far past the minimum: the block stops and names the limit beside the pointer.
+  const current = await notes();
+  const cRight = Math.max(...current.map((note) => note.x + note.width / 2));
+  const cBottom = Math.max(...current.map((note) => note.y + note.height / 2));
+  const stopCorner = toClient(view, { x: cRight + gap, y: cBottom + gap });
+  await page.mouse.move(stopCorner.x, stopCorner.y);
+  await page.mouse.down();
+  await page.mouse.move(stopCorner.x - 600, stopCorner.y - 600, { steps: 10 });
+  await expect(page.locator(".canvas-limit")).toBeVisible();
+  await expect(page.locator(".canvas-limit")).toContainText("Size limit");
+  await page.mouse.up();
+  await expect(page.locator(".canvas-limit")).toHaveCount(0);
 });
 
 /**

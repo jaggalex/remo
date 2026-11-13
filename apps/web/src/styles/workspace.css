@@ -117,6 +117,26 @@
 }
 
 /* Beside the rail, not under it: the rail is a panel over the canvas now (§10.2, Р3). */
+/*
+ * The size limit beside the pointer (ADR-211).
+ *
+ * It is a second surface for the sentence the badge already says, so it is decorative:
+ * `aria-hidden`, no interaction, and it never covers the cursor — it steps away from it
+ * and flips to the other side near the right edge.
+ */
+.canvas-limit {
+  position: fixed;
+  z-index: var(--z-bar);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xl);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  font: var(--type-caption);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-bar);
+}
+
 .selection-badge {
   position: absolute;
   z-index: var(--z-bar);

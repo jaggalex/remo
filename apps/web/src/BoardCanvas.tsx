@@ -622,6 +622,21 @@ export function BoardCanvas({
       />
       {/* An empty room shows its start, not tips about objects it does not have. */}
       <CanvasHint allowed={hintAllowed && widgets.length > 0} />
+      {resizeLimit && cursor && (
+        <div
+          className="canvas-limit"
+          aria-hidden="true"
+          style={{
+            left: cursor.x + 16,
+            top: cursor.y + 16,
+            transform: cursor.x > viewport.width - 220 ? "translateX(-100%) translateX(-32px)" : undefined,
+          }}
+        >
+          {t("canvas.resize.limit", {
+            size: `${Math.round(Math.min(resizeLimit.width, resizeLimit.height))} px`,
+          })}
+        </div>
+      )}
       <BoardSelectionBadge
         widgets={widgets}
         selectedIds={presenting ? [] : selectedIds}
