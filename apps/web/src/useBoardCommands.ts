@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef } from "react";
-import { MAX_SHAPE_HEIGHT, MIN_SHAPE_FONT, shapeHeightFor } from "@remo/canvas";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { MAX_SHAPE_HEIGHT, MIN_SHAPE_FONT, lineHeightFor, textClipped } from "@remo/canvas";
 import type { Rect } from "@remo/model";
 import type { MutableRefObject } from "react";
 import {
@@ -31,6 +31,7 @@ import {
   setTextColor,
   toggleNoteMark,
   ungroupWidgets,
+  LOCAL_ORIGIN,
   setWidgetDelta,
   setWidgetText,
   swapConnectorEnds,
@@ -170,20 +171,51 @@ export function useBoardCommands(deps: BoardCommandDeps) {
    */
   const onSetText = useCallback(
     (id: string, delta: TextDeltaOp[]) => {
-      const widget = board.readWidget(id);
-      let height: number | null = null;
-      if (widget?.type === "shape" && !widget.cell && !widget.style?.fontSize) {
-        const runs = delta
-          .filter((op) => op.insert)
-          .map((op) => ({ text: op.insert, ...op.attributes }));
-        const needed = shapeHeightFor(runs, widget.width, MIN_SHAPE_FONT, settings.text.fontFamily);
-        if (needed != null && needed > widget.height) {
-          height = Math.min(Math.round(needed), MAX_SHAPE_HEIGHT);
-        }
-      }
-      setWidgetDelta(board, id, delta, height != null ? { height } : {});
+      setWidgetDelta(board, id, delta);
+      // The editor streams a delta on every keystroke; the shared text settles a moment
+      // later. Measuring immediately reads a partial text, so the check waits for a
+      // pause and then grows until the painter's own check says it fits (ADR-214).
+      const pending = growthTimers.current.get(id);
+      if (pending) clearTimeout(pending);
+      growthTimers.current.set(
+        id,
+        setTimeout(() => {
+          growthTimers.current.delete(id);
+          const current = board.readWidget(id);
+          if (!current || current.type !== "shape" || current.cell || current.style?.fontSize) {
+            return;
+          }
+          const text = board.textOf(id);
+          if (!text) return;
+          const runs = board
+            .deltaOf(id)
+            .filter((op) => op.insert)
+            .map((op) => ({ text: op.insert, ...op.attributes }));
+          const cap = settings.notes.fontCap.M;
+          let target = current.height;
+          while (target < MAX_SHAPE_HEIGHT) {
+            const probe = {
+              ...current,
+              height: target,
+              content: text,
+              runs: runs.length ? runs : undefined,
+            };
+            if (textClipped(probe, cap, settings.text.fontFamily) !== true) break;
+            target = Math.min(target + lineHeightFor(MIN_SHAPE_FONT), MAX_SHAPE_HEIGHT);
+          }
+          if (target <= current.height) return;
+          board.transact(
+            () => {
+              const live = board.readWidget(id);
+              if (live && !live.locked) board.widgets.set(id, { ...live, height: target });
+            },
+            LOCAL_ORIGIN,
+            { merge: true },
+          );
+        }, 120),
+      );
     },
-    [board, settings.text.fontFamily],
+    [board, settings.notes.fontCap.M, settings.text.fontFamily],
   );
 
   const moveMany = useCallback(
@@ -224,6 +256,16 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     () => widgets.some((widget) => selectedIds.includes(widget.id) && widget.locked),
     [selectedIds, widgets],
   );
+
+  /** One pending growth check per shape: typing streams, the measure waits for calm. */
+  const growthTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const timers = growthTimers.current;
+    return () => {
+      for (const timer of timers.values()) clearTimeout(timer);
+      timers.clear();
+    };
+  }, []);
 
   const resizeSelection = useCallback(
     (rects: WidgetRect[], scale?: { from: Rect; kx: number; ky: number }) =>

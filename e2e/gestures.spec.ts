@@ -677,6 +677,22 @@ test("a shape grows down for its text (ADR-214)", async ({ page }) => {
   expect(grown.height).toBeLessThanOrEqual(1280);
   expect(grown.height).toBeGreaterThan(before.height + 40);
 
+  // The badge must not call it clipped once the shape has grown for the settled text.
+  await page.waitForTimeout(500);
+  const centre = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y } : null;
+  });
+  if (centre) {
+    const view = await geometry(page);
+    const point = toClient(view, centre);
+    await page.mouse.click(point.x, point.y);
+    await expect(page.locator(".selection-badge")).not.toContainText("Text does not fit");
+  }
+
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(async () => (await box())?.height ?? 0).toBeLessThan(grown.height);
 });

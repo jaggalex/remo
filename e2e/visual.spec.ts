@@ -749,3 +749,40 @@ test("a connector label keeps its lines", async ({ page }) => {
   await expect(page.locator(".inline-editor")).toHaveCount(0);
   await capture(page, page.locator(".canvas-wrap"), "label-wrap");
 });
+
+/** A shape that grew for its text (ADR-214): width unchanged, height down. */
+test("a shape grows for its text", async ({ page }) => {
+  const account = await register(page, "visual-shape-grow");
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+  await zoomInToReadable(page);
+
+  const rail = page.getByRole("toolbar", { name: "Tools" });
+  await rail.getByRole("button", { name: "Shape variants" }).click();
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+
+  const at = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y } : null;
+  });
+  if (!at) throw new Error("the shape was not created");
+  const view = await canvasView(page);
+  const point = clientPoint(view, at);
+  await page.mouse.dblclick(point.x, point.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill(
+    "Подпись диаграммы, которой нужно больше места, чем было у прямоугольника. ".repeat(10),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+  await page.waitForTimeout(500);
+  await capture(page, page.locator(".canvas-wrap"), "shape-grow");
+});
