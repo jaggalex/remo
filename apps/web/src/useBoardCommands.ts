@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
+import { MAX_SHAPE_HEIGHT, MIN_SHAPE_FONT, shapeHeightFor } from "@remo/canvas";
 import type { MutableRefObject } from "react";
 import {
   addConnectorWaypoint,
@@ -162,11 +163,26 @@ export function useBoardCommands(deps: BoardCommandDeps) {
    *
    * The note does **not** grow: it keeps its size and Auto text shrinks to fit
    * (ADR-027), which is why typing a lot into a sticky makes the letters smaller
-   * instead of the note taller. Resizing is a deliberate gesture with its own handle.
+   * instead of the note taller. A shape is a diagram node: when its text no longer fits
+   * at the readable floor, the shape grows down (ADR-214), in the same transaction as
+   * the keystroke, so the growth and the edit are one undo step.
    */
   const onSetText = useCallback(
-    (id: string, delta: TextDeltaOp[]) => setWidgetDelta(board, id, delta),
-    [board],
+    (id: string, delta: TextDeltaOp[]) => {
+      const widget = board.readWidget(id);
+      let height: number | null = null;
+      if (widget?.type === "shape" && !widget.cell && !widget.style?.fontSize) {
+        const runs = delta
+          .filter((op) => op.insert)
+          .map((op) => ({ text: op.insert, ...op.attributes }));
+        const needed = shapeHeightFor(runs, widget.width, MIN_SHAPE_FONT, settings.text.fontFamily);
+        if (needed != null && needed > widget.height) {
+          height = Math.min(Math.round(needed), MAX_SHAPE_HEIGHT);
+        }
+      }
+      setWidgetDelta(board, id, delta, height != null ? { height } : {});
+    },
+    [board, settings.text.fontFamily],
   );
 
   const moveMany = useCallback(

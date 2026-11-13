@@ -106,9 +106,9 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 
 | Fact | Value |
 |---|---|
-| ADR | 213, latest ADR-213 |
+| ADR | 214, latest ADR-214 |
 | Schema version | 20 |
-| Browser scenarios | 159 in 35 files |
+| Browser scenarios | 160 in 35 files |
 | Help topics | 34 (RU + EN) |
 | Portal pages | 69 |
 | Baselines | 23 product + 12 DS |

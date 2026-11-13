@@ -608,3 +608,59 @@ test("Alt resizes around the centre (ADR-212)", async ({ page }) => {
   expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
   expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
 });
+
+/**
+ * A shape grows down when its text no longer fits at the readable floor (ADR-214).
+ *
+ * The width is the person's decision and stays; the height follows the text until the
+ * 1280 px cap. The growth rides the keystroke, so one undo restores both.
+ */
+test("a shape grows down for its text (ADR-214)", async ({ page }) => {
+  await freshBoard(page, "gesture-shape-grow");
+  const rail = page.getByRole("toolbar", { name: "Tools" });
+  await rail.getByRole("button", { name: "Shape variants" }).click();
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+
+  // A tolerant read: the probe is refreshed on every render, and a poll must not fail
+  // because it looked during a re-render.
+  const box = () =>
+    page.evaluate(() => {
+      const probe = (window as unknown as {
+        __remo?: { widgets: Array<{ type: string; width: number; height: number }> };
+      }).__remo;
+      const one = probe?.widgets.find((widget) => widget.type === "shape");
+      return one ? { width: one.width, height: one.height } : null;
+    });
+
+  const before = await box();
+  if (!before) throw new Error("the shape was not created");
+  const view = await geometry(page);
+  const at = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y } : null;
+  });
+  if (!at) throw new Error("the shape has no position");
+  const point = toClient(view, at);
+  await page.mouse.dblclick(point.x, point.y);
+
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill(
+    "Очень длинная подпись шейпа, которая заведомо не помещается в исходный прямоугольник. ".repeat(14),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+
+  await expect.poll(async () => (await box())?.height ?? 0).toBeGreaterThan(before.height);
+  const grown = await box();
+  if (!grown) throw new Error("the shape disappeared");
+  expect(grown.width).toBe(before.width);
+  expect(grown.height).toBeLessThanOrEqual(1280);
+  expect(grown.height).toBeGreaterThan(before.height + 40);
+
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(async () => (await box())?.height ?? 0).toBeLessThan(grown.height);
+});

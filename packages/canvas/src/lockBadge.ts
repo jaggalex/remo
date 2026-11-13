@@ -1,5 +1,5 @@
 import type { Rect } from "@remo/model";
-import { roundRect } from "./render";
+import { roundRect } from "./path";
 
 /**
  * The lock badge on a locked object (ADR-193).

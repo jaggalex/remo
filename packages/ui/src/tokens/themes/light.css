@@ -34,6 +34,8 @@
   --state-info: var(--neutral-600);
   --selection-fill: var(--alpha-accent-8);
   --selection-stroke: var(--neutral-900);
+  --canvas-mark-bg: var(--alpha-white-88);
+  --canvas-mark-line: var(--alpha-ink-28);
   --presence-1: var(--orange-600);
   --presence-2: var(--green-teal-600);
   --presence-3: var(--blue-600);

@@ -25,6 +25,8 @@ export function canvasPaletteFromTokens(root: Element = document.documentElement
     accentSoft: t["accent-soft"],
     selectionStroke: t["selection-stroke"],
     selectionFill: t["selection-fill"],
+    markBg: t["canvas-mark-bg"],
+    markLine: t["canvas-mark-line"],
     danger: t["danger"],
     warning: t["state-warning"],
     success: t["state-success"],

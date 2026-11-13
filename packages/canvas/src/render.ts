@@ -19,7 +19,10 @@ import {
   type ArrowHead,
   type ConnectorPath,
 } from "./connectors";
+import { drawClipMark } from "./clipMark";
+import { roundRect } from "./path";
 import { layoutLabel } from "./labelLayout";
+export { roundRect } from "./path";
 import { DEFAULT_PALETTE, withAlpha, type CanvasPalette } from "./palette";
 import {
   DEFAULT_FONT_FAMILY,
@@ -27,6 +30,7 @@ import {
   layoutRuns,
   lineHeightFor,
   fitNoteFont,
+  MIN_SHAPE_FONT,
   notePadding,
   type RichLine,
 } from "./textLayout";
@@ -168,23 +172,6 @@ export function deviceScale(ctx: CanvasRenderingContext2D, zoom: number): number
   return matrix ? Math.hypot(matrix.a, matrix.b) : zoom;
 }
 
-export function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-): void {
-  const r = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + width, y, x + width, y + height, r);
-  ctx.arcTo(x + width, y + height, x, y + height, r);
-  ctx.arcTo(x, y + height, x, y, r);
-  ctx.arcTo(x, y, x + width, y, r);
-  ctx.closePath();
-}
 
 /** Greedy word wrap; returns the lines that fit into `maxLines`. */
 export function wrapText(
@@ -310,14 +297,15 @@ function drawTextInBox(
     vAlign: "top" | "middle" | "bottom";
     clip?: boolean;
   },
-): void {
+): boolean {
   const content = widget.content ?? "";
   const runs: TextRun[] = widget.runs?.length ? widget.runs : content ? [{ text: content }] : [];
-  if (!runs.length) return;
+  if (!runs.length) return false;
 
   const explicit = widget.style?.fontSize;
+  const floor = widget.type === "shape" ? MIN_SHAPE_FONT : undefined;
   const size =
-    explicit ?? fitNoteFont(ctx, runs, box.width, box.height, options.cap, undefined, theme.fontFamily);
+    explicit ?? fitNoteFont(ctx, runs, box.width, box.height, options.cap, floor, theme.fontFamily);
 
   const padding = notePadding(size);
   const lines = layoutRuns(ctx, runs, Math.max(box.width - padding * 2, 8), size, theme.fontFamily);
@@ -349,6 +337,9 @@ function drawTextInBox(
     drawRichLine(ctx, line, lineX, startY + i * lineHeight, size, options.align, false, theme.fontFamily);
   });
   ctx.restore();
+  // The caller shows the clip mark when the text could not fit even at the floor
+  // (ADR-214); this is the same comparison the fit used.
+  return total > Math.max(box.height - padding * 2, lineHeight) + 0.5;
 }
 
 /** Widgets whose paint already failed once; logged once each, not every frame. */
@@ -487,12 +478,13 @@ function paintWidget(
       // Notes and shapes share one text block: same Auto sizing, same alignment,
       // same runs. Two implementations would drift (ADR-033).
       if (!editing) {
-        drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
+        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
           cap: theme.fontCap[widget.style?.stickySize ?? "M"] ?? stickyFontCap(widget.style?.stickySize),
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",
           clip: true,
         });
+        if (clipped) drawClipMark(ctx, { x: left, y: top, width: widget.width, height: widget.height }, zoom, palette);
       }
       break;
     }
@@ -617,12 +609,13 @@ function paintWidget(
 
       if (!editing && (widget.content || widget.runs?.length)) {
         ctx.fillStyle = inkFor(fill, widget.style?.textColor);
-        drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
+        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
           cap: theme.fontCap.M,
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",
           clip: true,
         });
+        if (clipped) drawClipMark(ctx, { x: left, y: top, width: widget.width, height: widget.height }, zoom, palette);
       }
       break;
     }

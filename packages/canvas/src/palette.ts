@@ -28,6 +28,9 @@ export interface CanvasPalette {
   accentSoft: string;
   selectionStroke: string;
   selectionFill: string;
+  /** The "···" plate for a clipped label (ADR-214). */
+  markBg: string;
+  markLine: string;
   danger: string;
   warning: string;
   success: string;
@@ -53,6 +56,8 @@ export const DEFAULT_PALETTE: CanvasPalette = {
   accentSoft: "#eef1ff",
   selectionStroke: "#4262ff",
   selectionFill: "rgba(66,98,255,0.10)",
+  markBg: "rgba(255,255,255,0.88)",
+  markLine: "rgba(30,33,54,0.28)",
   danger: "#d92d20",
   warning: "#f59e0b",
   success: "#12b76a",

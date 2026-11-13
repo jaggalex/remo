@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { TextRun } from "@remo/model";
 import {
   MIN_NOTE_FONT,
+  MIN_SHAPE_FONT,
   fitNoteFont,
   layoutRuns,
   lineHeightFor,
   noteFontSizeFor,
   notePadding,
+  runsBlockHeight,
 } from "./textLayout";
 
 /**
@@ -60,5 +62,33 @@ describe("auto text size", () => {
   it("has a line height the painter and the fitter agree on", () => {
     expect(lineHeightFor(16)).toBe(20);
     expect(lineHeightFor(8)).toBe(10);
+  });
+});
+
+/**
+ * A shape grows at its readable floor (ADR-214).
+ *
+ * `runsBlockHeight` is the same measure the growth and the clip mark use, so these
+ * tests pin the number the command writes and the painter compares.
+ */
+describe("shape text height (ADR-214)", () => {
+  it("measures the lines at the floor, padding included", () => {
+    const ctx = fakeCtx();
+    const runs: TextRun[] = [{ text: "one two three" }];
+    const height = runsBlockHeight(ctx, runs, 200, MIN_SHAPE_FONT);
+    const lines = layoutRuns(ctx, runs, 200 - notePadding(MIN_SHAPE_FONT) * 2, MIN_SHAPE_FONT);
+    expect(lines).toHaveLength(1);
+    expect(height).toBeCloseTo(lineHeightFor(MIN_SHAPE_FONT) + notePadding(MIN_SHAPE_FONT) * 2, 6);
+  });
+
+  it("grows with more text at the same width", () => {
+    const ctx = fakeCtx();
+    const short = runsBlockHeight(ctx, [{ text: "short" }], 160, MIN_SHAPE_FONT);
+    const long = runsBlockHeight(ctx, [{ text: "word ".repeat(120) }], 160, MIN_SHAPE_FONT);
+    expect(long).toBeGreaterThan(short * 4);
+  });
+
+  it("keeps the note floor below the shape floor", () => {
+    expect(MIN_NOTE_FONT).toBeLessThan(MIN_SHAPE_FONT);
   });
 });

@@ -8748,3 +8748,39 @@ Enter gets nothing. The design review fixed the size and the behaviour (F2).
 layout; `connectorEditor.ts` sizes the textarea with the same metrics; `connectors.png` is
 regenerated. Tests cover explicit breaks, the 3-line wrap, the 8-line guard, the 40 px floor
 and the 240 px ceiling. Rotated labels and rich marks inside a label stay out of scope.
+
+---
+
+## ADR-214: A shape grows to keep its text readable, and a clipped label is marked
+
+**Status:** accepted (2026-11-12). Mockups: O-C1…C6, O-E1…E5; tokens F1.
+
+**Context.** A shape's Auto text could shrink to `MIN_NOTE_FONT` (8 px) and then clip at the
+border, so a diagram node with a long label became unreadable and gave no sign that text was
+missing. A note may do that on purpose — it is a physical object whose size is the person's
+decision (ADR-027) — but a shape is a diagram node, where the label is the content.
+
+**Decision.**
+
+- **The shape's readable floor is 10 px.** Auto never goes below it; a note keeps 8.
+- **When the text no longer fits at the floor, the shape grows down.** Width never changes:
+  the person decides how wide the box is, the text decides how tall.
+- **Growth happens only while typing.** A manual resize is a decision and is not undone by
+  the text; if the box becomes too small, the text clips and the mark appears.
+- **The growth cap is 1 280 px of height.** A pasted wall of text stops there and clips.
+- **Inside a table the shape does not grow**: the axis owns the size (ADR-206), and the
+  object stays inside its cell (ADR-199).
+- **An explicit font size wins.** Auto is what grows; a person who picked 12 px accepted the
+  clipping.
+- **A clipped label is marked** with three dots in an 18 × 14 px screen plate inside the
+  bottom-right corner, on a note and on a shape alike. Screen-constant size at every zoom;
+  the word for it lives in the selection badge, so the state is not colour-only.
+- The mark is painted after the text and never changes the object: it is a state, not
+  content, and it does not enter export as a separate object.
+
+**Consequences.** `textLayout` gains `MIN_SHAPE_FONT`, `MAX_SHAPE_HEIGHT` and
+`shapeHeightFor`; the editor's `onSetText` measures and rides the height in the same
+transaction as the keystroke, so typing stays one undo step. The painter draws the mark for
+both notes and shapes from `canvas-mark-bg` / `canvas-mark-line`. Tests cover the height at
+the floor and the growth in the browser. Rich text marks on a clipped line remain clipped the
+same way.
