@@ -108,10 +108,10 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 |---|---|
 | ADR | 214, latest ADR-214 |
 | Schema version | 20 |
-| Browser scenarios | 162 in 35 files |
+| Browser scenarios | 163 in 35 files |
 | Help topics | 34 (RU + EN) |
 | Portal pages | 69 |
-| Baselines | 26 product + 12 DS |
+| Baselines | 28 product + 12 DS |
 | Largest file | `apps/web/src/BoardApp.tsx` — 800 lines |
 <!-- generated:state:end -->
 

@@ -9,6 +9,7 @@ import {
   openFacilitation,
   openMore,
   register,
+  seedConnector,
   seedNote,
   selectKanbanCard,
   seedObject,
@@ -732,4 +733,56 @@ test("a shape grows for its text", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(page.locator(".inline-editor")).toHaveCount(0);
   await capture(page, page.locator(".canvas-wrap"), "shape-grow");
+
+  // A manual shrink wins over the text: the box stops where the person put it and the
+  // clip mark appears in the corner (ADR-214).
+  const grown = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number; width: number; height: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y, width: one.width, height: one.height } : null;
+  });
+  if (!grown) throw new Error("the shape disappeared");
+  const view2 = await canvasView(page);
+  const gap = 7 / view2.camera.zoom;
+  const centre = clientPoint(view2, grown);
+  await page.mouse.click(centre.x, centre.y);
+  const corner = clientPoint(view2, {
+    x: grown.x + grown.width / 2 + gap,
+    y: grown.y + grown.height / 2 + gap,
+  });
+  await page.mouse.move(corner.x, corner.y);
+  await page.mouse.down();
+  await page.mouse.move(corner.x, corner.y - 220, { steps: 10 });
+  await page.mouse.up();
+  await page.keyboard.press("Escape");
+  await capture(page, page.locator(".canvas-wrap"), "text-overflow");
+});
+
+/**
+ * A connector label with explicit lines (ADR-213): Enter is a line, the chip covers the
+ * line and stays on `labelAt`.
+ */
+test("a connector label keeps its lines", async ({ page }) => {
+  const account = await register(page, "visual-label");
+  const from = await seedNote(page, account.boardId, { x: -260, y: 0 });
+  const to = await seedNote(page, account.boardId, { x: 260, y: 0 });
+  await seedConnector(page, account.boardId, from, to);
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  const view = await canvasView(page);
+  const middle = clientPoint(view, { x: 0, y: 0 });
+  await page.mouse.dblclick(middle.x, middle.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill("Проверить заказ\nСогласовать с\nфинансовым отделом");
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+  await capture(page, page.locator(".canvas-wrap"), "label-wrap");
 });
