@@ -18,7 +18,7 @@ export interface TableAxis {
    * pixels is a manual floor; content still fits (ADR-196, ADR-201).
    */
   size?: TableAxisSize | number;
-  /** Column headers only; row headers stay horizontal (ADR-196). */
+  /** A column or row header may be drawn vertically (ADR-217). */
   vertical?: boolean;
 }
 
@@ -90,6 +90,10 @@ export interface TableLayout {
    */
   active?: boolean;
   appearance?: TableAppearance;
+  /** A manual row-header strip width in world units; absent means Auto (ADR-217). */
+  headerWidth?: number;
+  /** A manual column-header band height in world units; absent means Auto (ADR-217). */
+  headerHeight?: number;
   /** Merged blocks, anchored at their top-left cell (ADR-204). */
   spans?: TableSpan[];
 }

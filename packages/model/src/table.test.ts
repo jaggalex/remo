@@ -32,7 +32,7 @@ const layout: TableLayout = {
 
 describe("table header text (ADR-201)", () => {
   it("collapses whitespace and shortens a title past the cap", () => {
-    expect(headerText("  A \n  B ")).toBe("A B");
+    expect(headerText("  A \n  B ")).toBe("A\nB");
     const long = "x".repeat(TABLE_HEADER_MAX_TEXT + 20);
     const cut = headerText(long);
     expect(cut).toHaveLength(TABLE_HEADER_MAX_TEXT);

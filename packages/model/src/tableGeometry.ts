@@ -85,22 +85,35 @@ function boxOf(widget: Widget): Rect {
   };
 }
 
-/** Header text that may be painted: whitespace collapsed, at most 100 characters. */
+/**
+ * Header text that may be painted: spaces collapsed, intentional line breaks kept, at
+ * most 100 characters (ADR-202, ADR-217).
+ */
 export function headerText(title: string): string {
-  const text = title.replace(/\s+/g, " ").trim();
+  const text = title
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .join("\n")
+    .trim();
   return text.length > TABLE_HEADER_MAX_TEXT
     ? `${text.slice(0, TABLE_HEADER_MAX_TEXT - 1)}…`
     : text;
+}
+
+/** The longest explicit line, which is what a vertical header has to fit. */
+export function longestHeaderLine(text: string): string {
+  return text
+    .split("\n")
+    .reduce((longest, line) => (line.length > longest.length ? line : longest), "");
 }
 
 function approxWidth(text: string): number {
   return text.length * HEADER_CHAR_WIDTH;
 }
 
-/** Approximate wrapped line count for a horizontal header at a given width. */
-function headerLineCount(text: string, width: number): number {
+/** Approximate wrapped line count for one paragraph at a given width. */
+function paragraphLineCount(text: string, usable: number): number {
   if (!text) return 1;
-  const usable = Math.max(24, width - TABLE_HEADER_PADDING * 2);
   let lines = 1;
   let line = 0;
   for (const word of text.split(" ")) {
@@ -127,10 +140,31 @@ function headerLineCount(text: string, width: number): number {
   return lines;
 }
 
-/** The row-header strip is as wide as its longest label, within a cap. */
+/** Explicit line breaks count as lines; each paragraph still wraps (ADR-217). */
+function headerLineCount(text: string, width: number): number {
+  if (!text) return 1;
+  const usable = Math.max(24, width - TABLE_HEADER_PADDING * 2);
+  return text
+    .split("\n")
+    .reduce((total, paragraph) => total + paragraphLineCount(paragraph, usable), 0);
+}
+
+/** The width a vertical header needs for its explicit lines. */
+function verticalHeaderWidth(text: string): number {
+  return (
+    Math.max(1, text.split("\n").length) * TABLE_HEADER_LINE_HEIGHT +
+    TABLE_HEADER_PADDING * 2
+  );
+}
+
+/** The row-header strip: manual, or as wide as its longest horizontal label. */
 function headerWidthFor(layout: TableLayout): number {
+  if (layout.headerWidth) return layout.headerWidth;
   const longest = layout.rows.reduce(
-    (width, row) => Math.max(width, approxWidth(headerText(row.title))),
+    (width, row) =>
+      row.vertical
+        ? Math.max(width, TABLE_HEADER_LINE_HEIGHT)
+        : Math.max(width, approxWidth(headerText(row.title))),
     0,
   );
   return Math.min(
@@ -226,6 +260,7 @@ function contentColumnWidths(
         );
       }
     });
+    if (column.vertical) content = Math.max(content, verticalHeaderWidth(headerText(column.title)));
     widths[index] = Math.max(widths[index]!, content);
     x += widths[index]!;
   });
@@ -320,13 +355,17 @@ function contentRowHeights(
   return heights;
 }
 
-/** The header band needed for the current columns (ADR-202). */
-function headerHeightFor(columns: readonly TableColumn[]): number {
+/**
+ * The header band needed for the current columns (ADR-202, ADR-217): a vertical header
+ * fits its longest line, a horizontal one wraps into the band.
+ */
+function headerHeightFor(columns: readonly TableColumn[], manual?: number): number {
+  if (manual) return manual;
   let height = TABLE_HEADER_HEIGHT;
   for (const column of columns) {
     const text = headerText(column.axis.title);
     const needed = column.axis.vertical
-      ? approxWidth(text) + TABLE_HEADER_PADDING * 2
+      ? approxWidth(longestHeaderLine(text)) + TABLE_HEADER_PADDING * 2
       : headerLineCount(text, column.width) * TABLE_HEADER_LINE_HEIGHT +
         TABLE_HEADER_PADDING * 2;
     height = Math.max(height, needed);
@@ -351,7 +390,7 @@ export function tableAxisSizes(
     x: 0,
     width: columns[index]!,
   }));
-  const headerHeight = headerHeightFor(placed);
+  const headerHeight = headerHeightFor(placed, layout.headerHeight);
   const rows = contentRowHeights(frame, layout, widgets, origin.y + headerHeight);
   return { columns, rows };
 }
@@ -375,7 +414,7 @@ export function layoutTable(
     x += width;
   });
 
-  const headerHeight = headerHeightFor(columns);
+  const headerHeight = headerHeightFor(columns, layout.headerHeight);
   const heights = contentRowHeights(frame, layout, widgets, origin.y + headerHeight);
 
   const rows: TableRow[] = [];

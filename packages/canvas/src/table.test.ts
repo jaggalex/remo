@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { TableLayout, Widget } from "@remo/model";
+import { headerText, type TableLayout, type Widget } from "@remo/model";
 import {
   TABLE_HEADER_HEIGHT,
   TABLE_HEADER_MAX_HEIGHT,
@@ -198,5 +198,50 @@ describe("merged blocks (ADR-204)", () => {
     expect(grown.cells[0]!.rect.width).toBeGreaterThanOrEqual(400 + 16 * 2);
     // The first column keeps its own size; only the last covered axis takes the deficit.
     expect(grown.columns[0]!.width).toBe(grid.columns[0]!.width);
+  });
+});
+
+describe("header text, explicit lines and manual header size (ADR-217)", () => {
+  it("keeps an intentional line break and grows the band", () => {
+    const table = {
+      ...frame(),
+      layout: {
+        kind: "table" as const,
+        columns: [{ id: "c1", title: "Первая\nстрока" }],
+        rows: [{ id: "r1", title: "1" }],
+      },
+    };
+    const grid = layoutTable(table, [])!;
+    expect(headerText("Первая\nстрока")).toBe("Первая\nстрока");
+    expect(grid.headerHeight).toBeGreaterThan(TABLE_HEADER_HEIGHT);
+  });
+
+  it("uses a manual header width and height over Auto", () => {
+    const table = {
+      ...frame(),
+      layout: {
+        kind: "table" as const,
+        headerWidth: 200,
+        headerHeight: 120,
+        columns: [{ id: "c1", title: "A" }],
+        rows: [{ id: "r1", title: "1" }],
+      },
+    };
+    const grid = layoutTable(table, [])!;
+    expect(grid.headerWidth).toBe(200);
+    expect(grid.headerHeight).toBe(120);
+  });
+
+  it("draws a vertical row header inside the strip, not the label width", () => {
+    const table = {
+      ...frame(),
+      layout: {
+        kind: "table" as const,
+        columns: [{ id: "c1", title: "A" }],
+        rows: [{ id: "r1", title: "Очень длинная строка", vertical: true }],
+      },
+    };
+    const grid = layoutTable(table, [])!;
+    expect(grid.headerWidth).toBe(TABLE_HEADER_WIDTH);
   });
 });

@@ -15,6 +15,7 @@ import {
   setAxisVertical,
   setTableBorder,
   setTableFill,
+  setTableHeaderSize,
   setTablePadding,
   showTable,
   splitCell,
@@ -94,7 +95,7 @@ describe("table axes (ADR-196, ADR-199)", () => {
     });
   });
 
-  it("renames and sizes an axis, and only a column can be vertical", () => {
+  it("renames and sizes an axis, and either kind can be vertical", () => {
     const board = withNotes();
     addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
     const layout = tableLayoutOf(board, "f")!;
@@ -104,7 +105,7 @@ describe("table axes (ADR-196, ADR-199)", () => {
     expect(renameAxis(board, "f", column.id, "  Later  ")).toBe(true);
     expect(setAxisSize(board, "f", column.id, "wide")).toBe(true);
     expect(setAxisVertical(board, "f", column.id, true)).toBe(true);
-    expect(setAxisVertical(board, "f", row.id, true)).toBe(false);
+    expect(setAxisVertical(board, "f", row.id, true)).toBe(true);
 
     const next = tableLayoutOf(board, "f")!;
     expect(next.columns[1]).toMatchObject({ title: "Later", size: "wide", vertical: true });
@@ -740,6 +741,25 @@ describe("borders and paddings (ADR-208)", () => {
     expect(tableLayoutOf(board, "f")!.appearance?.table).toBe("#eeeeee");
   });
 
+  it("rejects a border width outside 1-8 instead of clamping it", () => {
+    const board = boardWithTable();
+    const target = { kind: "cell", rowId: "r1", columnId: "c1" } as const;
+    expect(setTableBorder(board, "f", target, { color: "#123456", width: 0, style: "solid" })).toBe(
+      false,
+    );
+    expect(setTableBorder(board, "f", target, { color: "#123456", width: 9, style: "solid" })).toBe(
+      false,
+    );
+    expect(
+      setTableBorder(board, "f", target, {
+        color: "#123456",
+        width: Number.NaN,
+        style: "solid",
+      }),
+    ).toBe(false);
+    expect(tableLayoutOf(board, "f")!.appearance?.borders).toBeUndefined();
+  });
+
   it("changes the cell width through padding", () => {
     const board = boardWithTable();
     const before = layoutTable(board.widgets.get("f")!, board.readWidgets())!;
@@ -752,5 +772,28 @@ describe("borders and paddings (ADR-208)", () => {
     expect(tableLayoutOf(board, "f")!.appearance?.paddings).toEqual({
       cells: { "r1:c1": 48 },
     });
+  });
+});
+
+describe("header size and vertical rows (ADR-217)", () => {
+  it("allows a vertical row header and a manual header size", () => {
+    const board = boardWith([
+      {
+        ...frame(),
+        layout: {
+          kind: "table",
+          columns: [{ id: "c1", title: "A" }],
+          rows: [{ id: "r1", title: "1" }],
+        },
+      },
+    ]);
+    expect(setAxisVertical(board, "f", "r1", true)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.rows[0]!.vertical).toBe(true);
+    expect(setTableHeaderSize(board, "f", "width", 220)).toBe(true);
+    expect(setTableHeaderSize(board, "f", "height", 140)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.headerWidth).toBe(220);
+    expect(tableLayoutOf(board, "f")!.headerHeight).toBe(140);
+    expect(setTableHeaderSize(board, "f", "width", null)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.headerWidth).toBeUndefined();
   });
 });

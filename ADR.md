@@ -8839,3 +8839,71 @@ badge's clip word agrees with the mark for every shape. ADR-214's consequence ab
 `shapeHeightFor` remains superseded by ADR-215; its "grows down" is now literal. A future
 widget that paints text in a box must add its rule to `textCapFor` / `textFloorFor` rather
 than pick a cap at the call site.
+
+## ADR-217: Header lines are intentional, a row header may be vertical, and the header band is sizeable (amends ADR-202; extends ADR-196, ADR-201)
+
+**Status:** accepted (2026-11-13).
+
+**Context.** ADR-202 wrapped header titles by words and kept row headers horizontal, with
+fixed caps. Owners of wide tables found three gaps: a vertical column title could not be
+given more band height (Auto ellipsized it at 260), a header title could not hold an
+intentional line break, and a row header could neither turn vertical nor get a wider strip.
+The caps exist to keep a table from swallowing the board, not to forbid the person from
+choosing a larger band.
+
+**Decision.**
+
+- **A header title keeps intentional line breaks.** The editor is a text area; `Enter`
+  commits, `Shift+Enter` inserts a line break, `Esc` cancels, `Tab` moves on. The painter
+  wraps each explicit paragraph by words; the 100-character cap and the ellipsis stay.
+  Geometry counts explicit lines when it sizes the band and the strip.
+- **A row header may be vertical.** `axis.vertical` is read for columns and rows; the menu
+  item and the panel checkbox apply to either. A vertical row title runs along its row
+  height and is shortened with an ellipsis when the row is too short; it does not widen the
+  row-header strip.
+- **The header band has manual sizes.** `TableLayout.headerWidth` (row strip) and
+  `headerHeight` (column band) are optional world-unit numbers; absent means Auto. A manual
+  size is exact, so a title that no longer fits is ellipsized exactly as past the Auto cap;
+  it is never squeezed or scaled. The panel offers two numeric fields with an empty "Auto"
+  placeholder, and the same command clears an override.
+- **Auto still has caps.** `TABLE_HEADER_MAX_WIDTH` and `TABLE_HEADER_MAX_HEIGHT` remain the
+  Auto ceiling; a vertical column needs height for its longest explicit line, and the column
+  width grows to fit the number of explicit lines. A manual size may exceed the cap.
+- **No second text model.** The title remains the axis title string; the painter, a11y
+  mirror, export and the reader use the same value. Newlines are ordinary characters in the
+  document.
+
+**Consequences.** `@remo/model` keeps the header metrics with the new fields and line-aware
+wrapping; `@remo/doc` allows vertical rows and gains `setTableHeaderSize`; the header editor
+becomes a text area; the panel gains the two header fields. Tests cover line preservation,
+manual sizes and a vertical row. Per-side headers and rich text in headers remain open.
+
+## ADR-218: Borders keep the accepted 1–8 px range, and a view switch reports from every surface (extends ADR-205, ADR-207, ADR-208)
+
+**Status:** accepted (2026-11-13).
+
+**Context.** Acceptance found three surfaces thinner than the accepted records: the panel
+offered only 1/2/3 px border widths while ADR-208 allows 1–8, the context menu switched the
+view without the toast the badge shows, and a locked section hid the view items instead of
+disabling them with a reason. The header axis menu also lacked the duplicate action ADR-205
+names.
+
+**Decision.**
+
+- **Border width is 1–8 px everywhere.** The panel offers 1, 2, 3, 4, 6 and 8. The command
+  rejects a width outside 1–8 or a non-finite one, and the reader drops it, because a
+  zero-width canvas stroke is ignored and would leave the previous stroke style in place.
+  A value is rejected, never clamped.
+- **One outcome, one message.** Every panel path that leaves the table confirms first: both
+  **Remove table** and the view switch open the same dialog. The badge and the context menu
+  switch at once and both show "Table removed, cells kept". The message belongs to the
+  action, not to one surface; the confirmation belongs to the panel, not to one button.
+- **A locked section shows disabled view items with the reason**, rather than hiding them:
+  the person can see that the action exists and why it is unavailable.
+- **Duplicate row/column is in the axis menu and in the section panel**, next to the other
+  axis actions, and reuses the same `duplicateAxis` command as the cell menu.
+
+**Consequences.** `buildBoardMenu` accepts the notice callback; the context menu labels a
+disabled view item with the lock reason; the panel border widths follow ADR-208; the axis
+menu and panel gain one command entry. No model change. Tests cover duplicate from the
+header, the locked section, the block-switch undo and the context-menu switch.

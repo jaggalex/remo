@@ -19,7 +19,7 @@ import type { Rect, TableAxis, Widget } from "@remo/model";
 import { Menu, type MenuItem } from "@remo/ui";
 import { AxisDeleteDialog, type AxisDeleteTarget } from "./AxisDeleteDialog";
 import { AxisSizePopover, axisIsManual, axisSizeValue } from "./AxisSizeControl";
-import { insertAxisNear } from "./tableActions";
+import { duplicateAxisNear, insertAxisNear } from "./tableActions";
 import { PanelWindow } from "./object-panel/PanelWindow";
 import { TableAxisControls } from "./TableAxisControls";
 import { TableMirror } from "./TableGrid";
@@ -349,6 +349,23 @@ export function TableHeaderLayer({
         ),
         onSelect: () => insert(entry, "after"),
       },
+      {
+        label: t(
+          entry.kind === "column"
+            ? "section.axis.duplicateColumn"
+            : "section.axis.duplicateRow",
+        ),
+        onSelect: () => {
+          duplicateAxisNear(
+            board,
+            entry.frame.id,
+            entry.kind,
+            entry.axis.id,
+            placeholder(entry.kind, axes.length + 1),
+          );
+          setMenu(null);
+        },
+      },
       { separator: true },
       {
         label: t(
@@ -370,18 +387,14 @@ export function TableHeaderLayer({
           setMenu(null);
         },
       },
-      ...(entry.kind === "column"
-        ? [
-            {
-              label: t("section.axis.rotate"),
-              checked: Boolean(entry.axis.vertical),
-              onSelect: () => {
-                setAxisVertical(board, entry.frame.id, entry.axis.id, !entry.axis.vertical);
-                setMenu(null);
-              },
-            } satisfies MenuItem,
-          ]
-        : []),
+      {
+        label: t("section.axis.rotate"),
+        checked: Boolean(entry.axis.vertical),
+        onSelect: () => {
+          setAxisVertical(board, entry.frame.id, entry.axis.id, !entry.axis.vertical);
+          setMenu(null);
+        },
+      },
       { separator: true },
       {
         label: t("section.size.mode"),
@@ -555,15 +568,14 @@ export function TableHeaderLayer({
           );
           if (!entry) return null;
           const rect = screenRect(entry.rect);
-          const vertical = entry.kind === "column" && entry.axis.vertical;
-          const width = vertical ? Math.max(rect.width, 168) : rect.width;
-          const height = Math.min(rect.height, 34);
+          const width = Math.max(rect.width, 168);
+          const height = Math.min(Math.max(rect.height, 48), 96);
           return (
-            <input
+            <textarea
               key={keyOf(entry.frame.id, entry.axis.id)}
               className="table-header-editor"
               style={{
-                left: vertical ? rect.left + rect.width / 2 - width / 2 : rect.left,
+                left: rect.left,
                 top: rect.top + rect.height / 2 - height / 2,
                 width,
                 height,
@@ -574,9 +586,12 @@ export function TableHeaderLayer({
               onChange={(event) => setDraft(event.currentTarget.value)}
               onBlur={() => finishEditing(true)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
+                if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
                   finishEditing(true);
+                } else if (event.key === "Enter") {
+                  // Shift+Enter keeps an intentional line break (ADR-217).
+                  return;
                 } else if (event.key === "Escape") {
                   event.preventDefault();
                   finishEditing(false);
