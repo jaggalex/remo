@@ -3,7 +3,6 @@ import {
   inkFor,
   shade,
   stickyFill,
-  stickyFontCap,
   timerPhase,
   timerRemainingMs,
   type CardStatus,
@@ -30,9 +29,10 @@ import {
   layoutRuns,
   lineHeightFor,
   fitNoteFont,
-  MIN_SHAPE_FONT,
   notePadding,
+  textCapFor,
   textClipped,
+  textFloorFor,
   type RichLine,
 } from "./textLayout";
 
@@ -68,12 +68,18 @@ function drawRichLine(
 
   // Underline and strikethrough belong to the text's baseline, not to the line box:
   // with the baseline guessed from the box top they drifted into the letters.
+  // The ascent must be measured with the font this line is drawn in: measuring it
+  // before setting the font used whichever widget painted last, and the first line of
+  // every block landed a few pixels off (a fitted label then looked clipped at the top).
+  ctx.font = fontFor(fontPx, line.segments[0], family);
+  // The ascent is measured against the baseline, so the baseline mode must be set
+  // before the probe: with the caller's `top` still active the ascent came out
+  // negative and the first line of every block was drawn a few pixels too high.
+  ctx.textBaseline = "alphabetic";
   const probe = ctx.measureText("Mg");
   const ascent = probe.actualBoundingBoxAscent || fontPx * 0.8;
   const descent = probe.actualBoundingBoxDescent || fontPx * 0.2;
   const baseline = centre ? y + (ascent - descent) / 2 : y + ascent;
-
-  ctx.textBaseline = "alphabetic";
 
   for (const segment of line.segments) {
     ctx.font = fontFor(fontPx, segment, family);
@@ -310,15 +316,14 @@ function drawTextInBox(
   if (!runs.length) return false;
 
   const explicit = widget.style?.fontSize;
-  const floor = widget.type === "shape" ? MIN_SHAPE_FONT : undefined;
   const size =
-    explicit ?? fitNoteFont(ctx, runs, box.width, box.height, options.cap, floor, theme.fontFamily);
+    explicit ??
+    fitNoteFont(ctx, runs, box.width, box.height, options.cap, textFloorFor(widget), theme.fontFamily);
 
   const padding = notePadding(size);
   const lines = layoutRuns(ctx, runs, Math.max(box.width - padding * 2, 8), size, theme.fontFamily);
   const lineHeight = lineHeightFor(size);
   const total = lines.length * lineHeight;
-
   const startY =
     options.vAlign === "top"
       ? box.y + padding
@@ -485,7 +490,7 @@ function paintWidget(
       // same runs. Two implementations would drift (ADR-033).
       if (!editing) {
         const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
-          cap: theme.fontCap[widget.style?.stickySize ?? "M"] ?? stickyFontCap(widget.style?.stickySize),
+          cap: textCapFor(widget, theme.fontCap),
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",
           clip: true,
@@ -616,7 +621,7 @@ function paintWidget(
       if (!editing && (widget.content || widget.runs?.length)) {
         ctx.fillStyle = inkFor(fill, widget.style?.textColor);
         const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
-          cap: theme.fontCap.M,
+          cap: textCapFor(widget, theme.fontCap),
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",
           clip: true,

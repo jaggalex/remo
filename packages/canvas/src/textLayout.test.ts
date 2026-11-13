@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { TextRun, Widget } from "@remo/model";
+import { stickyFontCap, type TextRun, type Widget } from "@remo/model";
 import {
   MAX_SHAPE_HEIGHT,
   MIN_NOTE_FONT,
@@ -9,7 +9,9 @@ import {
   lineHeightFor,
   noteFontSizeFor,
   notePadding,
+  textCapFor,
   textClipped,
+  textFloorFor,
 } from "./textLayout";
 
 /**
@@ -105,5 +107,35 @@ describe("clip state", () => {
 
   it("answers null when there is no context to measure with", () => {
     expect(textClipped(shape("short", 200), 16, "sans", null)).toBeNull();
+  });
+});
+
+/**
+ * One rule picks the cap and the floor for every reader of a widget's text — painter,
+ * badge, editor and growth (ADR-216). These tests pin the rule itself.
+ */
+describe("text size limits", () => {
+  const widget = (type: Widget["type"], stickySize?: "S" | "M" | "L"): Widget =>
+    ({ id: "w", type, x: 0, y: 0, width: 200, height: 160, style: { stickySize } }) as Widget;
+  const caps = { S: 13, M: 16, L: 20 };
+
+  it("sets a shape's label at the M cap whatever size it carries", () => {
+    expect(textCapFor(widget("shape"), caps)).toBe(16);
+    expect(textCapFor(widget("shape", "L"), caps)).toBe(16);
+  });
+
+  it("lets a note follow the size the person picked", () => {
+    expect(textCapFor(widget("sticky_note", "L"), caps)).toBe(20);
+    expect(textCapFor(widget("sticky_note"), caps)).toBe(16);
+  });
+
+  it("falls back to the model's size table when settings do not override", () => {
+    expect(textCapFor(widget("sticky_note", "S"), {})).toBe(stickyFontCap("S"));
+    expect(textCapFor(widget("shape"), {})).toBe(stickyFontCap("M"));
+  });
+
+  it("gives a floor to a shape only", () => {
+    expect(textFloorFor(widget("shape"))).toBe(MIN_SHAPE_FONT);
+    expect(textFloorFor(widget("sticky_note"))).toBeUndefined();
   });
 });

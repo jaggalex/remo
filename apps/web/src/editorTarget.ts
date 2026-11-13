@@ -1,13 +1,14 @@
 import {
   noteFontSizeFor,
   notePadding,
+  textCapFor,
+  textFloorFor,
   type Camera,
   type KanbanLayout,
 } from "@remo/canvas";
 import {
   inkFor,
   stickyFill,
-  stickyFontCap,
   type TextDeltaOp,
   type TextRun,
   type Widget,
@@ -90,10 +91,10 @@ export function editorTargetFor({
         runs,
         width,
         height,
-        settings.notes.fontCap[widget.style?.stickySize ?? "M"] ??
-          stickyFontCap(widget.style?.stickySize),
+        textCapFor(widget, settings.notes.fontCap),
         widget.style?.fontSize,
         settings.text.fontFamily,
+        textFloorFor(widget),
       ) ?? 16);
 
   // The note's own fill and the ink that goes with it, so the editor shows the

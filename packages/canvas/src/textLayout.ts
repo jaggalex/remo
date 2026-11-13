@@ -5,7 +5,8 @@
  * these metrics, and the editor asks them how tall the note should be. If the two
  * disagreed, a note would grow a little on every keystroke or jitter as you type.
  */
-import type { TextMarks, TextRun, Widget } from "@remo/model";
+import type { StickySize, TextMarks, TextRun, Widget } from "@remo/model";
+import { stickyFontCap } from "@remo/model";
 import { measureContext } from "./measure";
 
 export const STICKY_FONT_PX = 16;
@@ -277,6 +278,27 @@ export const MIN_SHAPE_FONT = 10;
 /** How tall a shape may grow for its text before the label is clipped (ADR-214). */
 export const MAX_SHAPE_HEIGHT = 1280;
 
+/**
+ * The Auto-size cap a widget's text is measured with (ADR-216).
+ *
+ * A note is set by its sticky size, so its cap follows the size the person picked. A
+ * shape has no size ladder: its label is always set at the M cap, and passing the note's
+ * size here was how the badge and the editor drifted from the painter.
+ */
+export function textCapFor(
+  widget: Widget,
+  caps: Partial<Record<StickySize, number>> | undefined,
+): number {
+  if (widget.type === "shape") return caps?.M ?? stickyFontCap("M");
+  const size = widget.style?.stickySize;
+  return caps?.[size ?? "M"] ?? stickyFontCap(size);
+}
+
+/** The smallest Auto size a widget's text may reach; only a shape has a floor (ADR-214). */
+export function textFloorFor(widget: Widget): number | undefined {
+  return widget.type === "shape" ? MIN_SHAPE_FONT : undefined;
+}
+
 /** Line box for a text size; the painter and the fitter must agree exactly. */
 export function lineHeightFor(fontPx: number): number {
   return Math.round(fontPx * 1.25);
@@ -344,11 +366,12 @@ export function noteFontSizeFor(
   cap: number,
   explicit?: number,
   family: string = DEFAULT_FONT_FAMILY,
+  floor?: number,
 ): number | null {
   if (explicit) return explicit;
   const ctx = measureContext();
   if (!ctx) return null;
-  return fitNoteFont(ctx, runs, width, height, cap, undefined, family);
+  return fitNoteFont(ctx, runs, width, height, cap, floor, family);
 }
 
 
@@ -381,7 +404,7 @@ export function textClipped(
       widget.width,
       widget.height,
       cap,
-      widget.type === "shape" ? MIN_SHAPE_FONT : undefined,
+      textFloorFor(widget),
       family,
     );
   // The painter compares the lines' own height with the box inside its padding; adding

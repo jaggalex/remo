@@ -796,7 +796,13 @@ test("a shape grows for its text", async ({ page }) => {
   await expect.poll(height).toBeGreaterThan(200);
   // Fit after the growth frames the grown box, which is what makes the label legible
   // in the baseline; fitting before it would leave the shape small in a wide frame.
+  // Two steps back leave a margin, so the frame shows a box on a board rather than one
+  // border lying on the viewport edge.
   await zoomInToReadable(page);
+  await page.getByRole("button", { name: "Zoom out" }).click();
+  await page.waitForTimeout(150);
+  await page.getByRole("button", { name: "Zoom out" }).click();
+  await page.waitForTimeout(250);
   await page.keyboard.press("Escape");
   await expect(page.locator(".selection-badge")).toHaveCount(0);
   // Fit keeps focus, and its tooltip would land in the frame: blur it and park the

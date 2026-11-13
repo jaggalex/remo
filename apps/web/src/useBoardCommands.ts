@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { MAX_SHAPE_HEIGHT, MIN_SHAPE_FONT, lineHeightFor, textClipped } from "@remo/canvas";
+import {
+  MAX_SHAPE_HEIGHT,
+  MIN_SHAPE_FONT,
+  lineHeightFor,
+  textCapFor,
+  textClipped,
+} from "@remo/canvas";
 import type { Rect } from "@remo/model";
 import type { MutableRefObject } from "react";
 import {
@@ -196,7 +202,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
             .deltaOf(id)
             .filter((op) => op.insert)
             .map((op) => ({ text: op.insert, ...op.attributes }));
-          const cap = settings.notes.fontCap.M;
+          const cap = textCapFor(current, settings.notes.fontCap);
           let target = current.height;
           while (target < MAX_SHAPE_HEIGHT) {
             const probe = {
@@ -225,7 +231,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
         }, 120),
       );
     },
-    [board, settings.notes.fontCap.M, settings.text.fontFamily],
+    [board, settings.notes.fontCap, settings.text.fontFamily],
   );
 
   const moveMany = useCallback(

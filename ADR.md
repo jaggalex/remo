@@ -8801,12 +8801,42 @@ painter still clipped.
 last keystroke. It reads `board.textOf`, grows the shape line by line while `textClipped` —
 the same predicate the painter and the badge use — reports a clipped label, and writes the
 height with `merge: true`, so the correction joins the editing session instead of becoming a
-second undo step. The box is centre-anchored, so the centre moves down by half the growth: the
-top edge stays where the person put it (ADR-214's "grows down"). A manual resize while the
-check is pending wins: the check records the height it saw and does nothing if the height
-changed.
+second undo step. A manual resize while the check is pending wins: the check records the
+height it saw and does nothing if the height changed.
 
 **Consequences.** Growth appears a moment after typing rather than per keystroke, which is
 invisible at typing speed and avoids measuring a partial string. `shapeHeightFor` and
 `runsBlockHeight` are removed: the clip predicate is the only measure. The tests assert that
 the grown shape's badge names the object and does not report a clipped label.
+
+---
+
+## ADR-216: A shape's text has one size rule, and the shape grows down from its top edge (amends ADR-214, ADR-215)
+
+**Status:** accepted (2026-11-13).
+
+**Context.** Two review findings on the growth work. First, ADR-214 says the shape grows
+down, but the canvas anchors a box on its centre, so raising the height alone lifted the top
+edge by half the growth. Second, the cap and floor that decide a shape's text size were chosen
+separately by each reader: the painter used the M cap and the 10 px floor, the badge used the
+sticky-size cap, the inline editor and the edit bar used the sticky-size cap and the note floor
+of 8 px, and the growth used the M cap. A shape carrying `stickySize: "L"` could grow until the
+painter was satisfied and still show "Text does not fit", and its label could be edited at
+8 px only to be painted at 10 px.
+
+**Decision.**
+
+- **The growth moves the centre down by half the height it adds.** The top edge stays where
+  the person put it; this is what "grows down" (ADR-214) means for a centre-anchored box.
+- **`textCapFor(widget, caps)` and `textFloorFor(widget)` are the only place that answers
+  which cap and which floor a widget's Auto text uses.** A shape is always the M cap and the
+  10 px floor; a note follows its `stickySize` and the 8 px floor. The painter, the badge,
+  the inline editor, the edit bar and the growth call them.
+- **`noteFontSizeFor` takes the floor**, so the editor and the bar can ask the painter's exact
+  question instead of the note's.
+
+**Consequences.** Editing a shape's label now shows the size it will be painted at, and the
+badge's clip word agrees with the mark for every shape. ADR-214's consequence about
+`shapeHeightFor` remains superseded by ADR-215; its "grows down" is now literal. A future
+widget that paints text in a box must add its rule to `textCapFor` / `textFloorFor` rather
+than pick a cap at the call site.

@@ -6,9 +6,11 @@ import {
   pathPolyline,
   unionBox,
   noteFontSizeFor,
+  textCapFor,
+  textFloorFor,
   type Camera,
 } from "@remo/canvas";
-import { inkFor, routingOf, stickyFill, stickyFontCap, type StickySize, type TextMarks, type TextRun, type Widget } from "@remo/model";
+import { inkFor, routingOf, stickyFill, type StickySize, type TextMarks, type TextRun, type Widget } from "@remo/model";
 import type { ArrangeBarTarget } from "./ArrangeBar";
 import type { ConnectorBarTarget } from "./ConnectorBar";
 import type { StickyBarTarget } from "./StickyBar";
@@ -148,10 +150,10 @@ export function noteBarTarget(args: {
       runs,
       widget.width,
       widget.height,
-      settings.notes.fontCap[widget.style?.stickySize ?? "M"] ??
-        stickyFontCap(widget.style?.stickySize),
+      textCapFor(widget, settings.notes.fontCap),
       undefined,
       settings.text.fontFamily,
+      textFloorFor(widget),
     ) ?? 16;
 
   const fill =
