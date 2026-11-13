@@ -37,6 +37,7 @@ import {
 } from "@remo/canvas";
 import { bounds, canConnect, scalesInBlock, soleSelectedGroup, type Widget } from "@remo/model";
 import type { Presence } from "@remo/doc";
+import { resizeMembersOf } from "./canvasGeometry";
 import type { BoardSettings } from "./settings";
 import { drawRemoteCursor } from "./remoteCursor";
 import type { ConnectorSide } from "@remo/model";
@@ -311,6 +312,8 @@ export interface OverlayPaintInput {
   layouts: Map<string, KanbanLayout>;
   /** Every object, so the overlay can mark every locked one (ADR-193). */
   widgets: readonly Widget[];
+  /** The same predicate the board uses, so both agree on the members of a block. */
+  isCardOfKanban: (widget: Widget) => boolean;
   selectedIds: readonly string[];
   preview: ReadonlyMap<string, Partial<Widget>>;
   editingId: string | null;
@@ -350,6 +353,7 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
     selectedIds,
     preview,
     editingId,
+    isCardOfKanban,
     hoverId,
     hoverAnchor,
     hoverCell,
@@ -476,9 +480,7 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
 
   // Resize handles: one object or a block, on the union box (ADR-211).
   const single = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  const resizeMembers = selectedIds
-    .map((id) => widgetById(id))
-    .filter((widget): widget is Widget => !!widget && widget.type !== "connector");
+  const resizeMembers = resizeMembersOf(widgets, selectedIds, isCardOfKanban);
   const box =
     !editingId && resizeMembers.some(scalesInBlock)
       ? unionBox(resizeMembers.map(boxOf))

@@ -1,9 +1,9 @@
-import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, portsAreEdgePlus, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget } from "./canvasGeometry";
+import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, portsAreEdgePlus, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget, resizeMembersOf } from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import type { ConnectDraft } from "./gestureTypes";
 import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, layoutTable, pick, pickConnector, placementAt, plusHit, resolvedEndSide, tableHitAt, unionBox } from "@remo/canvas";
 import { canConnect, expandGroups, minimumSizeOf, scalesInBlock } from "@remo/model";
-import type { ConnectorSide, Widget } from "@remo/model";
+import type { ConnectorSide } from "@remo/model";
 import { capture } from "./gestureEnv";
 import {
   clearTableCellSelection,
@@ -19,10 +19,8 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
   // objects and before panning: Alt over a handle resizes around the centre (ADR-212),
   // while Alt anywhere else still pans. One object or a block — the handle sits on the
   // union box and the gesture scales every member that can scale (ADR-211).
-  const resizeMembers = selectedIds
-    .map((id) => widgetById(id))
-    .filter((widget): widget is Widget => !!widget && widget.type !== "connector" && !isCardOfKanban(widget));
-  if (!readOnly && resizeMembers.some(scalesInBlock)) {
+  const resizeMembers = resizeMembersOf(widgets, selectedIds, isCardOfKanban);
+  if (!readOnly && event.button === 0 && resizeMembers.some(scalesInBlock)) {
     const box = unionBox(resizeMembers.map(boxOf));
     const hit = box ? cornerAt(box, world, 10 / camera.zoom, HANDLE_GAP / camera.zoom) : null;
     if (box && hit) {

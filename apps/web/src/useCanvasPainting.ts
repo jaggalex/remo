@@ -217,6 +217,7 @@ export function useCanvasPainting({
     viewport,
     resolveConnector,
     widgets,
+    isCardOfKanban,
   ]);
 
   const paintOverlay = useCallback(() => {
@@ -232,6 +233,7 @@ export function useCanvasPainting({
       settings,
       layouts,
       widgets,
+      isCardOfKanban,
       selectedIds,
       preview,
       editingId,
@@ -276,6 +278,7 @@ export function useCanvasPainting({
     viewport,
     resolveConnector,
     widgets,
+    isCardOfKanban,
   ]);
 
   /**

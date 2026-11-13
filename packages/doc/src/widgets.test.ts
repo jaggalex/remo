@@ -377,3 +377,82 @@ describe("transformSelection (ADR-211)", () => {
     expect(board.widgets.get("leaf")).toMatchObject({ x: 100, y: 100 });
   });
 });
+
+/**
+ * A block transform carries a connector's bends with it (ADR-211), and a gesture that
+ * changed nothing is not an edit.
+ */
+describe("transformSelection: connectors and no-ops (ADR-211)", () => {
+  it("scales the bends of a connector whose both ends travel", () => {
+    const board = boardWith([
+      { ...note("a", { x: 50, y: 50 }), width: 160, height: 120 },
+      { ...note("b", { x: 150, y: 50 }), width: 160, height: 120 },
+      {
+        id: "c",
+        type: "connector",
+        parentId: null,
+        x: 100,
+        y: 50,
+        width: 100,
+        height: 0,
+        start: { item: "a", side: "right" },
+        end: { item: "b", side: "left" },
+        waypoints: [{ id: "w", x: 100, y: 50, rigid: true }],
+      },
+    ]);
+
+    transformSelection(
+      board,
+      [
+        { id: "a", x: 50, y: 50, width: 160, height: 120 },
+        { id: "b", x: 350, y: 50, width: 160, height: 120 },
+      ],
+      {
+        from: { x: 0, y: 0, width: 200, height: 100 },
+        to: { x: 0, y: 0, width: 400, height: 100 },
+      },
+    );
+
+    expect(board.widgets.get("c")!.waypoints?.[0]).toMatchObject({ x: 200, y: 50 });
+  });
+
+  it("does not keep a bend of a connector with only one end inside", () => {
+    const board = boardWith([
+      { ...note("a", { x: 50, y: 50 }), width: 160, height: 120 },
+      { ...note("b", { x: 900, y: 50 }), width: 160, height: 120 },
+      {
+        id: "c",
+        type: "connector",
+        parentId: null,
+        x: 100,
+        y: 50,
+        width: 800,
+        height: 0,
+        start: { item: "a", side: "right" },
+        end: { item: "b", side: "left" },
+        waypoints: [{ id: "w", x: 100, y: 50, rigid: true }],
+      },
+    ]);
+
+    transformSelection(
+      board,
+      [{ id: "a", x: 250, y: 50, width: 160, height: 120 }],
+      {
+        from: { x: 0, y: 0, width: 200, height: 100 },
+        to: { x: 0, y: 0, width: 400, height: 100 },
+      },
+    );
+
+    expect(board.widgets.get("c")!.waypoints?.[0]).toMatchObject({ x: 100, y: 50 });
+  });
+
+  it("does not record an undo step when nothing changed", () => {
+    const board = boardWith([note("a", { x: 50, y: 50 })]);
+    const before = board.widgets.get("a");
+
+    transformSelection(board, [{ id: "a", x: 50, y: 50, width: 40, height: 40 }]);
+    board.undoOnce();
+
+    expect(board.widgets.get("a")).toEqual(before);
+  });
+});

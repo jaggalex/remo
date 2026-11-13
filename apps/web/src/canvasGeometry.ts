@@ -738,3 +738,25 @@ export function inTableCell(
     widget.cell?.columnId === target.columnId
   );
 }
+
+/**
+ * The objects a block transform may touch (ADR-211).
+ *
+ * Connectors are derived and their stored box is the span of two ends; cards inside a
+ * kanban are placed by the matrix. Everything else is a member. One helper, because the
+ * painter decides whether handles exist and the gesture decides what they carry — the two
+ * must agree on the set.
+ */
+export function resizeMembersOf(
+  widgets: readonly Widget[],
+  ids: readonly string[],
+  isCardOfKanban: (widget: Widget) => boolean,
+): Widget[] {
+  const byId = new Map(widgets.map((widget) => [widget.id, widget]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter(
+      (widget): widget is Widget =>
+        !!widget && widget.type !== "connector" && !isCardOfKanban(widget),
+    );
+}

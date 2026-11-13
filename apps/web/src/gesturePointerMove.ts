@@ -12,7 +12,7 @@ import {
 import type { GestureEnv } from "./gestureEnv";
 import { bendStep, curveStep, flipStep, moveStep } from "./gestureSteps";
 import type { ConnectDraft } from "./gestureTypes";
-import { cellAt, cellGuides, closestOnPath, connectorPath, pick, rectFrom, scaleBoxes, snapResize, type ResizeEdges } from "@remo/canvas";
+import { cellAt, cellGuides, closestOnPath, connectorPath, minScale, pick, rectFrom, scaleBoxes, snapResize, type ResizeEdges } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 
 /**
@@ -84,7 +84,9 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
       box: drag.box,
       raw: { dx: world.x - drag.start.x, dy: world.y - drag.start.y },
       targets: alignmentTargets(drag.origins.map((o) => o.id)),
-      threshold: settings.snapping.thresholdPx / camera.zoom,
+      // One rule for both gestures: the platform modifier turns the magnet off.
+      threshold:
+        event.metaKey || event.ctrlKey ? 0 : settings.snapping.thresholdPx / camera.zoom,
     });
     dragDeltaRef.current = delta;
     // The footprint as patches: the painter, the hit-test and every connector that
@@ -167,11 +169,16 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
         x: drag.corner === "ne" || drag.corner === "se" ? "right" : "left",
         y: drag.corner === "sw" || drag.corner === "se" ? "bottom" : "top",
       };
+      const floor = minScale(items);
       const snapped = snapResize(
         target,
         edges,
         alignmentTargets(drag.ids),
         settings.snapping.thresholdPx / camera.zoom,
+        {
+          width: drag.origin.width * Math.min(1, floor.x),
+          height: drag.origin.height * Math.min(1, floor.y),
+        },
       );
       target = snapped.box;
       setGuides(settings.snapping.guides ? snapped.guides : []);
@@ -179,6 +186,7 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
       setGuides([]);
     }
 
+    drag.target = target;
     const scaled = scaleBoxes(items, drag.origin, target);
     setResizeLimit(
       scaled.stopped

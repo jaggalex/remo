@@ -30,6 +30,8 @@ export interface LabelMetrics {
   truncated: boolean;
 }
 
+import { measureContext } from "./measure";
+
 export interface Measure {
   measureText(text: string): { width: number };
 }
@@ -85,31 +87,37 @@ export function layoutLabel(
   fontPx: number,
   maxWidth: number = LABEL_MAX_WIDTH,
 ): LabelMetrics {
+  const padding = pad(fontPx);
+  // The chip's total width is bounded, so the text gets what the padding leaves.
+  const textMax = Math.max(maxWidth - padding.x * 2, LABEL_MIN_WIDTH);
   const paragraphs = text.split("\n");
-  const explicit = paragraphs.length > 1;
   const lines: string[] = [];
+  let truncated = false;
+
   for (const paragraph of paragraphs) {
     if (paragraph.trim() === "") {
       lines.push("");
       continue;
     }
-    lines.push(...wrapParagraph(measure, paragraph, maxWidth));
+    let wrapped = wrapParagraph(measure, paragraph, textMax);
+    // Every paragraph wraps at most three lines, explicit breaks or not (ADR-213).
+    if (wrapped.length > LABEL_WRAP_LINES) {
+      wrapped = wrapped.slice(0, LABEL_WRAP_LINES);
+      wrapped[LABEL_WRAP_LINES - 1] = ellipsize(measure, wrapped[LABEL_WRAP_LINES - 1] ?? "", textMax);
+      truncated = true;
+    }
+    lines.push(...wrapped);
   }
 
-  const cap = explicit ? LABEL_MAX_LINES : LABEL_WRAP_LINES;
-  let truncated = false;
-  if (lines.length > cap) {
-    lines.length = cap;
-    lines[cap - 1] = ellipsize(measure, lines[cap - 1] ?? "", maxWidth);
+  // The guard is about the whole label, not one paragraph.
+  if (lines.length > LABEL_MAX_LINES) {
+    lines.length = LABEL_MAX_LINES;
+    lines[LABEL_MAX_LINES - 1] = ellipsize(measure, lines[LABEL_MAX_LINES - 1] ?? "", textMax);
     truncated = true;
   }
 
-  const padding = pad(fontPx);
   const textWidth = Math.max(...lines.map((line) => measure.measureText(line).width), 0);
-  const width = Math.min(
-    Math.max(textWidth + padding.x * 2, LABEL_MIN_WIDTH),
-    maxWidth + padding.x * 2,
-  );
+  const width = Math.min(Math.max(textWidth + padding.x * 2, LABEL_MIN_WIDTH), maxWidth);
   const lineHeight = Math.round(fontPx * 1.25);
   return {
     lines,
@@ -125,20 +133,12 @@ export function layoutLabel(
 
 /* ------------------------------------------------------ measuring context --- */
 
-let scratch: CanvasRenderingContext2D | null = null;
-
 /**
  * A measuring context for callers outside the painter (the editor, tests with a DOM).
  * Returns null where no canvas exists; `layoutLabel` still works with any `Measure`.
  */
 export function labelMeasure(): Measure | null {
-  if (scratch) return scratch;
-  if (typeof document === "undefined") return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = 1;
-  canvas.height = 1;
-  scratch = canvas.getContext("2d");
-  return scratch;
+  return measureContext();
 }
 
 /** Metrics for the editor: the same layout the painter will use once it commits. */

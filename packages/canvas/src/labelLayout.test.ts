@@ -49,15 +49,22 @@ describe("layoutLabel (ADR-213)", () => {
     expect(metrics.width).toBe(LABEL_MIN_WIDTH);
   });
 
-  it("never lets a line exceed the ceiling", () => {
+  it("never lets the chip exceed the ceiling", () => {
     const metrics = layoutLabel(measure, "x".repeat(200), FONT);
-    const padding = FONT * 0.46 * 2;
-    expect(metrics.width).toBeLessThanOrEqual(LABEL_MAX_WIDTH + padding + 0.001);
+    expect(metrics.width).toBeLessThanOrEqual(LABEL_MAX_WIDTH);
     expect(metrics.width).toBeGreaterThan(LABEL_MIN_WIDTH);
     // A single unbreakable word is broken rather than allowed to run past the chip.
-    expect(metrics.lines.every((line) => measure.measureText(line).width <= LABEL_MAX_WIDTH)).toBe(
-      true,
-    );
+    const padding = FONT * 0.46 * 2;
+    expect(
+      metrics.lines.every((line) => measure.measureText(line).width <= LABEL_MAX_WIDTH - padding),
+    ).toBe(true);
+  });
+
+  it("caps every paragraph at three lines, even when the label has explicit breaks", () => {
+    const metrics = layoutLabel(measure, `${"word ".repeat(40)}first\nsecond`, FONT);
+    expect(metrics.lines.slice(0, 3)).toHaveLength(3);
+    expect(metrics.lines[2]?.endsWith("…")).toBe(true);
+    expect(metrics.lines.at(-1)).toBe("second");
   });
 
   it("sizes the height by the line count", () => {

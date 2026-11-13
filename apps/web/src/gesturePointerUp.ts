@@ -123,7 +123,11 @@ export function pointerUp(env: GestureEnv) {
     });
     clearPreview();
     setResizeLimit(null);
-    if (rects.length) onResizeMany(rects);
+    // The command skips values that did not change, so a click on a handle that never
+    // moved costs no undo step without a second comparison here.
+    if (rects.length) {
+      onResizeMany(rects, drag.target ? { from: drag.origin, to: drag.target } : undefined);
+    }
     return;
   }
 

@@ -5,7 +5,8 @@
  * these metrics, and the editor asks them how tall the note should be. If the two
  * disagreed, a note would grow a little on every keystroke or jitter as you type.
  */
-import type { TextMarks, TextRun } from "@remo/model";
+import type { TextMarks, TextRun, Widget } from "@remo/model";
+import { measureContext } from "./measure";
 
 export const STICKY_FONT_PX = 16;
 export const STICKY_LINE_HEIGHT = 20;
@@ -86,17 +87,6 @@ export function stickyMetrics(
  * The editor needs a measuring context but must not depend on a canvas being
  * mounted, so a 1x1 scratch canvas is used.
  */
-let scratch: CanvasRenderingContext2D | null = null;
-
-function scratchContext(): CanvasRenderingContext2D | null {
-  if (scratch) return scratch;
-  if (typeof document === "undefined") return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = 1;
-  canvas.height = 1;
-  scratch = canvas.getContext("2d");
-  return scratch;
-}
 
 /**
  * Height a note needs to show `text` without clipping.
@@ -105,7 +95,7 @@ function scratchContext(): CanvasRenderingContext2D | null {
  * (see the note in `setWidgetText`).
  */
 export function stickyHeightFor(text: string, width: number): number | null {
-  const ctx = scratchContext();
+  const ctx = measureContext();
   if (!ctx) return null;
   return stickyMetrics(ctx, text, width).height;
 }
@@ -265,7 +255,7 @@ export function richMetrics(
 
 /** Height formatted text needs, measured off-screen. */
 export function runsHeightFor(runs: readonly TextRun[], width: number): number | null {
-  const ctx = scratchContext();
+  const ctx = measureContext();
   if (!ctx) return null;
   return richMetrics(ctx, runs, width).height;
 }
@@ -312,7 +302,7 @@ export function shapeHeightFor(
   fontPx: number = MIN_SHAPE_FONT,
   family: string = DEFAULT_FONT_FAMILY,
 ): number | null {
-  const ctx = scratchContext();
+  const ctx = measureContext();
   if (!ctx) return null;
   return runsBlockHeight(ctx, runs, width, fontPx, family);
 }
@@ -386,7 +376,43 @@ export function noteFontSizeFor(
   family: string = DEFAULT_FONT_FAMILY,
 ): number | null {
   if (explicit) return explicit;
-  const ctx = scratchContext();
+  const ctx = measureContext();
   if (!ctx) return null;
   return fitNoteFont(ctx, runs, width, height, cap, undefined, family);
+}
+
+
+/**
+ * Whether the widget's text is clipped at the size it paints at (ADR-214).
+ *
+ * The badge needs the same answer the painter has; `null` means no canvas is available
+ * (server-side render), and the caller then says nothing rather than guessing.
+ */
+export function textClipped(
+  widget: Widget,
+  cap: number,
+  family: string = DEFAULT_FONT_FAMILY,
+): boolean | null {
+  const runs: TextRun[] = widget.runs?.length
+    ? widget.runs
+    : widget.content
+      ? [{ text: widget.content }]
+      : [];
+  if (!runs.length) return false;
+  const ctx = measureContext();
+  if (!ctx) return null;
+  const explicit = widget.style?.fontSize;
+  const size =
+    explicit ??
+    fitNoteFont(
+      ctx,
+      runs,
+      widget.width,
+      widget.height,
+      cap,
+      widget.type === "shape" ? MIN_SHAPE_FONT : undefined,
+      family,
+    );
+  return runsBlockHeight(ctx, runs, widget.width, size, family) >
+    Math.max(widget.height - notePadding(size) * 2, lineHeightFor(size)) + 0.5;
 }

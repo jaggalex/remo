@@ -22,6 +22,7 @@ import {
   type KanbanState,
   type TextDeltaOp,
   type TextMarks,
+  type Rect,
   type Widget,
 } from "@remo/model";
 import { InlineEditor } from "./InlineEditor";
@@ -87,7 +88,7 @@ interface Props {
   /** Drop a selection into a table cell (ADR-196). */
   onMoveToCell: (frameId: string, rowId: string, columnId: string, ids: string[], offset: { x: number; y: number }) => void;
   /** Commit a resize gesture: one transaction, one undo step. */
-  onResizeMany: (rects: WidgetRect[]) => void;
+  onResizeMany: (rects: WidgetRect[], scale?: { from: Rect; to: Rect }) => void;
   onMoveCard: (kanbanId: string, cardId: string, columnId: string, swimlaneId: string) => void;
   onAddCard: (kanbanId: string, columnId: string, swimlaneId: string) => void;
   onAddColumn: (kanbanId: string) => void;
@@ -624,16 +625,12 @@ export function BoardCanvas({
       <CanvasHint allowed={hintAllowed && widgets.length > 0} />
       {resizeLimit && cursor && (
         <div
-          className="canvas-limit"
+          className={`canvas-limit${cursor.x > viewport.width - 220 ? " canvas-limit--flip" : ""}`}
           aria-hidden="true"
-          style={{
-            left: cursor.x + 16,
-            top: cursor.y + 16,
-            transform: cursor.x > viewport.width - 220 ? "translateX(-100%) translateX(-32px)" : undefined,
-          }}
+          style={{ left: cursor.x, top: cursor.y }}
         >
-          {t("canvas.resize.limit", {
-            size: `${Math.round(Math.min(resizeLimit.width, resizeLimit.height))} px`,
+          {t("canvas.resize.limitPx", {
+            size: Math.round(Math.min(resizeLimit.width, resizeLimit.height)),
           })}
         </div>
       )}

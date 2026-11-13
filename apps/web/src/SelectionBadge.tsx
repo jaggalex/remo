@@ -18,6 +18,7 @@ export function SelectionBadge({
   selectedLineSize,
   selectedWidgets = [],
   resizeLimit,
+  textClipped,
 }: {
   selectedIds: readonly string[];
   selectedWidget: Widget | undefined;
@@ -31,11 +32,13 @@ export function SelectionBadge({
   selectedWidgets?: readonly Widget[];
   /** While a block is stopped at a minimum, the size the person is pressing against. */
   resizeLimit?: { width: number; height: number } | null;
+  /** The selected object's text does not fit (ADR-214); the word, not only the mark. */
+  textClipped?: boolean | null;
 }) {
   const { t, count, typeName } = useI18n();
   if (!selectedIds.length) return null;
   return (
-    <div className="selection-badge">
+    <div className="selection-badge" role="status" aria-live="polite">
       {selectedIds.length === 1 && selectedWidget ? (
         <>
           <strong>{typeName(selectedWidget.type)}</strong>
@@ -59,6 +62,9 @@ export function SelectionBadge({
             <span className="muted">
               {(selectedWidget.title ?? selectedWidget.content ?? "").slice(0, 48)}
             </span>
+          )}
+          {textClipped && (
+            <span className="muted">{t("canvas.text.overflow")}</span>
           )}
           {selectedTags?.map((tag) => (
             <span key={tag.id} className={`tag-chip tag-${tag.color}`}>

@@ -68,8 +68,9 @@
 ## 5. Эталоны (кадр F3) — финально
 
 Новые: `selection-block.png`, `selection-min-stop.png`, `shape-grow.png`,
-`text-overflow.png`, `label-wrap.png`. Изменятся: `connectors.png`, возможно `board.png`.
-Проверить, что не изменились: `connector-straight/-elbow/-curved.png`, `lock-badge.png`.
+`text-overflow.png`, `label-wrap.png` — все сняты на пустой доске при 100 %.
+`connectors.png` и `board.png` не изменились: подпись в эталонном кадре короткая, а
+однообъектное выделение осталось прежним.
 
 ## 6. Что готово и что ещё нет
 

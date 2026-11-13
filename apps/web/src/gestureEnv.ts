@@ -47,6 +47,8 @@ type DragState =
       ids: string[];
       corner: ResizeCorner;
       origin: Rect;
+      /** The last target box, so the release can pass the factors to the command. */
+      target?: Rect;
       /** The boxes as they were when the gesture started; the preview must not feed itself. */
       members: Array<{
         id: string;
@@ -169,7 +171,7 @@ export function useGestureEnv(deps: GestureDeps) {
   /** The same map for handlers that must not wait for a render. */
   const previewLive = useRef<ReadonlyMap<string, Partial<Widget>>>(new Map());
   /**
-   * One preview commit per animation frame (ADR-213).
+   * One preview commit per animation frame (ADR-212 step 1).
    *
    * A trackpad or a gaming mouse sends pointer moves faster than the screen refreshes.
    * Repainting the board for every event buys nothing visible and spends the frame

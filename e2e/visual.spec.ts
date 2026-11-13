@@ -645,6 +645,12 @@ async function canvasView(page: Page) {
   });
 }
 
+/** Fit is deterministic: the same content always lands at the same zoom. */
+async function zoomInToReadable(page: Page) {
+  await page.getByRole("button", { name: "Fit" }).click();
+  await page.waitForTimeout(250);
+}
+
 function clientPoint(
   view: Awaited<ReturnType<typeof canvasView>>,
   world: { x: number; y: number },
@@ -662,7 +668,7 @@ function clientPoint(
  * and the sentence a person reads.
  */
 test("a block selection shows one box and its composition", async ({ page }) => {
-  const account = await freshBoard(page, "visual-block");
+  const account = await register(page, "visual-block");
   await seedNote(page, account.boardId, { x: -320, y: 0 });
   await seedNote(page, account.boardId, { x: 0, y: 0 });
   await seedNote(page, account.boardId, { x: 320, y: 0 });
@@ -672,6 +678,28 @@ test("a block selection shows one box and its composition", async ({ page }) => 
     return !!probe?.camera;
   });
   await page.waitForTimeout(400);
+  await zoomInToReadable(page);
+
+  const view = await canvasView(page);
+  // One marquee instead of three shift-clicks: a missed click must not turn the
+  // baseline into a different selection.
+  const startPoint = { x: view.rect.left + 90, y: view.rect.top + 90 };
+  const endPoint = {
+    x: view.rect.left + view.rect.width - 90,
+    y: view.rect.top + view.rect.height - 90,
+  };
+  await page.mouse.move(startPoint.x, startPoint.y);
+  await page.mouse.down();
+  await page.mouse.move(endPoint.x, endPoint.y, { steps: 10 });
+  await page.mouse.up();
+
+  const selected = await page.evaluate(
+    () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds.length,
+  );
+  expect(selected).toBe(3);
+  await expect(page.locator(".selection-badge")).toContainText("3 objects");
+  await expect(page.locator(".selection-badge")).toContainText("3 change size");
+  await capture(page, page.locator(".canvas-wrap"), "selection-block");
 
   const notes = await page.evaluate(() => {
     const list = (window as unknown as {
@@ -681,25 +709,14 @@ test("a block selection shows one box and its composition", async ({ page }) => 
       .filter((widget) => widget.type === "sticky_note")
       .map((widget) => ({ x: widget.x, y: widget.y, width: widget.width, height: widget.height }));
   });
-  const view = await canvasView(page);
-  for (const [index, note] of notes.entries()) {
-    const point = clientPoint(view, note);
-    if (index > 0) await page.keyboard.down("Shift");
-    await page.mouse.click(point.x, point.y);
-    if (index > 0) await page.keyboard.up("Shift");
-  }
-  await expect(page.locator(".selection-badge")).toContainText("3 objects");
-  await capture(page, page.locator(".canvas-wrap"), "selection-block");
 
-  // The same block pressed against its minimum: the plate names the limit, the badge
-  // repeats it in words, and the box stops instead of squeezing one member.
   const right = Math.max(...notes.map((note) => note.x + note.width / 2));
   const bottom = Math.max(...notes.map((note) => note.y + note.height / 2));
   const gap = 7 / view.camera.zoom;
   const corner = clientPoint(view, { x: right + gap, y: bottom + gap });
   await page.mouse.move(corner.x, corner.y);
   await page.mouse.down();
-  await page.mouse.move(corner.x - 300, corner.y - 200, { steps: 10 });
+  await page.mouse.move(corner.x - 700 / view.camera.zoom, corner.y - 500 / view.camera.zoom, { steps: 10 });
   await expect(page.locator(".canvas-limit")).toBeVisible();
   await capture(page, page.locator("body"), "selection-min-stop");
   await page.mouse.up();
@@ -709,7 +726,14 @@ test("a block selection shows one box and its composition", async ({ page }) => 
  * A shape that grew for its text (ADR-214): width unchanged, height down, readable size.
  */
 test("a shape grows for its text", async ({ page }) => {
-  await freshBoard(page, "visual-shape-grow");
+  const account = await register(page, "visual-shape-grow");
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+  await zoomInToReadable(page);
   const rail = page.getByRole("toolbar", { name: "Tools" });
   await rail.getByRole("button", { name: "Shape variants" }).click();
   await page.getByRole("button", { name: "Rectangle", exact: true }).click();
@@ -775,6 +799,7 @@ test("a connector label keeps its lines", async ({ page }) => {
     return !!probe?.camera;
   });
   await page.waitForTimeout(400);
+  await zoomInToReadable(page);
 
   const view = await canvasView(page);
   const middle = clientPoint(view, { x: 0, y: 0 });

@@ -1,6 +1,8 @@
 import {
   boxOf,
   connectorPath,
+  labelMetrics,
+  labelPoint,
   pathPolyline,
   unionBox,
   noteFontSizeFor,
@@ -304,9 +306,17 @@ export function connectorBarTarget(args: {
   const xs = points.map((point) => point.x);
   const ys = points.map((point) => point.y);
   const { camera, viewport } = frame;
+  // A multi-line label grows above the line; the bar must clear the chip, not the path
+  // (ADR-213), or it covers the first line of the text it edits.
+  const label = widget.content?.trim();
+  const chip = label
+    ? labelMetrics(label, widget.style?.fontSize ?? 13, settings.text.fontFamily)
+    : null;
+  const anchor = labelPoint(path, widget.labelAt);
+  const topWorld = chip ? Math.min(Math.min(...ys), anchor.y - chip.height / 2) : Math.min(...ys);
   const left = viewport.width / 2 + (Math.min(...xs) - camera.x) * camera.zoom;
   const right = viewport.width / 2 + (Math.max(...xs) - camera.x) * camera.zoom;
-  const top = viewport.height / 2 + (Math.min(...ys) - camera.y) * camera.zoom;
+  const top = viewport.height / 2 + (topWorld - camera.y) * camera.zoom;
   const bottom = viewport.height / 2 + (Math.max(...ys) - camera.y) * camera.zoom;
 
   const centre = (left + right) / 2;

@@ -1,4 +1,4 @@
-import { expandGroups, minimumSizeOf, scalesInBlock, type Widget } from "@remo/model";
+import { expandGroups, minimumSizeOf, scalesInBlock, type Rect, type Widget } from "@remo/model";
 import type { BoardDocument } from "./board";
 import { connectorsTo } from "./connectors";
 import { cardsOf } from "./kanbanState";
@@ -404,7 +404,11 @@ function carriedByListed(
  * along, while a resized one leaves them where they are (ADR-141). One transaction, one
  * undo step.
  */
-export function transformSelection(board: BoardDocument, boxes: readonly WidgetRect[]): void {
+export function transformSelection(
+  board: BoardDocument,
+  boxes: readonly WidgetRect[],
+  scale?: { from: Rect; to: Rect },
+): void {
   if (!boxes.length) return;
   board.transact(() => {
     const direct = new Set(boxes.map((box) => box.id));
@@ -421,16 +425,21 @@ export function transformSelection(board: BoardDocument, boxes: readonly WidgetR
 
       if (scalesInBlock(widget)) {
         const minimum = minimumSizeOf(widget.type);
-        board.widgets.set(widget.id, {
-          ...widget,
-          x: box.x,
-          y: box.y,
-          width: Math.max(minimum.width, box.width),
-          height: Math.max(minimum.height, box.height),
-        });
+        const width = Math.max(minimum.width, box.width);
+        const height = Math.max(minimum.height, box.height);
+        if (
+          Math.abs(width - widget.width) < 0.5 &&
+          Math.abs(height - widget.height) < 0.5 &&
+          Math.abs(box.x - widget.x) < 0.5 &&
+          Math.abs(box.y - widget.y) < 0.5
+        ) {
+          continue;
+        }
+        board.widgets.set(widget.id, { ...widget, x: box.x, y: box.y, width, height });
         resized.add(widget.id);
         if (widget.type === "frame") resizedFrames.add(widget.id);
       } else {
+        if (Math.abs(box.x - widget.x) < 0.5 && Math.abs(box.y - widget.y) < 0.5) continue;
         board.widgets.set(widget.id, { ...widget, x: box.x, y: box.y });
       }
     }
@@ -456,6 +465,27 @@ export function transformSelection(board: BoardDocument, boxes: readonly WidgetR
     for (const id of resizedFrames) {
       const frame = board.readWidget(id);
       if (frame) reconcileFrameMembership(board, frame);
+    }
+
+    // A connector whose both ends travel keeps its bends in the same place relative to
+    // the block (ADR-211); a half-selected connector keeps its world points.
+    if (scale && scale.from.width > 0 && scale.from.height > 0) {
+      const kx = scale.to.width / scale.from.width;
+      const ky = scale.to.height / scale.from.height;
+      for (const connector of board.readWidgets()) {
+        if (connector.type !== "connector" || !connector.waypoints?.length) continue;
+        const start = connector.start?.item;
+        const end = connector.end?.item;
+        if (!start || !end || !direct.has(start) || !direct.has(end)) continue;
+        board.widgets.set(connector.id, {
+          ...connector,
+          waypoints: connector.waypoints.map((point) => ({
+            ...point,
+            x: scale.from.x + (point.x - scale.from.x) * kx,
+            y: scale.from.y + (point.y - scale.from.y) * ky,
+          })),
+        });
+      }
     }
   });
 }
@@ -489,6 +519,7 @@ export function setWidgetRects(board: BoardDocument, rects: WidgetRect[]): void 
       const frame = board.readWidget(id);
       if (frame) reconcileFrameMembership(board, frame);
     }
+
   });
 }
 

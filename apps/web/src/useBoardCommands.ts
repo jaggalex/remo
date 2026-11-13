@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 import { MAX_SHAPE_HEIGHT, MIN_SHAPE_FONT, shapeHeightFor } from "@remo/canvas";
+import type { Rect } from "@remo/model";
 import type { MutableRefObject } from "react";
 import {
   addConnectorWaypoint,
@@ -225,7 +226,8 @@ export function useBoardCommands(deps: BoardCommandDeps) {
   );
 
   const resizeSelection = useCallback(
-    (rects: WidgetRect[]) => transformSelection(board, rects),
+    (rects: WidgetRect[], scale?: { from: Rect; to: Rect }) =>
+      transformSelection(board, rects, scale),
     [board],
   );
 
