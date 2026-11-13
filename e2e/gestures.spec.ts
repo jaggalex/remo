@@ -642,10 +642,12 @@ test("a shape grows down for its text (ADR-214)", async ({ page }) => {
   const box = () =>
     page.evaluate(() => {
       const probe = (window as unknown as {
-        __remo?: { widgets: Array<{ type: string; width: number; height: number; text: string }> };
+        __remo?: {
+          widgets: Array<{ type: string; x: number; y: number; width: number; height: number; text: string }>;
+        };
       }).__remo;
       const one = probe?.widgets.find((widget) => widget.type === "shape");
-      return one ? { width: one.width, height: one.height, text: one.text } : null;
+      return one ? { x: one.x, y: one.y, width: one.width, height: one.height, text: one.text } : null;
     });
 
   const before = await box();
@@ -679,6 +681,10 @@ test("a shape grows down for its text (ADR-214)", async ({ page }) => {
   expect(grown.width).toBe(before.width);
   expect(grown.height).toBeLessThanOrEqual(1280);
   expect(grown.height).toBeGreaterThan(before.height + 40);
+  // The box is centre-anchored, so growing the height alone would lift the top edge.
+  // It stays put: the shape grows down from where the person put it (ADR-214).
+  const top = (box: { y: number; height: number }) => box.y - box.height / 2;
+  expect(Math.abs(top(grown) - top(before))).toBeLessThanOrEqual(1);
 
   // The badge must not call it clipped once the shape has grown for the settled text.
   await page.waitForTimeout(500);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { TextRun } from "@remo/model";
+import type { TextRun, Widget } from "@remo/model";
 import {
+  MAX_SHAPE_HEIGHT,
   MIN_NOTE_FONT,
   MIN_SHAPE_FONT,
   fitNoteFont,
@@ -8,6 +9,7 @@ import {
   lineHeightFor,
   noteFontSizeFor,
   notePadding,
+  textClipped,
 } from "./textLayout";
 
 /**
@@ -61,5 +63,47 @@ describe("auto text size", () => {
   it("has a line height the painter and the fitter agree on", () => {
     expect(lineHeightFor(16)).toBe(20);
     expect(lineHeightFor(8)).toBe(10);
+  });
+});
+
+/**
+ * The clip state is one answer for the painter, the badge and the growth (ADR-214), so
+ * these tests pin the predicate itself: growth stops exactly where the mark appears.
+ */
+describe("clip state", () => {
+  const shape = (text: string, height: number): Widget =>
+    ({
+      id: "s",
+      type: "shape",
+      x: 0,
+      y: 0,
+      width: 200,
+      height,
+      content: text,
+      style: { fontSize: 16 },
+    }) as Widget;
+
+  it("keeps the constant the growth and the mark share", () => {
+    expect(MIN_SHAPE_FONT).toBe(10);
+    expect(MAX_SHAPE_HEIGHT).toBe(1280);
+    expect(MIN_SHAPE_FONT).toBeGreaterThan(MIN_NOTE_FONT);
+  });
+
+  it("calls an empty label fitted", () => {
+    expect(textClipped(shape("", 40), 16, "sans", fakeCtx())).toBe(false);
+  });
+
+  it("calls a short label fitted", () => {
+    expect(textClipped(shape("short", 200), 16, "sans", fakeCtx())).toBe(false);
+  });
+
+  it("stops clipping once the box is tall enough — the growth's own question", () => {
+    const text = "word ".repeat(40);
+    expect(textClipped(shape(text, 80), 16, "sans", fakeCtx())).toBe(true);
+    expect(textClipped(shape(text, 600), 16, "sans", fakeCtx())).toBe(false);
+  });
+
+  it("answers null when there is no context to measure with", () => {
+    expect(textClipped(shape("short", 200), 16, "sans", null)).toBeNull();
   });
 });

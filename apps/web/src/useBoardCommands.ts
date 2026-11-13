@@ -166,8 +166,8 @@ export function useBoardCommands(deps: BoardCommandDeps) {
    * The note does **not** grow: it keeps its size and Auto text shrinks to fit
    * (ADR-027), which is why typing a lot into a sticky makes the letters smaller
    * instead of the note taller. A shape is a diagram node: when its text no longer fits
-   * at the readable floor, the shape grows down (ADR-214), in the same transaction as
-   * the keystroke, so the growth and the edit are one undo step.
+   * at the readable floor, the shape grows down (ADR-214) and the height merges into the
+   * editing session, so the growth and the edit are one undo step (ADR-215).
    */
   const onSetText = useCallback(
     (id: string, delta: TextDeltaOp[]) => {
@@ -212,7 +212,12 @@ export function useBoardCommands(deps: BoardCommandDeps) {
           board.transact(
             () => {
               const live = board.readWidget(id);
-              if (live && !live.locked) board.widgets.set(id, { ...live, height: target });
+              if (!live || live.locked) return;
+              // The box is centre-anchored on the canvas, so growing the height alone
+              // would push the shape up as well; moving the centre by half the delta
+              // keeps the top edge where the person put it and grows down (ADR-214).
+              const grown = target - live.height;
+              board.widgets.set(id, { ...live, y: live.y + grown / 2, height: target });
             },
             LOCAL_ORIGIN,
             { merge: true },
@@ -271,6 +276,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     return () => {
       for (const timer of timers.values()) clearTimeout(timer);
       timers.clear();
+      growthHeights.current.clear();
     };
   }, []);
 

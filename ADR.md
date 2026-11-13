@@ -8801,8 +8801,10 @@ painter still clipped.
 last keystroke. It reads `board.textOf`, grows the shape line by line while `textClipped` —
 the same predicate the painter and the badge use — reports a clipped label, and writes the
 height with `merge: true`, so the correction joins the editing session instead of becoming a
-second undo step. A manual resize while the check is pending wins: the check records the
-height it saw and does nothing if the height changed.
+second undo step. The box is centre-anchored, so the centre moves down by half the growth: the
+top edge stays where the person put it (ADR-214's "grows down"). A manual resize while the
+check is pending wins: the check records the height it saw and does nothing if the height
+changed.
 
 **Consequences.** Growth appears a moment after typing rather than per keystroke, which is
 invisible at typing speed and avoids measuring a partial string. `shapeHeightFor` and

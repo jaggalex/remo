@@ -362,6 +362,8 @@ export function textClipped(
   widget: Widget,
   cap: number,
   family: string = DEFAULT_FONT_FAMILY,
+  /** The shared scratch canvas; a test passes a fake so it needs no browser. */
+  ctx: CanvasRenderingContext2D | null = measureContext(),
 ): boolean | null {
   const runs: TextRun[] = widget.runs?.length
     ? widget.runs
@@ -369,7 +371,6 @@ export function textClipped(
       ? [{ text: widget.content }]
       : [];
   if (!runs.length) return false;
-  const ctx = measureContext();
   if (!ctx) return null;
   const explicit = widget.style?.fontSize;
   const size =

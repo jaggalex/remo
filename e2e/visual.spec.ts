@@ -783,7 +783,26 @@ test("a shape grows for its text", async ({ page }) => {
   );
   await page.keyboard.press("Escape");
   await expect(page.locator(".inline-editor")).toHaveCount(0);
-  await page.waitForTimeout(500);
+
+  // Wait for the growth itself, not for a guessed delay: the shape is taller than when
+  // it was created, then Fit frames it, so the label is legible in the baseline.
+  const height = () =>
+    page.evaluate(() => {
+      const probe = (window as unknown as {
+        __remo?: { widgets: Array<{ type: string; height: number }> };
+      }).__remo;
+      return probe?.widgets.find((widget) => widget.type === "shape")?.height ?? 0;
+    });
+  await expect.poll(height).toBeGreaterThan(200);
+  // Fit after the growth frames the grown box, which is what makes the label legible
+  // in the baseline; fitting before it would leave the shape small in a wide frame.
+  await zoomInToReadable(page);
   await page.keyboard.press("Escape");
+  await expect(page.locator(".selection-badge")).toHaveCount(0);
+  // Fit keeps focus, and its tooltip would land in the frame: blur it and park the
+  // cursor on the grid before the shot.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.mouse.move(1200, 400);
+  await page.waitForTimeout(500);
   await capture(page, page.locator(".canvas-wrap"), "shape-grow");
 });

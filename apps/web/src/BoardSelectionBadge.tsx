@@ -58,14 +58,18 @@ export function BoardSelectionBadge({
   const selectedGroup = soleSelectedGroup(widgets, selectedIds);
 
   // The clip state is the same measure the painter uses (ADR-214). Only the two kinds
-  // that paint text in a box are asked; a card's title is a different layout.
+  // that paint text in a box are asked; a card's title is a different layout. A shape
+  // paints its label at the M cap whatever `stickySize` it carries, so the badge asks
+  // with the same cap the painter does (ADR-215).
   const clipped =
     selectedWidget &&
     (selectedWidget.type === "sticky_note" || selectedWidget.type === "shape")
       ? textClipped(
           selectedWidget,
-          settings.notes.fontCap[selectedWidget.style?.stickySize ?? "M"] ??
-            settings.notes.fontCap.M,
+          selectedWidget.type === "shape"
+            ? settings.notes.fontCap.M
+            : (settings.notes.fontCap[selectedWidget.style?.stickySize ?? "M"] ??
+              settings.notes.fontCap.M),
           settings.text.fontFamily,
         )
       : null;
