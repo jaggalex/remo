@@ -8877,3 +8877,31 @@ choosing a larger band.
 wrapping; `@remo/doc` allows vertical rows and gains `setTableHeaderSize`; the header editor
 becomes a text area; the panel gains the two header fields. Tests cover line preservation,
 manual sizes and a vertical row. Per-side headers and rich text in headers remain open.
+
+## ADR-218: Borders keep the accepted 1–8 px range, and a view switch reports from every surface (extends ADR-205, ADR-207, ADR-208)
+
+**Status:** accepted (2026-11-13).
+
+**Context.** Acceptance found three surfaces thinner than the accepted records: the panel
+offered only 1/2/3 px border widths while ADR-208 allows 1–8, the context menu switched the
+view without the toast the badge shows, and a locked section hid the view items instead of
+disabling them with a reason. The header axis menu also lacked the duplicate action ADR-205
+names.
+
+**Decision.**
+
+- **Border width is 1–8 px everywhere.** The panel offers 1, 2, 3, 4, 6 and 8; the command
+  and reader reject 0, because a zero-width canvas stroke is ignored and would leave the
+  previous stroke style in place. A stored value outside 1–8 is dropped, not clamped.
+- **One outcome, one message.** Switching to the free view from the panel confirms, while
+  the badge and the context menu switch at once and both show "Table removed, cells kept".
+  The message belongs to the action, not to one surface.
+- **A locked section shows disabled view items with the reason**, rather than hiding them:
+  the person can see that the action exists and why it is unavailable.
+- **Duplicate row/column is in the axis menu and in the section panel**, next to the other
+  axis actions, and reuses the same `duplicateAxis` command as the cell menu.
+
+**Consequences.** `buildBoardMenu` accepts the notice callback; the context menu labels a
+disabled view item with the lock reason; the panel border widths follow ADR-208; the axis
+menu and panel gain one command entry. No model change. Tests cover duplicate from the
+header, the locked section, the block-switch undo and the context-menu switch.

@@ -280,7 +280,7 @@ export function setAxisAutoResize(
   return false;
 }
 
-/** A column header can be vertical; row headers stay horizontal (ADR-196). */
+/** A column or row header may be drawn vertically (ADR-196, ADR-217). */
 export function setAxisVertical(
   board: BoardDocument,
   frameId: string,
@@ -583,7 +583,7 @@ function editableTableTarget(
 
 function borderValue(border: TableBorder): TableBorder | null {
   if (typeof border.color !== "string" || !border.color) return null;
-  const width = Math.round(Math.min(8, Math.max(0, border.width)));
+  const width = Math.round(Math.min(8, Math.max(1, border.width)));
   const style = border.style;
   if (style !== "solid" && style !== "dashed" && style !== "none") return null;
   return { color: border.color, width, style };

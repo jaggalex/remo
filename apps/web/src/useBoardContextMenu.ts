@@ -24,6 +24,7 @@ export function useBoardContextMenu({
   setSelectedIds,
   menuPoint,
   t,
+  onNotice,
 }: {
   board: BoardDocument;
   kanbanStates: Record<string, KanbanState>;
@@ -36,6 +37,7 @@ export function useBoardContextMenu({
   /** Where the last menu was opened, so a command that needs a point can use it. */
   menuPoint: MutableRefObject<{ x: number; y: number } | null>;
   t: (key: TranslationKey) => string;
+  onNotice?: (text: string) => void;
 }) {
   const [menu, setMenu] = useState<MenuState | null>(null);
 
@@ -55,6 +57,7 @@ export function useBoardContextMenu({
         duplicateIds,
         pasteSelection,
         t,
+        onNotice,
       });
       if (result.select) setSelectedIds(result.select);
       if (result.point) menuPoint.current = result.point;
@@ -70,6 +73,7 @@ export function useBoardContextMenu({
       setSelectedIds,
       t,
       writeBlocked,
+      onNotice,
     ],
   );
 

@@ -126,6 +126,7 @@ export const ruSection = {
   "section.cell.mergeHint": "Выберите две и более ячейки",
   "section.cell.mergeRefused": "Заголовки не объединяются",
   "section.cell.range": "Действия с ячейками",
+  "section.cell.selectedRange": "Ячейки «{from}» — «{to}»",
   "section.cell.selected": "Ячейка «{column} × {row}»",
   "section.cell.refuseHeader": "Заголовок не принимает объекты",
   "section.cell.moved": "Перенесено в «{cell}».",

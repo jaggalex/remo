@@ -90,12 +90,17 @@ export function TableSelectionLayer({
   const top = Math.min(...screen.map((rect) => rect.top));
   const right = Math.max(...screen.map((rect) => rect.left + rect.width));
 
-  const columnTitle =
-    frame.layout.columns.find((axis) => axis.id === selection.anchor.columnId)?.title ||
-    t("section.axis.untitled");
-  const rowTitle =
-    frame.layout.rows.find((axis) => axis.id === selection.anchor.rowId)?.title ||
-    t("section.axis.untitled");
+  const titleOf = (
+    axes: Array<{ id: string; title: string }>,
+    id: string,
+  ) => axes.find((axis) => axis.id === id)?.title || t("section.axis.untitled");
+  const columnTitle = titleOf(frame.layout.columns, selection.anchor.columnId);
+  const rowTitle = titleOf(frame.layout.rows, selection.anchor.rowId);
+  const focusColumnTitle = titleOf(frame.layout.columns, selection.focus.columnId);
+  const focusRowTitle = titleOf(frame.layout.rows, selection.focus.rowId);
+  const ranged =
+    selection.anchor.rowId !== selection.focus.rowId ||
+    selection.anchor.columnId !== selection.focus.columnId;
 
   const merge = () => {
     const result = mergeCells(board, frame.id, range);
@@ -129,7 +134,12 @@ export function TableSelectionLayer({
         ))}
       </div>
       <p className="table-range-live" role="status" aria-live="polite">
-        {t("section.cell.selected", { column: columnTitle, row: rowTitle })}
+        {ranged
+          ? t("section.cell.selectedRange", {
+              from: `${columnTitle} × ${rowTitle}`,
+              to: `${focusColumnTitle} × ${focusRowTitle}`,
+            })
+          : t("section.cell.selected", { column: columnTitle, row: rowTitle })}
       </p>
       {!readOnly && (merged || range.length > 1) && (
         <div

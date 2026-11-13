@@ -19,7 +19,7 @@ import type { Rect, TableAxis, Widget } from "@remo/model";
 import { Menu, type MenuItem } from "@remo/ui";
 import { AxisDeleteDialog, type AxisDeleteTarget } from "./AxisDeleteDialog";
 import { AxisSizePopover, axisIsManual, axisSizeValue } from "./AxisSizeControl";
-import { insertAxisNear } from "./tableActions";
+import { duplicateAxisNear, insertAxisNear } from "./tableActions";
 import { PanelWindow } from "./object-panel/PanelWindow";
 import { TableAxisControls } from "./TableAxisControls";
 import { TableMirror } from "./TableGrid";
@@ -348,6 +348,23 @@ export function TableHeaderLayer({
             : "section.axis.insertBelow",
         ),
         onSelect: () => insert(entry, "after"),
+      },
+      {
+        label: t(
+          entry.kind === "column"
+            ? "section.axis.duplicateColumn"
+            : "section.axis.duplicateRow",
+        ),
+        onSelect: () => {
+          duplicateAxisNear(
+            board,
+            entry.frame.id,
+            entry.kind,
+            entry.axis.id,
+            placeholder(entry.kind, axes.length + 1),
+          );
+          setMenu(null);
+        },
       },
       { separator: true },
       {

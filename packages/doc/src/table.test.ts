@@ -95,7 +95,7 @@ describe("table axes (ADR-196, ADR-199)", () => {
     });
   });
 
-  it("renames and sizes an axis, and only a column can be vertical", () => {
+  it("renames and sizes an axis, and either kind can be vertical", () => {
     const board = withNotes();
     addAxis(board, "f", "column", { title: "Next", firstTitle: "Now", oppositeTitle: "Row" });
     const layout = tableLayoutOf(board, "f")!;

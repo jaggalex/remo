@@ -938,3 +938,85 @@ test("header lines, vertical rows and manual header size", async ({ page }) => {
     })
     .toBe(200);
 });
+
+test("duplicates a column from the header menu", async ({ page }) => {
+  const { frameId } = await openTable(page, "table-duplicate-header");
+  const header = page.getByRole("button", { name: "Columns: Column 1" });
+  if ((await header.getAttribute("aria-pressed")) !== "true") await header.click();
+  await header.click();
+  await page
+    .getByRole("menu", { name: /Columns: Column 1/ })
+    .getByRole("menuitem", { name: "Duplicate column", exact: true })
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.columns?.length;
+    })
+    .toBe(3);
+});
+
+test("a locked table disables the title and the view badge", async ({ page }) => {
+  await openTable(page, "table-locked");
+  await page.keyboard.press("Meta+Shift+l");
+  await expect
+    .poll(() => page.locator(".badge-lock").count())
+    .toBeGreaterThan(0);
+  const badge = page.getByRole("button", { name: "Section view: Table" });
+  await expect(badge).toBeDisabled();
+  await page.getByRole("button", { name: "Rename section" }).dblclick();
+  await expect(page.locator(".section-title-input")).toHaveCount(0);
+});
+
+test("the block size switch is one undo step", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-block-undo");
+  await panel
+    .locator(".section-axis-add")
+    .getByRole("button", { name: "Row", exact: true })
+    .click();
+  const first = await cellPoint(page, frameId, 1, 0);
+  const second = await cellPoint(page, frameId, 1, 1);
+  await page.mouse.click(first.x, first.y);
+  await page.keyboard.down("Shift");
+  await page.mouse.click(second.x, second.y);
+  await page.keyboard.up("Shift");
+  await page.locator(".table-range-bar").getByRole("button", { name: "Merge" }).click();
+  const merged = await cellPoint(page, frameId, 1, 0);
+  await page.mouse.click(merged.x, merged.y);
+  const box = panel
+    .locator(".section-group")
+    .filter({ hasText: "Block size" })
+    .getByRole("checkbox");
+  await box.click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return typeof layout.columns![0]!.size;
+    })
+    .toBe("number");
+  await page.locator(".canvas-wrap").click({ position: { x: 8, y: 8 } });
+  await page.keyboard.press("Meta+z");
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.columns![0]!.size;
+    })
+    .toBeUndefined();
+});
+
+test("the context menu switches the view and reports it", async ({ page }) => {
+  const { frameId } = await openTable(page, "table-context-view");
+  const empty = await cellPoint(page, frameId, 0, 1);
+  await page.mouse.click(empty.x, empty.y, { button: "right" });
+  await page
+    .getByRole("menu")
+    .getByRole("menuitem", { name: "Show as section", exact: true })
+    .click();
+  await expect(page.getByText("Table removed, cells kept", { exact: true })).toBeVisible();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout;
+      return layout?.active;
+    })
+    .toBe(false);
+});

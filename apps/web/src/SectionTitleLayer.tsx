@@ -128,6 +128,7 @@ export function SectionTitleLayer({
                   type="button"
                   className={`section-title${title ? "" : " is-empty"}`}
                   aria-label={t("section.title.rename")}
+                  title={title || undefined}
                   onClick={(event) => {
                     event.stopPropagation();
                     if (event.detail > 1) {
@@ -154,6 +155,7 @@ export function SectionTitleLayer({
                   className="section-view-badge"
                   disabled={readOnly || Boolean(frame.locked)}
                   aria-haspopup="menu"
+                  aria-expanded={menu?.frame.id === frame.id}
                   aria-label={`${t("section.view.label")}: ${t("section.view.table")}`}
                   title={frame.locked ? t("section.view.locked") : undefined}
                   onClick={(event) => {

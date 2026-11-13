@@ -126,6 +126,7 @@ export const enSection = {
   "section.cell.mergeHint": "Select two or more cells",
   "section.cell.mergeRefused": "Headers cannot be merged",
   "section.cell.range": "Cell actions",
+  "section.cell.selectedRange": "Cells “{from}” — “{to}”",
   "section.cell.selected": "Cell “{column} × {row}”",
   "section.cell.refuseHeader": "A header does not take objects",
   "section.cell.moved": "Moved to “{cell}”.",

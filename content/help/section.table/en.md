@@ -12,7 +12,7 @@ In table mode a **Table** badge appears after the title. Click it to open the **
 
 1. Select the section and open **Properties**. A section just created with **Gather into section** opens the panel for you.
 2. Choose **Table**. If the section already holds objects, the **How to lay out the material?** question opens: lay it out by its current position or keep everything in the first cell. The canvas shows a preview; **Apply** is one undo step.
-3. **+ Column** and **+ Row** add axes. Choose an axis in the panel or by clicking its header on the canvas; clicking the header again opens its menu: rename, insert a neighbour, move, turn, size, delete.
+3. **+ Column** and **+ Row** add axes. Choose an axis in the panel or by clicking its header on the canvas; clicking the header again opens its menu: rename, insert a neighbour, duplicate, move, turn, size, delete.
 4. A double click on a header (or `Enter`/`F2`) edits the title in place: `Enter` commits, `Shift+Enter` inserts a line break, `Tab` moves to the next header, `Esc` cancels.
 5. Click an empty part of a cell: the first click selects the section, the second selects the cell. `Shift+click` another cell selects a rectangular range; the arrow keys move the cell, `Shift+arrows` extend the range, `Esc` clears it.
 6. **Merge** appears above the range; a merged cell offers **Split**. The same actions live in the cell menu (right click or `Shift+F10`), together with inserting and duplicating rows and columns.

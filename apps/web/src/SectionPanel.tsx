@@ -26,6 +26,7 @@ import { AxisSizeButton } from "./AxisSizeControl";
 import { TableAppearanceControls } from "./TableAppearanceControls";
 import { TableHeaderSize } from "./TableHeaderSize";
 import { setSectionView } from "./sectionView";
+import { duplicateAxisNear } from "./tableActions";
 import { openSectionLayout } from "./sectionLayoutStore";
 import { AxisDeleteDialog } from "./AxisDeleteDialog";
 import { HelpLink } from "./help/HelpLink";
@@ -494,6 +495,34 @@ export function SectionPanel({
               <span>{t("section.axis.rotate")}</span>
             </label>
             <div className="section-axis-actions">
+              <Button
+                size="compact"
+                variant="secondary"
+                disabled={readOnly}
+                onClick={() =>
+                  duplicateAxisNear(
+                    board,
+                    frame.id,
+                    selectedKind,
+                    selected.id,
+                    t(
+                      selectedKind === "column"
+                        ? "section.axis.placeholderColumn"
+                        : "section.axis.placeholderRow",
+                      {
+                        n:
+                          (selectedKind === "column" ? columns.length : rows.length) + 1,
+                      },
+                    ),
+                  )
+                }
+              >
+                {t(
+                  selectedKind === "column"
+                    ? "section.axis.duplicateColumn"
+                    : "section.axis.duplicateRow",
+                )}
+              </Button>
               <Button
                 size="compact"
                 variant="secondary"

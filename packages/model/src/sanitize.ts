@@ -195,7 +195,7 @@ const BORDER_STYLES = new Set(["solid", "dashed", "none"]);
 
 function readBorder(value: unknown): Raw | undefined {
   if (!isObject(value) || typeof value.color !== "string") return undefined;
-  if (!isFiniteNumber(value.width) || value.width < 0 || value.width > 8) return undefined;
+  if (!isFiniteNumber(value.width) || value.width < 1 || value.width > 8) return undefined;
   if (typeof value.style !== "string" || !BORDER_STYLES.has(value.style)) return undefined;
   return { color: value.color, width: value.width, style: value.style };
 }
