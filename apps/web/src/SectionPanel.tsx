@@ -238,6 +238,12 @@ export function SectionPanel({
         return;
       }
     }
+    // The panel asks before it removes a table (ADR-218); the badge and the context
+    // menu switch at once and report with a toast instead.
+    if (next === "free" && active) {
+      setRemoveOpen(true);
+      return;
+    }
     const created = setSectionView(board, frame.id, next as "free" | "table", t);
     if (created) selectAxis(created);
     else if (next === "free") selectAxis(null);

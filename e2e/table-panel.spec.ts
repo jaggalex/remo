@@ -771,6 +771,21 @@ test("removing a table asks in the panel and keeps the objects", async ({ page }
     })
     .not.toBe(false);
 
+  // The view switch in the panel asks too, instead of removing on the spot (ADR-218).
+  await panel.getByRole("radio", { name: "Free", exact: true }).click();
+  await expect(page.getByRole("alertdialog").filter({ hasText: "Remove the table?" })).toBeVisible();
+  await page
+    .getByRole("alertdialog")
+    .filter({ hasText: "Remove the table?" })
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout;
+      return layout?.active;
+    })
+    .not.toBe(false);
+
   await panel.getByRole("button", { name: "Remove table", exact: true }).click();
   await page
     .getByRole("alertdialog")

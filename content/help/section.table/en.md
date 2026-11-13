@@ -6,7 +6,7 @@ A section (frame) can be shown as a table: it gets columns and rows, and objects
 
 The section's title sits above its top-left corner. Double-click the title, or press `F2` or `Enter`, to edit it: `Enter` or leaving the field commits, `Esc` cancels, and one ⌘Z undoes it. The title is the section's label, not an object: it is outside the table rectangle and never gets in the way of moving objects.
 
-In table mode a **Table** badge appears after the title. Click it to open the **Section / Table** menu; there is no badge in the free view. The same switch is in **Properties** and in the section's context menu. Switching keeps the objects and the camera; **Remove table** in the panel asks for confirmation, while the badge switches at once and says the cells are kept.
+In table mode a **Table** badge appears after the title. Click it to open the **Section / Table** menu; there is no badge in the free view. The same switch is in **Properties** and in the section's context menu. Switching keeps the objects and the camera; **Remove table** and the view switch in the panel ask for confirmation, while the badge and the context menu switch at once and say the cells are kept.
 
 ## Steps
 

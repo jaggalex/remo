@@ -8890,12 +8890,14 @@ names.
 
 **Decision.**
 
-- **Border width is 1–8 px everywhere.** The panel offers 1, 2, 3, 4, 6 and 8; the command
-  and reader reject 0, because a zero-width canvas stroke is ignored and would leave the
-  previous stroke style in place. A stored value outside 1–8 is dropped, not clamped.
-- **One outcome, one message.** Switching to the free view from the panel confirms, while
-  the badge and the context menu switch at once and both show "Table removed, cells kept".
-  The message belongs to the action, not to one surface.
+- **Border width is 1–8 px everywhere.** The panel offers 1, 2, 3, 4, 6 and 8. The command
+  rejects a width outside 1–8 or a non-finite one, and the reader drops it, because a
+  zero-width canvas stroke is ignored and would leave the previous stroke style in place.
+  A value is rejected, never clamped.
+- **One outcome, one message.** Every panel path that leaves the table confirms first: both
+  **Remove table** and the view switch open the same dialog. The badge and the context menu
+  switch at once and both show "Table removed, cells kept". The message belongs to the
+  action, not to one surface; the confirmation belongs to the panel, not to one button.
 - **A locked section shows disabled view items with the reason**, rather than hiding them:
   the person can see that the action exists and why it is unavailable.
 - **Duplicate row/column is in the axis menu and in the section panel**, next to the other

@@ -741,6 +741,25 @@ describe("borders and paddings (ADR-208)", () => {
     expect(tableLayoutOf(board, "f")!.appearance?.table).toBe("#eeeeee");
   });
 
+  it("rejects a border width outside 1-8 instead of clamping it", () => {
+    const board = boardWithTable();
+    const target = { kind: "cell", rowId: "r1", columnId: "c1" } as const;
+    expect(setTableBorder(board, "f", target, { color: "#123456", width: 0, style: "solid" })).toBe(
+      false,
+    );
+    expect(setTableBorder(board, "f", target, { color: "#123456", width: 9, style: "solid" })).toBe(
+      false,
+    );
+    expect(
+      setTableBorder(board, "f", target, {
+        color: "#123456",
+        width: Number.NaN,
+        style: "solid",
+      }),
+    ).toBe(false);
+    expect(tableLayoutOf(board, "f")!.appearance?.borders).toBeUndefined();
+  });
+
   it("changes the cell width through padding", () => {
     const board = boardWithTable();
     const before = layoutTable(board.widgets.get("f")!, board.readWidgets())!;

@@ -583,7 +583,10 @@ function editableTableTarget(
 
 function borderValue(border: TableBorder): TableBorder | null {
   if (typeof border.color !== "string" || !border.color) return null;
-  const width = Math.round(Math.min(8, Math.max(1, border.width)));
+  // Reject rather than clamp: a zero-width stroke is ignored by the canvas, so a
+  // boundary value has to fail loudly instead of becoming a silent 1 px (ADR-218).
+  if (!Number.isFinite(border.width) || border.width < 1 || border.width > 8) return null;
+  const width = Math.round(border.width);
   const style = border.style;
   if (style !== "solid" && style !== "dashed" && style !== "none") return null;
   return { color: border.color, width, style };
