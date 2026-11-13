@@ -642,14 +642,17 @@ test("a shape grows down for its text (ADR-214)", async ({ page }) => {
   const box = () =>
     page.evaluate(() => {
       const probe = (window as unknown as {
-        __remo?: { widgets: Array<{ type: string; width: number; height: number }> };
+        __remo?: { widgets: Array<{ type: string; width: number; height: number; text: string }> };
       }).__remo;
       const one = probe?.widgets.find((widget) => widget.type === "shape");
-      return one ? { width: one.width, height: one.height } : null;
+      return one ? { width: one.width, height: one.height, text: one.text } : null;
     });
 
   const before = await box();
   if (!before) throw new Error("the shape was not created");
+  // Creation is its own decision: let it close before typing, so the undo below targets
+  // the label and not the shape (undo capture is 400 ms).
+  await page.waitForTimeout(600);
   const view = await geometry(page);
   const at = await page.evaluate(() => {
     const probe = (window as unknown as {
@@ -694,6 +697,9 @@ test("a shape grows down for its text (ADR-214)", async ({ page }) => {
   await expect(badge).toContainText("×");
   await expect(badge).not.toContainText("Text does not fit");
 
+  // One undo restores the text and the height it needed together (ADR-215).
   await page.keyboard.press("ControlOrMeta+z");
-  await expect.poll(async () => (await box())?.height ?? 0).toBeLessThan(grown.height);
+  await expect.poll(async () => (await box())?.height ?? 0).toBe(before.height);
+  const undone = await box();
+  expect(undone?.text ?? "").toBe("");
 });
