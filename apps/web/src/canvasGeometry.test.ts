@@ -3,11 +3,13 @@ import type { NoteDirection } from "@remo/doc";
 import { minimumSizeOf, type ConnectorSide, type Widget } from "@remo/model";
 import {
   ANCHOR_GAP,
+  BAR_ROOM,
   anchorSlotDecision,
   anchorsOf,
   barTop,
   connectTargetAt,
   copySlot,
+  freeConnectedCenter,
   bendAxis,
   cornerAt,
   cornerPoints,
@@ -88,11 +90,11 @@ describe("floating bar placement", () => {
   const viewport = { height: 600 };
 
   it("sits above the object when there is room", () => {
-    expect(barTop({ top: 200, height: 100 }, viewport)).toBe(148);
+    expect(barTop({ top: 200, height: 100 }, viewport)).toBe(200 - BAR_ROOM);
   });
 
   it("drops below the object when the top is too close to the edge", () => {
-    // top 20 leaves no room for a 52px bar, so it goes under the object instead.
+    // top 20 leaves no room for the bar and its edge +, so it goes under the object.
     expect(barTop({ top: 20, height: 100 }, viewport)).toBe(132);
   });
 
@@ -287,8 +289,14 @@ describe("port click and the copy slot (ADR-137)", () => {
     expect(copySlot(source, "down", gap).center).toEqual({ x: 0, y: 160 });
   });
 
-  it("calls the slot occupied by intersection, not by the object's centre", () => {
-    // A wide note reaches into the slot; its centre (350) is outside the copy (110…210).
+  it("walks past an occupied slot for Create new", () => {
+    const blocker = item("b", 160, 0);
+    const free = freeConnectedCenter(source, "right", [source, blocker], new Map(), gap);
+    expect(free.center).toEqual({ x: 320, y: 0 });
+    expect(free.rect.x).toBe(270);
+  });
+
+  it("calls the slot occupied by intersection, not by the object's centre", () => {    // A wide note reaches into the slot; its centre (350) is outside the copy (110…210).
     const wide = item("wide", 350, 0, 400, 100);
     expect(anchorSlotDecision(source, "right", [source, wide], new Map(), gap)).toMatchObject({
       kind: "connect",
@@ -445,5 +453,62 @@ describe("lines brought in by a selection (ADR-138)", () => {
   it("returns each line once, however many times the widget is listed", () => {
     const widgets = [item("a"), item("b"), line("l", "a", "b"), line("l", "a", "b")];
     expect(internalConnectors(widgets, ["a", "b", "a"]).map((w) => w.id)).toEqual(["l"]);
+  });
+});
+
+/**
+ * Modifiers a resize carries (ADR-212): Shift keeps the proportion, Alt anchors the
+ * centre, and the floor never breaks the proportion.
+ */
+describe("resize modifiers (ADR-212)", () => {
+  const ratio = 200 / 120;
+
+  it("keeps the original aspect while the corner moves", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 380, y: 220 }, 40, 30, {
+      ratio,
+    });
+    expect(box.width).toBeCloseTo(380, 6);
+    expect(box.height).toBeCloseTo(228, 6);
+    expect(box.x).toBe(0);
+    expect(box.y).toBe(0);
+  });
+
+  it("keeps the ratio when the opposite corner is the anchor", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "nw", { x: -100, y: -10 }, 40, 30, {
+      ratio,
+    });
+    expect(box).toMatchObject({ x: -100, y: -60 });
+    expect(box.width).toBeCloseTo(300, 6);
+    expect(box.height).toBeCloseTo(180, 6);
+    expect(box.x + box.width).toBe(200);
+    expect(box.y + box.height).toBe(120);
+  });
+
+  it("grows around the centre with Alt", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 300, y: 200 }, 40, 30, {
+      fromCenter: true,
+    });
+    expect(box).toEqual({ x: -100, y: -80, width: 400, height: 280 });
+    expect(box.x + box.width / 2).toBe(100);
+    expect(box.y + box.height / 2).toBe(60);
+  });
+
+  it("keeps the centre and the ratio together", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 300, y: 200 }, 40, 30, {
+      fromCenter: true,
+      ratio,
+    });
+    expect(box.width / box.height).toBeCloseTo(ratio, 6);
+    expect(box.x + box.width / 2).toBe(100);
+    expect(box.y + box.height / 2).toBe(60);
+  });
+
+  it("lets the floor win without breaking the proportion", () => {
+    const box = resizedBox({ x: 0, y: 0, width: 200, height: 120 }, "se", { x: 10, y: 10 }, 80, 60, {
+      ratio,
+    });
+    expect(box.width).toBeCloseTo(100, 6);
+    expect(box.height).toBeCloseTo(60, 6);
+    expect(box.width / box.height).toBeCloseTo(ratio, 6);
   });
 });

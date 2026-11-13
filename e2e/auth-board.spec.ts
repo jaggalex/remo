@@ -135,10 +135,10 @@ test("two sessions of one account are two follow targets with labels", async ({
 test("theme and language follow the account to another browser", async ({ page, browser }) => {
   const account = await register(page, "prefs", { user: "Prefs Owner" });
   await openBoard(page, account.boardId);
-  await openAccount(page);
 
-  await page.getByRole("radio", { name: "Dark" }).click();
-  await page.getByRole("radio", { name: "Russian" }).click();
+  // The two controls live at the right edge of the header (ADR-194), not in the menu.
+  await page.getByRole("button", { name: /Theme: light/ }).click();
+  await page.getByRole("button", { name: /Language: English/ }).click();
 
   // The account row is the source for the second browser (ADR-150).
   await expect
@@ -189,7 +189,8 @@ test("signing out returns the board to its signed-out state", async ({ page }) =
   await freshBoard(page, "signout");
   await openAccount(page);
   await page.getByRole("button", { name: "Sign out" }).click();
-  // Without an account the menu keeps theme, language and the way back in.
+  // Without an account the header still offers theme and language, and the menu
+  // offers the way back in.
   await expect(page.locator(".account-button")).toHaveAttribute(
     "aria-label",
     "Account and interface",

@@ -1,14 +1,51 @@
-import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget } from "./canvasGeometry";
+import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, portsAreEdgePlus, bendAxis, connectTargetAt, cornerAt, nearestAnchor, placedWidget, resizeMembersOf } from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import type { ConnectDraft } from "./gestureTypes";
-import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, pick, pickConnector, placementAt, plusHit, resolvedEndSide } from "@remo/canvas";
-import { canConnect, expandGroups, kindOf } from "@remo/model";
+import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, layoutTable, pick, pickConnector, placementAt, plusHit, resolvedEndSide, tableHitAt, unionBox } from "@remo/canvas";
+import { canConnect, expandGroups, minimumSizeOf, scalesInBlock } from "@remo/model";
 import type { ConnectorSide } from "@remo/model";
 import { capture } from "./gestureEnv";
+import {
+  clearTableCellSelection,
+  setTableCellSelection,
+  tableCellSelection,
+} from "./tableCellSelection";
 
 export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
-  const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onAddCard, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
+  const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onAddCard, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
   const world = toWorld(event);
+
+  // A resize handle is a UI affordance of the selection, so it is tried before the
+  // objects and before panning: Alt over a handle resizes around the centre (ADR-212),
+  // while Alt anywhere else still pans. One object or a block — the handle sits on the
+  // union box and the gesture scales every member that can scale (ADR-211).
+  const resizeMembers = resizeMembersOf(widgets, selectedIds, isCardOfKanban);
+  if (!readOnly && event.button === 0 && resizeMembers.some(scalesInBlock)) {
+    const box = unionBox(resizeMembers.map(boxOf));
+    const hit = box ? cornerAt(box, world, 10 / camera.zoom, HANDLE_GAP / camera.zoom) : null;
+    if (box && hit) {
+      dragRef.current = {
+        mode: "resize",
+        id: resizeMembers[0]!.id,
+        ids: resizeMembers.map((widget) => widget.id),
+        corner: hit,
+        origin: box,
+        // Captured once: during the drag every move scales the original boxes, never
+        // the preview it just painted.
+        members: resizeMembers.map((widget) => ({
+          id: widget.id,
+          box: boxOf(widget),
+          scalable: scalesInBlock(widget),
+          min: minimumSizeOf(widget.type),
+        })),
+      };
+      capture(event);
+      return;
+    }
+  }
+
+  setTableHover(null);
+  setTableRefused(false);
   const panRequested = event.button === 1 || event.button === 2 || event.altKey;
 
   if (panRequested) {
@@ -19,6 +56,37 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     };
     capture(event);
     return;
+  }
+
+  // A click on a table cell selects the cell once its section is selected (click-click,
+  // ADR-204). An object inside the cell keeps its own selection; a click outside clears
+  // the cell so the two selections never compete.
+  if (!readOnly && event.button === 0) {
+    const hit = tableCellAtPoint(world, widgets);
+    const current = tableCellSelection();
+    const frameSelected =
+      hit && selectedIds.length === 1 && selectedIds[0] === hit.frame.id;
+    if (hit?.cell && frameSelected) {
+      const under = pick(widgets, world, isCardOfKanban);
+      const empty = !under || under.id === hit.frame.id;
+      if (empty) {
+        event.preventDefault();
+        const anchor =
+          event.shiftKey && current?.frameId === hit.frame.id
+            ? current.anchor
+            : hit.cell;
+        setTableCellSelection({ frameId: hit.frame.id, anchor, focus: hit.cell });
+        dragRef.current = {
+          mode: "cellPress",
+          start: world,
+          startScreen: { x: event.clientX, y: event.clientY },
+          additive: event.shiftKey,
+        };
+        capture(event);
+        return;
+      }
+    }
+    if (current && (!hit?.cell || !frameSelected)) clearTableCellSelection();
   }
 
   if (!readOnly) {
@@ -156,23 +224,16 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     }
   }
 
-  // A resize handle is a UI affordance on the selection's corner, so it is tried
-  // before the objects themselves.
-  const resizable =
-    selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  if (!readOnly && resizable && !resizable.locked && kindOf(resizable.type).resizable) {
-    const hit = cornerAt(boxOf(resizable), world, 10 / camera.zoom, HANDLE_GAP / camera.zoom);
-    if (hit) {
-      dragRef.current = { mode: "resize", id: resizable.id, corner: hit, origin: boxOf(resizable) };
-      capture(event);
-      return;
-    }
-  }
-
   // The connector anchor of the current selection wins over everything: it is a UI
   // affordance sitting on the object's edge.
   const anchorSource = selectedIds.length === 1 ? widgetById(selectedIds[0]!) : undefined;
-  if (!readOnly && anchorSource && canConnect(anchorSource) && !anchorSource.locked) {
+  if (
+    !readOnly &&
+    anchorSource &&
+    canConnect(anchorSource) &&
+    !anchorSource.locked &&
+    !portsAreEdgePlus(anchorSource)
+  ) {
     let nearest: { side: ConnectorSide; distance: number } | null = null;
     for (const anchor of anchorsOf(anchorSource, ANCHOR_GAP / camera.zoom)) {
       const screen = worldToScreenPoint({ x: anchor.x, y: anchor.y });
@@ -287,4 +348,25 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
   marqueeRef.current = { x: world.x, y: world.y, width: 0, height: 0 };
   setMarquee(marqueeRef.current);
   capture(event);
+}
+
+
+/** The table cell under a world point, or null when the point is not over a table. */
+function tableCellAtPoint(
+  world: { x: number; y: number },
+  widgets: Parameters<typeof pick>[0],
+): { frame: (typeof widgets)[number]; cell: { rowId: string; columnId: string } | null } | null {
+  for (const frame of [...widgets].reverse()) {
+    if (frame.type !== "frame" || frame.layout?.kind !== "table") continue;
+    if (frame.layout.active === false) continue;
+    const grid = layoutTable(frame, widgets);
+    if (!grid) continue;
+    const hit = tableHitAt(grid, world);
+    if (!hit) continue;
+    if (hit.kind === "cell") {
+      return { frame, cell: { rowId: hit.rowId, columnId: hit.columnId } };
+    }
+    return { frame, cell: null };
+  }
+  return null;
 }

@@ -1,13 +1,14 @@
 import {
   noteFontSizeFor,
   notePadding,
+  textCapFor,
+  textFloorFor,
   type Camera,
   type KanbanLayout,
 } from "@remo/canvas";
 import {
   inkFor,
   stickyFill,
-  stickyFontCap,
   type TextDeltaOp,
   type TextRun,
   type Widget,
@@ -54,10 +55,18 @@ export function editorTargetFor({
   });
 
   if (widget.type === "connector") {
-    return connectorEditorTarget(widget, camera, rect, deltaOf(widget.id), widgetById, {
-      max: settings.connectors.stubMax,
-      ratio: settings.connectors.stubRatio,
-    });
+    return connectorEditorTarget(
+      widget,
+      camera,
+      rect,
+      deltaOf(widget.id),
+      widgetById,
+      {
+        max: settings.connectors.stubMax,
+        ratio: settings.connectors.stubRatio,
+      },
+      settings.text.fontFamily,
+    );
   }
 
   // A card's box comes from the kanban matrix, everything else from the widget.
@@ -82,9 +91,9 @@ export function editorTargetFor({
         runs,
         width,
         height,
-        settings.notes.fontCap[widget.style?.stickySize ?? "M"] ??
-          stickyFontCap(widget.style?.stickySize),
+        textCapFor(widget, settings.notes.fontCap),
         widget.style?.fontSize,
+        textFloorFor(widget),
         settings.text.fontFamily,
       ) ?? 16);
 

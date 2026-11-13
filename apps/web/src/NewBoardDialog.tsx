@@ -19,6 +19,7 @@ export function NewBoardDialog({
   open,
   orgs,
   defaultOrgId = null,
+  initialTemplate = "empty",
   onClose,
   onCreated,
 }: {
@@ -26,6 +27,8 @@ export function NewBoardDialog({
   orgs: OrgSummary[];
   /** The directory filter, so a new board starts in the organisation being viewed. */
   defaultOrgId?: string | null;
+  /** The home's example link preselects an authored template; the default is empty. */
+  initialTemplate?: "empty" | TemplateKey;
   onClose: () => void;
   onCreated: (boardId: string, template: Choice, title: string) => void;
 }) {
@@ -43,13 +46,13 @@ export function NewBoardDialog({
   useEffect(() => {
     if (!open) return;
     setTitle("");
-    setTemplate("empty");
+    setTemplate(initialTemplate);
     setError(null);
     setTeamId("");
     setTeams([]);
     const preferred = canCreate.find((org) => org.id === defaultOrgId) ?? canCreate[0];
     setOrgId(preferred?.id ?? "");
-  }, [open, defaultOrgId]);
+  }, [open, defaultOrgId, initialTemplate]);
 
   // Teams are per organisation; reload them when the selection changes.
   useEffect(() => {
@@ -157,22 +160,48 @@ export function NewBoardDialog({
           </label>
         )}
 
-        <label className="auth-field">
-          <span>{t("newBoard.template")}</span>
-          <select
-            value={template}
-            onChange={(event) => setTemplate(event.target.value as Choice)}
-          >
-            <option value="empty">{t("newBoard.template.empty")}</option>
-            {TEMPLATE_KEYS.map((key) => (
-              <option key={key} value={key}>
-                {t(TEMPLATE_LABEL_KEY[key])}
-              </option>
-            ))}
-          </select>
-        </label>
+        {/* Two equal choices, not a list: an empty room or one with an example. The
+            example list appears only once "With an example" is chosen (P2). */}
+        <fieldset className="new-board-start">
+          <legend>{t("newBoard.template")}</legend>
+          <div className="new-board-cards">
+            {(["empty", "example"] as const).map((kind) => {
+              const checked = kind === "empty" ? template === "empty" : template !== "empty";
+              return (
+                <label key={kind} className={`new-board-card${checked ? " is-checked" : ""}`}>
+                  <input
+                    type="radio"
+                    name="new-board-start"
+                    checked={checked}
+                    onChange={() =>
+                      setTemplate(kind === "empty" ? "empty" : (TEMPLATE_KEYS[0] as Choice))
+                    }
+                  />
+                  <b>{t(kind === "empty" ? "newBoard.template.empty" : "newBoard.start.example")}</b>
+                  <span>
+                    {t(kind === "empty" ? "newBoard.start.emptyHint" : "newBoard.start.exampleHint")}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {template !== "empty" && (
+            <label className="auth-field">
+              <span>{t("newBoard.start.which")}</span>
+              <select
+                value={template}
+                onChange={(event) => setTemplate(event.target.value as Choice)}
+              >
+                {TEMPLATE_KEYS.map((key) => (
+                  <option key={key} value={key}>
+                    {t(TEMPLATE_LABEL_KEY[key])}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </fieldset>
 
-        <p className="auth-hint">{t("newBoard.hint")}</p>
         {error && <p className="auth-error">{error}</p>}
 
         <div className="auth-actions">

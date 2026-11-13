@@ -54,6 +54,10 @@
   --ochre-600: #9a5800;
   --alpha-white-55: rgba(255,255,255,0.55);
   --alpha-white-72: rgba(255,255,255,0.72);
+  --alpha-white-88: rgba(255,255,255,0.88);
+  --alpha-ink-45: rgba(30,33,54,0.45);
+  --alpha-white-45: rgba(243,242,240,0.45);
+  --alpha-ink-28: rgba(30,33,54,0.28);
   --alpha-umber-7: rgba(120,80,20,0.07);
   --alpha-umber-60: rgba(38,30,22,0.6);
   --alpha-ink-32: rgba(23,23,22,0.32);

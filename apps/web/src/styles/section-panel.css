@@ -1,0 +1,790 @@
+/* ------------------------------------------------------- section panel --- */
+
+.section-panel {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.section-panel-head,
+.section-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.section-panel-head h2 {
+  margin: 0;
+}
+
+.section-badge {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--ink);
+  font: var(--type-caption);
+}
+
+.section-panel-title {
+  margin: var(--space-1) 0 var(--space-3);
+  font: var(--type-label);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.section-group {
+  margin-top: var(--space-4);
+}
+
+.section-group h3,
+.section-field-label {
+  display: block;
+  margin: 0 0 var(--space-2);
+  font: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.section-panel .rm-segmented {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.section-panel .rm-segment {
+  flex: 1 1 auto;
+  justify-content: center;
+  padding: 0 var(--space-2);
+}
+
+.section-axis-add {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.section-axis-group {
+  margin-top: var(--space-2);
+}
+
+.section-axis-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font: var(--type-caption);
+  color: var(--faint);
+}
+
+.section-axis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.section-axis-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--ink);
+  font: var(--type-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-axis-row:hover {
+  background: var(--bg-hover);
+}
+
+.section-axis-row.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.section-axis-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-axis-meta {
+  flex: none;
+  color: var(--faint);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.section-axis-empty {
+  margin: 0;
+}
+
+.section-axis-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.section-axis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.section-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-label);
+  color: var(--ink);
+}
+
+.section-look-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.section-look {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.section-fill-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--type-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-fill-dot {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+}
+
+.section-fill-dot.is-empty {
+  background: var(--bg-panel);
+}
+
+.section-fill-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-fill-name {
+  flex: none;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.section-fill-window {
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.section-fill-window .cw-grid {
+  grid-template-columns: repeat(7, 26px);
+  gap: 2px;
+}
+
+.section-fill-window .cw-swatch {
+  width: 26px;
+  height: 26px;
+}
+
+.section-remove {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.section-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--type-label);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.section-action:hover {
+  color: var(--accent);
+}
+
+.section-action-danger {
+  color: var(--danger);
+}
+
+.section-action-danger:hover {
+  color: var(--danger);
+}
+
+.section-action.is-disabled {
+  color: var(--faint);
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+.section-caption {
+  margin: 2px 0 var(--space-3);
+}
+
+/* ------------------------------------------------------- table headers --- */
+
+.table-headers {
+  position: absolute;
+  inset: 0;
+  /* Canvas chrome, not app chrome: a topbar menu and its popover must stay above a
+     transparent header hit area that happens to overlap them. */
+  z-index: var(--z-canvas-overlay);
+  pointer-events: none;
+}
+
+/*
+ * The canvas paints the title; this button is only the hit area, the hover wash and
+ * the selection ring. A visible child would paint the title twice.
+ */
+.table-header {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  pointer-events: auto;
+  cursor: text;
+}
+
+.table-header:hover {
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.table-header.is-selected {
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.table-header.is-editing {
+  visibility: hidden;
+}
+
+.table-header:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.table-header-editor {
+  position: absolute;
+  z-index: var(--z-canvas-overlay);
+  box-sizing: border-box;
+  padding: 0 var(--space-2);
+  border: 1.5px solid var(--border-focus);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font: var(--type-label);
+  outline: none;
+}
+
+.table-axis-menu {
+  position: fixed;
+  z-index: var(--z-popover);
+}
+
+/* A cell the dragged selection would land in. */
+.table-drop-cell {
+  position: absolute;
+  z-index: var(--z-canvas-overlay);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* A header never accepts objects; the pointer carries the reason. */
+.table-drop-refused {
+  position: fixed;
+  z-index: var(--z-popover);
+  max-width: 240px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-pop);
+  font: var(--type-caption);
+  pointer-events: none;
+}
+
+.table-cell-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.table-cell-panel h2 {
+  margin: 0;
+}
+
+/*
+ * The table mirror is for screen readers: real table markup, no visual box and no
+ * tab stop. It must not be `display:none`, or assistive technology would not see it.
+ */
+.table-mirror {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* On-canvas axis actions of a selected table (ADR-196, ADR-201; T5, T13). */
+.table-axis-controls {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-canvas-overlay);
+  pointer-events: none;
+}
+
+.table-edge-add {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
+  color: var(--text-secondary);
+  font: var(--type-caption);
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.72;
+  transition: opacity var(--dur-1) var(--ease);
+}
+
+.table-edge-add.is-row {
+  justify-content: flex-start;
+}
+
+.table-edge-add:hover,
+.table-edge-add:focus-visible {
+  border-style: solid;
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.table-edge-add:focus-visible,
+.table-insert:focus-visible,
+.table-resize:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.table-insert {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.6;
+  transition: opacity var(--dur-1) var(--ease);
+}
+
+.table-insert:hover,
+.table-insert:focus-visible {
+  border-color: var(--border-focus);
+  color: var(--accent);
+  opacity: 1;
+}
+
+.table-resize {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.table-resize.is-column {
+  cursor: col-resize;
+}
+
+.table-resize.is-row {
+  cursor: row-resize;
+}
+
+.table-resize:hover::after,
+.table-resize:focus-visible::after {
+  content: "";
+  position: absolute;
+  background: var(--border-focus);
+}
+
+.table-resize.is-column:hover::after,
+.table-resize.is-column:focus-visible::after {
+  inset: 0 calc(50% - 1px);
+}
+
+.table-resize.is-row:hover::after,
+.table-resize.is-row:focus-visible::after {
+  inset: calc(50% - 1px) 0;
+}
+
+.table-resize-value {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  font: var(--type-caption);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.table-resize-guide {
+  position: absolute;
+  border: 0 dashed var(--border-focus);
+  pointer-events: none;
+}
+
+.table-resize-guide.is-column {
+  width: 0;
+  border-left-width: 1.5px;
+}
+
+.table-resize-guide.is-row {
+  height: 0;
+  border-top-width: 1.5px;
+}
+
+.section-px {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.section-px .section-field-label {
+  flex: 1;
+}
+
+.section-px .rm-field {
+  width: 96px;
+}
+
+/* The delete-axis choices wrap instead of clipping a long neighbour name. */
+.axis-delete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.axis-delete-actions .rm-btn {
+  max-width: 100%;
+}
+
+.axis-delete-actions .rm-btn-label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* ------------------------------------------------------- axis size --- */
+
+/* The panel keeps one button (T13, P7); the window opens under it. */
+.axis-size-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.axis-size-portal {
+  position: fixed;
+  z-index: var(--z-popover);
+}
+
+.axis-size-pop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.axis-size-hint,
+.axis-size-keys {
+  margin: 0;
+  font: 400 12px/16px var(--font-sans);
+}
+
+.axis-size-px {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.axis-size-now {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The header menu's size window hangs beside the header (T13). */
+
+
+/* -------------------------------------------------- cell selection --- */
+
+.table-cell-selection {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.table-cell-box {
+  position: absolute;
+  border: 1.5px solid var(--selection-stroke);
+  background: var(--selection-fill);
+  box-sizing: border-box;
+}
+
+.table-range-bar {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  /* Canvas chrome: above the overlay canvas, below the topbar and popovers. */
+  z-index: var(--z-canvas-overlay);
+}
+
+.table-range-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table-range-notice {
+  position: absolute;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  font: 400 12px/16px var(--font-sans);
+}
+
+/* The cell menu opens at the pointer, above the canvas and the selection layer. */
+.table-cell-menu {
+  position: fixed;
+  z-index: var(--z-popover);
+}
+
+/* ------------------------------------------------ section title strip --- */
+
+.section-titles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-canvas-overlay);
+}
+
+.section-title-strip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: min(480px, 60vw);
+  height: 24px;
+}
+
+.section-title {
+  pointer-events: auto;
+  max-width: 320px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+
+.section-title-strip.is-selected .section-title {
+  color: var(--text-primary);
+}
+
+.section-title.is-empty {
+  opacity: 0;
+}
+
+.section-title-strip:hover .section-title.is-empty,
+.section-title-strip.is-selected .section-title.is-empty {
+  opacity: 1;
+}
+
+.section-title:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.section-title-input {
+  pointer-events: auto;
+  width: 240px;
+  height: 24px;
+  padding: 0 var(--space-2);
+  border: 1.5px solid var(--border-focus);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font: var(--type-label);
+  outline: none;
+}
+
+.section-view-badge {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  font: var(--type-caption);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.section-title-strip:hover .section-view-badge,
+.section-title-strip.is-selected .section-view-badge,
+.section-view-badge:focus-visible {
+  opacity: 1;
+}
+
+.section-view-badge:disabled {
+  cursor: not-allowed;
+}
+
+.section-view-menu {
+  position: fixed;
+  z-index: var(--z-popover);
+}
+
+/* ------------------------------------------------- section layout plan --- */
+
+.section-layout-card {
+  position: fixed;
+  z-index: var(--z-popover);
+  width: 320px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-pop);
+}
+
+.section-layout-card h2 {
+  margin: 0 0 var(--space-2);
+  font: var(--type-label);
+  font-weight: 600;
+}
+
+.section-layout-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font: var(--type-body);
+}
+
+.section-layout-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.section-layout-preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-canvas-overlay);
+}
+
+.section-layout-cell {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px dashed var(--accent);
+  background: var(--accent-soft);
+  opacity: 0.45;
+}
+
+.section-layout-ghost {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--accent);
+  background: var(--bg-raised);
+  border-radius: var(--radius-sm);
+  opacity: 0.35;
+}

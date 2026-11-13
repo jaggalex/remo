@@ -3,7 +3,6 @@ import {
   inkFor,
   shade,
   stickyFill,
-  stickyFontCap,
   timerPhase,
   timerRemainingMs,
   type CardStatus,
@@ -19,16 +18,13 @@ import {
   type ArrowHead,
   type ConnectorPath,
 } from "./connectors";
+import { drawClipMark } from "./clipMark";
+import { roundRect } from "./path";
+import { layoutLabel } from "./labelLayout";
+export { roundRect } from "./path";
 import { DEFAULT_PALETTE, withAlpha, type CanvasPalette } from "./palette";
-import {
-  DEFAULT_FONT_FAMILY,
-  fontFor,
-  layoutRuns,
-  lineHeightFor,
-  fitNoteFont,
-  notePadding,
-  type RichLine,
-} from "./textLayout";
+import { layoutRuns, textCapFor } from "./textLayout";
+import { drawRichLine, drawTextInBox } from "./textPaint";
 
 /**
  * Stacking order.
@@ -40,53 +36,6 @@ import {
  */
 export { PAINT_RANK, layerKey, paintOrder, rankOf } from "@remo/model";
 
-/**
- * Draw one line of formatted text.
- *
- * `align` matters for the widget being painted: a sticky note is left-aligned, a
- * text block is centred, so the line is measured twice — once per segment to place
- * it, once in total to shift it.
- */
-function drawRichLine(
-  ctx: CanvasRenderingContext2D,
-  line: RichLine,
-  x: number,
-  /** Top of the line box, or its vertical centre when `centre` is set. */
-  y: number,
-  fontPx: number,
-  align: "left" | "center" | "right",
-  centre = false,
-  family: string = DEFAULT_FONT_FAMILY,
-): void {
-  let cursor = align === "center" ? x - line.width / 2 : align === "right" ? x - line.width : x;
-
-  // Underline and strikethrough belong to the text's baseline, not to the line box:
-  // with the baseline guessed from the box top they drifted into the letters.
-  const probe = ctx.measureText("Mg");
-  const ascent = probe.actualBoundingBoxAscent || fontPx * 0.8;
-  const descent = probe.actualBoundingBoxDescent || fontPx * 0.2;
-  const baseline = centre ? y + (ascent - descent) / 2 : y + ascent;
-
-  ctx.textBaseline = "alphabetic";
-
-  for (const segment of line.segments) {
-    ctx.font = fontFor(fontPx, segment, family);
-    ctx.fillText(segment.text, cursor, baseline);
-    const width = ctx.measureText(segment.text).width;
-
-    if (segment.underline || segment.strike) {
-      ctx.strokeStyle = ctx.fillStyle as string;
-      ctx.lineWidth = Math.max(1, fontPx / 14);
-      const at = segment.underline ? baseline + fontPx * 0.13 : baseline - fontPx * 0.3;
-      ctx.beginPath();
-      ctx.moveTo(cursor, at);
-      ctx.lineTo(cursor + width, at);
-      ctx.stroke();
-    }
-
-    cursor += width;
-  }
-}
 
 /**
  * Outline left where a dragged object used to be.
@@ -167,23 +116,6 @@ export function deviceScale(ctx: CanvasRenderingContext2D, zoom: number): number
   return matrix ? Math.hypot(matrix.a, matrix.b) : zoom;
 }
 
-export function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-): void {
-  const r = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + width, y, x + width, y + height, r);
-  ctx.arcTo(x + width, y + height, x, y + height, r);
-  ctx.arcTo(x, y + height, x, y, r);
-  ctx.arcTo(x, y, x + width, y, r);
-  ctx.closePath();
-}
 
 /** Greedy word wrap; returns the lines that fit into `maxLines`. */
 export function wrapText(
@@ -230,6 +162,12 @@ export interface DrawWidgetOptions {
    * canvas does not paint a second copy behind it (ADR-033).
    */
   editingId?: string;
+  /**
+   * True when the selection has many members: the member is drawn with the quiet 1 px
+   * ring instead of the active 2 px outline, because the handles belong to the block
+   * (ADR-211).
+   */
+  memberRing?: boolean;
 }
 
 /** Visual defaults that come from the person's settings. */
@@ -291,64 +229,6 @@ function fillHead(ctx: CanvasRenderingContext2D, head: ArrowHead, colour: string
   ctx.restore();
 }
 
-/**
- * Draw a widget's text inside its box.
- *
- * Shared by sticky notes and shapes so both get the same Auto sizing, the same three
- * alignments, the same runs and the same underline placement. `clip` keeps text from
- * spilling over a physical object's edge.
- */
-function drawTextInBox(
-  ctx: CanvasRenderingContext2D,
-  widget: Widget,
-  box: { x: number; y: number; width: number; height: number },
-  theme: PaintTheme,
-  options: {
-    cap: number;
-    align: "left" | "center" | "right";
-    vAlign: "top" | "middle" | "bottom";
-    clip?: boolean;
-  },
-): void {
-  const content = widget.content ?? "";
-  const runs: TextRun[] = widget.runs?.length ? widget.runs : content ? [{ text: content }] : [];
-  if (!runs.length) return;
-
-  const explicit = widget.style?.fontSize;
-  const size =
-    explicit ?? fitNoteFont(ctx, runs, box.width, box.height, options.cap, undefined, theme.fontFamily);
-
-  const padding = notePadding(size);
-  const lines = layoutRuns(ctx, runs, Math.max(box.width - padding * 2, 8), size, theme.fontFamily);
-  const lineHeight = lineHeightFor(size);
-  const total = lines.length * lineHeight;
-
-  const startY =
-    options.vAlign === "top"
-      ? box.y + padding
-      : options.vAlign === "bottom"
-        ? box.y + box.height - padding - total
-        : box.y + (box.height - total) / 2;
-  const lineX =
-    options.align === "left"
-      ? box.x + padding
-      : options.align === "right"
-        ? box.x + box.width - padding
-        : box.x + box.width / 2;
-
-  ctx.save();
-  if (options.clip) {
-    ctx.beginPath();
-    ctx.rect(box.x, box.y, box.width, box.height);
-    ctx.clip();
-  }
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  lines.forEach((line, i) => {
-    drawRichLine(ctx, line, lineX, startY + i * lineHeight, size, options.align, false, theme.fontFamily);
-  });
-  ctx.restore();
-}
 
 /** Widgets whose paint already failed once; logged once each, not every frame. */
 const failedPaints = new Set<string>();
@@ -486,12 +366,13 @@ function paintWidget(
       // Notes and shapes share one text block: same Auto sizing, same alignment,
       // same runs. Two implementations would drift (ADR-033).
       if (!editing) {
-        drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
-          cap: theme.fontCap[widget.style?.stickySize ?? "M"] ?? stickyFontCap(widget.style?.stickySize),
+        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme.fontFamily, {
+          cap: textCapFor(widget, theme.fontCap),
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",
           clip: true,
         });
+        if (clipped) drawClipMark(ctx, { x: left, y: top, width: widget.width, height: widget.height }, zoom, palette);
       }
       break;
     }
@@ -616,12 +497,13 @@ function paintWidget(
 
       if (!editing && (widget.content || widget.runs?.length)) {
         ctx.fillStyle = inkFor(fill, widget.style?.textColor);
-        drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme, {
-          cap: theme.fontCap.M,
+        const clipped = drawTextInBox(ctx, widget, { x: left, y: top, width: widget.width, height: widget.height }, theme.fontFamily, {
+          cap: textCapFor(widget, theme.fontCap),
           align: widget.style?.textAlign ?? "center",
           vAlign: widget.style?.textVAlign ?? "middle",
           clip: true,
         });
+        if (clipped) drawClipMark(ctx, { x: left, y: top, width: widget.width, height: widget.height }, zoom, palette);
       }
       break;
     }
@@ -695,12 +577,11 @@ function paintWidget(
         const at = labelPoint(attached, widget.labelAt);
         const fontPx = widget.style?.fontSize ?? 13;
         ctx.font = `500 ${fontPx}px ${theme.fontFamily}`;
-        const text = fitOneLine(ctx, label, 260);
-        const textWidth = ctx.measureText(text).width;
-        const padX = fontPx * 0.46;
-        const padY = fontPx * 0.3;
-        const chipWidth = textWidth + padX * 2;
-        const chipHeight = fontPx + padY * 2;
+        // The chip and the editor share one layout (ADR-213): explicit lines are kept,
+        // automatic wrapping stops at three, the guard at eight.
+        const metrics = layoutLabel(ctx, label, fontPx);
+        const chipWidth = metrics.width;
+        const chipHeight = metrics.height;
         ctx.fillStyle = withAlpha(palette.panel, 0.96);
         ctx.strokeStyle = withAlpha(palette.textPrimary, 0.12);
         ctx.lineWidth = 1 / zoom;
@@ -710,7 +591,10 @@ function paintWidget(
         ctx.fillStyle = widget.style?.textColor ?? palette.textPrimary;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(text, at.x, at.y + 0.5);
+        const firstY = at.y - ((metrics.lines.length - 1) * metrics.lineHeight) / 2;
+        metrics.lines.forEach((line, index) => {
+          ctx.fillText(line, at.x, firstY + index * metrics.lineHeight + 0.5);
+        });
       }
       break;
     }
@@ -779,8 +663,15 @@ function paintWidget(
 
   // A connector shows its selection along the path (above), so it never gets a box.
   if (selected && widget.type !== "connector") {
-    ctx.strokeStyle = palette.selectionStroke;
-    ctx.lineWidth = 2 / zoom;
-    ctx.strokeRect(left - 2 / zoom, top - 2 / zoom, widget.width + 4 / zoom, widget.height + 4 / zoom);
+    const member = options.memberRing === true;
+    const inset = (member ? 3 : 2) / zoom;
+    ctx.strokeStyle = member ? palette.selectionMember : palette.selectionStroke;
+    ctx.lineWidth = (member ? 1 : 2) / zoom;
+    ctx.strokeRect(
+      left - inset,
+      top - inset,
+      widget.width + inset * 2,
+      widget.height + inset * 2,
+    );
   }
 }

@@ -57,6 +57,21 @@ describe("readWidget (ADR-171)", () => {
     expect(repaired?.tagIds).toEqual(["t1"]);
   });
 
+  it("drops the fields the model no longer has, even when they look valid (ADR-209)", () => {
+    const repaired = readWidget(
+      {
+        ...note,
+        rotation: 0.5,
+        style: { ...note.style, fontFamily: "Georgia, serif" },
+      },
+      "n1",
+    );
+    expect(repaired).not.toHaveProperty("rotation");
+    expect(repaired?.style).not.toHaveProperty("fontFamily");
+    // The rest of the style is untouched, and the widget is not copied without a reason.
+    expect(repaired?.style?.fillColor).toBe("#ffd02f");
+  });
+
   it("never lets an unsafe link through, whoever wrote it", () => {
     for (const url of ["javascript:alert(1)", "data:text/html,x", "https://u:p@example.com"]) {
       expect(readWidget({ ...note, link: { kind: "url", url } }, "n1")).not.toHaveProperty("link");

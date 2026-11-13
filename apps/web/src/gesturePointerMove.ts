@@ -1,9 +1,19 @@
-import { connectTargetAt, hoveredCell, nearestAnchor, placedWidget, resizedBox } from "./canvasGeometry";
+import {
+  connectTargetAt,
+  hoveredCell,
+  inTableCell,
+  nearestAnchor,
+  placedWidget,
+  resizedBox,
+  tableDropAt,
+  tableDropOffset,
+  tableDropSelection,
+} from "./canvasGeometry";
 import type { GestureEnv } from "./gestureEnv";
 import { bendStep, curveStep, flipStep, moveStep } from "./gestureSteps";
 import type { ConnectDraft } from "./gestureTypes";
-import { cellAt, cellGuides, closestOnPath, connectorPath, pick, rectFrom } from "@remo/canvas";
-import { minimumSizeOf, type Widget } from "@remo/model";
+import { cellAt, cellGuides, closestOnPath, connectorPath, minScale, pick, rectFrom, scaleBoxes, snapResize, type ResizeEdges } from "@remo/canvas";
+import type { Widget } from "@remo/model";
 
 /**
    * Boxes a dragged object can line up with.
@@ -14,7 +24,7 @@ import { minimumSizeOf, type Widget } from "@remo/model";
    * matrix, not chosen by dragging a widget.
    */
 export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
-  const { alignmentTargets, anchorNear, anchorPressRef, applyPreview, camera, cardPreviewRef, connectDraftRef, connectPendingRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onCamera, publishCursor, setConnectDraft, setCursor, setDragPreview, setGuides, setHoverAnchor, setHoverCell, setHoverId, setMarquee, settings, toWorld, widgetById, widgets } = env;
+  const { alignmentTargets, anchorNear, anchorPressRef, applyPreview, camera, cardPreviewRef, connectDraftRef, connectPendingRef, dragDeltaRef, dragRef, isCardOfKanban, layouts, marqueeRef, onCamera, publishCursor, setConnectDraft, setCursor, setDragPreview, setGuides, setHoverAnchor, setHoverCell, setHoverId, setMarquee, setResizeLimit, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets } = env;
   const drag = dragRef.current;
   setCursor({ x: event.clientX, y: event.clientY });
   const world = toWorld(event);
@@ -74,7 +84,9 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
       box: drag.box,
       raw: { dx: world.x - drag.start.x, dy: world.y - drag.start.y },
       targets: alignmentTargets(drag.origins.map((o) => o.id)),
-      threshold: settings.snapping.thresholdPx / camera.zoom,
+      // One rule for both gestures: the platform modifier turns the magnet off.
+      threshold:
+        event.metaKey || event.ctrlKey ? 0 : settings.snapping.thresholdPx / camera.zoom,
     });
     dragDeltaRef.current = delta;
     // The footprint as patches: the painter, the hit-test and every connector that
@@ -83,29 +95,119 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     for (const origin of drag.origins) {
       next.set(origin.id, { x: origin.x + delta.dx, y: origin.y + delta.dy });
     }
+
+    // A table cell under the pointer is a drop target. A cross-cell move lands the
+    // whole selection at the cell's padding corner, so the preview and the command
+    // use one offset; a header refuses the drop and the objects stay put.
+    const ids = drag.origins.map((origin) => origin.id);
+    let tableHover: { frameId: string; rowId: string; columnId: string } | null = null;
+    let refused = false;
+    drag.table = undefined;
+    if (tableDropSelection(widgets, ids)) {
+      const hit = tableDropAt(widgets, world);
+      if (hit?.kind === "cell") {
+        tableHover = {
+          frameId: hit.target.frameId,
+          rowId: hit.target.rowId,
+          columnId: hit.target.columnId,
+        };
+        const alreadyThere = drag.origins.every((origin) => {
+          const widget = widgetById(origin.id);
+          return widget ? inTableCell(widget, hit.target) : false;
+        });
+        if (!alreadyThere) {
+          const offset = tableDropOffset(hit.target, widgets, ids);
+          if (offset) {
+            for (const origin of drag.origins) {
+              next.set(origin.id, {
+                x: origin.x + offset.x,
+                y: origin.y + offset.y,
+              });
+            }
+            drag.table = {
+              frameId: hit.target.frameId,
+              rowId: hit.target.rowId,
+              columnId: hit.target.columnId,
+              offset,
+            };
+          }
+        }
+      } else if (hit?.kind === "header") {
+        refused = true;
+        for (const origin of drag.origins) {
+          next.set(origin.id, { x: origin.x, y: origin.y });
+        }
+      }
+    }
+    drag.refused = refused;
+    setTableHover(tableHover);
+    setTableRefused(refused);
     applyPreview(next);
     setGuides(settings.snapping.guides ? guides : []);
     return;
   }
 
   if (drag.mode === "resize") {
-    // The floor belongs to the kind, not to this gesture: a frame may not collapse
-    // below its title band, a note keeps the generic minimum (ADR-141).
-    const minimum = minimumSizeOf(widgetById(drag.id)?.type ?? "unsupported");
-    const box = resizedBox(drag.origin, drag.corner, world, minimum.width, minimum.height);
-    applyPreview(
-      new Map([
-        [
-          drag.id,
-          {
-            x: box.x + box.width / 2,
-            y: box.y + box.height / 2,
-            width: box.width,
-            height: box.height,
-          },
-        ],
-      ]),
+    // One box for the whole selection: every centre is mapped through the same
+    // factor, and only a member that can scale changes size (ADR-211). The floor is
+    // per kind and stops the block instead of squeezing one member.
+    const items = drag.members;
+    if (!items.length) return;
+
+    // Shift keeps the proportion, Alt anchors the centre (ADR-212). Either one also
+    // turns snapping off for the gesture: a ratio and a glued edge are different
+    // promises, and applying both would break the ratio silently.
+    const ratio = event.shiftKey && drag.origin.height > 0
+      ? drag.origin.width / drag.origin.height
+      : undefined;
+    const fromCenter = event.altKey;
+    let target = resizedBox(drag.origin, drag.corner, world, 0, 0, { ratio, fromCenter });
+
+    const snapping = !event.shiftKey && !event.metaKey && !event.ctrlKey;
+    if (snapping) {
+      const edges: ResizeEdges = {
+        x: drag.corner === "ne" || drag.corner === "se" ? "right" : "left",
+        y: drag.corner === "sw" || drag.corner === "se" ? "bottom" : "top",
+      };
+      const floor = minScale(items);
+      const snapped = snapResize(
+        target,
+        edges,
+        alignmentTargets(drag.ids),
+        settings.snapping.thresholdPx / camera.zoom,
+        {
+          width: drag.origin.width * Math.min(1, floor.x),
+          height: drag.origin.height * Math.min(1, floor.y),
+        },
+      );
+      target = snapped.box;
+      setGuides(settings.snapping.guides ? snapped.guides : []);
+    } else {
+      setGuides([]);
+    }
+
+    drag.target = target;
+    const scaled = scaleBoxes(items, drag.origin, target);
+    drag.factors = scaled.factors;
+    setResizeLimit(
+      scaled.stopped
+        ? {
+            width: drag.origin.width * scaled.factors.x,
+            height: drag.origin.height * scaled.factors.y,
+          }
+        : null,
     );
+    const scalable = new Map(items.map((item) => [item.id, item.scalable]));
+    const next = new Map<string, Partial<Widget>>();
+    for (const box of scaled.boxes) {
+      next.set(
+        box.id,
+        scalable.get(box.id)
+          ? { x: box.x, y: box.y, width: box.width, height: box.height }
+          : { x: box.x, y: box.y },
+      );
+    }
+    applyPreview(next);
     return;
   }
 
@@ -167,6 +269,20 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
       current: drag.origin.curve ?? { from: natural, to: natural },
     });
     applyPreview(new Map([[drag.id, { curve }]]));
+    return;
+  }
+
+  if (drag.mode === "cellPress") {
+    // A few pixels of travel is still a click on the cell; past that it is a marquee
+    // over the board, so dragging from an empty cell keeps working.
+    if (
+      Math.hypot(event.clientX - drag.startScreen.x, event.clientY - drag.startScreen.y) <= 4
+    ) {
+      return;
+    }
+    dragRef.current = { mode: "marquee", start: drag.start, additive: drag.additive };
+    marqueeRef.current = rectFrom(drag.start, world);
+    setMarquee(marqueeRef.current);
     return;
   }
 

@@ -1,5 +1,4 @@
 import type { ShapePreset, StickySize, TextMarks } from "@remo/model";
-import type { NoteDirection } from "@remo/doc";
 
 /**
  * What the object bar shows and what it can do, without the bar itself.
@@ -50,7 +49,6 @@ export interface StickyBarActions {
   toggleMark: (mark: keyof TextMarks) => void;
   setAlign: (align: "left" | "center" | "right") => void;
   setVAlign: (vAlign: "top" | "middle" | "bottom") => void;
-  addConnected: (direction: NoteDirection) => void;
   /**
    * One chip, one preset, one undo step: the document writes fill, outline and width
    * together, so undo does not have to be pressed three times (ADR-120).

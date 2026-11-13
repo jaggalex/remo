@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { Widget } from "@remo/model";
-import { BoardDocument, fitFrameToContents, loadBoard, setWidgetRects } from "./board";
+import {
+  BoardDocument,
+  deleteWidgets,
+  fitFrameToContents,
+  loadBoard,
+  moveWidgets,
+  setWidgetRects,
+  transformSelection,
+} from "./board";
 
 /**
  * Resizing a frame (ADR-141).
@@ -223,5 +231,222 @@ describe("fitFrameToContents", () => {
     ]);
     expect(fitFrameToContents(board, "f")).toBe(false);
     expect(fitFrameToContents(board, "loose")).toBe(false);
+  });
+});
+
+/**
+ * A lock protects content, not placement (ADR-210, amending ADR-040).
+ *
+ * A locked object may be carried by its neighbours; its size, text and links stay
+ * protected, and deletion still refuses it.
+ */
+describe("a lock protects content, not placement (ADR-210)", () => {
+  it("moves a locked widget with the rest of the selection", () => {
+    const board = boardWith([
+      { ...note("a", { x: 0, y: 0 }), locked: true },
+      note("b", { x: 100, y: 0 }),
+    ]);
+
+    moveWidgets(board, [
+      { id: "a", x: 10, y: 20 },
+      { id: "b", x: 110, y: 20 },
+    ]);
+
+    expect(board.widgets.get("a")).toMatchObject({ x: 10, y: 20, locked: true });
+    expect(board.widgets.get("b")).toMatchObject({ x: 110, y: 20 });
+  });
+
+  it("still refuses to change a locked widget's size", () => {
+    const board = boardWith([{ ...note("a", { x: 0, y: 0 }), locked: true }]);
+
+    setWidgetRects(board, [{ id: "a", x: 0, y: 0, width: 200, height: 160 }]);
+
+    expect(board.widgets.get("a")).toMatchObject({ width: 40, height: 40 });
+  });
+
+  it("is one undo step for a selection that contains a lock", () => {
+    const board = boardWith([
+      { ...note("a", { x: 0, y: 0 }), locked: true },
+      note("b", { x: 100, y: 0 }),
+    ]);
+
+    moveWidgets(board, [
+      { id: "a", x: 30, y: 40 },
+      { id: "b", x: 130, y: 40 },
+    ]);
+    board.undoOnce();
+
+    expect(board.widgets.get("a")).toMatchObject({ x: 0, y: 0 });
+    expect(board.widgets.get("b")).toMatchObject({ x: 100, y: 0 });
+  });
+
+  it("still refuses to delete a locked widget", () => {
+    const board = boardWith([{ ...note("a", { x: 0, y: 0 }), locked: true }]);
+
+    deleteWidgets(board, ["a"]);
+
+    expect(board.widgets.get("a")).toBeTruthy();
+  });
+});
+
+/**
+ * A block transform (ADR-211): one factor for the whole box, and only what can scale
+ * changes size. A locked object and a table section keep their size and travel.
+ */
+describe("transformSelection (ADR-211)", () => {
+  const big = (id: string, at: { x: number; y: number }, extra: Partial<Widget> = {}): Widget => ({
+    ...note(id, at),
+    width: 160,
+    height: 120,
+    ...extra,
+  });
+
+  it("scales what can scale and carries the rest without resizing it", () => {
+    const board = boardWith([big("a", { x: 100, y: 100 }), big("b", { x: 400, y: 100 }, { locked: true })]);
+
+    transformSelection(board, [
+      { id: "a", x: 90, y: 90, width: 100, height: 80 },
+      // The size in the box is what the geometry proposed; the command must ignore it.
+      { id: "b", x: 360, y: 90, width: 100, height: 80 },
+    ]);
+
+    expect(board.widgets.get("a")).toMatchObject({ x: 90, y: 90, width: 100, height: 80 });
+    expect(board.widgets.get("b")).toMatchObject({ x: 360, y: 90, width: 160, height: 120, locked: true });
+  });
+
+  it("is one undo step for a block with a lock", () => {
+    const board = boardWith([big("a", { x: 100, y: 100 }), big("b", { x: 400, y: 100 }, { locked: true })]);
+
+    transformSelection(board, [
+      { id: "a", x: 90, y: 90, width: 100, height: 80 },
+      { id: "b", x: 360, y: 90, width: 100, height: 80 },
+    ]);
+    board.undoOnce();
+
+    expect(board.widgets.get("a")).toMatchObject({ x: 100, y: 100, width: 160, height: 120 });
+    expect(board.widgets.get("b")).toMatchObject({ x: 400, y: 100, width: 160, height: 120 });
+  });
+
+  it("moves a table section and leaves its size and cells to the table", () => {
+    const table: Widget = {
+      ...frame("t", 400, 300),
+      layout: {
+        kind: "table",
+        columns: [{ id: "c1", title: "C1" }],
+        rows: [{ id: "r1", title: "R1" }],
+      },
+    };
+    const child = { ...note("c", { x: 50, y: 50 }, "t"), width: 40, height: 40 };
+    const board = boardWith([table, child]);
+
+    transformSelection(board, [{ id: "t", x: 50, y: 50, width: 100, height: 100 }]);
+
+    const section = board.widgets.get("t")!;
+    // The block proposed 100 × 100; a table section's size comes from its axes (ADR-201),
+    // so it travels and keeps the size the table gives it.
+    expect(section).toMatchObject({ x: 50, y: 50 });
+    expect(section.width).toBeGreaterThan(100);
+    expect(section.height).toBeGreaterThan(100);
+    // A cell object is placed by the table, not by the block's delta (ADR-203).
+    expect(board.widgets.get("c")!.x).toBeGreaterThan(50);
+  });
+
+  it("resizes a frame without moving its contents", () => {
+    const board = boardWith([frame("f", 400, 300), note("c", { x: 50, y: 50 }, "f")]);
+
+    transformSelection(board, [{ id: "f", x: 0, y: 0, width: 200, height: 300 }]);
+
+    expect(board.widgets.get("f")).toMatchObject({ width: 200 });
+    expect(board.widgets.get("c")).toMatchObject({ x: 50, y: 50, width: 40, height: 40 });
+  });
+
+  it("does not shift a child twice when the block lists both it and its container", () => {
+    const outer = { ...frame("outer", 400, 300), locked: true };
+    const middle = { ...frame("middle", 200, 200), parentId: "outer", locked: true };
+    const leaf = note("leaf", { x: 50, y: 50 }, "middle");
+    const board = boardWith([outer, middle, leaf]);
+
+    transformSelection(board, [
+      { id: "outer", x: 50, y: 50, width: 400, height: 300 },
+      { id: "middle", x: 50, y: 50, width: 200, height: 200 },
+    ]);
+
+    expect(board.widgets.get("outer")).toMatchObject({ x: 50, y: 50 });
+    expect(board.widgets.get("middle")).toMatchObject({ x: 50, y: 50 });
+    // The leaf follows the outermost carried container exactly once.
+    expect(board.widgets.get("leaf")).toMatchObject({ x: 100, y: 100 });
+  });
+});
+
+/**
+ * A block transform carries a connector's bends with it (ADR-211), and a gesture that
+ * changed nothing is not an edit.
+ */
+describe("transformSelection: connectors and no-ops (ADR-211)", () => {
+  it("scales the bends of a connector whose both ends travel", () => {
+    const board = boardWith([
+      { ...note("a", { x: 50, y: 50 }), width: 160, height: 120 },
+      { ...note("b", { x: 150, y: 50 }), width: 160, height: 120 },
+      {
+        id: "c",
+        type: "connector",
+        parentId: null,
+        x: 100,
+        y: 50,
+        width: 100,
+        height: 0,
+        start: { item: "a", side: "right" },
+        end: { item: "b", side: "left" },
+        waypoints: [{ id: "w", x: 100, y: 50, rigid: true }],
+      },
+    ]);
+
+    transformSelection(
+      board,
+      [
+        { id: "a", x: 50, y: 50, width: 160, height: 120 },
+        { id: "b", x: 350, y: 50, width: 160, height: 120 },
+      ],
+      { from: { x: 0, y: 0, width: 200, height: 100 }, kx: 2, ky: 1 },
+    );
+
+    expect(board.widgets.get("c")!.waypoints?.[0]).toMatchObject({ x: 200, y: 50 });
+  });
+
+  it("does not keep a bend of a connector with only one end inside", () => {
+    const board = boardWith([
+      { ...note("a", { x: 50, y: 50 }), width: 160, height: 120 },
+      { ...note("b", { x: 900, y: 50 }), width: 160, height: 120 },
+      {
+        id: "c",
+        type: "connector",
+        parentId: null,
+        x: 100,
+        y: 50,
+        width: 800,
+        height: 0,
+        start: { item: "a", side: "right" },
+        end: { item: "b", side: "left" },
+        waypoints: [{ id: "w", x: 100, y: 50, rigid: true }],
+      },
+    ]);
+
+    transformSelection(
+      board,
+      [{ id: "a", x: 250, y: 50, width: 160, height: 120 }],
+      { from: { x: 0, y: 0, width: 200, height: 100 }, kx: 2, ky: 1 },
+    );
+
+    expect(board.widgets.get("c")!.waypoints?.[0]).toMatchObject({ x: 100, y: 50 });
+  });
+
+  it("does not record an undo step when nothing changed", () => {
+    const board = boardWith([note("a", { x: 50, y: 50 })]);
+    const before = board.widgets.get("a");
+
+    transformSelection(board, [{ id: "a", x: 50, y: 50, width: 40, height: 40 }]);
+    board.undoOnce();
+
+    expect(board.widgets.get("a")).toEqual(before);
   });
 });

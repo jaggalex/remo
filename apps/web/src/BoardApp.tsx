@@ -14,7 +14,8 @@ import { BoardDialogs } from "./BoardDialogs";
 import { BoardPanels } from "./BoardPanels";
 import { BoardTopbar } from "./BoardTopbar";
 import { BoardInspector } from "./BoardInspector";
-import { BoardStateLayer, CanvasChrome } from "./BoardOverlays";
+import { CanvasChrome } from "./BoardOverlays";
+import { BoardStart } from "./BoardStart";
 import { ContextMenu } from "./ContextMenu";
 import { useBoardContextMenu } from "./useBoardContextMenu";
 import { useBoardHeader } from "./useBoardHeader";
@@ -28,6 +29,7 @@ import { useInfoCard } from "./useInfoCard";
 import { useApplyAgentPlan } from "./useApplyAgentPlan";
 import { useTidyCommand } from "./useTidyCommand";
 import { useBoardCommands } from "./useBoardCommands";
+import { useGatherSelection } from "./useGatherSelection";
 import { useBoardVote } from "./useBoardVote";
 import { useFollowAttention } from "./useFollowAttention";
 import { useBoardAccess } from "./useBoardAccess";
@@ -65,6 +67,7 @@ export function BoardApp() {
   const menuPoint = useRef<{ x: number; y: number } | null>(null);
   const [settings, setSettings] = useState<BoardSettings>(() => loadSettings());
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [templateRequest, setTemplateRequest] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -136,7 +139,6 @@ export function BoardApp() {
     identityKey: `${me?.id ?? ""}:${access?.aclVersion ?? 0}`,
     openSettings: () => openAccount("agents"),
   });
-
   /** One voting session, shared by the panel and the chips on the board (ADR-115). */
   const { vote, open: voteOpen, setOpen: setVoteOpen, cast, withdraw } = useBoardVote({
     boardId: currentRoom(),
@@ -255,13 +257,10 @@ export function BoardApp() {
   });
 
   const {
-    theme,
-    setTheme,
     presentOpen,
     setPresentOpen,
     commentsOpen,
     setCommentsOpen,
-    commentsUnread,
     setCommentsUnread,
     reactionRequest,
     react,
@@ -272,10 +271,6 @@ export function BoardApp() {
     trashBoard,
     signOut,
     duplicateBoard,
-    orgName,
-    roleLine,
-    voteHint,
-    timerHint,
   } = header;
 
   /** Signing out returns this browser to its guest name (ADR-149). */
@@ -297,7 +292,7 @@ export function BoardApp() {
     shareFallback,
     closeShareFallback,
     inspectorOpen,
-    toggleInspector,
+    toggleInspector, openInspector,
   } = useBoardChrome({ board, t });
 
   const { active, addTemplate, replaceBoard } = useBoardTemplates({
@@ -327,6 +322,15 @@ export function BoardApp() {
   const { undo, redo, forceRender } = useBoardHistory(board);
   const { info, openInfo, closeInfo } = useInfoCard(typeName, t);
 
+  const gatherSelection = useGatherSelection({
+    board,
+    setSelectedIds, openInspector,
+    notice: showNotice,
+    title: t("board.frameTitle"),
+    emptyMessage: t("selection.gather.none"),
+    skippedMessage: (count) => t("selection.gather.skipped", { n: String(count) }),
+  });
+
   const commands = useBoardCommands({
     board,
     widgets,
@@ -346,17 +350,17 @@ export function BoardApp() {
     canManage,
     refuseUnlock: (authorName) =>
       showNotice(t("lock.refused", { name: authorName || t("lock.authorUnknown") })),
-    onTidy: tidy.start,
+    onTidy: tidy.start, onGather: gatherSelection,
   });
 
   const {
     textOf,
     deltaOf,
     onSetText,
-    moveMany,
+    moveMany, moveToCell,
     patchConnector,
     selectionLocked,
-    resizeNote,
+    resizeSelection,
     onMoveCard,
     onAddCard,
     onAddColumn,
@@ -391,10 +395,11 @@ export function BoardApp() {
     setSelectedIds,
   });
 
-  const { addStickyAndEdit, addTextAndEdit, finishEditing } = useNewObjectEditing({
+  const { addStickyAndEdit, addTextAndEdit, addShapeAndEdit, finishEditing } = useNewObjectEditing({
     board,
     addSticky,
     addText,
+    addShape,
     setEditingId,
   });
 
@@ -610,12 +615,12 @@ export function BoardApp() {
       />
       <RoomAgentPanel {...roomAgent.panelProps} />
       <BoardTopbar
+        {...header}
         title={title || boardTitle || ""}
         titleDraft={titleDraft}
         setTitleDraft={setTitleDraft}
         titleCancelled={titleCancelled}
         renameBoard={renameBoard}
-        orgName={orgName}
         writeBlocked={writeBlocked}
         readOnly={readOnly}
         onOpenHome={openHome}
@@ -640,9 +645,7 @@ export function BoardApp() {
         onDuplicate={() => void duplicateBoard()}
         onTrash={() => setTrashOpen(true)}
         voteRunning={vote.running}
-        voteHint={voteHint}
         timerRunning={currentTimerPhase === "running"}
-        timerHint={timerHint}
         setVoteOpen={setVoteOpen}
         setTimerOpen={setTimerOpen}
         setFollowOpen={setFollowOpen}
@@ -658,33 +661,29 @@ export function BoardApp() {
         visiblePresence={visiblePresence}
         me={me}
         identity={identity}
-        roleLine={roleLine}
         renameSelf={renameSelf} onAccountRenamed={setMe}
-        theme={theme} setTheme={setTheme}
-        lang={lang} setLang={setLang}
         setAccountOpen={(value) => (value ? openAccount("people") : setAccountOpen(false))}
         setAuthOpen={setAuthOpen}
         onSignOut={() => void signOutAndForgetName()}
-        saveState={saveState}
-        saveLabel={saveLabel}
-        saveTitle={saveTitle}
-        inspectorOpen={inspectorOpen}
-        toggleInspector={toggleInspector}
-        presentOpen={presentOpen}
-        setPresentOpen={setPresentOpen}
-        commentsOpen={commentsOpen}
-        setCommentsOpen={setCommentsOpen}
-        commentsUnread={commentsUnread}
+        saveState={saveState} saveLabel={saveLabel} saveTitle={saveTitle}
+        inspectorOpen={inspectorOpen} toggleInspector={toggleInspector}
         addTemplate={addTemplate}
+        templateRequest={templateRequest}
       />
-      <BoardStateLayer
-        blocked={saveState.blocked}
-        emptyRoom={!denied && widgets.length === 0 ? currentRoom() : null}
-        denied={denied}
-        unclaimed={unclaimed}
-        reason={access?.reason}
-        signedIn={Boolean(me)}
-        boardId={currentRoom()}
+      <BoardStart
+        state={{
+          blocked: saveState.blocked,
+          widgets,
+          denied,
+          unclaimed,
+          reason: access?.reason,
+          signedIn: Boolean(me),
+          boardId: currentRoom(),
+          readOnly: writeBlocked,
+        }}
+        onCreateNote={addStickyAndEdit} onCreateShape={() => addShapeAndEdit("rectangle")}
+        onCreateText={addTextAndEdit}
+        onExample={() => setTemplateRequest((value) => value + 1)}
         onSignIn={() => setAuthOpen(true)}
         onRetry={() => void refreshAccess()}
         onClaim={() => void claimBoard()}
@@ -721,8 +720,9 @@ export function BoardApp() {
           kanbanStates={kanbanStates}
           selectedIds={selectedIds}
           onSelect={setSelectedIds}
-          onMoveMany={moveMany}
-          onResize={resizeNote}
+          onNotice={showNotice}
+          onMoveMany={moveMany} onMoveToCell={moveToCell}
+          onResizeMany={resizeSelection}
           onMoveCard={onMoveCard}
           onAddCard={onAddCard}
           onAddColumn={onAddColumn}

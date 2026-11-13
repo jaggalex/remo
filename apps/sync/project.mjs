@@ -46,6 +46,41 @@ export function projectProps(widget) {
   if (widget.startAt) props.startAt = widget.startAt;
   if (widget.dueAt) props.dueAt = widget.dueAt;
   if (Array.isArray(widget.tagIds) && widget.tagIds.length) props.tagIds = widget.tagIds;
+  // A table section keeps its axes in the projection, and a member keeps the cell it
+  // belongs to (ADR-196, ADR-199). The read path and the agent see the same structure.
+  if (widget.cell && typeof widget.cell === "object") {
+    const rowId = str(widget.cell.rowId);
+    const columnId = str(widget.cell.columnId);
+    if (rowId && columnId) props.cell = { rowId, columnId };
+  }
+  if (widget.layout?.kind === "table") {
+    const spans = Array.isArray(widget.layout.spans)
+      ? widget.layout.spans
+          .map((span) => ({
+            rowId: str(span?.rowId) ?? "",
+            columnId: str(span?.columnId) ?? "",
+            rowSpan: Math.max(1, Math.round(Number(span?.rowSpan) || 1)),
+            columnSpan: Math.max(1, Math.round(Number(span?.columnSpan) || 1)),
+          }))
+          .filter((span) => span.rowId && span.columnId)
+      : [];
+    props.table = {
+      active: widget.layout.active !== false,
+      columns: Array.isArray(widget.layout.columns)
+        ? widget.layout.columns.map((axis) => ({
+            id: str(axis?.id) ?? "",
+            title: str(axis?.title) ?? "",
+          }))
+        : [],
+      rows: Array.isArray(widget.layout.rows)
+        ? widget.layout.rows.map((axis) => ({
+            id: str(axis?.id) ?? "",
+            title: str(axis?.title) ?? "",
+          }))
+        : [],
+      ...(spans.length ? { spans } : {}),
+    };
+  }
   return Object.keys(props).length ? props : null;
 }
 
@@ -67,7 +102,6 @@ export function projectWidgets(doc) {
       content: widget.type === "card" ? str(widget.content) : text,
       fillColor: str(widget.style?.fillColor),
       cardTheme: str(widget.style?.cardTheme),
-      rotation: num(widget.rotation) ?? 0,
       props: projectProps(widget),
     });
   });

@@ -100,7 +100,7 @@ test("a brief with a file becomes a plan, applies once and undoes in one step", 
   const plan = page.getByRole("dialog", { name: "Agent plan" });
   await expect(plan).toBeVisible({ timeout: 20_000 });
   await expect(plan).toContainText("Objects: 10 · connectors: 0 · actions: 10");
-  await expect(plan).toContainText("2 frames");
+  await expect(plan).toContainText("2 sections");
   await expect(plan).toContainText("4 sticky notes");
   await expect(plan).toContainText("The file was cut");
   await expect.poll(() => page.evaluate(() => window.__remo.widgets.length)).toBe(0);

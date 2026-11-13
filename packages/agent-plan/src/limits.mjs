@@ -134,7 +134,7 @@ export function textField(value, { code, field, max, required = false }) {
   return text;
 }
 
-const STRING_STYLE_FIELDS = new Set(["fillColor", "cardTheme", "strokeColor", "fontFamily", "color", "textColor"]);
+const STRING_STYLE_FIELDS = new Set(["fillColor", "cardTheme", "strokeColor", "color", "textColor"]);
 const NUMBER_STYLE_FIELDS = new Map([
   ["strokeWidth", [0, 32]],
   ["fontSize", [4, 400]],

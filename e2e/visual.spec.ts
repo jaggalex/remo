@@ -4,9 +4,15 @@ import {
   agentBoard,
   freshBoard,
   openAccount,
+  openBoard,
   openBoardMenu,
   openFacilitation,
   openMore,
+  register,
+  seedConnector,
+  seedNote,
+  selectKanbanCard,
+  seedObject,
 } from "./helpers";
 
 /**
@@ -100,6 +106,23 @@ test("three connector routings paint differently", async ({ page }) => {
   expect(new Set(Object.values(pixels.signatures)).size).toBe(3);
 });
 
+test("a locked object carries the canvas lock badge", async ({ page }) => {
+  await freshBoard(page, "lock-badge", { template: "empty" });
+  await addSticky(page);
+  await page.keyboard.press("Meta+Shift+l");
+  await expect(page.locator(".badge-lock")).toHaveCount(1);
+  // The selection badge is a DOM plate over the note's corner; clear it so the
+  // canvas mark, not the plate, is what the baseline records (ADR-193).
+  await page.keyboard.press("Escape");
+  // A single note makes the camera fit it at >400 %; step back to a normal zoom so
+  // the 16 px mark is read against the object, not against a magnified canvas.
+  for (let step = 0; step < 8; step += 1) {
+    await page.getByRole("button", { name: "Zoom out" }).click();
+  }
+  await page.mouse.move(700, 500);
+  await capture(page, page.locator("body"), "lock-badge");
+});
+
 test("the board, export, timer and vote screens fit the viewport", async ({ page }) => {
   const account = await freshBoard(page, "visual");
   await addSticky(page);
@@ -160,24 +183,10 @@ test("the board, export, timer and vote screens fit the viewport", async ({ page
 
 test("a card with fields is readable", async ({ page }) => {
   await freshBoard(page, "visual-card");
+  // ADR-197: the helper opens the inspector, then selects a placed card and waits
+  // for the selection to land, so a resize cannot leave the click on a stale point.
+  await selectKanbanCard(page);
 
-  const point = await page.evaluate(() => {
-    const probe = window as unknown as {
-      __remo: {
-        camera: { x: number; y: number; zoom: number };
-        layouts: Array<{ placements: Array<{ x: number; y: number }> }>;
-      };
-    };
-    const layout = probe.__remo.layouts.find((entry) => entry.placements.length > 0)!;
-    const placement = layout.placements[0]!;
-    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: rect.left + rect.width / 2 + (placement.x - probe.__remo.camera.x) * probe.__remo.camera.zoom,
-      y: rect.top + rect.height / 2 + (placement.y - probe.__remo.camera.y) * probe.__remo.camera.zoom,
-    };
-  });
-  await page.mouse.click(point.x, point.y);
   const fields = page.locator(".card-fields");
   await fields.locator("select").first().selectOption("in_progress");
   await fields.locator('input[type="date"]').first().fill("2026-10-30");
@@ -360,8 +369,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
 
   // Both themes: the rail is a panel, not a strip of icons on the canvas edge.
   await page.setViewportSize({ width: 1440, height: 900 });
-  await openAccount(page);
-  await page.getByRole("radio", { name: "Dark" }).click();
+  await page.getByRole("button", { name: /Theme: light/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.keyboard.press("Escape");
   // The same counters in the dark theme: the plate, the accent of my vote and the
@@ -424,9 +432,9 @@ test("the header stays on one row and its menus fit the viewport", async ({ page
   }
 
   // Both themes, with a menu open: the header is one surface, the menu another.
-  await openAccount(page);
-  await page.getByRole("radio", { name: "Dark" }).click();
+  await page.getByRole("button", { name: /Theme: light/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await openAccount(page);
   await capture(page, page.locator(".app"), "topbar-dark");
 });
 
@@ -550,4 +558,356 @@ test("the tidy preview shows before and after and fits the viewport", async ({ p
 
   await page.waitForTimeout(300);
   await capture(page, page.locator(".app"), "agent-plan-tidy");
+});
+
+test("the section panel shows the table and its axes", async ({ page }) => {
+  const account = await register(page, "visual-section");
+  const frameId = await seedObject(page, account.boardId, {
+    type: "frame",
+    x: 0,
+    y: 0,
+    width: 600,
+    height: 400,
+    title: "Section",
+  });
+  await seedNote(page, account.boardId, { x: 0, y: 0 }, undefined, "Inside", frameId);
+
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => Boolean((window as unknown as { __remo?: unknown }).__remo));
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (id) =>
+          (window as unknown as { __remo: { widgets: Array<{ id: string }> } }).__remo.widgets.some(
+            (widget) => widget.id === id,
+          ),
+        frameId,
+      ),
+    )
+    .toBe(true);
+  const frame = await page.evaluate((id) => {
+    const probe = window as unknown as {
+      __remo: { widgets: Array<{ id: string; x: number; y: number; height: number }> };
+    };
+    return probe.__remo.widgets.find((widget) => widget.id === id)!;
+  }, frameId);
+  const point = await page.evaluate(({ x, y }) => {
+    const probe = (window as unknown as {
+      __remo: { camera: { x: number; y: number; zoom: number } };
+    }).__remo;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2 + (x - probe.camera.x) * probe.camera.zoom,
+      y: rect.top + rect.height / 2 + (y - probe.camera.y) * probe.camera.zoom,
+    };
+  }, { x: frame.x, y: frame.y - frame.height / 2 + 24 });
+  await page.mouse.click(point.x, point.y);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds,
+      ),
+    )
+    .toEqual([frameId]);
+
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  const panel = page.locator(".section-panel");
+  await expect(panel).toBeVisible();
+  await panel.getByRole("radio", { name: "Table", exact: true }).click();
+  const layoutDialog = page.locator(".section-layout-card");
+  await expect(layoutDialog).toBeVisible();
+  await layoutDialog.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(panel.locator(".section-axis-row")).toHaveCount(3);
+  await page.getByRole("button", { name: "Columns: Column 1" }).click();
+  await expect(panel.getByLabel("Axis name")).toHaveValue("Column 1");
+  await page.getByRole("button", { name: "Fit", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+    .toBe(true);
+
+  await page.waitForTimeout(300);
+  await capture(page, page.locator(".app"), "section-panel");
+});
+
+/** World point → client point for the canvas, the same inverse the handlers use. */
+async function canvasView(page: Page) {
+  return page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { camera: { x: number; y: number; zoom: number } };
+    }).__remo;
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      camera: probe?.camera ?? { x: 0, y: 0, zoom: 1 },
+      rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+    };
+  });
+}
+
+/** Fit is deterministic: the same content always lands at the same zoom. */
+async function zoomInToReadable(page: Page) {
+  await page.getByRole("button", { name: "Fit" }).click();
+  await page.waitForTimeout(250);
+}
+
+function clientPoint(
+  view: Awaited<ReturnType<typeof canvasView>>,
+  world: { x: number; y: number },
+) {
+  return {
+    x: view.rect.left + view.rect.width / 2 + (world.x - view.camera.x) * view.camera.zoom,
+    y: view.rect.top + view.rect.height / 2 + (world.y - view.camera.y) * view.camera.zoom,
+  };
+}
+
+/**
+ * A block selection: one box with handles, quiet rings on the members (ADR-211).
+ *
+ * The badge is the written form of the same state, so the baseline shows both the chrome
+ * and the sentence a person reads.
+ */
+test("a block selection shows one box and its composition", async ({ page }) => {
+  const account = await register(page, "visual-block");
+  await seedNote(page, account.boardId, { x: -320, y: 0 });
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await seedNote(page, account.boardId, { x: 320, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+  await zoomInToReadable(page);
+
+  const view = await canvasView(page);
+  // One marquee instead of three shift-clicks: a missed click must not turn the
+  // baseline into a different selection.
+  const startPoint = { x: view.rect.left + 90, y: view.rect.top + 90 };
+  const endPoint = {
+    x: view.rect.left + view.rect.width - 90,
+    y: view.rect.top + view.rect.height - 90,
+  };
+  await page.mouse.move(startPoint.x, startPoint.y);
+  await page.mouse.down();
+  await page.mouse.move(endPoint.x, endPoint.y, { steps: 10 });
+  await page.mouse.up();
+
+  const selected = await page.evaluate(
+    () => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds.length,
+  );
+  expect(selected).toBe(3);
+  await expect(page.locator(".selection-badge")).toContainText("3 objects");
+  await expect(page.locator(".selection-badge")).toContainText("3 change size");
+  await capture(page, page.locator(".canvas-wrap"), "selection-block");
+
+  const notes = await page.evaluate(() => {
+    const list = (window as unknown as {
+      __remo: { widgets: Array<{ type: string; x: number; y: number; width: number; height: number }> };
+    }).__remo.widgets;
+    return list
+      .filter((widget) => widget.type === "sticky_note")
+      .map((widget) => ({ x: widget.x, y: widget.y, width: widget.width, height: widget.height }));
+  });
+
+  const right = Math.max(...notes.map((note) => note.x + note.width / 2));
+  const bottom = Math.max(...notes.map((note) => note.y + note.height / 2));
+  const gap = 7 / view.camera.zoom;
+  const corner = clientPoint(view, { x: right + gap, y: bottom + gap });
+  await page.mouse.move(corner.x, corner.y);
+  await page.mouse.down();
+  await page.mouse.move(corner.x - 700 / view.camera.zoom, corner.y - 500 / view.camera.zoom, { steps: 10 });
+  await expect(page.locator(".canvas-limit")).toBeVisible();
+  await capture(page, page.locator("body"), "selection-min-stop");
+  await page.mouse.up();
+});
+
+/**
+ * A connector label with explicit lines (ADR-213): Enter is a line, the chip covers the
+ * line and stays on `labelAt`.
+ */
+test("a connector label keeps its lines", async ({ page }) => {
+  const account = await register(page, "visual-label");
+  const from = await seedNote(page, account.boardId, { x: -260, y: 0 });
+  const to = await seedNote(page, account.boardId, { x: 260, y: 0 });
+  await seedConnector(page, account.boardId, from, to);
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+  await zoomInToReadable(page);
+
+  const view = await canvasView(page);
+  const middle = clientPoint(view, { x: 0, y: 0 });
+  await page.mouse.dblclick(middle.x, middle.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill("Проверить заказ\nСогласовать с\nфинансовым отделом");
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+  await capture(page, page.locator(".canvas-wrap"), "label-wrap");
+});
+
+/** A shape that grew for its text (ADR-214): width unchanged, height down. */
+test("a shape grows for its text", async ({ page }) => {
+  const account = await register(page, "visual-shape-grow");
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+  await zoomInToReadable(page);
+
+  const rail = page.getByRole("toolbar", { name: "Tools" });
+  await rail.getByRole("button", { name: "Shape variants" }).click();
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+
+  const at = await page.evaluate(() => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ type: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.type === "shape");
+    return one ? { x: one.x, y: one.y } : null;
+  });
+  if (!at) throw new Error("the shape was not created");
+  const view = await canvasView(page);
+  const point = clientPoint(view, at);
+  await page.mouse.dblclick(point.x, point.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill(
+    "Подпись диаграммы, которой нужно больше места, чем было у прямоугольника. ".repeat(10),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+
+  // Wait for the growth itself, not for a guessed delay: the shape is taller than when
+  // it was created, then Fit frames it, so the label is legible in the baseline.
+  const height = () =>
+    page.evaluate(() => {
+      const probe = (window as unknown as {
+        __remo?: { widgets: Array<{ type: string; height: number }> };
+      }).__remo;
+      return probe?.widgets.find((widget) => widget.type === "shape")?.height ?? 0;
+    });
+  await expect.poll(height).toBeGreaterThan(200);
+  // Fit frames the grown box, which is what makes the label legible in the baseline;
+  // two steps back leave a margin, so the frame shows a box on a board rather than one
+  // border lying on the viewport edge.
+  await zoomInToReadable(page);
+  const zoom = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __remo?: { camera: { zoom: number } } }).__remo?.camera.zoom ?? 0,
+    );
+  const fitted = await zoom();
+  // Two steps of 1.2 are 1.44; the poll only has to see most of that, not an exact value.
+  await page.getByRole("button", { name: "Zoom out" }).click();
+  await page.getByRole("button", { name: "Zoom out" }).click();
+  await expect.poll(zoom).toBeLessThan(fitted / 1.35);
+
+  // The first line of a painted block sits inside the padding. Measuring the ascent
+  // against the wrong baseline mode drew it a few pixels too high and a fitted label
+  // touched the top border, so the gap is asserted, not just photographed.
+  const gap = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.board")!;
+    const ctx = canvas.getContext("2d")!;
+    const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const dark = (x: number, y: number) => data[(y * width + x) * 4]! < 100;
+    const counts: number[] = [];
+    for (let y = 0; y < height; y += 1) {
+      let count = 0;
+      for (let x = 0; x < width; x += 2) if (dark(x, y)) count += 1;
+      counts.push(count);
+    }
+    const borderCount = Math.max(...counts);
+    let border = counts.indexOf(borderCount);
+    // The outline is a few pixels thick; step past it before looking for the label.
+    while (border < height && counts[border]! > borderCount * 0.8) border += 1;
+    for (let y = border; y < Math.min(height, border + 120); y += 1) {
+      if (counts[y]! > 30) return (y - border) / (window.devicePixelRatio || 1);
+    }
+    return 0;
+  });
+  const stretched = await zoom();
+  // Padding is 8 world px at the shape's floor; the first line's ink starts below it.
+  expect(gap).toBeGreaterThan(8 * stretched * 0.7);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".selection-badge")).toHaveCount(0);
+  // Fit keeps focus, and its tooltip would land in the frame: blur it, park the
+  // cursor on the grid, and wait for the tooltip to be gone rather than for a delay.
+  const canvas = await canvasView(page);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.mouse.move(canvas.rect.left + canvas.rect.width - 40, canvas.rect.top + 100);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await capture(page, page.locator(".canvas-wrap"), "shape-grow");
+});
+
+/**
+ * A note that cannot show all its text (ADR-214): the mark sits in the corner and the
+ * badge says it in words, so the state is not colour-only.
+ */
+test("a clipped label is marked and named", async ({ page }) => {
+  const account = await register(page, "visual-text-overflow");
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+  await page.evaluate(() => document.fonts.ready);
+  await zoomInToReadable(page);
+
+  const id = await addSticky(page);
+  const at = await page.evaluate((noteId) => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ id: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.id === noteId);
+    return one ? { x: one.x, y: one.y } : null;
+  }, id);
+  if (!at) throw new Error("the note was not created");
+  const view = await canvasView(page);
+  const point = clientPoint(view, at);
+  await page.mouse.dblclick(point.x, point.y);
+  const editor = page.locator(".inline-editor");
+  await expect(editor).toBeVisible();
+  await editor.fill(
+    "Заметка, в которую не помещается весь текст, и это видно по знаку в углу. ".repeat(16),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inline-editor")).toHaveCount(0);
+
+  // Fit frames the note closely; step back until the mark and the letters are readable.
+  await zoomInToReadable(page);
+  const zoom = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __remo?: { camera: { zoom: number } } }).__remo?.camera.zoom ?? 0,
+    );
+  for (let step = 0; step < 8 && (await zoom()) > 1.8; step += 1) {
+    await page.getByRole("button", { name: "Zoom out" }).click();
+  }
+  await expect.poll(zoom).toBeLessThanOrEqual(1.8);
+
+  const framed = await page.evaluate((noteId) => {
+    const probe = (window as unknown as {
+      __remo?: { widgets: Array<{ id: string; x: number; y: number }> };
+    }).__remo;
+    const one = probe?.widgets.find((widget) => widget.id === noteId);
+    return one ? { x: one.x, y: one.y } : null;
+  }, id);
+  if (!framed) throw new Error("the note disappeared");
+  const framedView = await canvasView(page);
+  const spot = clientPoint(framedView, framed);
+  await page.mouse.click(spot.x, spot.y);
+  const badge = page.locator(".selection-badge");
+  await expect(badge).toContainText("Sticky note");
+  await expect(badge).toContainText("Text does not fit");
+  await page.mouse.move(framedView.rect.left + framedView.rect.width - 40, framedView.rect.top + 100);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await capture(page, page.locator(".canvas-wrap"), "text-overflow");
 });

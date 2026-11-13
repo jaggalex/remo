@@ -38,8 +38,14 @@ export interface Presence {
   stopFollowersAt: number | null;
   /** A "bring everyone to me" request; `from` is a session key, `name` its label. */
   invite: { from: string; name?: string; at: number } | null;
-  /** The slide this peer is presenting (ADR-108), or null. */
-  presenting: { frameId: string; index: number; startedAt: number } | null;
+  /** The slide this peer is presenting (ADR-108, ADR-200), or null. */
+  presenting: {
+    frameId: string;
+    index: number;
+    startedAt: number;
+    /** Present when the slide is one cell of a table section. */
+    cell?: { rowId: string; columnId: string };
+  } | null;
   /** The last live reaction, ephemeral and never persisted (ADR-104 amendment). */
   reaction: { emoji: string; at: number; x?: number; y?: number } | null;
 }
@@ -123,12 +129,30 @@ export function readPresence(
         state.invite && typeof (state.invite as { at?: unknown }).at === "number"
           ? (state.invite as { from: string; name?: string; at: number })
           : null,
-      presenting:
-        state.presenting &&
-        typeof (state.presenting as { frameId?: unknown }).frameId === "string" &&
-        typeof (state.presenting as { startedAt?: unknown }).startedAt === "number"
-          ? (state.presenting as { frameId: string; index: number; startedAt: number })
-          : null,
+      presenting: (() => {
+        const raw = state.presenting as
+          | { frameId?: unknown; index?: unknown; startedAt?: unknown; cell?: unknown }
+          | null
+          | undefined;
+        if (!raw || typeof raw.frameId !== "string" || typeof raw.startedAt !== "number") {
+          return null;
+        }
+        const cell =
+          raw.cell &&
+          typeof (raw.cell as { rowId?: unknown }).rowId === "string" &&
+          typeof (raw.cell as { columnId?: unknown }).columnId === "string"
+            ? {
+                rowId: (raw.cell as { rowId: string }).rowId,
+                columnId: (raw.cell as { columnId: string }).columnId,
+              }
+            : undefined;
+        return {
+          frameId: raw.frameId,
+          index: typeof raw.index === "number" ? raw.index : 0,
+          startedAt: raw.startedAt,
+          ...(cell ? { cell } : {}),
+        };
+      })(),
       reaction:
         state.reaction &&
         typeof (state.reaction as { at?: unknown }).at === "number" &&

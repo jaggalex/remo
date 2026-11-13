@@ -16,6 +16,22 @@ type DragState =
       start: { x: number; y: number };
       /** Union box of the lifted objects, which is what alignment snaps. */
       box: Rect;
+      /** A table cell under the pointer that will take the selection on drop. */
+      table?: {
+        frameId: string;
+        rowId: string;
+        columnId: string;
+        offset: { x: number; y: number };
+      };
+      /** The pointer is over a table header: the drop is refused, not free. */
+      refused?: boolean;
+    }
+  | {
+      /** A press on an empty cell: a click selects the cell, a drag becomes a marquee. */
+      mode: "cellPress";
+      start: { x: number; y: number };
+      startScreen: { x: number; y: number };
+      additive: boolean;
     }
   | {
       mode: "marquee";
@@ -25,7 +41,24 @@ type DragState =
       hostId?: string;
     }
   | { mode: "card"; kanbanId: string; cardId: string; offset: { x: number; y: number } }
-  | { mode: "resize"; id: string; corner: ResizeCorner; origin: Rect }
+  | {
+      mode: "resize";
+      id: string;
+      ids: string[];
+      corner: ResizeCorner;
+      origin: Rect;
+      /** The last target box, so the release can pass the factors to the command. */
+      target?: Rect;
+      /** The factors actually applied (after the minimum floor). */
+      factors?: { x: number; y: number };
+      /** The boxes as they were when the gesture started; the preview must not feed itself. */
+      members: Array<{
+        id: string;
+        box: Rect;
+        scalable: boolean;
+        min: { width: number; height: number };
+      }>;
+    }
   | { mode: "connect"; fromId: string; fromSide: ConnectorSide }
   | {
       mode: "reattach";
@@ -71,8 +104,9 @@ export function useGestureEnv(deps: GestureDeps) {
     onCamera,
     onSelect,
     onMoveMany,
-    onResize,
+    onResizeMany,
     onMoveCard,
+    onMoveToCell,
     onAddCard,
     onConnect,
     onConnectorPatch,
@@ -118,6 +152,12 @@ export function useGestureEnv(deps: GestureDeps) {
   const [hoverCell, setHoverCell] = useState<{ columnId: string; swimlaneId: string } | null>(
     null,
   );
+  const [tableHover, setTableHover] = useState<{
+    frameId: string;
+    rowId: string;
+    columnId: string;
+  } | null>(null);
+  const [tableRefused, setTableRefused] = useState(false);
   const [marquee, setMarquee] = useState<Rect | null>(null);
   /**
    * The gesture in flight, as patches on stored widgets (ADR-051).
@@ -132,11 +172,42 @@ export function useGestureEnv(deps: GestureDeps) {
   );
   /** The same map for handlers that must not wait for a render. */
   const previewLive = useRef<ReadonlyMap<string, Partial<Widget>>>(new Map());
-  const applyPreview = useCallback((next: ReadonlyMap<string, Partial<Widget>>) => {
-    previewLive.current = next;
-    setPreview(next);
+  /**
+   * One preview commit per animation frame (ADR-212 step 1).
+   *
+   * A trackpad or a gaming mouse sends pointer moves faster than the screen refreshes.
+   * Repainting the board for every event buys nothing visible and spends the frame
+   * budget that the paint itself needs; the last position of the frame is the one a
+   * person can actually see. The handlers keep reading `previewLive`, so hit-testing
+   * and the drop stay exact, and a release cancels the pending frame before it clears.
+   */
+  const previewFrame = useRef<number | null>(null);
+  const paintPreview = useCallback(() => {
+    previewFrame.current = null;
+    setPreview(previewLive.current);
   }, []);
-  const clearPreview = useCallback(() => applyPreview(new Map()), [applyPreview]);
+  const applyPreview = useCallback(
+    (next: ReadonlyMap<string, Partial<Widget>>) => {
+      previewLive.current = next;
+      if (previewFrame.current !== null) return;
+      previewFrame.current = requestAnimationFrame(paintPreview);
+    },
+    [paintPreview],
+  );
+  const clearPreview = useCallback(() => {
+    if (previewFrame.current !== null) {
+      cancelAnimationFrame(previewFrame.current);
+      previewFrame.current = null;
+    }
+    previewLive.current = new Map();
+    setPreview(previewLive.current);
+  }, []);
+  useEffect(
+    () => () => {
+      if (previewFrame.current !== null) cancelAnimationFrame(previewFrame.current);
+    },
+    [],
+  );
 
   /** Ids being dragged right now — the "in hand" shadow applies to exactly these. */
   const [dragIds, setDragIds] = useState<string[]>([]);
@@ -144,6 +215,8 @@ export function useGestureEnv(deps: GestureDeps) {
   const [dragGhostIds, setDragGhostIds] = useState<string[]>([]);
   /** Alignment lines for the current drag; empty when nothing is near enough. */
   const [guides, setGuides] = useState<AlignmentGuide[]>([]);
+  /** The floored block size while a resize is stopped at a minimum (ADR-211). */
+  const [resizeLimit, setResizeLimit] = useState<{ width: number; height: number } | null>(null);
 
   /**
    * Object under the pointer.
@@ -304,12 +377,10 @@ export function useGestureEnv(deps: GestureDeps) {
         }
       }
 
-      // A locked object stays where it is, even when it is selected with others: it
-      // was pinned on purpose (ADR-040).
+      // A locked object travels with the selection: the lock protects what the object
+      // is (size, text, links), not where it stands (ADR-210, amending ADR-040).
       const origins = widgets
-        .filter(
-          (widget) => lifted.has(widget.id) && !isCardOfKanban(widget) && !widget.locked,
-        )
+        .filter((widget) => lifted.has(widget.id) && !isCardOfKanban(widget))
         .map((widget) => ({ id: widget.id, x: widget.x, y: widget.y }));
       if (!origins.length) return;
       const box =
@@ -393,8 +464,9 @@ export function useGestureEnv(deps: GestureDeps) {
     onCamera,
     onSelect,
     onMoveMany,
-    onResize,
+    onResizeMany,
     onMoveCard,
+    onMoveToCell,
     onAddCard,
     onConnect,
     onConnectorPatch,
@@ -419,6 +491,10 @@ export function useGestureEnv(deps: GestureDeps) {
     setDragPreview,
     hoverCell,
     setHoverCell,
+    tableHover,
+    setTableHover,
+    tableRefused,
+    setTableRefused,
     marquee,
     setMarquee,
     preview,
@@ -431,6 +507,8 @@ export function useGestureEnv(deps: GestureDeps) {
     dragGhostIds,
     setDragGhostIds,
     guides,
+    resizeLimit,
+    setResizeLimit,
     setGuides,
     hoverId,
     setHoverId,

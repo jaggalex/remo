@@ -98,6 +98,46 @@ describe("selection as source", () => {
     expect(source.truncationCode).toBe("SELECTION_TRUNCATED");
   });
 
+  it("carries table axes and cell membership", () => {
+    const table = {
+      id: "table",
+      type: "frame",
+      parentId: null,
+      x: 0,
+      y: 0,
+      width: 600,
+      height: 400,
+      title: "Plan",
+      layout: {
+        kind: "table",
+        active: true,
+        columns: [
+          { id: "c1", title: "Now" },
+          { id: "c2", title: "Next" },
+        ],
+        rows: [{ id: "r1", title: "Step" }],
+        spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 }],
+      },
+    };
+    const inside = note("cell-note", 0, 0, "Inside", {
+      parentId: "table",
+      cell: { rowId: "r1", columnId: "c2" },
+    });
+    const source = buildSelectionSource(board([table, inside]), ["table"]);
+    const frame = source.objects.find((object) => object.id === "table");
+    const child = source.objects.find((object) => object.id === "cell-note");
+    expect(frame.table).toEqual({
+      active: true,
+      columns: [
+        { id: "c1", title: "Now" },
+        { id: "c2", title: "Next" },
+      ],
+      rows: [{ id: "r1", title: "Step" }],
+      spans: [{ rowId: "r1", columnId: "c1", rowSpan: 1, columnSpan: 2 }],
+    });
+    expect(child.cell).toEqual({ rowId: "r1", columnId: "c2" });
+  });
+
   it("cuts a long text at a boundary and reports it", () => {
     const words = Array.from({ length: 4_000 }, (_, index) => `word${index}`).join(" ");
     const source = buildSelectionSource(board([note("long", 0, 0, words)]), ["long"]);

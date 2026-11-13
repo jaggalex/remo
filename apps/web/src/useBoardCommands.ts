@@ -1,4 +1,12 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  MAX_SHAPE_HEIGHT,
+  MIN_SHAPE_FONT,
+  lineHeightFor,
+  textCapFor,
+  textClipped,
+} from "@remo/canvas";
+import type { Rect } from "@remo/model";
 import type { MutableRefObject } from "react";
 import {
   addConnectorWaypoint,
@@ -13,6 +21,7 @@ import {
   groupWidgets,
   moveCard,
   moveConnectorWaypoint,
+  moveSelectionToCell,
   moveWidgets,
   noteMarksOf,
   pasteFragment,
@@ -28,8 +37,8 @@ import {
   setTextColor,
   toggleNoteMark,
   ungroupWidgets,
+  LOCAL_ORIGIN,
   setWidgetDelta,
-  setWidgetRects,
   setWidgetText,
   swapConnectorEnds,
   type BoardDocument,
@@ -41,6 +50,8 @@ import {
   type NoteDirection,
   type StyleSnapshot,
   type WidgetPosition,
+  type WidgetRect,
+  transformSelection,
 } from "@remo/doc";
 import {
   newId,
@@ -104,6 +115,8 @@ export interface BoardCommandDeps {
   refuseUnlock: (authorName: string) => void;
   /** Open the tidy dialog; the app owns the dialog, the preview and the plan. */
   onTidy: (ids: readonly string[]) => void;
+  /** Gather a compatible selection into one section (ADR-198). */
+  onGather: (ids: readonly string[]) => void;
 }
 
 export function useBoardCommands(deps: BoardCommandDeps) {
@@ -126,6 +139,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     canManage,
     refuseUnlock,
     onTidy,
+    onGather,
   } = deps;
 
   const {
@@ -157,15 +171,83 @@ export function useBoardCommands(deps: BoardCommandDeps) {
    *
    * The note does **not** grow: it keeps its size and Auto text shrinks to fit
    * (ADR-027), which is why typing a lot into a sticky makes the letters smaller
-   * instead of the note taller. Resizing is a deliberate gesture with its own handle.
+   * instead of the note taller. A shape is a diagram node: when its text no longer fits
+   * at the readable floor, the shape grows down (ADR-214) and the height merges into the
+   * editing session, so the growth and the edit are one undo step (ADR-215).
    */
   const onSetText = useCallback(
-    (id: string, delta: TextDeltaOp[]) => setWidgetDelta(board, id, delta),
-    [board],
+    (id: string, delta: TextDeltaOp[]) => {
+      setWidgetDelta(board, id, delta);
+      // The editor streams a delta on every keystroke; the shared text settles a moment
+      // later. Measuring immediately reads a partial text, so the check waits for a
+      // pause and then grows until the painter's own check says it fits (ADR-215).
+      const pending = growthTimers.current.get(id);
+      if (pending) clearTimeout(pending);
+      growthHeights.current.set(id, board.readWidget(id)?.height ?? 0);
+      growthTimers.current.set(
+        id,
+        setTimeout(() => {
+          growthTimers.current.delete(id);
+          const expected = growthHeights.current.get(id);
+          growthHeights.current.delete(id);
+          const current = board.readWidget(id);
+          if (!current || current.type !== "shape" || current.cell || current.style?.fontSize) {
+            return;
+          }
+          // A manual resize while the check was pending is a decision: it wins.
+          if (expected != null && Math.abs(current.height - expected) > 0.5) return;
+          const text = board.textOf(id);
+          if (!text) return;
+          const runs = board
+            .deltaOf(id)
+            .filter((op) => op.insert)
+            .map((op) => ({ text: op.insert, ...op.attributes }));
+          const cap = textCapFor(current, settings.notes.fontCap);
+          let target = current.height;
+          while (target < MAX_SHAPE_HEIGHT) {
+            const probe = {
+              ...current,
+              height: target,
+              content: text,
+              runs: runs.length ? runs : undefined,
+            };
+            if (textClipped(probe, cap, settings.text.fontFamily) !== true) break;
+            target = Math.min(target + lineHeightFor(MIN_SHAPE_FONT), MAX_SHAPE_HEIGHT);
+          }
+          if (target <= current.height) return;
+          board.transact(
+            () => {
+              const live = board.readWidget(id);
+              if (!live || live.locked) return;
+              // The box is centre-anchored on the canvas, so growing the height alone
+              // would push the shape up as well; moving the centre by half the delta
+              // keeps the top edge where the person put it and grows down (ADR-214).
+              const grown = target - live.height;
+              board.widgets.set(id, { ...live, y: live.y + grown / 2, height: target });
+            },
+            LOCAL_ORIGIN,
+            { merge: true },
+          );
+        }, 120),
+      );
+    },
+    [board, settings.notes.fontCap, settings.text.fontFamily],
   );
 
   const moveMany = useCallback(
     (positions: WidgetPosition[]) => moveWidgets(board, positions),
+    [board],
+  );
+
+  /** A drop into a table cell: membership and the landing offset in one transaction. */
+  const moveToCell = useCallback(
+    (
+      frameId: string,
+      rowId: string,
+      columnId: string,
+      ids: string[],
+      offset: { x: number; y: number },
+    ) => moveSelectionToCell(board, frameId, ids, { rowId, columnId, offset }),
     [board],
   );
 
@@ -191,9 +273,22 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     [selectedIds, widgets],
   );
 
-  const resizeNote = useCallback(
-    (rect: { id: string; x: number; y: number; width: number; height: number }) =>
-      setWidgetRects(board, [rect]),
+  /** One pending growth check per shape: typing streams, the measure waits for calm. */
+  const growthTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  /** The height the widget had when the check was scheduled: a resize wins over text. */
+  const growthHeights = useRef(new Map<string, number>());
+  useEffect(() => {
+    const timers = growthTimers.current;
+    return () => {
+      for (const timer of timers.values()) clearTimeout(timer);
+      timers.clear();
+      growthHeights.current.clear();
+    };
+  }, []);
+
+  const resizeSelection = useCallback(
+    (rects: WidgetRect[], scale?: { from: Rect; kx: number; ky: number }) =>
+      transformSelection(board, rects, scale),
     [board],
   );
 
@@ -366,7 +461,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
 
   /** One note beside another, linked, in one undo step; the caret moves there. */
   const addConnectedNote = useCallback(
-    (sourceId: string, direction: NoteDirection) => {
+    (sourceId: string, direction: NoteDirection, center?: { x: number; y: number }) => {
       const created = createConnectedNote(
         board,
         sourceId,
@@ -374,6 +469,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
         { note: newId("sticky"), connector: newId("conn") },
         lastConnector.current,
         { ratio: settings.notes.gapRatio, min: settings.notes.minGap },
+        center,
       );
       if (!created) return;
       setSelectedIds([created]);
@@ -398,10 +494,6 @@ export function useBoardCommands(deps: BoardCommandDeps) {
         setNoteTextAlign(board, selectedIds, align),
       setVAlign: (vAlign: "top" | "middle" | "bottom") =>
         setNoteTextVAlign(board, selectedIds, vAlign),
-      addConnected: (direction: NoteDirection) => {
-        const source = selectedIds[0];
-        if (source) addConnectedNote(source, direction);
-      },
       applyShapePreset: (preset: ShapePreset) =>
         // One `transact` for fill, outline and width: one chip, one undo step. A preset
         // is a complete look, so it also makes the border solid again (ADR-120).
@@ -411,7 +503,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
         }),
       remove: () => requestDelete(selectedIds),
     }),
-    [addConnectedNote, board, requestDelete, selectedIds],
+    [board, requestDelete, selectedIds],
   );
 
   const noteMarks = useCallback((id: string) => noteMarksOf(board, id), [board]);
@@ -498,6 +590,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
       ungroup: () => ungroupWidgets(board, [...selectedIds]),
       remove: () => requestDelete(selectedIds),
       tidy: () => onTidy(selectedIds),
+      gather: () => onGather(selectedIds),
       canGroup: isGroupable(commandContext),
       canUngroup: selectionHasGroup(commandContext),
       selectType,
@@ -517,6 +610,7 @@ export function useBoardCommands(deps: BoardCommandDeps) {
       commandContext,
       distributeSelection,
       groupIds,
+      onGather,
       onTidy,
       requestDelete,
       selectType,
@@ -570,11 +664,12 @@ export function useBoardCommands(deps: BoardCommandDeps) {
     deltaOf,
     onSetText,
     moveMany,
+    moveToCell,
     alignSelection,
     distributeSelection,
     patchConnector,
     selectionLocked,
-    resizeNote,
+    resizeSelection,
     onMoveCard,
     onAddCard,
     onAddColumn,

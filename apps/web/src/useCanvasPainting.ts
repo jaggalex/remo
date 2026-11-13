@@ -7,7 +7,7 @@ import {
   type OverlayPaintInput,
 } from "./painters";
 import { canvasPaletteFromTokens } from "./canvasPalette";
-import { connectorResolver } from "./canvasGeometry";
+import { connectorResolver, type ContinuePreview } from "./canvasGeometry";
 import { useProposalLayout } from "./proposalStore";
 import type { Camera, KanbanLayout } from "@remo/canvas";
 import type { Presence } from "@remo/doc";
@@ -48,6 +48,8 @@ export function useCanvasPainting({
   focusedWaypoint,
   kanbanStates,
   clock,
+  presenting,
+  continuePreview,
   t,
 }: {
   boardRef: React.RefObject<HTMLCanvasElement | null>;
@@ -70,6 +72,10 @@ export function useCanvasPainting({
   kanbanStates: Record<string, KanbanState>;
   /** Changes once a second while the shared timer runs; the timer card paints from it. */
   clock: number;
+  /** A live presentation hides state marks that are not content (ADR-193). */
+  presenting: boolean;
+  /** The edge "+" preview; the overlay paints it until the click (ADR-195). */
+  continuePreview: ContinuePreview | null;
   t: (key: TranslationKey) => string;
 }) {
   const {
@@ -211,6 +217,7 @@ export function useCanvasPainting({
     viewport,
     resolveConnector,
     widgets,
+    isCardOfKanban,
   ]);
 
   const paintOverlay = useCallback(() => {
@@ -225,6 +232,8 @@ export function useCanvasPainting({
       viewport,
       settings,
       layouts,
+      widgets,
+      isCardOfKanban,
       selectedIds,
       preview,
       editingId,
@@ -240,6 +249,8 @@ export function useCanvasPainting({
       theme: paintTheme,
       focusedWaypoint,
       proposal,
+      presenting,
+      continuePreview,
     };
     paintOverlayLayer(input);
     paintStats.current.overlay += 1;
@@ -260,10 +271,14 @@ export function useCanvasPainting({
     presence,
     preview,
     proposal,
+    presenting,
+    continuePreview,
     selectedIds,
     settings,
     viewport,
     resolveConnector,
+    widgets,
+    isCardOfKanban,
   ]);
 
   /**

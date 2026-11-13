@@ -69,14 +69,22 @@ export function Badge({ tone = "neutral", icon, count, onRemove, children }: Bad
   );
 }
 
-export interface TooltipProps { label: string; shortcut?: string[]; side?: "bottom" | "top" | "right"; open?: boolean; children: ReactElement }
+export interface TooltipProps {
+  label: string;
+  shortcut?: string[];
+  side?: "bottom" | "top" | "right";
+  /** `end` lines the tip up with the trigger's right edge, for controls at the window edge. */
+  align?: "center" | "end";
+  open?: boolean;
+  children: ReactElement;
+}
 
-export function Tooltip({ label, shortcut, side = "bottom", open, children }: TooltipProps) {
+export function Tooltip({ label, shortcut, side = "bottom", align = "center", open, children }: TooltipProps) {
   const id = useId();
   return (
     <span className={cx("rm-tooltip-wrap", open && "is-open")}>
       {isValidElement(children) ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, { "aria-describedby": id }) : children}
-      <span role="tooltip" id={id} className={cx("rm-tooltip", `rm-tooltip-${side}`)}>
+      <span role="tooltip" id={id} className={cx("rm-tooltip", `rm-tooltip-${side}`, align === "end" && "rm-tooltip-end")}>
         {label}
         {shortcut && <Kbd keys={shortcut} />}
       </span>

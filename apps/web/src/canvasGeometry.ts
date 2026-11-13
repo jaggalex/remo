@@ -2,15 +2,25 @@ import {
   anchorPoint,
   boxOf,
   cellAt,
+  layoutTable,
   pick,
   placementAt,
   sideNormal,
   simplify,
   stubLength,
+  tableCellPlacement,
+  tableHitAt,
   type ConnectorPath,
   type KanbanLayout,
+  type TableGrid,
 } from "@remo/canvas";
-import { connectedNoteCenter, type GapOptions, type NoteDirection } from "@remo/doc";
+import {
+  GATHERABLE_TYPES,
+  connectedNoteCenter,
+  noteGap,
+  type GapOptions,
+  type NoteDirection,
+} from "@remo/doc";
 import {
   canConnect,
   joinsWithin,
@@ -37,6 +47,17 @@ import {
  * source product draws them (ADR-030). Corner handles follow the same rule.
  */
 export const ANCHOR_GAP = 9;
+
+/**
+ * Whether a selected object's ports are its edge "+" buttons (ADR-195, ADR-201).
+ *
+ * A note or a shape gets the DOM "+" on each side, which both continues and starts a
+ * line; painting a port circle beside it would be a second control for the same side.
+ * Other connectable objects keep their painted ports.
+ */
+export function portsAreEdgePlus(widget: Widget): boolean {
+  return (widget.type === "sticky_note" || widget.type === "shape") && !widget.locked;
+}
 export const HANDLE_GAP = 7;
 
 /**
@@ -119,7 +140,15 @@ export function sideOfDirection(direction: NoteDirection): ConnectorSide {
 }
 
 /** Height reserved for a floating bar, including the gap above the object. */
-export const BAR_ROOM = 52;
+/**
+ * Space above the object for the object bar.
+ *
+ * It must clear the 44 px edge "+" (centred 30 px outside the edge, ADR-195), or the
+ * bar would sit on top of that button and make it unreachable.
+ */
+export const BAR_ROOM = 84;
+/** A bar with no edge "+" to clear — the arrange and connector bars. */
+export const COMPACT_BAR_ROOM = 52;
 
 /**
  * Vertical placement of a floating bar over a box in screen space.
@@ -131,8 +160,9 @@ export const BAR_ROOM = 52;
 export function barTop(
   box: { top: number; height: number },
   viewport: { height: number },
+  room = BAR_ROOM,
 ): number {
-  const above = box.top - BAR_ROOM;
+  const above = box.top - room;
   const below = box.top + box.height + 12;
   const lowest = Math.max(8, viewport.height - 40 - 8);
   if (above >= 8) return Math.min(above, lowest);
@@ -210,12 +240,21 @@ export function cornerAt(
   return best;
 }
 
+/** Modifiers a resize can carry (ADR-212). */
+export interface ResizeOptions {
+  /** Original width / height; present means Shift — keep the proportion. */
+  ratio?: number;
+  /** Alt — grow and shrink around the centre instead of the opposite corner. */
+  fromCenter?: boolean;
+}
+
 /**
  * Box for a corner drag.
  *
  * The corner opposite the one being dragged stays put, which is what makes a resize
  * feel attached to the note rather than to the grid. The minimum keeps a note from
- * collapsing to a line under a fast flick.
+ * collapsing to a line under a fast flick. `ratio` keeps the original proportion and
+ * `fromCenter` anchors the centre instead of the opposite corner (ADR-212).
  */
 export function resizedBox(
   origin: Rect,
@@ -223,17 +262,62 @@ export function resizedBox(
   point: { x: number; y: number },
   minWidth: number,
   minHeight: number,
+  options: ResizeOptions = {},
 ): Rect {
   const west = corner === "nw" || corner === "sw";
   const north = corner === "nw" || corner === "ne";
-
   const right = origin.x + origin.width;
   const bottom = origin.y + origin.height;
 
-  const left = west ? Math.min(point.x, right - minWidth) : origin.x;
-  const top = north ? Math.min(point.y, bottom - minHeight) : origin.y;
-  const newRight = west ? right : Math.max(point.x, origin.x + minWidth);
-  const newBottom = north ? bottom : Math.max(point.y, origin.y + minHeight);
+  if (options.fromCenter) {
+    const centreX = origin.x + origin.width / 2;
+    const centreY = origin.y + origin.height / 2;
+    let halfWidth = Math.max(Math.abs(point.x - centreX), minWidth / 2);
+    let halfHeight = Math.max(Math.abs(point.y - centreY), minHeight / 2);
+    const ratio = options.ratio;
+    if (ratio && ratio > 0) {
+      // One factor for both axes, chosen by the larger half-size so the pointer keeps
+      // the corner it points at.
+      const factor = Math.max(halfWidth / (origin.width / 2), halfHeight / (origin.height / 2));
+      halfWidth = Math.max((origin.width / 2) * factor, minWidth / 2);
+      halfHeight = halfWidth / ratio;
+      if (halfHeight < minHeight / 2) {
+        halfHeight = minHeight / 2;
+        halfWidth = halfHeight * ratio;
+      }
+    }
+    return {
+      x: centreX - halfWidth,
+      y: centreY - halfHeight,
+      width: halfWidth * 2,
+      height: halfHeight * 2,
+    };
+  }
+
+  let left = west ? Math.min(point.x, right - minWidth) : origin.x;
+  let top = north ? Math.min(point.y, bottom - minHeight) : origin.y;
+  let newRight = west ? right : Math.max(point.x, origin.x + minWidth);
+  let newBottom = north ? bottom : Math.max(point.y, origin.y + minHeight);
+
+  const ratio = options.ratio;
+  if (ratio && ratio > 0) {
+    let width = newRight - left;
+    let height = newBottom - top;
+    if (width / height > ratio) height = width / ratio;
+    else width = height * ratio;
+    // The floor must not break the proportion, so one axis is derived from the other.
+    width = Math.max(width, minWidth);
+    height = width / ratio;
+    if (height < minHeight) {
+      height = minHeight;
+      width = height * ratio;
+    }
+    // Keep the anchor edges fixed while the size is re-derived from the proportion.
+    if (west) left = newRight - width;
+    else newRight = left + width;
+    if (north) top = newBottom - height;
+    else newBottom = top + height;
+  }
 
   return { x: left, y: top, width: newRight - left, height: newBottom - top };
 }
@@ -388,11 +472,77 @@ function overlaps(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
+/**
+ * The first free copy slot in `direction`, used by "Create new" in an occupied slot
+ * (ADR-195).
+ *
+ * The preview and the command call this same function, so what the person sees before
+ * the click is exactly where the copy lands. The search walks in whole source extents
+ * plus the tuned gap; only connectable leaves block a slot, because a frame or a line
+ * in it still leaves room for a note.
+ */
+export function freeConnectedCenter(
+  source: Widget,
+  direction: NoteDirection,
+  widgets: readonly Widget[],
+  layouts: Map<string, KanbanLayout>,
+  options: GapOptions = {},
+): CopySlot {
+  const gap = noteGap(source.width, source.height, options);
+  const stepX =
+    direction === "right" ? source.width + gap : direction === "left" ? -(source.width + gap) : 0;
+  const stepY =
+    direction === "down" ? source.height + gap : direction === "up" ? -(source.height + gap) : 0;
+  let center = connectedNoteCenter(source, direction, options);
+
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    const rect = {
+      x: center.x - source.width / 2,
+      y: center.y - source.height / 2,
+      width: source.width,
+      height: source.height,
+    };
+    const occupied = widgets.some((widget) => {
+      if (widget.id === source.id || !canConnect(widget)) return false;
+      if (
+        widget.type === "card" &&
+        widget.parentId &&
+        layouts.has(widget.parentId) &&
+        !placementOfCard(layouts, widget.id)
+      ) {
+        return false;
+      }
+      return overlaps(rect, boxOf(placedWidget(widget, layouts)));
+    });
+    if (!occupied) return { center, rect };
+    center = { x: center.x + stepX, y: center.y + stepY };
+  }
+
+  return {
+    center,
+    rect: {
+      x: center.x - source.width / 2,
+      y: center.y - source.height / 2,
+      width: source.width,
+      height: source.height,
+    },
+  };
+}
+
 /** What a port click does with the slot it computed. */
 export type AnchorSlotDecision =
   | { kind: "clone" }
   | { kind: "connect"; target: Widget; endSide: ConnectorSide }
   | { kind: "duplicate"; target: Widget };
+
+/** The transient preview the edge "+" paints before a click (ADR-195). */
+export interface ContinuePreview {
+  source: Widget;
+  direction: NoteDirection;
+  decision: AnchorSlotDecision;
+  /** The free slot for a clone or "Create new"; absent for a pure connect. */
+  freeCenter?: { x: number; y: number };
+}
 
 /**
  * Decide the outcome of a port click (ADR-137).
@@ -503,4 +653,110 @@ export function internalConnectors(
     out.push(widget);
   }
   return out;
+}
+
+
+/** A data cell that can take a dragged selection, with the grid it came from. */
+export interface TableDropTarget {
+  frameId: string;
+  rowId: string;
+  columnId: string;
+  grid: TableGrid;
+  rect: Rect;
+}
+
+/**
+ * What a drag is over: a data cell, a refused header, or no table at all.
+ *
+ * Read from the same `layoutTable`/`tableHitAt` pair the painter uses, so the cell a
+ * person points at is the cell the drop lands in. Headers are returned as a refusal,
+ * because a header never accepts objects (ADR-196).
+ */
+export function tableDropAt(
+  widgets: readonly Widget[],
+  point: { x: number; y: number },
+): { kind: "cell"; target: TableDropTarget } | { kind: "header" } | null {
+  for (const frame of [...widgets].reverse()) {
+    if (frame.type !== "frame" || frame.layout?.kind !== "table") continue;
+    if (frame.layout.active === false || frame.locked) continue;
+    const grid = layoutTable(frame, widgets);
+    if (!grid) continue;
+    const hit = tableHitAt(grid, point);
+    if (!hit) continue;
+    if (hit.kind === "cell") {
+      return {
+        kind: "cell",
+        target: {
+          frameId: frame.id,
+          rowId: hit.rowId,
+          columnId: hit.columnId,
+          grid,
+          rect: hit.rect,
+        },
+      };
+    }
+    return { kind: "header" };
+  }
+  return null;
+}
+
+/** Whether every dragged object is an ordinary table member that may land in a cell. */
+export function tableDropSelection(
+  widgets: readonly Widget[],
+  ids: readonly string[],
+): boolean {
+  if (!ids.length) return false;
+  return ids.every((id) => {
+    const widget = widgets.find((entry) => entry.id === id);
+    return Boolean(widget && GATHERABLE_TYPES.has(widget.type));
+  });
+}
+
+/** The one world offset that lands the selection in the target cell. */
+export function tableDropOffset(
+  target: TableDropTarget,
+  widgets: readonly Widget[],
+  ids: readonly string[],
+): { x: number; y: number } | null {
+  return tableCellPlacement(
+    target.grid,
+    target.rowId,
+    target.columnId,
+    widgets,
+    ids,
+  );
+}
+
+/** Whether every object already belongs to this exact cell. */
+export function inTableCell(
+  widget: Widget,
+  target: { frameId: string; rowId: string; columnId: string },
+): boolean {
+  return (
+    widget.parentId === target.frameId &&
+    widget.cell?.rowId === target.rowId &&
+    widget.cell?.columnId === target.columnId
+  );
+}
+
+/**
+ * The objects a block transform may touch (ADR-211).
+ *
+ * Connectors are derived and their stored box is the span of two ends; cards inside a
+ * kanban are placed by the matrix. Everything else is a member. One helper, because the
+ * painter decides whether handles exist and the gesture decides what they carry — the two
+ * must agree on the set.
+ */
+export function resizeMembersOf(
+  widgets: readonly Widget[],
+  ids: readonly string[],
+  isCardOfKanban: (widget: Widget) => boolean,
+): Widget[] {
+  const byId = new Map(widgets.map((widget) => [widget.id, widget]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter(
+      (widget): widget is Widget =>
+        !!widget && widget.type !== "connector" && !isCardOfKanban(widget),
+    );
 }

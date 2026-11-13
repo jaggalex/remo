@@ -26,11 +26,13 @@ const STORAGE_KEY = "remo.lang";
 import { enCore } from "./i18n/en-core";
 import { enCollab } from "./i18n/en-collab";
 import { enWork } from "./i18n/en-work";
+import { enSection } from "./i18n/en-section";
 import { ruCore } from "./i18n/ru-core";
 import { ruCollab } from "./i18n/ru-collab";
 import { ruWork } from "./i18n/ru-work";
+import { ruSection } from "./i18n/ru-section";
 
-const en = { ...enCore, ...enCollab, ...enWork };
+const en = { ...enCore, ...enCollab, ...enWork, ...enSection };
 
 type Key = keyof typeof en;
 /** Every translation key, for code that builds labels dynamically (commands, menus). */
@@ -40,6 +42,7 @@ const ru: Record<Key, string> = {
   ...ruCore,
   ...ruCollab,
   ...ruWork,
+  ...ruSection,
 };
 
 const STRINGS: Record<Lang, Record<Key, string>> = { en, ru };
@@ -59,6 +62,8 @@ type CountKey =
   | "widgets"
   | "grants"
   | "selected"
+  | "scalable"
+  | "pinned"
   | "cards"
   | "columns"
   | "swimlanes"
@@ -76,6 +81,8 @@ const COUNTS: Record<Lang, Record<CountKey, [string, string, string]>> = {
     widgets: ["{n} widget", "{n} widgets", "{n} widgets"],
     grants: ["{n} grant", "{n} grants", "{n} grants"],
     selected: ["{n} selected", "{n} selected", "{n} selected"],
+    scalable: ["{n} changes size", "{n} change size", "{n} change size"],
+    pinned: ["{n} pinned", "{n} pinned", "{n} pinned"],
     cards: ["{n} card", "{n} cards", "{n} cards"],
     columns: ["{n} column", "{n} columns", "{n} columns"],
     swimlanes: ["{n} swimlane", "{n} swimlanes", "{n} swimlanes"],
@@ -92,6 +99,8 @@ const COUNTS: Record<Lang, Record<CountKey, [string, string, string]>> = {
     widgets: ["{n} объект", "{n} объекта", "{n} объектов"],
     grants: ["{n} доступ", "{n} доступа", "{n} доступов"],
     selected: ["Выбрано: {n}", "Выбрано: {n}", "Выбрано: {n}"],
+    scalable: ["{n} меняет размер", "{n} меняют размер", "{n} меняют размер"],
+    pinned: ["{n} закреплён", "{n} закреплены", "{n} закреплены"],
     cards: ["{n} карточка", "{n} карточки", "{n} карточек"],
     columns: ["{n} колонка", "{n} колонки", "{n} колонок"],
     swimlanes: ["{n} дорожка", "{n} дорожки", "{n} дорожек"],
@@ -110,7 +119,7 @@ const TYPE_NAMES: Record<Lang, Record<string, string>> = {
     card: "Card",
     kanban: "Kanban",
     shape: "Shape",
-    frame: "Frame",
+    frame: "Section",
     text: "Text",
     connector: "Connector",
     stamp: "Sticker",
@@ -123,7 +132,7 @@ const TYPE_NAMES: Record<Lang, Record<string, string>> = {
     card: "Карточка",
     kanban: "Канбан",
     shape: "Фигура",
-    frame: "Фрейм",
+    frame: "Раздел",
     text: "Текст",
     connector: "Связь",
     stamp: "Наклейка",
@@ -151,7 +160,7 @@ const TYPE_COUNTS: Record<Lang, Record<string, [string, string, string]>> = {
     card: ["{n} card", "{n} cards", "{n} cards"],
     kanban: ["{n} kanban", "{n} kanbans", "{n} kanbans"],
     shape: ["{n} shape", "{n} shapes", "{n} shapes"],
-    frame: ["{n} frame", "{n} frames", "{n} frames"],
+    frame: ["{n} section", "{n} sections", "{n} sections"],
     text: ["{n} text", "{n} texts", "{n} texts"],
     connector: ["{n} connector", "{n} connectors", "{n} connectors"],
     stamp: ["{n} sticker", "{n} stickers", "{n} stickers"],
@@ -164,7 +173,7 @@ const TYPE_COUNTS: Record<Lang, Record<string, [string, string, string]>> = {
     card: ["{n} карточка", "{n} карточки", "{n} карточек"],
     kanban: ["{n} канбан", "{n} канбана", "{n} канбанов"],
     shape: ["{n} фигура", "{n} фигуры", "{n} фигур"],
-    frame: ["{n} фрейм", "{n} фрейма", "{n} фреймов"],
+    frame: ["{n} раздел", "{n} раздела", "{n} разделов"],
     text: ["{n} текст", "{n} текста", "{n} текстов"],
     connector: ["{n} связь", "{n} связи", "{n} связей"],
     stamp: ["{n} наклейка", "{n} наклейки", "{n} наклеек"],
@@ -186,7 +195,7 @@ const TYPE_DATIVE: Record<Lang, Record<string, [string, string, string]>> = {
     card: ["on {n} card", "on {n} cards", "on {n} cards"],
     kanban: ["on {n} kanban", "on {n} kanbans", "on {n} kanbans"],
     shape: ["on {n} shape", "on {n} shapes", "on {n} shapes"],
-    frame: ["on {n} frame", "on {n} frames", "on {n} frames"],
+    frame: ["on {n} section", "on {n} sections", "on {n} sections"],
     text: ["on {n} text", "on {n} texts", "on {n} texts"],
     connector: ["on {n} connector", "on {n} connectors", "on {n} connectors"],
     stamp: ["on {n} sticker", "on {n} stickers", "on {n} stickers"],
@@ -199,7 +208,7 @@ const TYPE_DATIVE: Record<Lang, Record<string, [string, string, string]>> = {
     card: ["по {n} карточке", "по {n} карточкам", "по {n} карточкам"],
     kanban: ["по {n} канбану", "по {n} канбанам", "по {n} канбанам"],
     shape: ["по {n} фигуре", "по {n} фигурам", "по {n} фигурам"],
-    frame: ["по {n} фрейму", "по {n} фреймам", "по {n} фреймам"],
+    frame: ["по {n} разделу", "по {n} разделам", "по {n} разделам"],
     text: ["по {n} тексту", "по {n} текстам", "по {n} текстам"],
     connector: ["по {n} связи", "по {n} связям", "по {n} связям"],
     stamp: ["по {n} наклейке", "по {n} наклейкам", "по {n} наклейкам"],
