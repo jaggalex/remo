@@ -12,7 +12,7 @@ import {
 import type { GestureEnv } from "./gestureEnv";
 import { bendStep, curveStep, flipStep, moveStep } from "./gestureSteps";
 import type { ConnectDraft } from "./gestureTypes";
-import { cellAt, cellGuides, closestOnPath, connectorPath, pick, rectFrom, scaleBoxes } from "@remo/canvas";
+import { cellAt, cellGuides, closestOnPath, connectorPath, pick, rectFrom, scaleBoxes, snapResize, type ResizeEdges } from "@remo/canvas";
 import type { Widget } from "@remo/model";
 
 /**
@@ -151,7 +151,34 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
     // per kind and stops the block instead of squeezing one member.
     const items = drag.members;
     if (!items.length) return;
-    const target = resizedBox(drag.origin, drag.corner, world, 0, 0);
+
+    // Shift keeps the proportion, Alt anchors the centre (ADR-212). Either one also
+    // turns snapping off for the gesture: a ratio and a glued edge are different
+    // promises, and applying both would break the ratio silently.
+    const ratio = event.shiftKey && drag.origin.height > 0
+      ? drag.origin.width / drag.origin.height
+      : undefined;
+    const fromCenter = event.altKey;
+    let target = resizedBox(drag.origin, drag.corner, world, 0, 0, { ratio, fromCenter });
+
+    const snapping = !event.shiftKey && !event.metaKey && !event.ctrlKey;
+    if (snapping) {
+      const edges: ResizeEdges = {
+        x: drag.corner === "ne" || drag.corner === "se" ? "right" : "left",
+        y: drag.corner === "sw" || drag.corner === "se" ? "bottom" : "top",
+      };
+      const snapped = snapResize(
+        target,
+        edges,
+        alignmentTargets(drag.ids),
+        settings.snapping.thresholdPx / camera.zoom,
+      );
+      target = snapped.box;
+      setGuides(settings.snapping.guides ? snapped.guides : []);
+    } else {
+      setGuides([]);
+    }
+
     const scaled = scaleBoxes(items, drag.origin, target);
     const scalable = new Map(items.map((item) => [item.id, item.scalable]));
     const next = new Map<string, Partial<Widget>>();

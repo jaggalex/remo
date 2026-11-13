@@ -533,3 +533,78 @@ test("a block of notes resizes as one box (ADR-211)", async ({ page }) => {
     expect(Math.round(undone[index]!.x)).toBe(Math.round(note.x));
   }
 });
+
+/**
+ * Modifiers a resize carries (ADR-212).
+ *
+ * Shift keeps the proportion and Alt anchors the centre; both are read from the
+ * pointer event during the gesture, not from a mode.
+ */
+test("Shift keeps the note's proportion (ADR-212)", async ({ page }) => {
+  const account = await register(page, "gesture-shift-ratio");
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  const before = await note(page);
+  const view = await geometry(page);
+  const gap = 7 / view.camera.zoom;
+  const corner = toClient(view, {
+    x: before.x + before.width / 2 + gap,
+    y: before.y + before.height / 2 + gap,
+  });
+
+  const centre = toClient(view, before);
+  await page.mouse.click(centre.x, centre.y);
+
+  await page.mouse.move(corner.x, corner.y);
+  await page.keyboard.down("Shift");
+  await page.mouse.down();
+  await page.mouse.move(corner.x + 120, corner.y + 20, { steps: 10 });
+  await page.mouse.up();
+  await page.keyboard.up("Shift");
+  await expect.poll(async () => (await note(page)).width).toBeGreaterThan(before.width);
+
+  const after = await note(page);
+  expect(after.width / after.height).toBeCloseTo(before.width / before.height, 1);
+});
+
+test("Alt resizes around the centre (ADR-212)", async ({ page }) => {
+  const account = await register(page, "gesture-alt-centre");
+  await seedNote(page, account.boardId, { x: 0, y: 0 });
+  await openBoard(page, account.boardId);
+  await page.waitForFunction(() => {
+    const probe = (window as unknown as { __remo?: { camera?: unknown } }).__remo;
+    return !!probe?.camera;
+  });
+  await page.waitForTimeout(400);
+
+  const before = await note(page);
+  const view = await geometry(page);
+  const gap = 7 / view.camera.zoom;
+  const corner = toClient(view, {
+    x: before.x + before.width / 2 + gap,
+    y: before.y + before.height / 2 + gap,
+  });
+
+  const centre = toClient(view, before);
+  await page.mouse.click(centre.x, centre.y);
+
+  await page.mouse.move(corner.x, corner.y);
+  await page.keyboard.down("Alt");
+  await page.mouse.down();
+  await page.mouse.move(corner.x + 80, corner.y + 40, { steps: 10 });
+  await page.mouse.up();
+  await page.keyboard.up("Alt");
+  await expect.poll(async () => (await note(page)).width).toBeGreaterThan(before.width);
+
+  const after = await note(page);
+  expect(after.height).toBeGreaterThan(before.height);
+  // The centre is the anchor: a pixel of rounding is allowed, a drift is not.
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
+});

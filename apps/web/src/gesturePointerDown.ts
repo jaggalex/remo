@@ -14,6 +14,38 @@ import {
 export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanvasElement>) {
   const { anchorPressRef, beginWidgetDrag, camera, cardPreviewRef, connectDraftRef, connectPendingRef, connectorLabelAt, dragRef, isCardOfKanban, layouts, marqueeRef, onAddCard, onConnect, onSelect, readOnly, selectedIds, setConnectDraft, setConnectPending, setDragPreview, setMarquee, setTableHover, setTableRefused, settings, toWorld, widgetById, widgets, worldToScreenPoint } = env;
   const world = toWorld(event);
+
+  // A resize handle is a UI affordance of the selection, so it is tried before the
+  // objects and before panning: Alt over a handle resizes around the centre (ADR-212),
+  // while Alt anywhere else still pans. One object or a block — the handle sits on the
+  // union box and the gesture scales every member that can scale (ADR-211).
+  const resizeMembers = selectedIds
+    .map((id) => widgetById(id))
+    .filter((widget): widget is Widget => !!widget && widget.type !== "connector" && !isCardOfKanban(widget));
+  if (!readOnly && resizeMembers.some(scalesInBlock)) {
+    const box = unionBox(resizeMembers.map(boxOf));
+    const hit = box ? cornerAt(box, world, 10 / camera.zoom, HANDLE_GAP / camera.zoom) : null;
+    if (box && hit) {
+      dragRef.current = {
+        mode: "resize",
+        id: resizeMembers[0]!.id,
+        ids: resizeMembers.map((widget) => widget.id),
+        corner: hit,
+        origin: box,
+        // Captured once: during the drag every move scales the original boxes, never
+        // the preview it just painted.
+        members: resizeMembers.map((widget) => ({
+          id: widget.id,
+          box: boxOf(widget),
+          scalable: scalesInBlock(widget),
+          min: minimumSizeOf(widget.type),
+        })),
+      };
+      capture(event);
+      return;
+    }
+  }
+
   setTableHover(null);
   setTableRefused(false);
   const panRequested = event.button === 1 || event.button === 2 || event.altKey;
@@ -191,36 +223,6 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
         capture(event);
         return;
       }
-    }
-  }
-
-  // A resize handle is a UI affordance of the selection, so it is tried before the
-  // objects themselves. One object or a block: the handle sits on the union box and
-  // the gesture scales every member that can scale (ADR-211).
-  const resizeMembers = selectedIds
-    .map((id) => widgetById(id))
-    .filter((widget): widget is Widget => !!widget && widget.type !== "connector" && !isCardOfKanban(widget));
-  if (!readOnly && resizeMembers.some(scalesInBlock)) {
-    const box = unionBox(resizeMembers.map(boxOf));
-    const hit = box ? cornerAt(box, world, 10 / camera.zoom, HANDLE_GAP / camera.zoom) : null;
-    if (box && hit) {
-      dragRef.current = {
-        mode: "resize",
-        id: resizeMembers[0]!.id,
-        ids: resizeMembers.map((widget) => widget.id),
-        corner: hit,
-        origin: box,
-        // Captured once: during the drag every move scales the original boxes, never
-        // the preview it just painted.
-        members: resizeMembers.map((widget) => ({
-          id: widget.id,
-          box: boxOf(widget),
-          scalable: scalesInBlock(widget),
-          min: minimumSizeOf(widget.type),
-        })),
-      };
-      capture(event);
-      return;
     }
   }
 
