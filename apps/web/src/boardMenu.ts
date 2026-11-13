@@ -45,6 +45,7 @@ export function buildBoardMenu({
   duplicateIds,
   pasteSelection,
   t,
+  onNotice,
 }: {
   target: ContextTarget;
   point: { x: number; y: number; world: { x: number; y: number } };
@@ -56,6 +57,7 @@ export function buildBoardMenu({
   duplicateIds: (ids: string[]) => void;
   pasteSelection: (at?: { x: number; y: number }) => Promise<void>;
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  onNotice?: (text: string) => void;
 }): BoardMenuResult {
   const result: BoardMenuResult = { menu: null, select: null, point: null };
   /** Every branch below sets the menu; the helper keeps that a single assignment. */
@@ -222,24 +224,31 @@ export function buildBoardMenu({
         disabled: !command.enabled(context),
         danger: command.danger,
       }));
-    if (frame?.type === "frame" && !writeBlocked && !frame.locked) {
+    if (frame?.type === "frame" && !writeBlocked) {
+      const locked = Boolean(frame.locked);
+      const reason = locked ? ` — ${t("section.view.locked")}` : "";
       items.unshift(
         {
-          label: t("section.view.toTable"),
+          label: `${t("section.view.toTable")}${reason}`,
           action: () => {
+            if (locked) return;
             const objects = board
               .readWidgets()
               .filter((widget) => widget.parentId === frame.id);
             if (!frame.layout && objects.length) openSectionLayout(frame.id);
             else setSectionView(board, frame.id, "table", t);
           },
-          disabled: Boolean(table),
+          disabled: locked || Boolean(table),
           danger: undefined,
         },
         {
-          label: t("section.view.toFree"),
-          action: () => setSectionView(board, frame.id, "free", t),
-          disabled: !table,
+          label: `${t("section.view.toFree")}${reason}`,
+          action: () => {
+            if (locked) return;
+            setSectionView(board, frame.id, "free", t);
+            if (table) onNotice?.(t("section.view.removed"));
+          },
+          disabled: locked || !table,
           danger: undefined,
         },
       );

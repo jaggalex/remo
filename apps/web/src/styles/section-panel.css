@@ -674,7 +674,9 @@
 }
 
 .section-title-strip:hover .section-title.is-empty,
-.section-title-strip.is-selected .section-title.is-empty {
+.section-title-strip.is-selected .section-title.is-empty,
+.section-title-strip:focus-within .section-title.is-empty,
+.section-title.is-empty:focus-visible {
   opacity: 1;
 }
 
@@ -787,4 +789,11 @@
   background: var(--bg-raised);
   border-radius: var(--radius-sm);
   opacity: 0.35;
+}
+
+/* A header title may hold explicit lines (ADR-217). */
+.table-header-editor {
+  resize: none;
+  white-space: pre-wrap;
+  line-height: 1.25;
 }

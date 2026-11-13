@@ -6,14 +6,14 @@ A section (frame) can be shown as a table: it gets columns and rows, and objects
 
 The section's title sits above its top-left corner. Double-click the title, or press `F2` or `Enter`, to edit it: `Enter` or leaving the field commits, `Esc` cancels, and one ⌘Z undoes it. The title is the section's label, not an object: it is outside the table rectangle and never gets in the way of moving objects.
 
-In table mode a **Table** badge appears after the title. Click it to open the **Section / Table** menu; there is no badge in the free view. The same switch is in **Properties** and in the section's context menu. Switching keeps the objects and the camera; **Remove table** in the panel asks for confirmation, while the badge switches at once and says the cells are kept.
+In table mode a **Table** badge appears after the title. Click it to open the **Section / Table** menu; there is no badge in the free view. The same switch is in **Properties** and in the section's context menu. Switching keeps the objects and the camera; **Remove table** and the view switch in the panel ask for confirmation, while the badge and the context menu switch at once and say the cells are kept.
 
 ## Steps
 
 1. Select the section and open **Properties**. A section just created with **Gather into section** opens the panel for you.
 2. Choose **Table**. If the section already holds objects, the **How to lay out the material?** question opens: lay it out by its current position or keep everything in the first cell. The canvas shows a preview; **Apply** is one undo step.
-3. **+ Column** and **+ Row** add axes. Choose an axis in the panel or by clicking its header on the canvas; clicking the header again opens its menu: rename, insert a neighbour, move, turn, size, delete.
-4. A double click on a header (or `Enter`/`F2`) edits the title in place: `Enter` commits, `Tab` moves to the next header, `Esc` cancels.
+3. **+ Column** and **+ Row** add axes. Choose an axis in the panel or by clicking its header on the canvas; clicking the header again opens its menu: rename, insert a neighbour, duplicate, move, turn, size, delete.
+4. A double click on a header (or `Enter`/`F2`) edits the title in place: `Enter` commits, `Shift+Enter` inserts a line break, `Tab` moves to the next header, `Esc` cancels.
 5. Click an empty part of a cell: the first click selects the section, the second selects the cell. `Shift+click` another cell selects a rectangular range; the arrow keys move the cell, `Shift+arrows` extend the range, `Esc` clears it.
 6. **Merge** appears above the range; a merged cell offers **Split**. The same actions live in the cell menu (right click or `Shift+F10`), together with inserting and duplicating rows and columns.
 7. Drag an object or a selection to another cell: it lands there keeping its relative arrangement. A header does not take objects. The same move is available as **Move to cell…** in the selected object's properties.
@@ -23,7 +23,7 @@ In table mode a **Table** badge appears after the title. Click it to open the **
 
 ## Sizes
 
-Each axis has two modes. **Auto** follows the content both ways. **Manual** remembers the visible size: content may grow the axis, but the axis never shrinks on its own. Drag a header boundary to switch to **Manual**; a double click on the boundary or `Delete` returns to **Auto**. The **Narrow / Medium / Wide** presets are manual sizes. For a merged cell the panel switch applies to every column and row of the block; a mixed state is shown separately.
+Each axis has two modes. **Auto** follows the content both ways. **Manual** remembers the visible size: content may grow the axis, but the axis never shrinks on its own. Drag a header boundary to switch to **Manual**; a double click on the boundary or `Delete` returns to **Auto**. The **Narrow / Medium / Wide** presets are manual sizes. For a merged cell the panel switch applies to every column and row of the block; a mixed state is shown separately. The header band has sizes too: **Header width** sets the row-title strip and **Header height** sets the column band; an empty field means Auto by the text. A row header can be turned vertical, like a column header.
 
 ## Appearance
 

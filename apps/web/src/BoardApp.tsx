@@ -189,7 +189,6 @@ export function BoardApp() {
     strokeStyle: DEFAULT_SETTINGS.connectors.dash,
     strokeWidth: DEFAULT_SETTINGS.connectors.width,
   });
-
   /**
    * Settings are a starting point, not a straitjacket: a new connector takes the
    * tuned defaults, then remembers whatever the person changes on it.
@@ -504,6 +503,7 @@ export function BoardApp() {
     setSelectedIds,
     menuPoint,
     t,
+    onNotice: showNotice,
   });
 
   /** The shared timer's deadline while it runs; a pinned voting session ends with it. */

@@ -39,34 +39,38 @@ function wrapHeaderText(
   maxWidth: number,
   maxLines: number,
 ): string[] {
-  const words = text.split(" ").filter(Boolean);
-  if (!words.length) return [];
   const lines: string[] = [];
-  let line = "";
-  const push = (value: string) => {
-    if (value) lines.push(value);
-  };
-  for (const word of words) {
-    let rest = word;
-    while (rest) {
-      const candidate = line ? `${line} ${rest}` : rest;
-      if (ctx.measureText(candidate).width <= maxWidth) {
-        line = candidate;
-        rest = "";
-        continue;
-      }
-      if (line) {
-        push(line);
-        line = "";
-        continue;
-      }
-      let cut = rest.length;
-      while (cut > 1 && ctx.measureText(rest.slice(0, cut)).width > maxWidth) cut -= 1;
-      push(rest.slice(0, cut));
-      rest = rest.slice(cut);
+  for (const paragraph of text.split("\n")) {
+    if (!paragraph) {
+      lines.push("");
+      continue;
     }
+    let line = "";
+    const push = (value: string) => {
+      if (value) lines.push(value);
+    };
+    for (const word of paragraph.split(" ").filter(Boolean)) {
+      let rest = word;
+      while (rest) {
+        const candidate = line ? `${line} ${rest}` : rest;
+        if (ctx.measureText(candidate).width <= maxWidth) {
+          line = candidate;
+          rest = "";
+          continue;
+        }
+        if (line) {
+          push(line);
+          line = "";
+          continue;
+        }
+        let cut = rest.length;
+        while (cut > 1 && ctx.measureText(rest.slice(0, cut)).width > maxWidth) cut -= 1;
+        push(rest.slice(0, cut));
+        rest = rest.slice(cut);
+      }
+    }
+    push(line);
   }
-  push(line);
   if (lines.length <= maxLines) return lines;
   const kept = lines.slice(0, maxLines);
   kept[maxLines - 1] = fitHeaderText(ctx, `${kept[maxLines - 1]}…`, maxWidth);
@@ -131,9 +135,18 @@ export function drawTable(
       ctx.translate(rect.x + rect.width / 2, rect.y + rect.height / 2);
       ctx.rotate(-Math.PI / 2);
       ctx.textAlign = "center";
-      // The header band grew to fit the title; only an extreme title is shortened,
-      // never squeezed or scaled (ADR-201).
-      ctx.fillText(fitHeaderText(ctx, text, rect.height - (TABLE_HEADER_PADDING * 2) / zoom), 0, 0);
+      ctx.textBaseline = "middle";
+      // Explicit lines stack across the column; each line is shortened only when it
+      // cannot fit the band (ADR-217).
+      const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
+      const lines = text.split("\n");
+      lines.forEach((line, index) =>
+        ctx.fillText(
+          fitHeaderText(ctx, line, rect.height - (TABLE_HEADER_PADDING * 2) / zoom),
+          0,
+          (index - (lines.length - 1) / 2) * lineHeight,
+        ),
+      );
       ctx.restore();
     } else {
       const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
@@ -165,23 +178,42 @@ export function drawTable(
     resetStroke();
     ctx.fillStyle = palette.textSecondary;
     ctx.font = headerFont;
-    const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
-    const maxLines = Math.max(
-      1,
-      Math.floor((rect.height - (TABLE_HEADER_PADDING * 2) / zoom) / lineHeight),
-    );
-    const lines = wrapHeaderText(
-      ctx,
-      headerText(row.axis.title),
-      rect.width - (TABLE_HEADER_PADDING * 2) / zoom,
-      maxLines,
-    );
-    const total = lines.length * lineHeight;
-    const start = rect.y + (rect.height - total) / 2 + lineHeight / 2;
-    ctx.textAlign = "left";
-    lines.forEach((line, index) =>
-      ctx.fillText(line, rect.x + TABLE_HEADER_PADDING / zoom, start + index * lineHeight),
-    );
+    const text = headerText(row.axis.title);
+    if (row.axis.vertical) {
+      ctx.save();
+      ctx.translate(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
+      const lines = text.split("\n");
+      lines.forEach((line, index) =>
+        ctx.fillText(
+          fitHeaderText(ctx, line, rect.height - (TABLE_HEADER_PADDING * 2) / zoom),
+          0,
+          (index - (lines.length - 1) / 2) * lineHeight,
+        ),
+      );
+      ctx.restore();
+    } else {
+      const lineHeight = TABLE_HEADER_LINE_HEIGHT / zoom;
+      const maxLines = Math.max(
+        1,
+        Math.floor((rect.height - (TABLE_HEADER_PADDING * 2) / zoom) / lineHeight),
+      );
+      const lines = wrapHeaderText(
+        ctx,
+        text,
+        rect.width - (TABLE_HEADER_PADDING * 2) / zoom,
+        maxLines,
+      );
+      const total = lines.length * lineHeight;
+      const start = rect.y + (rect.height - total) / 2 + lineHeight / 2;
+      ctx.textAlign = "left";
+      lines.forEach((line, index) =>
+        ctx.fillText(line, rect.x + TABLE_HEADER_PADDING / zoom, start + index * lineHeight),
+      );
+    }
   }
 
   const corner = cornerRect(grid);

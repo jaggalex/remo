@@ -130,7 +130,7 @@ export function TableAppearanceControls({
             label={t("section.look.borderWidth")}
             value={String(border?.width ?? 1)}
             onChange={(value) => setBorder({ width: Number(value) })}
-            options={[1, 2, 3].map((width) => ({
+            options={[1, 2, 3, 4, 6, 8].map((width) => ({
               value: String(width),
               label: t("section.size.px", { n: width }),
               disabled,
