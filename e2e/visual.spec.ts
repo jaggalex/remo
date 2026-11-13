@@ -799,16 +799,21 @@ test("a shape grows for its text", async ({ page }) => {
   // Two steps back leave a margin, so the frame shows a box on a board rather than one
   // border lying on the viewport edge.
   await zoomInToReadable(page);
+  const zoom = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __remo?: { camera: { zoom: number } } }).__remo?.camera.zoom ?? 0,
+    );
+  const fitted = await zoom();
   await page.getByRole("button", { name: "Zoom out" }).click();
-  await page.waitForTimeout(150);
   await page.getByRole("button", { name: "Zoom out" }).click();
-  await page.waitForTimeout(250);
+  await expect.poll(zoom).toBeLessThan(fitted / 1.35);
   await page.keyboard.press("Escape");
   await expect(page.locator(".selection-badge")).toHaveCount(0);
-  // Fit keeps focus, and its tooltip would land in the frame: blur it and park the
-  // cursor on the grid before the shot.
+  // Fit keeps focus, and its tooltip would land in the frame: blur it, park the
+  // cursor on the grid, and wait for the tooltip to be gone rather than for a delay.
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.mouse.move(1200, 400);
-  await page.waitForTimeout(500);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
   await capture(page, page.locator(".canvas-wrap"), "shape-grow");
 });
