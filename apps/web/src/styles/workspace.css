@@ -147,6 +147,9 @@
 .selection-badge {
   position: absolute;
   z-index: var(--z-bar);
+  /* A status card, not a control: it must never eat a click meant for the canvas or a
+     title strip under it (the strip's view badge at a frame's top-left sits here). */
+  pointer-events: none;
   left: calc(var(--space-3) + var(--toolbar-width) + var(--space-2));
   top: var(--space-3);
   display: flex;

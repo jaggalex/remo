@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 import {
   addComment,
   addSticky,
+  applyDefaultTableLayout,
   freshBoard,
   openBoard,
   openBoardMenu,
@@ -185,6 +186,7 @@ test("exports a table grid and carries its layout in the backup", async ({ page 
   );
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   await page.locator(".section-panel").getByRole("radio", { name: "Table", exact: true }).click();
+  await applyDefaultTableLayout(page);
   await expect(page.locator(".section-axis-row")).toHaveCount(3);
 
   await openBoardMenu(page);

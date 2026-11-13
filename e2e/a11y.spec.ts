@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import {
   addSticky,
+  applyDefaultTableLayout,
   freshBoard,
   openAccount,
   openBoard,
@@ -187,6 +188,7 @@ test("a section table has no serious accessibility violations", async ({ page })
   await page.mouse.click(point.x, point.y);
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   await page.locator(".section-panel").getByRole("radio", { name: "Table", exact: true }).click();
+  await applyDefaultTableLayout(page);
   await expect(page.locator(".table-mirror table")).toHaveCount(1);
   await expectNoSerious(page, "section panel", ".section-panel");
   await expectNoSerious(page, "table mirror", ".table-mirror");

@@ -1,6 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 import { layoutTable, type Widget } from "@remo/model";
-import { openBoard, PASSWORD, register, seedNote, seedObject, startPresentation } from "./helpers";
+import {
+  applyDefaultTableLayout,
+  openBoard,
+  PASSWORD,
+  register,
+  seedNote,
+  seedObject,
+  startPresentation,
+} from "./helpers";
 
 interface ProbeWidget {
   id: string;
@@ -89,17 +97,12 @@ async function openTable(page: Page, tag: string, second = false) {
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   const panel = page.locator(".section-panel");
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
-  await applyDefaultLayout(page);
+  await applyDefaultTableLayout(page);
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
   return { account, frameId, noteId, secondId, panel };
 }
 
-/** Apply the default T4 layout when turning a section with material into a table. */
-async function applyDefaultLayout(page: Page) {
-  const dialog = page.locator(".section-layout-card");
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "Apply", exact: true }).click();
-}
+
 
 /**
  * Move a second note into "Column 2 × Row 1" with the cell command in the panel, so the
@@ -160,7 +163,7 @@ test("turns a section into a table and deletes it without its objects", async ({
   await expect(panel).toBeVisible();
 
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
-  await applyDefaultLayout(page);
+  await applyDefaultTableLayout(page);
   const columnGroup = panel.locator(".section-axis-group").first();
   const rowGroup = panel.locator(".section-axis-group").nth(1);
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(2);
@@ -216,7 +219,7 @@ test("deleting an axis with objects asks and moves them to a neighbour", async (
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   const panel = page.locator(".section-panel");
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
-  await applyDefaultLayout(page);
+  await applyDefaultTableLayout(page);
   const columnGroup = panel.locator(".section-axis-group").first();
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(2);
 
@@ -274,7 +277,7 @@ test("a table header edits its title and opens the axis menu", async ({ page }) 
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   const panel = page.locator(".section-panel");
   await panel.getByRole("radio", { name: "Table", exact: true }).click();
-  await applyDefaultLayout(page);
+  await applyDefaultTableLayout(page);
   const columnGroup = panel.locator(".section-axis-group").first();
   await expect(columnGroup.locator(".section-axis-row")).toHaveCount(2);
 

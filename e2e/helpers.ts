@@ -325,3 +325,14 @@ export async function seedConnector(
   const body = (await response.json()) as { result: { id: string } };
   return body.result.id;
 }
+
+/**
+ * Turning a section that already holds material into a table asks how to lay it out
+ * (ADR-206, T4). Every scenario that flips the view must accept the default layout;
+ * skipping it leaves the section a frame with no axes and no mirror.
+ */
+export async function applyDefaultTableLayout(page: Page): Promise<void> {
+  const card = page.locator(".section-layout-card");
+  await expect(card).toBeVisible();
+  await card.getByRole("button", { name: "Apply", exact: true }).click();
+}
