@@ -794,9 +794,8 @@ test("a shape grows for its text", async ({ page }) => {
       return probe?.widgets.find((widget) => widget.type === "shape")?.height ?? 0;
     });
   await expect.poll(height).toBeGreaterThan(200);
-  // Fit after the growth frames the grown box, which is what makes the label legible
-  // in the baseline; fitting before it would leave the shape small in a wide frame.
-  // Two steps back leave a margin, so the frame shows a box on a board rather than one
+  // Fit frames the grown box, which is what makes the label legible in the baseline;
+  // two steps back leave a margin, so the frame shows a box on a board rather than one
   // border lying on the viewport edge.
   await zoomInToReadable(page);
   const zoom = () =>
@@ -809,6 +808,33 @@ test("a shape grows for its text", async ({ page }) => {
   await page.getByRole("button", { name: "Zoom out" }).click();
   await page.getByRole("button", { name: "Zoom out" }).click();
   await expect.poll(zoom).toBeLessThan(fitted / 1.35);
+
+  // The first line of a painted block sits inside the padding. Measuring the ascent
+  // against the wrong baseline mode drew it a few pixels too high and a fitted label
+  // touched the top border, so the gap is asserted, not just photographed.
+  const gap = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.board")!;
+    const ctx = canvas.getContext("2d")!;
+    const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const dark = (x: number, y: number) => data[(y * width + x) * 4]! < 100;
+    const counts: number[] = [];
+    for (let y = 0; y < height; y += 1) {
+      let count = 0;
+      for (let x = 0; x < width; x += 2) if (dark(x, y)) count += 1;
+      counts.push(count);
+    }
+    const borderCount = Math.max(...counts);
+    let border = counts.indexOf(borderCount);
+    // The outline is a few pixels thick; step past it before looking for the label.
+    while (border < height && counts[border]! > borderCount * 0.8) border += 1;
+    for (let y = border; y < Math.min(height, border + 120); y += 1) {
+      if (counts[y]! > 30) return (y - border) / (window.devicePixelRatio || 1);
+    }
+    return 0;
+  });
+  const stretched = await zoom();
+  // Padding is 8 world px at the shape's floor; the first line's ink starts below it.
+  expect(gap).toBeGreaterThan(8 * stretched * 0.7);
   await page.keyboard.press("Escape");
   await expect(page.locator(".selection-badge")).toHaveCount(0);
   // Fit keeps focus, and its tooltip would land in the frame: blur it, park the

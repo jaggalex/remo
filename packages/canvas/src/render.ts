@@ -344,7 +344,6 @@ function drawTextInBox(
     ctx.clip();
   }
   ctx.textAlign = "left";
-  ctx.textBaseline = "top";
   lines.forEach((line, i) => {
     drawRichLine(ctx, line, lineX, startY + i * lineHeight, size, options.align, false, theme.fontFamily);
   });

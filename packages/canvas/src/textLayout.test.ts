@@ -134,8 +134,8 @@ describe("text size limits", () => {
     expect(textCapFor(widget("shape"), {})).toBe(stickyFontCap("M"));
   });
 
-  it("gives a floor to a shape only", () => {
+  it("gives a shape the readable floor and a note the physical one", () => {
     expect(textFloorFor(widget("shape"))).toBe(MIN_SHAPE_FONT);
-    expect(textFloorFor(widget("sticky_note"))).toBeUndefined();
+    expect(textFloorFor(widget("sticky_note"))).toBe(MIN_NOTE_FONT);
   });
 });

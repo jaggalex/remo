@@ -294,9 +294,9 @@ export function textCapFor(
   return caps?.[size ?? "M"] ?? stickyFontCap(size);
 }
 
-/** The smallest Auto size a widget's text may reach; only a shape has a floor (ADR-214). */
-export function textFloorFor(widget: Widget): number | undefined {
-  return widget.type === "shape" ? MIN_SHAPE_FONT : undefined;
+/** The smallest Auto size a widget may shrink to: readable in a shape, physical in a note. */
+export function textFloorFor(widget: Widget): number {
+  return widget.type === "shape" ? MIN_SHAPE_FONT : MIN_NOTE_FONT;
 }
 
 /** Line box for a text size; the painter and the fitter must agree exactly. */

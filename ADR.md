@@ -8817,12 +8817,11 @@ the grown shape's badge names the object and does not report a clipped label.
 
 **Context.** Two review findings on the growth work. First, ADR-214 says the shape grows
 down, but the canvas anchors a box on its centre, so raising the height alone lifted the top
-edge by half the growth. Second, the cap and floor that decide a shape's text size were chosen
-separately by each reader: the painter used the M cap and the 10 px floor, the badge used the
-sticky-size cap, the inline editor and the edit bar used the sticky-size cap and the note floor
-of 8 px, and the growth used the M cap. A shape carrying `stickySize: "L"` could grow until the
-painter was satisfied and still show "Text does not fit", and its label could be edited at
-8 px only to be painted at 10 px.
+edge by half the growth. Second, the cap and floor that decide a shape's text size were
+chosen separately by each reader: the painter used the M cap and the 10 px floor, while the
+inline editor and the edit bar used the sticky-size cap and the note floor of 8 px. A shape
+carrying `stickySize: "L"` had its label edited at 8 px and up to the L cap, then painted at
+10 px and the M cap.
 
 **Decision.**
 
