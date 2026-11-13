@@ -32,6 +32,7 @@ import {
   fitNoteFont,
   MIN_SHAPE_FONT,
   notePadding,
+  textClipped,
   type RichLine,
 } from "./textLayout";
 
@@ -343,9 +344,8 @@ function drawTextInBox(
     drawRichLine(ctx, line, lineX, startY + i * lineHeight, size, options.align, false, theme.fontFamily);
   });
   ctx.restore();
-  // The caller shows the clip mark when the text could not fit even at the floor
-  // (ADR-214); this is the same comparison the fit used.
-  return total > Math.max(box.height - padding * 2, lineHeight) + 0.5;
+  // The caller shows the clip mark from the same answer the badge reads (ADR-214).
+  return textClipped(widget, options.cap, theme.fontFamily) === true;
 }
 
 /** Widgets whose paint already failed once; logged once each, not every frame. */

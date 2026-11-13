@@ -413,6 +413,10 @@ export function textClipped(
       widget.type === "shape" ? MIN_SHAPE_FONT : undefined,
       family,
     );
-  return runsBlockHeight(ctx, runs, widget.width, size, family) >
-    Math.max(widget.height - notePadding(size) * 2, lineHeightFor(size)) + 0.5;
+  // The painter compares the lines' own height with the box inside its padding; adding
+  // the padding on both sides would call a fitting label clipped (ADR-214).
+  const padding = notePadding(size);
+  const lines = layoutRuns(ctx, runs, Math.max(widget.width - padding * 2, 8), size, family);
+  return lines.length * lineHeightFor(size) >
+    Math.max(widget.height - padding * 2, lineHeightFor(size)) + 0.5;
 }
