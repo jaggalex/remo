@@ -8716,3 +8716,35 @@ a centre-anchored change has to measure by eye.
 current behaviour when it is absent; `guides.ts` gains `snapResize` returning the snapped box
 and the guides for it. Both are pure and tested without a browser. The pointer handler wires
 them when the B mockups arrive; no document field changes.
+
+---
+
+## ADR-213: A connector label wraps, and Enter is a line (amends ADR-041, ADR-043)
+
+**Status:** accepted (2026-11-12). Mockups: O-D1…D10.
+
+**Context.** A connector's label is one line truncated with an ellipsis at 260 px
+(`fitOneLine`). A newline typed into the editor is not drawn at all, so a person who presses
+Enter gets nothing. The design review fixed the size and the behaviour (F2).
+
+**Decision.**
+
+- **An explicit newline is a line.** The painter and the editor keep every paragraph the
+  person typed; wrapping never joins or drops it.
+- **Automatic wrapping** applies inside a paragraph: at most **3 lines**, then an ellipsis in
+  the last. When explicit lines push the label past **8 lines** in total, the eighth gets an
+  ellipsis — a guard against a pasted wall of text, not a design limit.
+- **The chip is 40…240 px wide** (text width plus padding): short labels do not collapse into
+  a dot, long ones do not cover the line. Height follows the line count.
+- **The chip covers the line.** No perpendicular offset, no gap in the path: the anchor is the
+  point on the path (`labelAt`), the same on a straight run, an elbow and a curve. The stored
+  field does not change.
+- **One layout for the painter and the editor**: `layoutLabel` in `@remo/canvas` returns the
+  lines, the width and the height, so the caret sits in the chip it is editing, including
+  while the text grows.
+- Export reads the same painter; a PNG cannot disagree with the screen.
+
+**Consequences.** `render.ts` loses `fitOneLine` for labels and draws lines from the shared
+layout; `connectorEditor.ts` sizes the textarea with the same metrics; `connectors.png` is
+regenerated. Tests cover explicit breaks, the 3-line wrap, the 8-line guard, the 40 px floor
+and the 240 px ceiling. Rotated labels and rich marks inside a label stay out of scope.

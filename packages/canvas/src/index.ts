@@ -3,6 +3,7 @@ export * from "./connectors";
 export * from "./guides";
 export * from "./hit";
 export * from "./kanban";
+export * from "./labelLayout";
 export * from "./layout";
 export * from "./lockBadge";
 export * from "./palette";

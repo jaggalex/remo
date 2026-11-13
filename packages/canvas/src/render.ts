@@ -19,6 +19,7 @@ import {
   type ArrowHead,
   type ConnectorPath,
 } from "./connectors";
+import { layoutLabel } from "./labelLayout";
 import { DEFAULT_PALETTE, withAlpha, type CanvasPalette } from "./palette";
 import {
   DEFAULT_FONT_FAMILY,
@@ -695,12 +696,11 @@ function paintWidget(
         const at = labelPoint(attached, widget.labelAt);
         const fontPx = widget.style?.fontSize ?? 13;
         ctx.font = `500 ${fontPx}px ${theme.fontFamily}`;
-        const text = fitOneLine(ctx, label, 260);
-        const textWidth = ctx.measureText(text).width;
-        const padX = fontPx * 0.46;
-        const padY = fontPx * 0.3;
-        const chipWidth = textWidth + padX * 2;
-        const chipHeight = fontPx + padY * 2;
+        // The chip and the editor share one layout (ADR-213): explicit lines are kept,
+        // automatic wrapping stops at three, the guard at eight.
+        const metrics = layoutLabel(ctx, label, fontPx);
+        const chipWidth = metrics.width;
+        const chipHeight = metrics.height;
         ctx.fillStyle = withAlpha(palette.panel, 0.96);
         ctx.strokeStyle = withAlpha(palette.textPrimary, 0.12);
         ctx.lineWidth = 1 / zoom;
@@ -710,7 +710,10 @@ function paintWidget(
         ctx.fillStyle = widget.style?.textColor ?? palette.textPrimary;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(text, at.x, at.y + 0.5);
+        const firstY = at.y - ((metrics.lines.length - 1) * metrics.lineHeight) / 2;
+        metrics.lines.forEach((line, index) => {
+          ctx.fillText(line, at.x, firstY + index * metrics.lineHeight + 0.5);
+        });
       }
       break;
     }

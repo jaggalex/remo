@@ -54,10 +54,18 @@ export function editorTargetFor({
   });
 
   if (widget.type === "connector") {
-    return connectorEditorTarget(widget, camera, rect, deltaOf(widget.id), widgetById, {
-      max: settings.connectors.stubMax,
-      ratio: settings.connectors.stubRatio,
-    });
+    return connectorEditorTarget(
+      widget,
+      camera,
+      rect,
+      deltaOf(widget.id),
+      widgetById,
+      {
+        max: settings.connectors.stubMax,
+        ratio: settings.connectors.stubRatio,
+      },
+      settings.text.fontFamily,
+    );
   }
 
   // A card's box comes from the kanban matrix, everything else from the widget.
