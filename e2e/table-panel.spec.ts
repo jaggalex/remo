@@ -507,18 +507,25 @@ test("a header boundary sets a manual width and a double click returns to Auto",
       (all) =>
         (all.find((widget) => widget.id === frameId)!.layout as {
           columns: Array<{ id: string; size?: unknown }>;
-        }).columns[1]!,
+        }).columns[0]!,
     );
-  const handle = page.getByRole("separator", { name: /Width of column/ }).nth(1);
-  await handle.focus();
-  await page.keyboard.press("Shift+ArrowRight");
-  await expect.poll(async () => typeof (await column()).size).toBe("number");
+  // An interior boundary, not the last one: the handle has to sit above the header
+  // hit area, or only the outer edge of the table can be resized.
+  const handle = page.getByRole("separator", { name: /Width of column/ }).first();
   const box = (await handle.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  expect(
+    await page.evaluate((point) => document.elementFromPoint(point.x, point.y)?.className, at),
+  ).toContain("table-resize");
+  await page.mouse.move(at.x, at.y);
   await page.mouse.down();
-  await page.mouse.move(box.x + 80, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.move(at.x + 80, at.y, { steps: 4 });
   await expect(page.locator(".table-resize-value")).toContainText("px");
   await page.mouse.up();
+  await expect.poll(async () => typeof (await column()).size).toBe("number");
+  await handle.focus();
+  await page.keyboard.press("Shift+ArrowLeft");
+  await expect.poll(async () => typeof (await column()).size).toBe("number");
   await handle.dblclick();
   await expect.poll(async () => (await column()).size).toBeUndefined();
 });
@@ -1035,3 +1042,4 @@ test("the context menu switches the view and reports it", async ({ page }) => {
     })
     .toBe(false);
 });
+

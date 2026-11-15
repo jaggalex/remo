@@ -457,24 +457,6 @@ export function TableHeaderLayer({
   return (
     <>
       <TableMirror widgets={widgets} />
-      <TableAxisControls
-        board={board}
-        widgets={widgets}
-        camera={camera}
-        viewport={viewport}
-        readOnly={readOnly}
-        activeFrameIds={
-          new Set([
-            ...selectedIds.filter((id) => headers.some((entry) => entry.frame.id === id)),
-            ...(selection ? [selection.frameId] : []),
-          ])
-        }
-        onCreated={(frameId, axisId) => {
-          setTableAxisSelection({ frameId, axisId });
-          onSelect([frameId]);
-        }}
-        onNotice={onNotice}
-      />
       <div className="table-headers" role="group" aria-label={t("section.axes")}>
         {headers.map((entry) => {
           const rect = screenRect(entry.rect);
@@ -558,6 +540,27 @@ export function TableHeaderLayer({
           );
         })}
       </div>
+
+      {/* After the header hit areas: both are canvas overlays at the same level, so DOM
+          order decides, and a boundary handle must sit above the title it resizes. */}
+      <TableAxisControls
+        board={board}
+        widgets={widgets}
+        camera={camera}
+        viewport={viewport}
+        readOnly={readOnly}
+        activeFrameIds={
+          new Set([
+            ...selectedIds.filter((id) => headers.some((entry) => entry.frame.id === id)),
+            ...(selection ? [selection.frameId] : []),
+          ])
+        }
+        onCreated={(frameId, axisId) => {
+          setTableAxisSelection({ frameId, axisId });
+          onSelect([frameId]);
+        }}
+        onNotice={onNotice}
+      />
 
       {editing &&
         (() => {
