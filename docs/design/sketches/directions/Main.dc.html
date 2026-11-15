@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Сценарий и сравнение</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1d4ed8}a:hover{color:#1e3a8a}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 56px 64px; background: #F7F7F5; color: #18181B; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 32px">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #52525B">Контрольная точка · выбор направления</div>
+      <h1 style="margin: 0; font-size: 40px; line-height: 48px; font-weight: 700; letter-spacing: -0.01em">REMO: три визуальных языка на одном сценарии</h1>
+    </div>
+    <div style="font-size: 14px; line-height: 20px; color: #52525B; max-width: 420px">Данные одинаковы во всех макетах и помечены как fixtures. Источники фактов: docs/design/product-context.md. Элементы с пометкой ADR требуют решения до реализации.</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; flex-grow: 1; min-height: 0">
+
+    <section style="background: #FFFFFF; border: 1px solid #E4E4E7; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 600">Сценарий из документации</h2>
+      <ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 20px; color: #27272A">
+        <li>Анна открывает главную организации и находит комнату «Подготовка запуска».</li>
+        <li>Выделяет 8 разрозненных стикеров: US-1…US-5 и API-1…API-3.</li>
+        <li>Открывает US-3, правит текст: жирное слово и перенос. Видит связь «зависит» с API-1 и тред из 2 сообщений.</li>
+        <li>Запускает «Упорядочить» по префиксу. Без ключа провайдера это тоже работает.</li>
+        <li>Видит превью «до и после»: 7 переедут, 2 блока-фрейма, API-2 под замком остаётся на месте.</li>
+        <li>Применяет: один ⌘Z вернёт всё. Сведения объекта называют агента «Планировщик».</li>
+        <li>Дальше: «Карточки из выделения» (пакет) или «Показать в комнате».</li>
+      </ol>
+      <div style="margin-top: auto; font-size: 12px; line-height: 16px; color: #52525B; border-top: 1px solid #E4E4E7; padding-top: 12px">guide/start/first-scenario · guide/how-to/tidy-selection · guide/capabilities/cards</div>
+    </section>
+
+    <section style="background: #FFFFFF; border: 1px solid #E4E4E7; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 600">Что показал каталог текущих экранов</h2>
+      <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 20px; color: #27272A">
+        <li>Инспектор показывает 17 кнопок одного веса и повторяет команды холста.</li>
+        <li>Превью плана агента выглядит как отладка: координаты «360, 245» вместо содержания.</li>
+        <li>Задача для AI — длинная форма поверх холста, выделение уходит под затемнение.</li>
+        <li>Объект агента на холсте неотличим от объекта человека: это видно только в «Сведениях».</li>
+        <li>Текст «Авто» на крупном стикере слишком разрежен, а при 40 % карточки нечитаемы.</li>
+        <li>Граница между «выбран» и «редактирую» почти не видна.</li>
+        <li>Поиска объекта в комнате нет, ⌘K ищет только комнаты.</li>
+      </ul>
+      <div style="margin-top: auto; font-size: 12px; line-height: 16px; color: #52525B; border-top: 1px solid #E4E4E7; padding-top: 12px">ui-inventory: room.canvas.selected, room.agents.plan, room.agents.task, room.inspector.card</div>
+    </section>
+
+    <section style="background: #18181B; color: #FAFAFA; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 600">Сравнение</h2>
+      <div style="display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; font-size: 13px; line-height: 18px; row-gap: 8px; column-gap: 8px">
+        <div style="color: #A1A1AA">Критерий</div><div style="color: #A1A1AA">A Поля</div><div style="color: #A1A1AA">B Атлас</div><div style="color: #A1A1AA">C Следы</div>
+        <div>Холст свободен</div><div>высоко</div><div>низко</div><div>средне</div>
+        <div>Ориентация</div><div>низко</div><div>высоко</div><div>средне</div>
+        <div>Последствия AI</div><div>средне</div><div>средне</div><div>высоко</div>
+        <div>Источник прав</div><div>низко</div><div>высоко</div><div>средне</div>
+        <div>Текст в объекте</div><div>высоко</div><div>средне</div><div>высоко</div>
+        <div>Работа на 1024 px</div><div>высоко</div><div>низко</div><div>средне</div>
+        <div>Нужно ADR</div><div>0</div><div>2</div><div>2</div>
+      </div>
+      <div style="border-top: 1px solid #3F3F46; padding-top: 14px; display: flex; flex-direction: column; gap: 8px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #A1A1AA">Рекомендация</div>
+        <div style="font-size: 16px; line-height: 22px; font-weight: 600">C «Следы» как основа: модель текста из A и паспорт объекта из B.</div>
+        <div style="font-size: 13px; line-height: 19px; color: #D4D4D8">Только C прямо отвечает на вопрос, что сделал человек, а что агент, и в каком состоянии предложение. Цена — нижняя лента на 56 px и два ADR, которые можно отложить: метку происхождения сначала показываем только у выбранного объекта.</div>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
