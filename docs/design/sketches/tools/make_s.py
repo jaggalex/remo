@@ -57,11 +57,19 @@ def iconbtn(name, label, on=False, size=40, raw=None):
 
 
 def segmented(items, on=0, h=30, disabled=False):
+    # Disabled: the whole control goes flat — no raised selected cell, so nothing reads as pressable.
+    def cell_bg(i):
+        if i != on:
+            return "background: transparent"
+        if disabled:
+            return f"background: transparent; box-shadow: 0 0 0 1px {P['line']}"
+        return f"background: {P['panel']}; box-shadow: 0 0 0 1px {P['strong']}"
     cells = "".join(
-        f'<button type="button" role="radio" aria-checked="{"true" if i == on else "false"}" style="{PILL}; border: 0; height: {h}px; padding: 0 12px; font-size: 13px; font-weight: 500; '
-        f'color: {P["muted"] if disabled else P["ink"]}; {"background: " + P["panel"] + "; box-shadow: 0 0 0 1px " + P["strong"] if i == on else "background: transparent"}">{t}</button>'
+        f'<button type="button" role="radio" aria-checked="{"true" if i == on else "false"}"{" disabled" if disabled else ""} style="{PILL}; border: 0; height: {h}px; padding: 0 12px; font-size: 13px; font-weight: 500; '
+        f'color: {P["muted"] if disabled else P["ink"]}; {cell_bg(i)}">{t}</button>'
         for i, t in enumerate(items))
-    return f'<div role="radiogroup" style="display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: {P["hover"]}">{cells}</div>'
+    wrap = f"border: 1px solid {P['line']}; background: transparent" if disabled else f"background: {P['hover']}"
+    return f'<div role="radiogroup" style="display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; {wrap}">{cells}</div>'
 
 
 def muted(text, size=12, color=None):
@@ -242,6 +250,10 @@ def cursor(x, y, kind="col"):
         d = "M4 12 H20 M4 12 l4 -4 M4 12 l4 4 M20 12 l-4 -4 M20 12 l-4 4 M12 5 V19"
     elif kind == "row":
         d = "M12 4 V20 M12 4 l-4 4 M12 4 l4 4 M12 20 l-4 -4 M12 20 l4 -4 M5 12 H19"
+    elif kind == "arrow":  # the ordinary pointer: nothing to resize here
+        d = "M7 4 L7 19 L11 15 L14 21 L16 20 L13 14 L18 14 Z"
+        return (f'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" style="position: absolute; left: {x - 7}px; top: {y - 4}px; z-index: 10">'
+                f'<path d="{d}" fill="{ink}" stroke="{paper}" stroke-width="1.5" stroke-linejoin="round"/></svg>')
     else:  # scrub, ew-resize
         d = "M3 12 H21 M3 12 l4 -4 M3 12 l4 4 M21 12 l-4 -4 M21 12 l-4 4"
     return (f'<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" style="position: absolute; left: {x - 12}px; top: {y - 12}px; z-index: 10">'
@@ -253,7 +265,7 @@ def focus_ring(x, y, w, h, r=4):
             f'border: 2px solid {P["focus"]}; border-radius: {r}px; z-index: 9"></div>')
 
 
-def numfield(label, value, unit="px", state="rest", auto=False, w=280, steppers=None, error=None, disabled=False, touch=False, typing=False):
+def numfield(label, value, unit="px", state="rest", auto=False, w=280, steppers=None, error=None, disabled=False, touch=False, typing=False, selected=False):
     """§4.3: scrub label · value · unit · steppers on hover/focus · optional Auto."""
     h = 44 if touch else 32
     show_steps = steppers if steppers is not None else state in ("hover", "focus", "drag")
@@ -262,7 +274,10 @@ def numfield(label, value, unit="px", state="rest", auto=False, w=280, steppers=
     lab_col = P["muted"] if disabled else (P["ink"] if state in ("hover", "drag") else P["text2"])
     lab_deco = f"text-decoration: underline dotted {P['strong']}; text-underline-offset: 3px;" if state in ("hover", "drag") else ""
     val = "" if auto else str(value)
-    ph = f'<span style="color: {P["muted"]}">Авто</span>' if auto else ""
+    if selected and val:  # whole value selected on focus: typing replaces it
+        val = f'<span style="background: {P["focusSoft"]}; box-shadow: 0 0 0 1px {P["focus"]}; border-radius: 2px">{val}</span>'
+    # Auto is an empty field: the word is a placeholder (lighter, italic), never a value.
+    ph = f'<span style="color: {P["muted"]}; font-style: italic; font-weight: 400">Авто</span>' if auto else ""
     caret = f'<span style="display: inline-block; width: 1.5px; height: 15px; background: {P["ink"]}; vertical-align: -2px"></span>' if typing else ""
     steps = (f'<span style="display: inline-flex; gap: 2px; margin-left: 4px">'
              f'<span style="width: {h - 8}px; height: {h - 8}px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {P["hover"]}">{ic("minus", 16)}</span>'
@@ -286,14 +301,20 @@ def popover(x, y, title, inner, w=320, z=9):
             f'<div style="font-size: 14px; font-weight: 600; margin-bottom: 12px">{title}</div>{inner}</div>')
 
 
-def axis_popover_body(mode=1, value=245, field_state="rest", auto=False, kind="col"):
+AUTO_HINT = "Следует за содержимым в обе стороны."
+MANUAL_HINT = "Растёт под содержимое, но не сжимается само."
+
+
+def axis_popover_body(mode=1, value=245, field_state="rest", auto=False, kind="col", typing=False, selected=False):
     names = ["Узкая", "Средняя", "Широкая"] if kind == "col" else ["Низкая", "Средняя", "Высокая"]
     lab = "Ширина" if kind == "col" else "Высота"
+    keys = ("Введите число, чтобы задать вручную · Двойной щелчок по границе — авто" if auto
+            else "Тяните подпись или стрелки · Пусто — вернуть Авто · Двойной щелчок по границе — авто")
     return (segmented(["Авто", "Вручную"], mode)
-            + f'<div style="margin-top: 6px">{muted("Растёт под содержимое, но не сжимается само.")}</div>'
+            + f'<div style="margin-top: 6px">{muted(AUTO_HINT if mode == 0 else MANUAL_HINT)}</div>'
             + f'<div style="margin-top: 12px">{segmented(names, -1)}</div>'
-            + f'<div style="margin-top: 12px">{numfield(lab, value, state=field_state, auto=auto, w=280)}</div>'
-            + f'<div style="margin-top: 10px">{muted("Тяните подпись или используйте стрелки · Двойной щелчок по границе — авто")}</div>')
+            + f'<div style="margin-top: 12px">{numfield(lab, value, state=field_state, auto=auto, w=280, typing=typing, selected=selected)}</div>'
+            + f'<div style="margin-top: 10px">{muted(keys)}</div>')
 
 
 # ── frames ───────────────────────────────────────────────────────────────────────
@@ -314,20 +335,23 @@ def s1():
     b += g.draw() + filled(g)
     x = g.cx[2]
     b += vline(x, g.y, g.hh, width=2) + vline(x, g.y, g.h, dashed=True, z=7) + cursor(x, g.y + 20, "col") + chip(x + 14, g.y - 28, "245 px · Вручную")
-    b += note(g.x, g.y + g.h + 24, "Внутренняя граница «Ответственный | Срок»: тянется так же, как крайняя. Порог 3 px; во время drag — чип у указателя и пунктир через всю таблицу. Отпускание — один undo, Esc — вернуть прежний размер.", 420)
+    b += note(g.x, g.y + g.h + 24, "Внутренняя граница «Ответственный | Срок»: тянется так же, как крайняя, без модификатора. Порог 3 px; во время drag — чип у указателя и пунктир через всю таблицу. Пунктир — только направляющая: попадание остаётся в полосе заголовков. Отпускание — один undo, Esc — вернуть прежний размер.", 420)
     g2 = Grid(820, 600, [("Задача", 150), ("Ответственный", 150)], [("Этап 1", 112), ("Этап 2", 88)], title="Строка: та же ручка в полосе имён")
     b += g2.draw()
     y = g2.ry[1]
     b += hline(g2.x, y, g2.hw, width=2) + hline(g2.x, y, g2.w, dashed=True, z=7) + cursor(g2.x + 64, y, "row") + chip(g2.x + 80, y + 10, "112 px · Вручную")
-    # §10.1, owner-approved: with Alt/Option held, an inner border in the body is a handle too.
-    g3 = Grid(960, 170, [("Задача", 150), ("Срок", 120)], [("Этап 1", 112), ("Этап 2", 112)], title="Alt/Option: граница из тела таблицы")
-    b += g3.draw() + sticky(*g3.cell(0, 0), "Собрать макет", 100, 80)
-    x3, cy = g3.cx[1], g3.ry[1] + 50
-    b += vline(x3, g3.y, g3.h, width=2) + cursor(x3, cy, "col") + chip(x3 + 14, cy - 34, "150 px · Вручную")
-    b += (f'<span aria-hidden="true" style="position: absolute; left: {x3 + 14}px; top: {cy + 14}px; height: 20px; min-width: 20px; padding: 0 6px; box-sizing: border-box; '
-          f'border: 1px solid {P["strong"]}; border-bottom-width: 2px; border-radius: 6px; background: {P["panel"]}; font-size: 11px; font-weight: 600; '
-          f'display: inline-flex; align-items: center; z-index: 9">Alt</span>')
-    b += note(g3.x, g3.y + g3.h + 20, "Пока Alt/Option зажат, внутренние линии тела — тоже ручки (зона 12 px, курсор ресайза), линия видна на всю высоту сплошной 2 px. Без Alt тело — выбор ячейки и перенос объектов, как раньше. Alt отпущен во время drag — drag продолжается до отпускания кнопки. На касании варианта нет.", 400)
+    # Every border in the header strip and the row-name strip is a handle, no modifier (the fix of
+    # the original complaint). The body has no handles in v1: Alt is already pan and centre-anchor.
+    g3 = Grid(960, 170, [("Задача", 150), ("Срок", 120)], [("Этап 1", 112), ("Этап 2", 112)], title="Все границы шапки — без модификатора")
+    b += g3.draw()
+    for cx in g3.cx[1:]:
+        b += hit_zone(cx - 12, g3.y, 24, g3.hh)
+    for ry in g3.ry[1:]:
+        b += hit_zone(g3.x, ry - 12, g3.hw, 24)
+    b += cursor(g3.cx[1] - 30, g3.ry[1] + 10, "arrow")
+    b += (f'<span style="position: absolute; left: {g3.cx[1] - 14}px; top: {g3.ry[1] + 34}px; font-size: 11px; line-height: 14px; color: {P["text2"]}; '
+          f'background: {P["panel"]}; padding: 2px 4px; z-index: 9">клик у линии —<br>выбор ячейки</span>')
+    b += note(g3.x, g3.y + g3.h + 20, "Штриховка — зоны попадания 12 px (только в спецификации): каждая граница колонки в полосе заголовков, включая крайнюю, и каждая граница строки в полосе имён. В теле таблицы ручек нет: клик у линии выбирает ячейку, drag переносит объект.", 400)
     return b
 
 
@@ -335,28 +359,30 @@ frame("S1", "axis-drag", "size / axis-drag — граница оси", s1(),
       ["Тянется любая граница в полосе заголовков (колонки) и в полосе имён (строки), не только крайняя.",
        "Hover: линия border-focus 1 px на высоту шапки; drag: 2 px, пунктир через таблицу, чип «245 px · Вручную» (bg-inverse).",
        "После отпускания ось — «Вручную»; содержимое может её только увеличить (ADR-206).",
-       "Решение §10.1 (подтверждено владельцем): в теле таблицы граница тянется только с зажатым Alt/Option; без модификатора тело — выбор и перенос."])
+       "Направляющая через таблицу — только визуальная; клик по ячейке у линии не начинает ресайз.",
+       "Ресайза из тела в v1 нет: Alt/Option уже занят (Alt+drag — панорама холста, Alt при ресайзе объекта — якорь от центра). Открытый вопрос §10.1."])
 
 
 def s2():
     b = chrome()
     states = [("Покой", dict(field_state="rest")), ("Hover подписи", dict(field_state="hover")),
-              ("Drag подписи · живое превью", dict(field_state="drag", value=268)), ("Фокус · набор", dict(field_state="focus", value=245)),
-              ("Авто", dict(mode=0, auto=True, field_state="rest"))]
+              ("Drag подписи · живое превью", dict(field_state="drag", value=268)),
+              ("Фокус · набор (значение выделено)", dict(field_state="focus", value=245, typing=True, selected=True)),
+              ("Авто · поле пустое", dict(mode=0, auto=True, field_state="rest"))]
     pos = [(110, 130), (500, 130), (890, 130), (110, 510), (500, 510)]
     for (t, kw), (x, y) in zip(states, pos):
         b += caption(x, y - 22, t)
-        body = axis_popover_body(**kw)
-        if t.startswith("Фокус"):
-            body = body.replace('<span style="font-variant-numeric: tabular-nums">245</span>', '<span style="font-variant-numeric: tabular-nums">245</span><span style="display: inline-block; width: 1.5px; height: 15px; background: currentColor; vertical-align: -2px"></span>')
-        b += popover(x, y, "Ширина колонки «Ответственный»", body, z=8)
-    b += cursor(546, 334, "scrub") + cursor(936, 334, "scrub") + chip(930, 300, "268 px")
-    b += note(890, 520, "Подпись поля — «скраб»: тяните вправо/влево, 1 px = 1 px, Shift — ×10, Alt — точнее; таблица на холсте меняется вживую. Клик по значению ставит каретку: ввод не отбирается перетаскиванием. Enter — зафиксировать, Esc — вернуть, пусто — Авто.", 330)
+        b += popover(x, y, "Ширина колонки «Ответственный»", axis_popover_body(**kw), z=8)
+    # The scrub chip sits above the field's right end, clear of the label it is dragged from.
+    b += cursor(546, 334, "scrub") + cursor(936, 334, "scrub") + chip(1146, 288, "268 px")
+    b += note(890, 520, "Подпись поля — «скраб»: тяните вправо/влево, 1 px = 1 px, Shift — ×10, Alt/Option — точнее (только внутри поля; на холсте Alt — панорама). Таблица на холсте меняется вживую. Клик по значению ставит каретку и выделяет число: ввод не отбирается перетаскиванием. Enter — зафиксировать, Esc — вернуть, пусто — Авто.", 330)
+    b += note(890, 660, "Подсказка под режимом зависит от режима: «Авто» — «Следует за содержимым в обе стороны»; «Вручную» — «Растёт под содержимое, но не сжимается само» (ADR-206).", 330)
     return b
 
 
 frame("S2", "axis-popover", "size / axis-popover — поповер оси", s2(),
-      ["Состояния: покой, hover подписи (курсор ew-resize, пунктирное подчёркивание), drag (живое значение + превью на холсте), фокус с кареткой, «Авто» (поле пусто).",
+      ["Состояния: покой, hover подписи (курсор ew-resize, пунктирное подчёркивание), drag (живое значение + превью на холсте), фокус с выделенным числом и кареткой, «Авто» (поле пустое, «Авто» — плейсхолдер).",
+       "«Авто» — «Следует за содержимым в обе стороны»; «Вручную» — «Растёт под содержимое, но не сжимается само». Пусто — вернуть Авто.",
        "Порядок: режим Авто/Вручную → пресеты → числовое поле → подсказка клавиш. Пресеты — способ задать ручной размер, не третье состояние.",
        "Степперы −/+ появляются по hover/focus; ввод с клавиатуры всегда работает."])
 
@@ -365,10 +391,13 @@ def corner(g, seg=None, drag=None, focus=None):
     """The header corner: bottom edge = header height, right edge = header width."""
     out = ""
     x0, y0 = g.x, g.y
+    # Only the active segment is accent; the other one stays a neutral 1 px line.
     if seg == "bottom":
-        out += hline(x0, y0 + g.hh, g.hw, width=2) + hline(x0, y0 + g.hh, g.w, dashed=True, z=7)
+        out += hline(x0, y0 + g.hh, g.hw - 20, width=2) + hline(x0, y0 + g.hh, g.w, dashed=True, z=7)
+        out += vline(x0 + g.hw, y0, g.hh - 20, color=P["strong"], width=1)
     if seg == "right":
-        out += vline(x0 + g.hw, y0, g.hh, width=2) + vline(x0 + g.hw, y0, g.h, dashed=True, z=7)
+        out += vline(x0 + g.hw, y0, g.hh - 20, width=2) + vline(x0 + g.hw, y0, g.h, dashed=True, z=7)
+        out += hline(x0, y0 + g.hh, g.hw - 20, color=P["strong"], width=1)
     grip = (f'<span aria-hidden="true" style="position: absolute; left: {x0 + g.hw - 20}px; top: {y0 + g.hh - 20}px; width: 20px; height: 20px; '
             f'border-radius: 6px; background: {P["panel"]}; border: 1px solid {P["strong"]}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; z-index: 8">'
             f'<svg width="12" height="12" viewBox="0 0 12 12"><path d="M11 3 V11 H3" fill="none" stroke="{P["ink"]}" stroke-width="1.5" stroke-linecap="round"/></svg></span>')
@@ -382,54 +411,91 @@ def s3():
     b = chrome()
     g = Grid(150, 170, COLS, ROWS, hh=64, heads={("c", 1): "Ответственный<br>за этап"})
     b += g.draw() + filled(g) + corner(g, seg="bottom") + cursor(g.x + 60, g.y + g.hh, "row") + chip(g.x + 76, g.y + g.hh + 8, "Высота шапки · 64 px")
+    b += (f'<span style="position: absolute; left: {g.x + 8}px; top: {g.y + 8}px; font-size: 11px; line-height: 14px; color: {P["text2"]}; z-index: 3">'
+          f'угол — хром,<br>не ячейка</span>')
     b += note(g.x, g.y + g.h + 24, "Hover нижней границы угла: попадание только в шапке (на ширину полосы имён), но вся линия через таблицу подсвечена как направляющая. Клик у края ячейки «Этап 1 × Задача» выбирает ячейку, а не тянет шапку.", 430)
     g2 = Grid(930, 170, [("Задача", 150), ("Срок", 110)], ROWS, hw=176, heads={("r", 0): "Этап 1 — подготовка"})
     b += g2.draw() + corner(g2, seg="right") + cursor(g2.x + g2.hw, g2.y + 22, "col") + chip(g2.x + g2.hw + 12, g2.y - 28, "Ширина шапки · 176 px")
-    b += note(930, g2.y + g2.h + 24, "Правая граница угла — ширина полосы имён строк. Верх и лево угла — края раздела, они не тянутся. Двойной щелчок по сегменту — Авто для этой величины, по углу — обе в Авто.", 420)
+    b += note(930, g2.y + g2.h + 24, "Правая граница угла — ширина полосы имён строк. Верх и лево угла — края раздела, они не тянутся.", 420)
     b += caption(930, 640, "Клавиатура: угол — два separator") + at(930, 666, f'<div style="display: flex; gap: 10px">{btn("Высота шапки · 64", "quiet", 30)}{btn("Ширина шапки · Авто", "quiet", 30)}</div>')
+    b += hit_order(150, 670)
     return b
+
+
+def hit_order(x, y):
+    """The corner's three targets, magnified: grip and segments never overlap."""
+    W, Hh, k = 256, 128, 2  # name strip 128 × header 64 at 2×
+    out = caption(x, y - 26, "Иерархия попаданий угла (×2)")
+    out += (f'<div style="position: absolute; left: {x}px; top: {y}px; width: {W}px; height: {Hh}px; box-sizing: border-box; background: {P["head"]}; '
+            f'border: 1px solid {P["line"]}; z-index: 1"></div>')
+    seg = 12 * k
+    grip = 20 * k
+    # 2 · bottom segment: the strip's width minus the grip, ±12 px around the line
+    out += hit_zone(x, y + Hh - seg, W - grip, seg * 2)
+    # 3 · right segment: the header's height minus the grip
+    out += hit_zone(x + W - seg, y, seg * 2, Hh - grip)
+    out += (f'<div style="position: absolute; left: {x + W - grip}px; top: {y + Hh - grip}px; width: {grip}px; height: {grip}px; box-sizing: border-box; '
+            f'border: 2px solid {P["ink"]}; border-radius: 12px; background: {P["panel"]}; z-index: 8"></div>')
+    def badge(bx, by, n):
+        return (f'<span style="position: absolute; left: {bx}px; top: {by}px; width: 20px; height: 20px; border-radius: 999px; background: {P["inv"]}; color: {P["onInv"]}; '
+                f'font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; z-index: 9">{n}</span>')
+    out += badge(x + W - grip + 10, y + Hh - grip + 10, 1) + badge(x + 60, y + Hh - 10, 2) + badge(x + W - 10, y + 30, 3)
+    rows = [("1 · Захват 20×20", "двойной клик — обе величины в Авто. В его квадрате сегменты не ловят. С клавиатуры захвата нет: два separator — 2 и 3."),
+            ("2 · Нижний сегмент", "высота шапки; двойной клик — только высота в Авто."),
+            ("3 · Правый сегмент", "ширина полосы имён; двойной клик — только ширина в Авто."),
+            ("Drag захвата", "обе сразу или ничего — открыто, решить в ADR.")]
+    out += at(x + W + 40, y - 4, "".join(f'<div style="margin-bottom: 8px; font-size: 12px; line-height: 16px"><b>{a}</b> — '
+                                          f'<span style="color: {P["text2"]}">{c}</span></div>' for a, c in rows), 360, z=6)
+    return out
 
 
 frame("S3", "band-corner", "size / band-corner — угол шапки", s3(),
       ["Угол — элемент хрома, не ячейка: не выбирается, не входит в диапазон, объединение, drop и таблицу для скринридера.",
        "Нижняя граница угла — высота шапки (общая для таблицы), правая — ширина полосы имён. Захват 20×20 (--table-band-grip) в правом нижнем углу.",
+       "Иерархия: захват, нижний и правый сегменты не перекрываются; двойной клик по захвату — обе в Авто, по сегменту — только своя. Сплошной акцент — только у активного сегмента.",
        "Полная линия через таблицу — только направляющая; попадание живёт в пределах шапки, клики по ячейкам свободны.",
        "Авто: высота — по самым высоким заголовкам с переносами, ширина — по самому длинному имени строки; потолок 260 px."])
 
 
-def size_panel(x, y, disabled=False, axis="col", value=245, mode=1, hh_val=None, hw_val=None):
+def size_panel(x, y, disabled=False, axis="col", value=245, mode=1, hh_val=None, hw_val=None, reason=None, w=344):
     lab = "Ширина колонки «Ответственный»" if axis == "col" else "Высота строки «Этап 1»"
     names = ["Узкая", "Средняя", "Широкая"] if axis == "col" else ["Низкая", "Средняя", "Высокая"]
-    inner = (f'<div style="font-size: 12px; font-weight: 600; letter-spacing: .06em; color: {P["muted"]}">РАЗМЕР</div>'
-             f'<div style="margin-top: 10px; font-size: 13px; font-weight: 600">{lab}</div>'
-             f'<div style="margin-top: 10px">{segmented(["Авто", "Вручную"], mode, disabled=disabled)}</div>'
-             f'<div style="margin-top: 6px">{muted("Растёт под содержимое, но не сжимается само.")}</div>'
-             f'<div style="margin-top: 10px">{segmented(names, -1, disabled=disabled)}</div>'
-             f'<div style="margin-top: 12px">{numfield("Ширина" if axis == "col" else "Высота", value, disabled=disabled, w=296)}</div>'
-             f'<div style="height: 1px; background: {P["line"]}; margin: 18px 0 14px"></div>'
-             f'<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 13px; font-weight: 600">Шапка</span>'
-             f'<span style="font-size: 12px; color: {P["muted"]}">общая для таблицы</span></div>'
-             f'<div style="margin-top: 10px">{numfield("Высота шапки", hh_val or 0, auto=hh_val is None, disabled=disabled, w=296)}</div>'
-             f'<div style="margin-top: 8px">{numfield("Ширина шапки", hw_val or 0, auto=hw_val is None, disabled=disabled, w=296)}</div>'
-             f'<div style="margin-top: 8px">{muted("Пусто — авто по тексту заголовков.")}</div>')
-    if disabled:
-        inner += (f'<div style="margin-top: 14px; display: flex; gap: 8px; align-items: center; font-size: 12px; color: {P["text2"]}">'
-                  f'{ic("lock-on", 16)}Раздел заблокирован — размеры не меняются</div>')
-    return panel(x, y, 344, inner, pad="18px 20px")
+    fw = w - 48
+    head_col = P["muted"] if disabled else P["ink"]
+    inner = f'<div style="font-size: 12px; font-weight: 600; letter-spacing: .06em; color: {P["muted"]}">РАЗМЕР</div>'
+    if disabled:  # the reason leads the group, in words, before any greyed control
+        icon, text = reason or ("lock-on", "Раздел заблокирован. Снимите замок, чтобы менять таблицу.")
+        inner += (f'<div role="note" style="margin-top: 10px; display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 18px; color: {P["ink"]}; '
+                  f'padding: 10px 12px; border: 1px solid {P["strong"]}; border-radius: 14px">{ic(icon, 16)}<span>{text}</span></div>')
+    inner += (f'<div style="margin-top: 12px; font-size: 13px; font-weight: 600; color: {head_col}">{lab}</div>'
+              f'<div style="margin-top: 10px">{segmented(["Авто", "Вручную"], mode, disabled=disabled)}</div>'
+              f'<div style="margin-top: 6px">{muted(AUTO_HINT if mode == 0 else MANUAL_HINT)}</div>'
+              f'<div style="margin-top: 10px">{segmented(names, -1, disabled=disabled)}</div>'
+              f'<div style="margin-top: 12px">{numfield("Ширина" if axis == "col" else "Высота", value, disabled=disabled, w=fw)}</div>')
+    # «Шапка» is shared by the whole table, so it sits in its own inset, not in the axis's list.
+    inner += (f'<div style="margin-top: 18px; padding: 12px 12px 10px; border-radius: 16px; background: {P["head"]}; border: 1px solid {P["line"]}">'
+              f'<div style="display: flex; align-items: center; gap: 8px; color: {head_col}">{ic("frame", 16)}<span style="font-size: 13px; font-weight: 600">Шапка</span>'
+              f'<span style="font-size: 12px; color: {P["muted"]}">· общая для всей таблицы</span></div>'
+              f'<div style="margin-top: 10px">{numfield("Высота шапки", hh_val or 0, auto=hh_val is None, disabled=disabled, w=fw - 26)}</div>'
+              f'<div style="margin-top: 8px">{numfield("Ширина шапки", hw_val or 0, auto=hw_val is None, disabled=disabled, w=fw - 26)}</div>'
+              f'<div style="margin-top: 8px">{muted("Пусто — авто по тексту заголовков.")}</div></div>')
+    return panel(x, y, w, inner, pad="18px 20px")
 
 
 def s4():
     b = chrome()
-    g = Grid(150, 170, COLS, ROWS)
-    b += g.draw() + filled(g) + vline(g.cx[2], g.y, g.hh, width=2)
-    b += size_panel(1050, 96)
-    b += note(150, 560, "Поля «Шапка» и ручки угла — одна команда (setTableHeaderSize); поле размера оси и ручка границы — одна команда. Кнопка размера в панели открывает тот же поповер, что меню заголовка.", 420)
-    b += note(150, 650, "Disabled-вариант — в кадре S9 «locked».", 420)
+    g = Grid(110, 170, [("Задача", 150), ("Ответственный", 160), ("Срок", 110)], [("Этап 1", 150), ("Этап 2", 150)])
+    b += g.draw() + filled(g) + vline(g.cx[2], g.y, g.hh, width=2) + hline(g.x, g.ry[1], g.hw, width=2)
+    b += caption(700, 74, "Выбрана колонка") + size_panel(700, 96, w=336)
+    b += caption(1050, 74, "Выбрана строка") + size_panel(1050, 96, axis="row", value=150, w=336, hh_val=64)
+    b += note(110, 560, "Панель показывает размер той оси, что выбрана: колонка — «Ширина», строка — «Высота». Поля «Шапка» и ручки угла меняют одно и то же; поле оси и ручка её границы — тоже. Кнопка размера в панели открывает тот же поповер, что меню заголовка.", 540)
+    b += note(110, 650, "Disabled-вариант — в кадре S9 «locked».", 540)
     return b
 
 
 frame("S4", "panel", "size / panel — группа «Размер»", s4(),
-      ["Порядок: режим оси → пресеты → числовое поле → подпись-связка «Ширина колонки» → подгруппа «Шапка» (общая для таблицы).",
+      ["Два варианта: «Ширина колонки» (выбрана колонка) и «Высота строки» (выбрана строка).",
+       "Порядок: режим оси → пресеты → числовое поле → отдельная плашка «Шапка» (общая для всей таблицы).",
        "Поля шапки: пусто = Авто, плейсхолдер «Авто»; сброс — очистить поле.",
        "Значения панели, поповера и ручек на холсте всегда совпадают: это одни и те же команды."])
 
@@ -442,23 +508,44 @@ def editor(x, y, w, lines, vertical=False):
             f'<div style="margin-top: 8px; font-size: 11px; font-weight: 400; color: {P["muted"]}">Enter — готово · Shift+Enter — новая строка</div></div>')
 
 
+def vertical_head(g, i, text):
+    return (f'<div style="position: absolute; left: {g.cx[i] + 6}px; top: {g.y + g.hh - 8}px; transform: rotate(-90deg); transform-origin: left top; width: {g.hh - 16}px; '
+            f'font-size: 13px; line-height: 16px; font-weight: 600; z-index: 3">{text}</div>')
+
+
 def s5():
     b = chrome()
-    for k, (lines, x) in enumerate([(["Ответственный"], 110), (["Ответственный", "за этап"], 530), (["Ответственный", "за этап", "(основной)"], 950)]):
-        g = Grid(x, 180, [("Задача", 100), (" ", 190)], [("Этап 1", 100)], hw=96, hh=40 + 16 * (len(lines) - 1), title=f"{len(lines)} строк{'а' if len(lines) == 1 else 'и'}")
+    # The editor never leaves its column (column width; the hint wraps): «Срок» next door stays visible.
+    for k, (lines, x) in enumerate([(["Ответственный"], 100), (["Ответственный", "за этап"], 530), (["Ответственный", "за этап", "(основной)"], 960)]):
+        g = Grid(x, 180, [("Задача", 80), (" ", 180), ("Срок", 80)], [("Этап 1", 100)], hw=72, hh=max(40, 20 + 16 * len(lines)), title=f"{len(lines)} строк{'а' if len(lines) == 1 else 'и'}")
         b += g.draw()
-        b += editor(g.cx[1] + 2, g.y + 2, 186, lines)
-    g = Grid(110, 470, [("Задача", 100), ("V", 56)], [("Этап 1", 100)], hw=96, hh=120, title="Вертикальный заголовок")
+        b += editor(g.cx[1] + 2, g.y + 2, 176, lines)
+    # vertical header: result, then editing — the editor turns horizontal over its column
+    g = Grid(100, 470, [("Задача", 80), ("V", 56)], [("Этап 1", 100)], hw=72, hh=120, title="Вертикальный: результат")
+    b += g.draw().replace('font-weight: 600; ">V</div>', 'font-weight: 600; ">&nbsp;</div>') + vertical_head(g, 1, "Срок<br>сдачи")
+    g = Grid(400, 470, [("Задача", 80), ("V", 56)], [("Этап 1", 100)], hw=72, hh=120, title="Вертикальный: правка")
     b += g.draw().replace('font-weight: 600; ">V</div>', 'font-weight: 600; ">&nbsp;</div>')
-    b += (f'<div style="position: absolute; left: {g.cx[1] + 6}px; top: {g.y + 112}px; transform: rotate(-90deg); transform-origin: left top; width: 110px; '
-          f'font-size: 13px; line-height: 16px; font-weight: 600; z-index: 3">Срок<br>сдачи</div>')
-    b += note(530, 420, "Редактор на холсте — текстовое поле на 2–6 строк, растёт по тексту. Enter — готово, Shift+Enter и Alt/Option+Enter — перенос, Esc — отмена, Tab — следующий заголовок. Подсказка внизу редактора — тихая, 11 px text-muted, видна только в режиме правки.", 520)
-    b += note(110, 720, "Вертикальный заголовок укладывает строки поперёк полосы: каждая строка — отдельная колонка текста. Шапка растёт по самому длинному заголовку (потолок 260 px).", 420)
+    b += vline(g.cx[1], g.y, g.hh, width=2) + vline(g.cx[2], g.y, g.hh, width=2)
+    # A 56 px column cannot hold a horizontal editor, so the neighbours are dimmed instead of covered blind.
+    b += (f'<div aria-hidden="true" style="position: absolute; left: {g.x}px; top: {g.y}px; width: {g.cx[1] - g.x}px; height: {g.h}px; '
+          f'background: {P["canvas"]}; opacity: .7; z-index: 8"></div>')
+    b += editor(g.cx[1] - 60, g.y + 8, 176, ["Срок", "сдачи"])
+    # a long word without spaces
+    g = Grid(700, 470, [("Задача", 80), (" ", 150), ("Срок", 80)], [("Этап 1", 100)], hw=72, hh=72, title="Слово без пробелов, Авто")
+    b += g.draw() + (f'<div style="position: absolute; left: {g.cx[1]}px; top: {g.y}px; width: 150px; box-sizing: border-box; padding: 10px; font-size: 13px; '
+                     f'line-height: 16px; font-weight: 600; overflow-wrap: anywhere; z-index: 3">Ответственностьзаподготовку</div>')
+    g = Grid(700, 690, [("Задача", 80), (" ", 150), ("Срок", 80)], [("Этап 1", 60)], hw=72, hh=40, title="То же, вручную 40 px")
+    b += g.draw() + (f'<div style="position: absolute; left: {g.cx[1]}px; top: {g.y}px; width: 150px; height: 40px; box-sizing: border-box; padding: 12px 10px; font-size: 13px; '
+                     f'line-height: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 3">Ответственностьзаподготовку</div>')
+    b += note(100, 380, "Редактор на холсте — текстовое поле на 2–6 строк, растёт по тексту вниз, но не шире своей колонки. Enter — готово, Shift+Enter или Alt/Option+Enter — перенос (Alt в тексте не панорамирует), Esc — отмена, Tab — следующий заголовок. Подсказка внизу редактора — 11 px text-muted, только в режиме правки.", 760)
+    b += note(100, 700, "Вертикальный заголовок: в правке редактор горизонтальный, шире узкой колонки — поэтому соседи приглушены, колонка отмечена линиями; после Enter текст снова вертикальный. Шапка растёт по самому длинному заголовку (потолок 260 px).", 560)
+    b += note(1110, 480, "Слово длиннее колонки: в Авто — перенос внутри слова, шапка растёт; вручную — одна строка и «…», полный текст — в подсказке и панели.", 260)
     return b
 
 
 frame("S5", "multiline-edit", "header / multiline-edit — редактор на холсте", s5(),
-      ["1, 2 и 3 строки: шапка в Авто растёт на 16 px за строку (line-height заголовка).",
+      ["1, 2 и 3 строки: шапка в Авто — 40, 52 и 68 px: 10 + 16 × строки + 10, не ниже 40. Редактор — не шире колонки, соседи видны.",
+       "Вертикальный заголовок: результат и правка (редактор горизонтальный поверх колонки). Слово без пробелов: перенос в Авто, «…» вручную.",
        "Перенос — обычный символ документа: на холсте, в панели и в экспорте одинаково.",
        "Без жирного/курсива/цвета: это подпись оси, а не объект."])
 
@@ -472,47 +559,74 @@ def s6():
         lst += (f'<div title="Ответственный&#10;за этап" style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 12px; '
                 f'{"background: " + P["hover"] + ";" if on else ""} font-size: 13px">{t}<span style="flex: 1"></span>'
                 f'{"<span style=\"font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid " + P["strong"] + "; color: " + P["text2"] + "\">" + tag + "</span>" if tag else ""}</div>')
-    field = (f'<div style="font-size: 13px; font-weight: 500; margin-bottom: 6px">Название колонки</div>'
-             f'<div style="box-sizing: border-box; min-height: 60px; padding: 8px 12px; border: 2px solid {P["focus"]}; border-radius: 14px; font-size: 13px; line-height: 18px">'
-             f'Ответственный<br>за этап<span style="display: inline-block; width: 1.5px; height: 15px; background: {P["ink"]}; vertical-align: -2px"></span></div>'
-             f'<div style="margin-top: 6px">{muted("Shift+Enter — новая строка · Enter — готово")}</div>')
+    caret = f'<span style="display: inline-block; width: 1.5px; height: 15px; background: {P["ink"]}; vertical-align: -2px"></span>'
+
+    def field(title, lines, scroll=False):
+        # 18 px a line, padding 8: grows to 4 lines (88 px), then scrolls inside the field
+        h = 8 * 2 + 18 * min(len(lines), 4)
+        bar = (f'<span aria-hidden="true" style="position: absolute; right: 4px; top: 8px; width: 4px; height: {h - 40}px; border-radius: 2px; background: {P["strong"]}"></span>'
+               if scroll else "")
+        return (f'<div style="font-size: 13px; font-weight: 500; margin-bottom: 6px">{title}</div>'
+                f'<div style="position: relative; box-sizing: border-box; height: {h}px; overflow: hidden; padding: 8px 14px 8px 12px; border: 2px solid {P["focus"]}; '
+                f'border-radius: 14px; font-size: 13px; line-height: 18px">{"<br>".join(lines[-4:] if scroll else lines)}{caret}{bar}</div>')
     inner = (f'<div style="font-size: 12px; font-weight: 600; letter-spacing: .06em; color: {P["muted"]}">КОЛОНКИ</div><div style="margin-top: 8px">{lst}</div>'
-             f'<div style="height: 1px; background: {P["line"]}; margin: 14px 0"></div>{field}')
+             f'<div style="height: 1px; background: {P["line"]}; margin: 14px 0"></div>'
+             + field("Название колонки · 3 строки", ["Ответственный", "за этап", "(основной)"])
+             + f'<div style="margin-top: 6px">{muted("Shift+Enter — новая строка · Enter — готово")}</div>'
+             + f'<div style="height: 1px; background: {P["line"]}; margin: 14px 0"></div>'
+             + field("5 строк: видно 4, дальше прокрутка", ["Ответственный", "за этап", "и согласование", "с заказчиком", "(основной)"], scroll=True))
     b += panel(1050, 96, 344, inner)
-    b += note(150, 600, "Поле названия оси в панели — многострочное (минимум 2 строки), те же клавиши, что на холсте. В списке осей — первая строка и метка «2 строки»; полный текст — в подсказке при наведении.", 460)
+    # hover on the list row: the full name, line breaks kept
+    b += (f'<div role="tooltip" style="position: absolute; left: 836px; top: 182px; width: 200px; box-sizing: border-box; padding: 8px 10px; border-radius: 10px; '
+          f'background: {P["inv"]}; color: {P["onInv"]}; font-size: 12px; line-height: 16px; z-index: 9">Ответственный<br>за этап</div>')
+    b += note(150, 600, "Поле названия оси в панели — многострочное (минимум 2 строки), те же клавиши, что на холсте; растёт до 4 строк, дальше прокрутка внутри поля. В списке осей — первая строка; метка «N строки» только у многострочных, у однострочной метки нет. Полный текст — в подсказке при наведении.", 560)
     return b
 
 
 frame("S6", "multiline-panel", "header / multiline-panel — заголовок в панели", s6(),
-      ["Однострочный Input заменяется многострочным полем ≥ 2 строк; переносы сохраняются.",
-       "Метка «{n} строки» — тихая пилюля в строке списка осей (text-secondary, контур border-strong).",
+      ["Однострочный Input заменяется многострочным полем ≥ 2 строк; растёт до 4 строк, дальше прокрутка; переносы сохраняются.",
+       "Метка «{n} строки» — только у многострочных: тихая пилюля (text-secondary, контур border-strong). У однострочной метки нет.",
+       "Полный текст с переносами — в подсказке при наведении на строку списка.",
        "Скринридер читает заголовок как текст с переносами, без лишних объявлений."])
 
 
 def s7():
     b = chrome()
     long = "Ответственный за этап<br>и согласование<br>с заказчиком"
-    g = Grid(150, 200, [("Задача", 180), ("Ответственный", 200), ("Срок", 120)], ROWS, hh=72, heads={("c", 1): long}, title="Авто: шапка выросла под 3 строки")
-    b += g.draw() + filled(g) + chip(g.x + g.w + 12, g.y + 26, "Высота шапки · Авто · 72 px")
-    g2 = Grid(150, 640, [("Задача", 180), ("Ответственный", 200), ("Срок", 120)], [("Этап 1", 110)], hh=40, heads={("c", 1): (long, 1)}, title="Вручную 40 px: многоточие, текст не сжимается")
+    cols = [("Задача", 180), ("Ответственный", 200), ("Срок", 120)]
+    g = Grid(150, 160, cols, [("Этап 1", 110)], hh=68, heads={("c", 1): long}, title="Авто: шапка выросла под 3 строки")
+    b += g.draw() + sticky(*g.cell(0, 0, dy=8), "Собрать макет", 90, 90) + chip(g.x + g.w + 12, g.y + 24, "Высота шапки · Авто · 68 px")
+    g2 = Grid(150, 410, cols, [("Этап 1", 110)], hh=40, heads={("c", 1): (long, 1)}, title="Вручную 40 px: многоточие, текст не сжимается")
     b += g2.draw() + chip(g2.x + g2.w + 12, g2.y + 10, "Высота шапки · 40 px · Вручную")
-    b += note(1030, 220, "Авто: высота шапки = самая высокая шапка с учётом переносов и вертикальных заголовков, потолок 260 px.", 360)
-    b += note(1030, 650, "Ручной размер точный: не влезающее сокращается многоточием; кегль не уменьшается, текст не масштабируется. Полный текст — в подсказке и в панели.", 360)
+    b += note(150, 572, "Одной строке нужно 36 px (10 + 16 + 10), а шапка не бывает ниже 40 px: 40 — это минимум, а не ошибка. Две строки — 52, три — 68.", 520)
+    # after deleting two lines of the header text
+    b += caption(150, 640, "Удалили две строки текста — что стало с шапкой")
+    one = [("Ответственный", 200)]
+    g3 = Grid(150, 700, one, [("Этап 1", 60)], hh=40, title="Авто: 68 → 40 px")
+    b += g3.draw() + chip(g3.x + g3.w + 10, g3.y + 10, "Авто · 40 px")
+    g4 = Grid(640, 700, one, [("Этап 1", 60)], hh=72, title="Вручную 72 px: остаётся 72 px")
+    b += g4.draw() + chip(g4.x + g4.w + 10, g4.y + 26, "72 px · Вручную")
+    b += note(1030, 180, "Авто: высота шапки = самая высокая шапка с учётом переносов и вертикальных заголовков, потолок 260 px. Текст стал короче — шапка сжимается обратно.", 360)
+    b += note(1030, 420, "Ручной размер точный: не влезающее сокращается многоточием; кегль не уменьшается, текст не масштабируется. Полный текст — в подсказке и в панели. Текст стал короче — размер не меняется сам (ADR-206).", 360)
     return b
 
 
 frame("S7", "auto-vs-manual", "header / auto-vs-manual — Авто и ручная шапка", s7(),
-      ["Один и тот же трёхстрочный заголовок: в Авто шапка 72 px, вручную 40 px — первая строка и «…».",
+      ["Один и тот же трёхстрочный заголовок: в Авто шапка 68 px (10 + 3 × 16 + 10), вручную 40 px — первая строка и «…». 40 px — минимум шапки.",
+       "До/после удаления текста: Авто сжимается обратно до 40 px, ручные 72 px остаются 72 px.",
        "Объекты в ячейках не затронуты: меняется только полоса шапки."])
 
 
 def s8():
     b = header() + rail() + zoom("50 % · 200 %")
     g = Grid(150, 200, COLS, ROWS, s=.5, title="50 %")
-    b += g.draw(13) + vline(g.cx[2], g.y, g.hh, width=2) + vline(g.cx[2], g.y, g.h, dashed=True, z=7) + cursor(g.cx[2], g.y + 10, "col") + chip(g.cx[2] + 14, g.y - 28, "245 px")
+    b += g.draw(13) + hit_zone(g.cx[2] - 12, g.y, 24, g.hh) + vline(g.cx[2], g.y, g.hh, width=2) + vline(g.cx[2], g.y, g.h, dashed=True, z=7)
+    b += cursor(g.cx[2], g.y + 10, "col") + chip(g.cx[2] + 14, g.y + g.hh + 8, "245 px")
     g2 = Grid(560, 200, [("Задача", 220), ("Ответственный", 245)], [("Этап 1", 150)], s=1.6, title="200 % (фрагмент)")
-    b += g2.draw(13) + vline(g2.cx[1], g2.y, g2.hh, width=2) + vline(g2.cx[1], g2.y, g2.h, dashed=True, z=7) + cursor(g2.cx[1], g2.y + 30, "col") + chip(g2.cx[1] + 14, g2.y - 28, "220 px")
-    b += note(150, 560, "Ручка, линия hover, чип и кольцо фокуса — в экранных px: на 50 % и 200 % они одного размера; масштабируется только таблица. Попадание — 12 px в обе стороны от линии при любом зуме.", 520)
+    b += g2.draw(13) + hit_zone(g2.cx[1] - 12, g2.y, 24, g2.hh) + vline(g2.cx[1], g2.y, g2.hh, width=2) + vline(g2.cx[1], g2.y, g2.h, dashed=True, z=7)
+    b += cursor(g2.cx[1], g2.y + 30, "col") + chip(g2.cx[1] + 14, g2.y - 28, "220 px")
+    b += note(150, 560, "Ручка, линия hover, чип и кольцо фокуса — в экранных px: на 50 % и 200 % они одного размера; масштабируется только таблица. Попадание (штриховка, только в спецификации) — 12 px в обе стороны от линии при любом зуме: зона не масштабируется вместе с таблицей.", 520)
+    b += note(150, 660, "Чип держится внутри видимой области холста: если над указателем мало места (таблица у верхнего края, окно 1280 × 720), чип уходит под указатель, а не под топбар.", 520)
     return b
 
 
@@ -523,17 +637,23 @@ frame("S8", "zoom", "size / zoom — 50 % и 200 %", s8(),
 
 def s9():
     b = chrome()
-    g = Grid(150, 170, COLS, ROWS)
+    g = Grid(110, 170, [("Задача", 150), ("Ответственный", 160), ("Срок", 110)], ROWS)
     b += g.draw() + filled(g)
     b += (f'<div style="position: absolute; left: {g.x + g.w - 26}px; top: {g.y - 26}px; color: {P["ink"]}; z-index: 4">{ic("lock-on", 16)}</div>')
-    b += cursor(g.cx[2], g.y + 20, "scrub").replace("<svg", '<svg style="opacity:0"') + note(g.x, g.y + g.h + 24, "Раздел заблокирован или у вас роль «Просмотр»: ручки границ и угла не показываются, курсор не меняется. Причина — словами в панели, не только серым цветом.", 430)
-    b += size_panel(1050, 96, disabled=True)
+    # pointer over the border and over the corner: the ordinary arrow, no line, no grip
+    b += cursor(g.cx[2] + 1, g.y + 14, "arrow") + cursor(g.x + g.hw - 6, g.y + g.hh - 6, "arrow")
+    b += (f'<span style="position: absolute; left: {g.x + 8}px; top: {g.y + 6}px; font-size: 11px; line-height: 14px; color: {P["text2"]}; z-index: 9">'
+          f'в углу захвата нет</span>')
+    b += note(g.x, g.y + g.h + 24, "Указатель на границе «Ответственный | Срок» и в углу — обычная стрелка: ручек границ и угла нет, линия не подсвечивается, двойной клик ничего не делает; separator не попадают в порядок Tab, стрелки размер не меняют. Причина — словами первой строкой группы «Размер», не только серым цветом.", 430)
+    b += caption(700, 74, "Раздел заблокирован") + size_panel(700, 96, disabled=True, w=336)
+    b += caption(1050, 74, "Роль «Просмотр»") + size_panel(1050, 96, disabled=True, w=336, reason=("eye", "Только просмотр: менять размеры может редактор комнаты"))
     return b
 
 
 frame("S9", "locked", "size / locked — только чтение", s9(),
-      ["Ручки скрыты; поля и сегменты — disabled с причиной «Раздел заблокирован — размеры не меняются».",
-       "Для роли «Просмотр» та же картина, причина — «Вы можете просматривать»."])
+      ["Выключена вся группа «Размер»: режим, пресеты, число и поля шапки. Причина — первой строкой группы.",
+       "Раздел заблокирован — «Раздел заблокирован. Снимите замок, чтобы менять таблицу.» (section.locked); роль «Просмотр» — «Только просмотр: менять размеры может редактор комнаты» (по образцу tool.readOnly).",
+       "Ручек границ и угла нет, курсор не меняется."])
 
 
 def s10():
@@ -554,11 +674,13 @@ def s10():
         x, y = 60 + col * 460, 270 + row * 92
         b += f'<div style="position: absolute; left: {x}px; top: {y}px; font-size: 12px; font-weight: 600">{t}</div>'
         b += at(x, y + 22, numfield("Ширина", kw.pop("value", 245), w=380, **kw))
-    b += cursor(86, 400, "scrub") + chip(60, 368, "268 px")
+    # chip above the field's right end: never over the label being dragged
+    b += cursor(86, 400, "scrub") + chip(388, 360, "268 px")
     b += panel(1000, 128, 380,
                f'<div style="font-size: 13px; font-weight: 600">Поведение</div>'
                + "".join(f'<div style="margin-top: 8px">{muted(t, 12, P["text2"])}</div>' for t in [
-                   "Тянуть подпись: 1 px указателя = 1 px; Shift — ×10; Alt/Option — точнее.",
+                   "Тянуть подпись: 1 px указателя = 1 px; Shift — ×10; Alt/Option — точнее. Alt действует только внутри поля; на холсте Alt+drag — панорама.",
+                   "Размеры: высота 32 (касание 44), степперы 24 (касание 36), радиус pill — как в S12.",
                    "Живое превью на холсте; фиксация на отпускании — один undo; Esc возвращает прежнее.",
                    "↑/↓ — 1, Shift+↑/↓ — 10, Home/End — минимум/максимум, Enter — зафиксировать, Esc — отменить, пусто — Авто.",
                    "Клик по значению ставит каретку: ввод не отбирается перетаскиванием.",
@@ -587,17 +709,26 @@ def s11():
     b += at(90, 590, f'<div style="position: relative; width: 300px; height: 40px; background: {P["head"]}; border: 1px solid {P["line"]}; border-radius: 4px"></div>')
     b += vline(240, 590, 40, width=2) + focus_ring(234, 588, 12, 44, 4)
     b += note(360, 590, "Tab — к ручке; ←/→ (↑/↓) — 8 px, Shift — 40 px, Delete — Авто. aria-valuenow = текущий размер, aria-label «Ширина колонки «Ответственный»».", 330)
-    g2 = Grid(820, 160, [("Задача", 180)], [("Этап 1", 120)], hh=64, title="")
-    b += g2.draw()
-    b += hit_zone(g2.x, g2.y + g2.hh - 12, g2.hw, 24) + hit_zone(g2.x + g2.hw - 12, g2.y, 24, g2.hh)
-    b += corner(g2, focus=True)
-    b += note(820, g2.y + g2.h + 20, "BandGrip — угол шапки: захват 20×20 (--table-band-grip) + два сегмента попадания: низ угла (высота шапки) и право угла (ширина полосы имён). Фокус — на захвате; ↑/↓ — высота, ←/→ — ширина.", 470)
+    b += hit_order(760, 190)
+    # keyboard: the corner is two separators, in Tab order before the column borders
+    b += caption(760, 440, "Фокус с клавиатуры: угол — два separator")
+    cx, cy = 760, 470
+    b += (f'<div style="position: absolute; left: {cx}px; top: {cy}px; width: 256px; height: 128px; box-sizing: border-box; background: {P["head"]}; '
+          f'border: 1px solid {P["line"]}; z-index: 1"></div>')
+    b += hline(cx, cy + 128, 216, width=2) + focus_ring(cx, cy + 122, 216, 12, 4)
+    b += vline(cx + 256, cy, 88, color=P["strong"], width=1)
+    b += (f'<span style="position: absolute; left: {cx + 8}px; top: {cy + 96}px; font-size: 11px; color: {P["text2"]}; z-index: 9">фокус: высота шапки · 64 px</span>')
+    order = ["Высота шапки (низ угла)", "Ширина полосы имён (право угла)", "Граница колонки «Задача»", "Граница колонки «Ответственный»", "Граница строки «Этап 1» …"]
+    b += at(1056, 470, f'<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Порядок Tab</div>'
+            + "".join(f'<div style="font-size: 12px; line-height: 20px; color: {P["text2"]}">{i + 1}. {t}</div>' for i, t in enumerate(order)), 330, z=6)
+    b += note(760, 630, "Высота: ↑/↓ — 8 px, Shift — 40 px, Delete — Авто. Ширина: ←/→. Каждый separator объявляет свою величину и режим: «Высота шапки, 64 пикселя, вручную».", 560)
     return b
 
 
 frame("S11", "handle-grip", "components / resize-handle и band-grip", s11(),
       ["Зоны попадания показаны голубой штриховкой (только в спецификации, в продукте не рисуются).",
-       "Касание: 24 px, без hover-зависимых действий; ручка шапки на касании — длинное нажатие на угол (§10.5, проверить на прототипе)."])
+       "Угол — та же иерархия, что в S3: захват и два сегмента не перекрываются. С клавиатуры — два separator, затем границы осей.",
+       "Касание: зоны 24 px у границ осей и у двух сегментов угла, без long-press; новый жест для угла — только после «да» и ADR (§10.5)."])
 
 
 def s12():
@@ -605,15 +736,17 @@ def s12():
     rows = [
         ("Линия границы, hover", "1 px, border-focus, на высоту шапки / ширину полосы имён"),
         ("Линия границы, drag", "2 px border-focus + направляющая 1 px пунктир 5/4 через таблицу"),
-        ("Попадание", "12 px в обе стороны (24 на касании) — --table-handle-hit (новый)"),
+        ("Направляющая через таблицу", "только визуальная, не зона попадания: клик по ячейке у линии — выбор ячейки"),
+        ("Попадание границы", "12 px в обе стороны (24 на касании) — --table-handle-hit (новый); только в полосе заголовков / имён"),
+        ("Сегменты угла", "то же попадание 12 / 24; длина — сторона угла минус захват; с захватом не перекрываются"),
+        ("Захват угла", "20×20, радиус 6, bg-panel, контур border-strong 1 — --table-band-grip (новый); только мышь, двойной клик — обе в Авто"),
         ("Порог drag", "3 px; меньше — клик по заголовку"),
-        ("Чип значения", "h 20, радиус radius-sm 6, отступ 7, bg-inverse / text-inverse, type-caption; 14 px справа и 28 px выше указателя"),
-        ("Захват угла", "20×20, радиус 6, bg-panel, контур border-strong 1 — --table-band-grip (новый)"),
+        ("Чип значения", "h 20, радиус radius-sm 6, отступ 7, bg-inverse / text-inverse, type-caption; 14 px справа и 28 px выше указателя, у верхнего края — под указателем; не накрывает подпись поля"),
         ("Кольцо фокуса", "2 px border-focus, offset 2"),
-        ("Числовое поле", "h 32 (касание 44), радиус pill, контур border-strong 1 / focus 2; степперы 24 (36)"),
+        ("Числовое поле", "h 32 (касание 44), радиус pill, контур border-strong 1 / focus 2; степперы 24 (касание 36)"),
         ("Z-порядок над холстом", "таблица → заголовки → ручки границ и угла → чип → поповер (z-popover)"),
-        ("Зум", "все элементы этого списка — в экранных px; таблица масштабируется, хром — нет"),
-        ("Движение", "появление линии и чипа 120 мс (dur-1), без пружин; reduced motion — мгновенно"),
+        ("Зум", "все элементы этого списка — в экранных px; таблица масштабируется, хром и зоны попадания — нет"),
+        ("Движение", "появление линии и чипа 120 мс (dur-1), без пружин; prefers-reduced-motion — мгновенно, без затухания"),
     ]
     head = f'<tr><th style="text-align: left; padding: 8px 12px; font-size: 12px; color: {P["muted"]}; border-bottom: 1px solid {P["line"]}">Элемент</th><th style="text-align: left; padding: 8px 12px; font-size: 12px; color: {P["muted"]}; border-bottom: 1px solid {P["line"]}">Метрика и токен</th></tr>'
     body = "".join(f'<tr><td style="padding: 9px 12px; font-size: 13px; font-weight: 500; border-bottom: 1px solid {P["line"]}; width: 260px">{a}</td><td style="padding: 9px 12px; font-size: 13px; border-bottom: 1px solid {P["line"]}">{c}</td></tr>' for a, c in rows)
@@ -622,28 +755,30 @@ def s12():
 
 
 frame("S12", "redlines", "99 Redlines", s12(),
-      ["Метрики, z-порядок, зум и движение. Новые токены — два: --table-handle-hit (12 / 24) и --table-band-grip (20).",
+      ["Метрики сведены с S10/S11: поле 32/44, степперы 24/36, захват 20×20, попадание 12/24. Новые токены — два: --table-handle-hit (12 / 24) и --table-band-grip (20).",
+       "Полная линия шапки — направляющая, не зона попадания.",
        "Цвета — только существующие: border-focus, bg-inverse, text-inverse, border-strong, bg-panel."])
 
 
 def s13():
     b = f'<h1 style="position: absolute; left: 60px; top: 40px; font-size: 24px; font-weight: 600; margin: 0">Решения по открытым вопросам §10</h1>'
+    open_, rec = "<b>Открыт</b> · ждёт владельца", "Рекомендация дизайна"
     rows = [
-        ("1. Ресайз из тела таблицы", "<b>Только с Alt/Option</b> (подтверждено владельцем). Без модификатора — нет; на касании — нет", "Тело таблицы — выбор ячейки и перенос объектов; без модификатора второй жест на тех же пикселях ломает оба. Alt разводит жесты; см. S1."),
-        ("2. Мультивыбор осей", "<b>Отдельная задача</b>", "Модель выбирает одну ось; общая дельта для выбранных — после ADR."),
-        ("3. Магнит", "<b>Нет</b>, кроме шага Shift = 40 px", "Пресеты уже дают «ровные» размеры; магнит к 8 px мешает точной подгонке под объект."),
-        ("4. Подсказка первого раза", "<b>Да, в панели</b>: «Тяните границу, чтобы изменить размер · Двойной щелчок — авто», один раз", "На холсте подсказка спорит с содержимым; панель открыта как раз тогда, когда человек думает о размере."),
-        ("5. Шапка на касании", "<b>Длинное нажатие на угол</b> → те же два separator крупно (24 px)", "Двумя пальцами — зум холста; конфликт жестов. Проверить на прототипе."),
-        ("Подсказка Shift+Enter", "<b>Внизу редактора</b>, 11 px text-muted, только в режиме правки", "Там, где человек печатает; вне правки не шумит."),
-        ("«Высота колонки» / «ширина строки»", "<b>Не используем</b>. Пишем «Высота шапки», «Ширина шапки» (общие)", "Честные имена: у отдельной колонки нет своей высоты."),
+        ("1. Ресайз из тела таблицы", "<b>Не делать в v1.</b> Все границы в шапке и в полосе имён и угол закрывают задачу", "Alt/Option занят: Alt+drag — панорама холста, Alt при ресайзе объекта — якорь от центра (ADR-212). Нужен — другой жест или режим и ADR, не Alt.", open_),
+        ("2. Мультивыбор осей", "<b>Отдельная задача.</b> В v1 выбирается одна ось", "Модель выбирает одну ось; общая дельта для выбранных — после ADR.", rec),
+        ("3. Магнит", "<b>Нет</b>, кроме шага Shift = 40 px", "Пресеты уже дают «ровные» размеры; магнит к 8 px мешает точной подгонке под объект.", rec),
+        ("4. Подсказка первого раза", "<b>В панели, один раз на пользователя</b>: «Тяните границу, чтобы изменить размер · Двойной щелчок — авто». Закрывается крестиком или сама после первого ресайза", "На холсте подсказка спорит с содержимым; панель открыта как раз тогда, когда человек думает о размере.", rec),
+        ("5. Шапка на касании", "<b>Те же два separator в углу</b>, зона 24 px, без долгого нажатия. Новый жест (например, long-press) — только после явного «да» и ADR", "Двумя пальцами — зум холста; долгое нажатие — новый жест холста, а не деталь таблицы.", open_),
+        ("Подсказка Shift+Enter", "<b>Внизу редактора</b>, 11 px text-muted, только в режиме правки", "Там, где человек печатает; вне правки не шумит.", rec),
+        ("«Высота колонки» / «ширина строки»", "<b>Не используем</b>. Пишем «Высота шапки», «Ширина шапки» (общие)", "Честные имена: у отдельной колонки нет своей высоты.", rec),
     ]
-    head = "".join(f'<th style="text-align: left; padding: 8px 12px; font-size: 12px; color: {P["muted"]}; border-bottom: 1px solid {P["line"]}">{c}</th>' for c in ["Вопрос", "Решение", "Причина"])
+    head = "".join(f'<th style="text-align: left; padding: 8px 12px; font-size: 12px; color: {P["muted"]}; border-bottom: 1px solid {P["line"]}">{c}</th>' for c in ["Вопрос", "Решение", "Причина", "Статус"])
     body = "".join("<tr>" + "".join(f'<td style="padding: 9px 12px; font-size: 13px; line-height: 18px; border-bottom: 1px solid {P["line"]}; vertical-align: top">{c}</td>' for c in r) + "</tr>" for r in rows)
     b += f'<table style="position: absolute; left: 60px; top: 90px; width: 1320px; border-collapse: collapse"><tr>{head}</tr>{body}</table>'
     return b
 
 
-frame("S13", "decisions", "Решения §10", s13(), ["Рекомендации дизайна по открытым вопросам ТЗ; пункт 1 подтверждён владельцем: Alt/Option-вариант."])
+frame("S13", "decisions", "Решения §10", s13(), ["Рекомендации дизайна по открытым вопросам ТЗ. Пункты 1 (ресайз из тела) и 5 (жест на касании) открыты до решения владельца; рекомендация — не делать в v1."])
 
 
 for name, title, html in BOARDS:
