@@ -6,6 +6,7 @@ import { drawTable } from "./tablePaint";
 function fakeContext() {
   const calls: string[] = [];
   const fonts: string[] = [];
+  const marks: Array<{ fill: unknown; align: unknown }> = [];
   const state: Record<string | symbol, unknown> = {};
   const ctx = new Proxy(state, {
     get(target, key) {
@@ -17,6 +18,7 @@ function fakeContext() {
         return (..._args: unknown[]) => {
           calls.push("fillText");
           fonts.push(String(target.font));
+          marks.push({ fill: target.fillStyle, align: target.textAlign });
           return undefined;
         };
       }
@@ -30,7 +32,7 @@ function fakeContext() {
       return true;
     },
   });
-  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, fonts };
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, fonts, marks };
 }
 
 const frame: Widget = {
@@ -73,9 +75,37 @@ describe("drawTable (ADR-196)", () => {
     };
     // The font is a world-unit size, so the same string is used at every zoom and the
     // canvas transform scales it on screen. Dividing by zoom would pin it to the screen.
-    expect(fontAt(1)).toEqual(new Set(["12px sans-serif"]));
-    expect(fontAt(2)).toEqual(new Set(["12px sans-serif"]));
-    expect(fontAt(0.5)).toEqual(new Set(["12px sans-serif"]));
+    expect(fontAt(1)).toEqual(new Set(["400 12px sans-serif"]));
+    expect(fontAt(2)).toEqual(new Set(["400 12px sans-serif"]));
+    expect(fontAt(0.5)).toEqual(new Set(["400 12px sans-serif"]));
+  });
+
+  it("paints the table-level header typography (ADR-220)", () => {
+    const { ctx, fonts, marks } = fakeContext();
+    drawTable(
+      ctx,
+      {
+        ...frame,
+        layout: {
+          ...frame.layout!,
+          appearance: {
+            headerText: {
+              size: 20,
+              weight: "bold",
+              italic: true,
+              color: "#123456",
+              align: "center",
+            },
+          },
+        },
+      },
+      [],
+      1,
+      DEFAULT_PALETTE,
+      "sans-serif",
+    );
+    expect(fonts).toContain("italic 600 20px sans-serif");
+    expect(marks).toContainEqual({ fill: "#123456", align: "center" });
   });
 
   it("does nothing for an inactive table", () => {

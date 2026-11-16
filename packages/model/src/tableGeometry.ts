@@ -33,8 +33,41 @@ export const TABLE_HEADER_PADDING = 10;
 export const TABLE_HEADER_LINE_HEIGHT = 16;
 /** Header text longer than this is shortened with an ellipsis (ADR-201). */
 export const TABLE_HEADER_MAX_TEXT = 100;
-/** Approximate advance of the 12 px interface font; geometry cannot measure text. */
-const HEADER_CHAR_WIDTH = 6.6;
+/** Approximate advance of the interface font; geometry cannot measure text. */
+const HEADER_CHAR_RATIO = 0.55;
+
+/** The one resolved typography of a table's headers (ADR-220). */
+export interface TableHeaderTextStyle {
+  size: number;
+  weight: "regular" | "medium" | "bold";
+  italic: boolean;
+  color?: string;
+  align: "left" | "center" | "right";
+}
+
+export const TABLE_HEADER_TEXT_SIZE = 12;
+
+/** Resolve the optional header typography against the defaults (ADR-220). */
+export function tableHeaderTextStyle(layout: TableLayout): TableHeaderTextStyle {
+  const text = layout.appearance?.headerText;
+  return {
+    size: text?.size ?? TABLE_HEADER_TEXT_SIZE,
+    weight: text?.weight ?? "regular",
+    italic: text?.italic ?? false,
+    color: text?.color,
+    align: text?.align ?? "left",
+  };
+}
+
+/** The font advance used before measuring: geometry has no canvas. */
+export function headerCharWidth(size: number): number {
+  return size * HEADER_CHAR_RATIO;
+}
+
+/** The line height that pairs with a header font size. */
+export function headerLineHeight(size: number): number {
+  return Math.round(size * (TABLE_HEADER_LINE_HEIGHT / TABLE_HEADER_TEXT_SIZE));
+}
 export const TABLE_CELL_PADDING = 16;
 export const TABLE_MIN_COLUMN = 120;
 export const TABLE_MIN_ROW = 72;
@@ -107,17 +140,18 @@ export function longestHeaderLine(text: string): string {
     .reduce((longest, line) => (line.length > longest.length ? line : longest), "");
 }
 
-function approxWidth(text: string): number {
-  return text.length * HEADER_CHAR_WIDTH;
+function approxWidth(text: string, size: number): number {
+  return text.length * headerCharWidth(size);
 }
 
 /** Approximate wrapped line count for one paragraph at a given width. */
-function paragraphLineCount(text: string, usable: number): number {
+function paragraphLineCount(text: string, usable: number, size: number): number {
   if (!text) return 1;
+  const charWidth = headerCharWidth(size);
   let lines = 1;
   let line = 0;
   for (const word of text.split(" ")) {
-    const wordWidth = Math.max(1, approxWidth(word));
+    const wordWidth = Math.max(1, approxWidth(word, size));
     if (line === 0) {
       line = wordWidth;
       if (wordWidth > usable) {
@@ -126,8 +160,8 @@ function paragraphLineCount(text: string, usable: number): number {
       }
       continue;
     }
-    if (line + HEADER_CHAR_WIDTH + wordWidth <= usable) {
-      line += HEADER_CHAR_WIDTH + wordWidth;
+    if (line + charWidth + wordWidth <= usable) {
+      line += charWidth + wordWidth;
       continue;
     }
     lines += 1;
@@ -141,30 +175,30 @@ function paragraphLineCount(text: string, usable: number): number {
 }
 
 /** Explicit line breaks count as lines; each paragraph still wraps (ADR-217). */
-function headerLineCount(text: string, width: number): number {
+function headerLineCount(text: string, width: number, size: number): number {
   if (!text) return 1;
   const usable = Math.max(24, width - TABLE_HEADER_PADDING * 2);
   return text
     .split("\n")
-    .reduce((total, paragraph) => total + paragraphLineCount(paragraph, usable), 0);
+    .reduce((total, paragraph) => total + paragraphLineCount(paragraph, usable, size), 0);
 }
 
 /** The width a vertical header needs for its explicit lines. */
-function verticalHeaderWidth(text: string): number {
+function verticalHeaderWidth(text: string, size: number): number {
   return (
-    Math.max(1, text.split("\n").length) * TABLE_HEADER_LINE_HEIGHT +
+    Math.max(1, text.split("\n").length) * headerLineHeight(size) +
     TABLE_HEADER_PADDING * 2
   );
 }
 
 /** The row-header strip: manual, or as wide as its longest horizontal label. */
-function headerWidthFor(layout: TableLayout): number {
+function headerWidthFor(layout: TableLayout, style: TableHeaderTextStyle): number {
   if (layout.headerWidth) return layout.headerWidth;
   const longest = layout.rows.reduce(
     (width, row) =>
       row.vertical
-        ? Math.max(width, TABLE_HEADER_LINE_HEIGHT)
-        : Math.max(width, approxWidth(headerText(row.title))),
+        ? Math.max(width, headerLineHeight(style.size))
+        : Math.max(width, approxWidth(headerText(row.title), style.size)),
     0,
   );
   return Math.min(
@@ -224,6 +258,7 @@ function contentColumnWidths(
   layout: TableLayout,
   widgets: readonly Widget[],
   startX: number,
+  style: TableHeaderTextStyle,
 ): number[] {
   const columns = layout.columns;
   const widths = columns.map((column) =>
@@ -260,7 +295,9 @@ function contentColumnWidths(
         );
       }
     });
-    if (column.vertical) content = Math.max(content, verticalHeaderWidth(headerText(column.title)));
+    if (column.vertical) {
+      content = Math.max(content, verticalHeaderWidth(headerText(column.title), style.size));
+    }
     widths[index] = Math.max(widths[index]!, content);
     x += widths[index]!;
   });
@@ -359,14 +396,18 @@ function contentRowHeights(
  * The header band needed for the current columns (ADR-202, ADR-217): a vertical header
  * fits its longest line, a horizontal one wraps into the band.
  */
-function headerHeightFor(columns: readonly TableColumn[], manual?: number): number {
+function headerHeightFor(
+  columns: readonly TableColumn[],
+  style: TableHeaderTextStyle,
+  manual?: number,
+): number {
   if (manual) return manual;
   let height = TABLE_HEADER_HEIGHT;
   for (const column of columns) {
     const text = headerText(column.axis.title);
     const needed = column.axis.vertical
-      ? approxWidth(longestHeaderLine(text)) + TABLE_HEADER_PADDING * 2
-      : headerLineCount(text, column.width) * TABLE_HEADER_LINE_HEIGHT +
+      ? approxWidth(longestHeaderLine(text), style.size) + TABLE_HEADER_PADDING * 2
+      : headerLineCount(text, column.width, style.size) * headerLineHeight(style.size) +
         TABLE_HEADER_PADDING * 2;
     height = Math.max(height, needed);
   }
@@ -383,14 +424,15 @@ export function tableAxisSizes(
   widgets: readonly Widget[],
 ): { columns: number[]; rows: number[] } {
   const origin = { x: frame.x - frame.width / 2, y: frame.y - frame.height / 2 };
-  const headerWidth = headerWidthFor(layout);
-  const columns = contentColumnWidths(frame, layout, widgets, origin.x + headerWidth);
+  const style = tableHeaderTextStyle(layout);
+  const headerWidth = headerWidthFor(layout, style);
+  const columns = contentColumnWidths(frame, layout, widgets, origin.x + headerWidth, style);
   const placed = layout.columns.map((axis, index) => ({
     axis,
     x: 0,
     width: columns[index]!,
   }));
-  const headerHeight = headerHeightFor(placed, layout.headerHeight);
+  const headerHeight = headerHeightFor(placed, style, layout.headerHeight);
   const rows = contentRowHeights(frame, layout, widgets, origin.y + headerHeight);
   return { columns, rows };
 }
@@ -403,8 +445,9 @@ export function layoutTable(
   const layout = frame.layout;
   if (layout?.kind !== "table" || layout.active === false) return null;
   const origin = { x: frame.x - frame.width / 2, y: frame.y - frame.height / 2 };
-  const headerWidth = headerWidthFor(layout);
-  const widths = contentColumnWidths(frame, layout, widgets, origin.x + headerWidth);
+  const style = tableHeaderTextStyle(layout);
+  const headerWidth = headerWidthFor(layout, style);
+  const widths = contentColumnWidths(frame, layout, widgets, origin.x + headerWidth, style);
 
   const columns: TableColumn[] = [];
   let x = origin.x + headerWidth;
@@ -414,7 +457,7 @@ export function layoutTable(
     x += width;
   });
 
-  const headerHeight = headerHeightFor(columns, layout.headerHeight);
+  const headerHeight = headerHeightFor(columns, style, layout.headerHeight);
   const heights = contentRowHeights(frame, layout, widgets, origin.y + headerHeight);
 
   const rows: TableRow[] = [];

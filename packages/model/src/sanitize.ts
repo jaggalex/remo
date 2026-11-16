@@ -253,6 +253,26 @@ function readPaddings(value: unknown): Raw | undefined {
   return Object.keys(output).length ? output : undefined;
 }
 
+const HEADER_TEXT_WEIGHTS = new Set(["regular", "medium", "bold"]);
+const HEADER_TEXT_ALIGNS = new Set(["left", "center", "right"]);
+
+function readHeaderText(value: unknown): Raw | undefined {
+  if (!isObject(value)) return undefined;
+  const output: Raw = {};
+  if (isFiniteNumber(value.size) && value.size >= 8 && value.size <= 48) {
+    output.size = value.size;
+  }
+  if (typeof value.weight === "string" && HEADER_TEXT_WEIGHTS.has(value.weight)) {
+    output.weight = value.weight;
+  }
+  if (typeof value.italic === "boolean") output.italic = value.italic;
+  if (typeof value.color === "string" && value.color) output.color = value.color;
+  if (typeof value.align === "string" && HEADER_TEXT_ALIGNS.has(value.align)) {
+    output.align = value.align;
+  }
+  return Object.keys(output).length ? output : undefined;
+}
+
 function readLayout(value: unknown): Raw | undefined {
   if (!isObject(value) || value.kind !== "table") return undefined;
   if (!Array.isArray(value.columns) || !Array.isArray(value.rows)) return undefined;
@@ -293,6 +313,8 @@ function readLayout(value: unknown): Raw | undefined {
     if (borders) appearance.borders = borders;
     const paddings = readPaddings(value.appearance.paddings);
     if (paddings) appearance.paddings = paddings;
+    const headerText = readHeaderText(value.appearance.headerText);
+    if (headerText) appearance.headerText = headerText;
     if (Object.keys(appearance).length) layout.appearance = appearance;
   }
   const spans = readSpans(value.spans, columns, rows);
