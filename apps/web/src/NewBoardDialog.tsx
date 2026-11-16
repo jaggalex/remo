@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { TEMPLATE_KEYS, type TemplateKey } from "@remo/model";
+import { Dialog } from "@remo/ui";
 import { api, ApiError, type OrgSummary } from "./api";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
@@ -103,25 +104,14 @@ export function NewBoardDialog({
   };
 
   return (
-    <div
-      className="dialog-backdrop"
-      role="presentation"
-      onPointerDown={() => {
-        if (!busy) onClose();
-      }}
+    <Dialog
+      title={t("newBoard.title")}
+      help={<HelpLink topicId="rooms.create" />}
+      size="sm"
+      onClose={onClose}
+      dismissable={!busy}
     >
-      <form
-        className="auth-dialog new-board-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("newBoard.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-        onSubmit={submit}
-      >
-        <h2>
-          {t("newBoard.title")} <HelpLink topicId="rooms.create" />
-        </h2>
-
+      <form className="auth-dialog new-board-dialog" onSubmit={submit}>
         <label className="auth-field">
           <span>{t("newBoard.name")}</span>
           <input
@@ -213,6 +203,6 @@ export function NewBoardDialog({
           </button>
         </div>
       </form>
-    </div>
+    </Dialog>
   );
 }

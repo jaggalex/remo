@@ -13,4 +13,5 @@ default · alert (`alertdialog`) · dismissable. hover, active — не прим
 
 ## Потребитель передаёт
 - `title`, `description`, `size`, `children`, `footer` (кнопки: secondary слева, primary справа), `onClose`, `dismissable`.
+- `help` — одна справка на диалог, рядом с заголовком (`HelpLink` продукта). Справок у групп внутри диалога нет.
 - `inline` — без затемнения и ловушки (каталог, эталоны).

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Dialog } from "@remo/ui";
 import { api, type SessionUser } from "./api";
 import { useI18n } from "./i18n";
 
@@ -58,15 +59,8 @@ export function AuthDialog({
   };
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <form
-        className="auth-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("auth.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-        onSubmit={submit}
-      >
+    <Dialog title={t("auth.title")} size="sm" onClose={onClose}>
+      <form className="auth-dialog" onSubmit={submit}>
         <div className="auth-tabs" role="tablist">
           <button
             type="button"
@@ -129,6 +123,6 @@ export function AuthDialog({
         </div>
         <p className="auth-hint">{t("auth.noEmail")}</p>
       </form>
-    </div>
+    </Dialog>
   );
 }

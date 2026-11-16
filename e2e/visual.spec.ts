@@ -154,8 +154,10 @@ test("the board, export, timer and vote screens fit the viewport", async ({ page
   await expect(page.locator(".export-dialog")).toBeVisible();
   expect(await page.locator(".export-dialog .export-choice").count()).toBeGreaterThanOrEqual(5);
   expect(await fits()).toBe(true);
-  await capture(page, page.locator(".export-dialog"), "export");
-  await page.locator(".export-dialog .dialog-close").click();
+  const exportDialog = page.getByRole("dialog", { name: "Export" });
+  await capture(page, exportDialog, "export");
+  // The header close of Dialog comes first; the footer has its own "Close".
+  await exportDialog.getByRole("button", { name: "Close", exact: true }).first().click();
 
   await openFacilitation(page);
   await page.getByRole("menuitem", { name: /Timer/ }).click();

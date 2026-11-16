@@ -67,6 +67,8 @@ export function countPrimary(node: ReactNode): number {
 export interface DialogProps {
   title: string;
   description?: string;
+  /** One help link for the whole dialog, beside the title (a `?` icon that opens help). */
+  help?: ReactNode;
   size?: "sm" | "md" | "lg";
   footer?: ReactNode;
   onClose?: () => void;
@@ -77,7 +79,7 @@ export interface DialogProps {
   children?: ReactNode;
 }
 
-export function Dialog({ title, description, size = "md", footer, onClose, dismissable = true, inline, alert, children }: DialogProps) {
+export function Dialog({ title, description, help, size = "md", footer, onClose, dismissable = true, inline, alert, children }: DialogProps) {
   const { t } = useUiStrings();
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -101,6 +103,7 @@ export function Dialog({ title, description, size = "md", footer, onClose, dismi
     <div ref={ref} className={cx("rm-dialog", `rm-dialog-${size}`)} role={alert ? "alertdialog" : "dialog"} aria-modal={inline ? undefined : true} aria-labelledby={titleId} onKeyDown={onKey}>
       <div className="rm-dialog-head">
         <h2 id={titleId} className="rm-dialog-title">{title}</h2>
+        {help && <span className="rm-dialog-help">{help}</span>}
         {onClose && dismissable && <IconButton icon="close" label={t("close")} size="compact" onClick={onClose} />}
       </div>
       {description && <p className="rm-dialog-desc">{description}</p>}

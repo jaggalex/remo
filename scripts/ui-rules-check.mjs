@@ -11,10 +11,15 @@
  * The same rule applies to layers: a panel names `--z-*`, never a number. The ladder is
  * one primitive series, not a light/dark pair, so both themes share the order (ADR-139).
  *
- *   node scripts/ui-rules-check.mjs
+ * Design rules (type, spacing, radius, motion, colour roles, DS controls, modal dialogs,
+ * icons) are a ratchet over existing deviations: see `ui-design-rules.mjs`.
+ *
+ *   node scripts/ui-rules-check.mjs              check
+ *   node scripts/ui-rules-check.mjs --tighten    lower the design baseline after a fix
  */
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { compareWithBaseline, countFindings, RULES, scanDesignRules, tighten } from "./ui-design-rules.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const SCAN = join(ROOT, "apps/web/src");
@@ -112,12 +117,46 @@ for (const file of walk(SCAN)) {
 
 problems.push(...layerProblems());
 
+// Design rules: a ratchet per file and rule (ui-design-rules.mjs).
+const BASELINE = join(ROOT, "scripts/ui-design-baseline.json");
+const findings = scanDesignRules(ROOT);
+const counts = countFindings(findings);
+const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, "utf8")) : null;
+const { worse, better } = compareWithBaseline(counts, baseline ?? {});
+
+if (process.argv.includes("--tighten")) {
+  if (baseline && worse.length) {
+    console.error("Cannot tighten over a regression; fix these first:");
+    for (const row of worse) console.error(`  ${row.file}: ${row.rule} ${row.was} → ${row.now}`);
+    process.exit(1);
+  }
+  writeFileSync(BASELINE, `${JSON.stringify(tighten(counts, baseline ?? counts), null, 1)}\n`);
+  const total = findings.length;
+  console.log(`Design baseline ${baseline ? "tightened" : "written"}: ${total} known deviations in ${Object.keys(counts).length} files`);
+  process.exit(0);
+}
+
+if (!baseline) problems.push("scripts/ui-design-baseline.json is missing: run node scripts/ui-rules-check.mjs --tighten");
+for (const row of worse) {
+  const lines = findings
+    .filter((f) => f.file === row.file && f.rule === row.rule)
+    .map((f) => f.line)
+    .join(", ");
+  problems.push(`${row.file}: ${row.rule} ${row.was} → ${row.now} (lines ${lines}) — ${RULES[row.rule]}`);
+}
+for (const row of better) {
+  problems.push(
+    `${row.file}: ${row.rule} improved ${row.was} → ${row.now} — lock it in: node scripts/ui-rules-check.mjs --tighten`,
+  );
+}
+
 if (problems.length) {
-  console.error("UI rules failed (use a token, objectDefaults.ts, or a named layer):");
+  console.error("UI rules failed (use a token, objectDefaults.ts, a named layer, or a @remo/ui component):");
   for (const problem of problems) console.error(`  ${problem}`);
   process.exit(1);
 }
 
 console.log(
-  `UI rules ok: no colour literals outside ${ALLOWED.size} data modules; layers are one named ladder`,
+  `UI rules ok: no colour literals outside ${ALLOWED.size} data modules; layers are one named ladder; ` +
+    `design ratchet holds at ${findings.length} known deviations`,
 );

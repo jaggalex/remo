@@ -389,12 +389,12 @@
 
 .tag-green {
   background: var(--success-soft);
-  color: var(--success);
+  color: var(--state-success);
 }
 
 .tag-yellow {
   background: var(--warning-soft);
-  color: var(--warning);
+  color: var(--state-warning);
 }
 
 .tag-red {

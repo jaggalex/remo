@@ -207,8 +207,8 @@
   gap: 4px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-2);
-  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-hover);
 }
 
 .agent-source > strong {

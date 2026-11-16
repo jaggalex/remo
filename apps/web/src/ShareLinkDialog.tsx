@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Dialog } from "@remo/ui";
 import { useI18n } from "./i18n";
 
 /**
@@ -19,34 +20,13 @@ export function ShareLinkDialog({
   const field = useRef<HTMLInputElement | null>(null);
   if (!link) return null;
   return (
-    <div
-      className="dialog-backdrop"
-      role="presentation"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <Dialog
+      title={t("board.shareFallbackTitle")}
+      description={t("board.shareFallbackBody")}
+      size="sm"
+      onClose={onClose}
     >
-      <div
-        className="auth-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("board.shareFallbackTitle")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <div className="share-head">
-          <div>
-            <h2>{t("board.shareFallbackTitle")}</h2>
-            <p className="muted">{t("board.shareFallbackBody")}</p>
-          </div>
-          <button
-            type="button"
-            className="dialog-close"
-            aria-label={t("delete.cancel")}
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
+      <div className="auth-dialog">
         <input
           ref={field}
           className="share-fallback-input"
@@ -71,6 +51,6 @@ export function ShareLinkDialog({
           </button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

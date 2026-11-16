@@ -1,0 +1,321 @@
+{
+ "apps/web/src/AgentDialog.tsx": {
+  "DS-CTRL-01/button": 11,
+  "DS-CTRL-01/field": 9,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/AgentSelectionSource.tsx": {
+  "DS-CTRL-01/button": 2
+ },
+ "apps/web/src/AgentsPanel.tsx": {
+  "DS-CTRL-01/button": 6,
+  "DS-CTRL-01/field": 3
+ },
+ "apps/web/src/AiCredentials.tsx": {
+  "DS-CTRL-01/button": 6,
+  "DS-CTRL-01/field": 6
+ },
+ "apps/web/src/AiJournal.tsx": {
+  "DS-CTRL-01/button": 1,
+  "DS-CTRL-01/field": 2
+ },
+ "apps/web/src/AppsPanel.tsx": {
+  "DS-CTRL-01/button": 2,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/AuthDialog.tsx": {
+  "DS-CTRL-01/button": 4,
+  "DS-CTRL-01/field": 3
+ },
+ "apps/web/src/BoardCanvas.tsx": {
+  "DS-CTRL-01/button": 1
+ },
+ "apps/web/src/BoardDeleteDialog.tsx": {
+  "DS-CTRL-01/button": 3,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/BoardInspector.tsx": {
+  "DS-CTRL-01/button": 12,
+  "DS-CTRL-01/field": 1,
+  "DS-ICON-01": 1
+ },
+ "apps/web/src/BoardObjectPanels.tsx": {
+  "DS-CTRL-01/button": 9,
+  "DS-CTRL-01/field": 12
+ },
+ "apps/web/src/BoardOverlays.tsx": {
+  "DS-CTRL-01/button": 7,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/BoardTopbar.tsx": {
+  "DS-CTRL-01/button": 2
+ },
+ "apps/web/src/CardFilterPanel.tsx": {
+  "DS-CTRL-01/button": 1,
+  "DS-CTRL-01/field": 2
+ },
+ "apps/web/src/CommentsPanel.tsx": {
+  "DS-CTRL-01/button": 9,
+  "DS-CTRL-01/field": 3,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/ContextMenu.tsx": {
+  "DS-CTRL-01/button": 2,
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/DeleteDialog.tsx": {
+  "DS-CTRL-01/button": 3,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/ExportDialog.tsx": {
+  "DS-CTRL-01/button": 7,
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/FollowDialog.tsx": {
+  "DS-CTRL-01/button": 3,
+  "DS-CTRL-01/field": 1,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/InfoCard.tsx": {
+  "DS-CTRL-01/button": 2,
+  "DS-ICON-01": 1
+ },
+ "apps/web/src/InviteDialog.tsx": {
+  "DS-CTRL-01/button": 2
+ },
+ "apps/web/src/LinkPasswordGate.tsx": {
+  "DS-CTRL-01/button": 1,
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/NewBoardDialog.tsx": {
+  "DS-CTRL-01/button": 2,
+  "DS-CTRL-01/field": 5
+ },
+ "apps/web/src/OrganisationDialog.tsx": {
+  "DS-CTRL-01/button": 16,
+  "DS-CTRL-01/field": 4,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/PresentationLayer.tsx": {
+  "DS-CTRL-01/button": 10,
+  "DS-ICON-01": 4,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/RoomAgentPanel.tsx": {
+  "DS-CTRL-01/button": 13,
+  "DS-CTRL-01/field": 4,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/SectionLayoutDialog.tsx": {
+  "DS-CTRL-01/field": 2
+ },
+ "apps/web/src/SectionPanel.tsx": {
+  "DS-CTRL-01/button": 3,
+  "DS-CTRL-01/field": 2
+ },
+ "apps/web/src/SectionTitleLayer.tsx": {
+  "DS-CTRL-01/button": 2,
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/SettingsPanel.tsx": {
+  "DS-CTRL-01/button": 5,
+  "DS-CTRL-01/field": 6,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/ShareDialog.tsx": {
+  "DS-CTRL-01/button": 12,
+  "DS-CTRL-01/field": 8
+ },
+ "apps/web/src/ShareLinkDialog.tsx": {
+  "DS-CTRL-01/button": 2,
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/TableAppearanceControls.tsx": {
+  "DS-CTRL-01/button": 2
+ },
+ "apps/web/src/TableAxisControls.tsx": {
+  "DS-CTRL-01/button": 4
+ },
+ "apps/web/src/TableHeaderLayer.tsx": {
+  "DS-CTRL-01/button": 1,
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/TableHeaderTextControls.tsx": {
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/ThemeSwitch.tsx": {
+  "DS-CTRL-01/button": 1
+ },
+ "apps/web/src/TidyDialog.tsx": {
+  "DS-CTRL-01/button": 2,
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/TimerPanel.tsx": {
+  "DS-CTRL-01/button": 7,
+  "DS-CTRL-01/field": 1,
+  "DS-ICON-01": 1,
+  "UX-DIALOG-01": 1
+ },
+ "apps/web/src/ToolRail.tsx": {
+  "DS-CTRL-01/button": 1
+ },
+ "apps/web/src/WorkspaceHome.tsx": {
+  "DS-CTRL-01/button": 3,
+  "DS-ICON-01": 1
+ },
+ "apps/web/src/object-panel/ColorWindow.tsx": {
+  "DS-CTRL-01/button": 2
+ },
+ "apps/web/src/styles/accounts.css": {
+  "DS-COLOR-01/alias": 8,
+  "DS-COLOR-01/primitive": 1,
+  "DS-SHAPE-01": 4,
+  "DS-SPACE-01": 23,
+  "DS-TYPE-01": 13
+ },
+ "apps/web/src/styles/agents.css": {
+  "DS-COLOR-01/alias": 24,
+  "DS-SHAPE-01": 5,
+  "DS-SPACE-01": 43,
+  "DS-TYPE-01": 38
+ },
+ "apps/web/src/styles/base.css": {
+  "DS-COLOR-01/alias": 3
+ },
+ "apps/web/src/styles/boards-panel.css": {
+  "DS-COLOR-01/alias": 24,
+  "DS-MOTION-01": 1,
+  "DS-SHAPE-01": 3,
+  "DS-SPACE-01": 49,
+  "DS-TYPE-01": 28,
+  "DS-TYPE-02": 2
+ },
+ "apps/web/src/styles/colour-window.css": {
+  "DS-SHAPE-01": 1,
+  "DS-SPACE-01": 2,
+  "DS-TYPE-01": 7,
+  "DS-TYPE-02": 1
+ },
+ "apps/web/src/styles/connector-bar.css": {
+  "DS-SHAPE-01": 3,
+  "DS-TYPE-01": 1
+ },
+ "apps/web/src/styles/home.css": {
+  "DS-COLOR-01/alias": 2,
+  "DS-MOTION-01": 2,
+  "DS-TYPE-01": 3
+ },
+ "apps/web/src/styles/info-card.css": {
+  "DS-COLOR-01/alias": 5,
+  "DS-SPACE-01": 5,
+  "DS-TYPE-01": 3,
+  "DS-TYPE-02": 1
+ },
+ "apps/web/src/styles/inspector.css": {
+  "DS-COLOR-01/alias": 18,
+  "DS-MOTION-01": 2,
+  "DS-SHAPE-01": 2,
+  "DS-SPACE-01": 30,
+  "DS-TYPE-01": 14,
+  "DS-TYPE-02": 4
+ },
+ "apps/web/src/styles/journal.css": {
+  "DS-COLOR-01/alias": 12,
+  "DS-SHAPE-01": 2,
+  "DS-SPACE-01": 15,
+  "DS-TYPE-01": 11
+ },
+ "apps/web/src/styles/menus.css": {
+  "DS-COLOR-01/alias": 4,
+  "DS-SPACE-01": 7,
+  "DS-TYPE-01": 4,
+  "DS-TYPE-02": 1
+ },
+ "apps/web/src/styles/object-bars.css": {
+  "DS-SHAPE-01": 4,
+  "DS-SPACE-01": 3,
+  "DS-TYPE-01": 4
+ },
+ "apps/web/src/styles/organisation.css": {
+  "DS-COLOR-01/alias": 10,
+  "DS-SHAPE-01": 4,
+  "DS-SPACE-01": 35,
+  "DS-TYPE-01": 22
+ },
+ "apps/web/src/styles/provider-keys.css": {
+  "DS-COLOR-01/alias": 15,
+  "DS-COLOR-01/primitive": 5,
+  "DS-MOTION-01": 1,
+  "DS-SHAPE-01": 5,
+  "DS-SPACE-01": 40,
+  "DS-TYPE-01": 21
+ },
+ "apps/web/src/styles/room-agent.css": {
+  "DS-COLOR-01/alias": 7,
+  "DS-COLOR-01/primitive": 7,
+  "DS-SPACE-01": 14,
+  "DS-TYPE-01": 8,
+  "DS-TYPE-02": 1
+ },
+ "apps/web/src/styles/section-panel.css": {
+  "DS-COLOR-01/alias": 16,
+  "DS-MOTION-01": 1,
+  "DS-TYPE-01": 2,
+  "DS-TYPE-02": 2
+ },
+ "apps/web/src/styles/settings.css": {
+  "DS-SHAPE-01": 1,
+  "DS-SPACE-01": 15,
+  "DS-TYPE-01": 10
+ },
+ "apps/web/src/styles/share.css": {
+  "DS-COLOR-01/alias": 9,
+  "DS-SHAPE-01": 3,
+  "DS-SPACE-01": 15,
+  "DS-TYPE-01": 9
+ },
+ "apps/web/src/styles/table-sizing.css": {
+  "DS-SHAPE-01": 1
+ },
+ "apps/web/src/styles/topbar.css": {
+  "DS-COLOR-01/alias": 2,
+  "DS-MOTION-01": 4,
+  "DS-SHAPE-01": 2,
+  "DS-SPACE-01": 7,
+  "DS-TYPE-01": 8
+ },
+ "apps/web/src/styles/vote-chips.css": {
+  "DS-COLOR-01/alias": 20,
+  "DS-MOTION-01": 1,
+  "DS-SHAPE-01": 11,
+  "DS-SPACE-01": 39,
+  "DS-TYPE-01": 22,
+  "DS-TYPE-02": 1
+ },
+ "apps/web/src/styles/workspace.css": {
+  "DS-COLOR-01/primitive": 1,
+  "DS-SPACE-01": 3,
+  "DS-TYPE-01": 5
+ },
+ "apps/web/src/topbar/AccountMenu.tsx": {
+  "DS-CTRL-01/button": 5
+ },
+ "apps/web/src/topbar/BoardTitleMenu.tsx": {
+  "DS-CTRL-01/field": 1
+ },
+ "apps/web/src/topbar/FacilitationMenu.tsx": {
+  "DS-CTRL-01/button": 1
+ },
+ "apps/web/src/topbar/Peers.tsx": {
+  "DS-CTRL-01/button": 1
+ }
+}

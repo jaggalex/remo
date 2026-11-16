@@ -29,6 +29,22 @@
   width: min(520px, 100%);
 }
 
+/* Dialogs moved onto the @remo/ui Dialog keep their old class on the content wrapper,
+   so their inner styles and test locators still apply; inside Dialog the wrapper is
+   layout only — the frame, scrim and close come from Dialog (UX-DIALOG-01). The rule
+   goes away with the classes once every dialog has moved (audit plan M9). */
+.rm-dialog-body > .auth-dialog,
+.rm-dialog-body > .share-dialog {
+  width: auto;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
 .share-fallback-input {
   width: 100%;
   border: 1px solid var(--border-strong);

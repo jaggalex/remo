@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Dialog } from "@remo/ui";
 import { api, type Grant, type OrgMember } from "./api";
 import { formatMoment } from "./format";
 import { useI18n } from "./i18n";
@@ -188,25 +189,14 @@ export function ShareDialog({
   const roleLine = roleSourceLine(t, viewerRole, viewerSources);
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="share-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("share.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="share-head">
-          <div>
-            <h2>
-              {t("share.title")} <HelpLink topicId="access.share" />
-            </h2>
-            <p className="muted">{boardTitle}</p>
-          </div>
-          <button type="button" className="dialog-close" onClick={onClose} aria-label={t("share.close")}>
-            ×
-          </button>
-        </header>
+    <Dialog
+      title={t("share.title")}
+      description={boardTitle}
+      help={<HelpLink topicId="access.share" />}
+      size="md"
+      onClose={onClose}
+    >
+      <section className="share-dialog">
 
         <form
           className="share-add"
@@ -543,7 +533,7 @@ export function ShareDialog({
           </div>
         )}
       </section>
-    </div>
+    </Dialog>
   );
 }
 

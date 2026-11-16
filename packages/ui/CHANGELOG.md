@@ -3,6 +3,12 @@
 Semver. A breaking token change (rename, removal, a role pointing elsewhere) is a major
 version with a note here and a codemod where possible.
 
+## Unreleased
+
+- **Dialog:** optional `help` slot — one help link beside the title. Product dialogs that
+  had a «?» in a hand-made header can move onto `Dialog` without losing it (audit
+  UX-DIALOG-01). Additive; no existing prop changes.
+
 ## 1.0.0 — 2026-10-26
 
 First package release (replaces the single-file prototype bundle).

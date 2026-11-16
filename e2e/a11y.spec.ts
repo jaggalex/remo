@@ -89,7 +89,7 @@ test("dialogs have no serious accessibility violations", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Export…" }).click();
   await expect(page.locator(".export-dialog")).toBeVisible();
   await expectNoSerious(page, "export dialog");
-  await page.locator(".export-dialog .dialog-close").click();
+  await page.getByRole("dialog", { name: "Export" }).getByRole("button", { name: "Close", exact: true }).first().click();
 
   await openFacilitation(page);
   await page.getByRole("menuitem", { name: /Voting/ }).click();
@@ -192,4 +192,42 @@ test("a section table has no serious accessibility violations", async ({ page })
   await expect(page.locator(".table-mirror table")).toHaveCount(1);
   await expectNoSerious(page, "section panel", ".section-panel");
   await expectNoSerious(page, "table mirror", ".table-mirror");
+});
+
+/**
+ * A modal dialog is the @remo/ui Dialog (UX-DIALOG-01): focus moves in, Tab stays in,
+ * Escape closes, focus returns to what opened it. Hand-made dialogs declared
+ * `aria-modal` without doing any of this, so a keyboard user stayed on the canvas.
+ */
+test("modal dialogs keep the keyboard inside and return focus", async ({ page }) => {
+  await freshBoard(page, "a11y-dialog-keys");
+  const cases: Array<{ name: string; open: () => Promise<void>; opener: () => ReturnType<Page["locator"]> }> = [
+    {
+      name: "Export",
+      open: async () => {
+        await openBoardMenu(page);
+        await page.getByRole("menuitem", { name: "Export…" }).click();
+      },
+      opener: () => page.getByRole("button", { name: /^Room menu:/ }),
+    },
+    {
+      name: "Room access",
+      open: () => page.getByRole("button", { name: "Share", exact: true }).click(),
+      opener: () => page.getByRole("button", { name: "Share", exact: true }),
+    },
+  ];
+  for (const { name, open, opener } of cases) {
+    await open();
+    const dialog = page.getByRole("dialog", { name });
+    await expect(dialog).toBeVisible();
+    const inside = () => dialog.evaluate((el) => el.contains(document.activeElement));
+    await expect.poll(inside, { message: `${name}: focus moves into the dialog` }).toBe(true);
+    for (let step = 0; step < 20; step += 1) {
+      await page.keyboard.press("Tab");
+      expect(await inside(), `${name}: Tab stays inside (step ${step + 1})`).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(opener(), `${name}: focus returns to the opener`).toBeFocused();
+  }
 });
