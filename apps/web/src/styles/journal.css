@@ -77,10 +77,6 @@
   color: var(--text-danger);
 }
 
-.timer-dialog {
-  width: min(440px, 100%);
-}
-
 .timer-face {
   display: flex;
   flex-direction: column;

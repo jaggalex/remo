@@ -11,7 +11,7 @@ import {
 import type { BoardConnection, Presence } from "@remo/doc";
 import { cellRect, layoutTable, type Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
-import { Button, Input } from "@remo/ui";
+import { Button, Dialog, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { usePresentation } from "./usePresentation";
@@ -201,31 +201,14 @@ export function PresentationLayer({
       {presentation.notice && <div className="canvas-notice">{presentation.notice}</div>}
 
       {presentation.panelOpen && (
-        <div
-          className="dialog-backdrop"
-          role="presentation"
-          onPointerDown={() => presentation.setPanelOpen(false)}
+        <Dialog
+          title={t("presentation.title")}
+          description={t("presentation.hint")}
+          help={<HelpLink topicId="presentation.mode" />}
+          size="md"
+          onClose={() => presentation.setPanelOpen(false)}
         >
-          <div
-            className="presentation-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("presentation.title")}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <header>
-              <b>
-                {t("presentation.title")} <HelpLink topicId="presentation.mode" />
-              </b>
-              <button
-                type="button"
-                onClick={() => presentation.setPanelOpen(false)}
-                aria-label={t("presentation.close")}
-              >
-                ✕
-              </button>
-            </header>
-            <p className="muted">{t("presentation.hint")}</p>
+          <div className="presentation-panel">
             {slides.length === 0 && <p className="muted">{t("presentation.noSlides")}</p>}
             <ol className="presentation-list">
               {slides.map((id, index) => (
@@ -313,7 +296,7 @@ export function PresentationLayer({
             </div>
             {!canFacilitate && <p className="muted">{t("presentation.forbidden")}</p>}
           </div>
-        </div>
+        </Dialog>
       )}
     </>
   );

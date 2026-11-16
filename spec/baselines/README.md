@@ -1,9 +1,11 @@
 # Product visual baselines
 
-PNG evidence for the screens and canvas states the product promises. Regenerate with:
+PNG evidence for the screens and canvas states the product promises. They are Linux renders
+from Chromium in the Playwright image, and `pnpm e2e:visual` compares every screen against
+them (ADR-222). A deliberate visual change regenerates them in the same pull request:
 
 ```bash
-pnpm db:up
+pnpm test:db:up
 pnpm baselines
 ```
 

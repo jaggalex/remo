@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { LinkPasswordGate } from "./LinkPasswordGate";
 import type { BoardDocument } from "@remo/doc";
 import { DeleteConfirmation } from "./DeleteDialog";
@@ -28,9 +29,12 @@ export function BoardAccessGate({
   onRetry: () => void;
 }) {
   const { t } = useI18n();
+  const titleId = useId();
+  // Not a dialog: there is no room behind it to return to, and the header above stays
+  // usable (ADR-139); a modal flag would hide that header from screen readers.
   return (
-    <div className="access-gate" role="dialog" aria-modal="true">
-      <h2>{t("iam.noAccess")}</h2>
+    <section className="access-gate" aria-labelledby={titleId}>
+      <h2 id={titleId}>{t("iam.noAccess")}</h2>
       <p className="muted">
         {reason === "PASSWORD_REQUIRED"
           ? t("iam.passwordRequired")
@@ -56,7 +60,7 @@ export function BoardAccessGate({
           </button>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

@@ -1,51 +1,10 @@
 /* ---------------------------------------------------------- settings --- */
 
-.settings-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-dialog);
-  display: grid;
-  place-items: center;
-  background: var(--bg-overlay);
-  padding: 24px;
-}
-
-.settings-panel {
-  width: min(560px, 100%);
-  max-height: min(82vh, 820px);
-  overflow: auto;
-  padding: 20px 22px;
-  border: var(--panel-border-width) solid var(--border-panel);
-  border-radius: var(--radius-2xl);
-  background: var(--bg-panel);
-  box-shadow: var(--shadow-pop);
-  font-family: var(--font-sans);
-}
-
-.settings-panel header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.settings-panel h2 {
-  margin: 0;
-  font-size: 18px;
-}
-
 .settings-panel h3 {
   margin: 18px 0 6px;
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
-.settings-close {
-  border: 0;
-  background: transparent;
-  font-size: 16px;
-  cursor: pointer;
   color: var(--text-secondary);
 }
 
@@ -126,8 +85,7 @@
   margin-top: 8px;
 }
 
-.settings-actions button,
-.settings-footer button {
+.settings-actions button {
   padding: 6px 12px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill);
@@ -137,16 +95,3 @@
   cursor: pointer;
 }
 
-.settings-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.settings-footer .share-button {
-  border-color: transparent;
-  color: var(--text-on-accent);
-}

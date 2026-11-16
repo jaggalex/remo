@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button, Dialog } from "@remo/ui";
 import { useI18n } from "./i18n";
 import {
   DEFAULT_SETTINGS,
@@ -37,15 +38,6 @@ export function SettingsPanel({
     setError(null);
   }, [open, settings]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
   if (!open) return null;
 
   const patch = (next: BoardSettings) => {
@@ -83,17 +75,29 @@ export function SettingsPanel({
   };
 
   return (
-    <div className="settings-overlay" role="dialog" aria-modal="true" aria-label={t("settings.title")}>
+    <Dialog
+      title={t("settings.title")}
+      description={t("settings.note")}
+      size="md"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            {t("settings.cancel")}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              onChange(draft);
+              onClose();
+            }}
+          >
+            {t("settings.save")}
+          </Button>
+        </>
+      }
+    >
       <div className="settings-panel">
-        <header>
-          <h2>{t("settings.title")}</h2>
-          <button type="button" className="settings-close" onClick={onClose} aria-label={t("settings.close")}>
-            ✕
-          </button>
-        </header>
-
-        <p className="muted settings-note">{t("settings.note")}</p>
-
         <section>
           <h3>{t("settings.grid")}</h3>
           {number(
@@ -261,23 +265,7 @@ export function SettingsPanel({
             </button>
           </div>
         </section>
-
-        <footer className="settings-footer">
-          <button type="button" className="ghost-button" onClick={onClose}>
-            {t("settings.cancel")}
-          </button>
-          <button
-            type="button"
-            className="share-button"
-            onClick={() => {
-              onChange(draft);
-              onClose();
-            }}
-          >
-            {t("settings.save")}
-          </button>
-        </footer>
       </div>
-    </div>
+    </Dialog>
   );
 }

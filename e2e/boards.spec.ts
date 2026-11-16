@@ -155,8 +155,8 @@ test("switches the organisation and leaves the previous board", async ({ page })
   await page.getByRole("button", { name: "+ New organisation" }).click();
   await page.locator(".org-create input").first().fill("Second team");
   await page.getByRole("button", { name: "Create organisation" }).click();
-  await expect(page.locator(".org-dialog h2")).toHaveText("Second team");
-  await page.locator(".org-dialog").getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("dialog", { name: "Second team" })).toBeVisible();
+  await page.getByRole("dialog", { name: "Second team" }).getByRole("button", { name: "Close", exact: true }).first().click();
 
   // A board in that organisation, so the filter has something to switch between.
   await page.getByRole("button", { name: "All rooms" }).click();

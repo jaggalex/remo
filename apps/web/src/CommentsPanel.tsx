@@ -6,7 +6,7 @@ import { commentsApi, type CommentAnchor, type CommentMessage, type CommentThrea
 import { currentRoom } from "./identity";
 import { threadInFrame } from "./commentScope";
 import { CommentPlacementLayer } from "./CommentPlacementLayer";
-import { ConfirmDialog as UiConfirmDialog, Icon } from "@remo/ui";
+import { ConfirmDialog as UiConfirmDialog, Dialog, Icon } from "@remo/ui";
 import { formatMoment } from "./format";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
@@ -242,16 +242,13 @@ export function CommentsPanel({
       )}
 
       {pendingAnchor && (
-        <div className="dialog-backdrop" role="presentation" onPointerDown={() => setPendingAnchor(null)}>
-          <div
-            className="auth-dialog comment-composer"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("comments.new")}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <h2>{t("comments.new")}</h2>
-            <p className="muted">{t("comments.anchor", { anchor: anchorLabelOf(pendingAnchor) })}</p>
+        <Dialog
+          title={t("comments.new")}
+          description={t("comments.anchor", { anchor: anchorLabelOf(pendingAnchor) })}
+          size="md"
+          onClose={() => setPendingAnchor(null)}
+        >
+          <div className="auth-dialog comment-composer">
             <textarea
               autoFocus
               maxLength={4000}
@@ -276,7 +273,7 @@ export function CommentsPanel({
               </button>
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
 
       {pendingDelete && (

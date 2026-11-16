@@ -211,6 +211,14 @@ test("modal dialogs keep the keyboard inside and return focus", async ({ page })
       opener: () => page.getByRole("button", { name: /^Room menu:/ }),
     },
     {
+      name: "Room settings",
+      open: async () => {
+        await openBoardMenu(page);
+        await page.getByRole("menuitem", { name: "Room settings" }).click();
+      },
+      opener: () => page.getByRole("button", { name: /^Room menu:/ }),
+    },
+    {
       name: "Room access",
       open: () => page.getByRole("button", { name: "Share", exact: true }).click(),
       opener: () => page.getByRole("button", { name: "Share", exact: true }),

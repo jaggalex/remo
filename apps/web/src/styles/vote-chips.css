@@ -555,12 +555,6 @@ button.peer:disabled {
   margin: 4px 0 8px;
 }
 
-.org-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .org-create {
   display: flex;
   align-items: center;
@@ -690,10 +684,6 @@ button.peer:disabled {
   border: 1px solid var(--accent);
   border-radius: 50%;
   pointer-events: none;
-}
-
-.comment-composer {
-  width: min(520px, calc(100vw - 32px));
 }
 
 .comment-composer textarea {

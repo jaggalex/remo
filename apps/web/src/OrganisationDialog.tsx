@@ -12,7 +12,7 @@ import {
 import { formatMoment, initials } from "./format";
 import { AgentsPanel } from "./AgentsPanel";
 import { OrganisationTeams } from "./OrganisationTeams";
-import { Button, Input } from "@remo/ui";
+import { Button, Dialog, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { ABOUT, ABOUT_LABEL } from "./about";
@@ -382,75 +382,63 @@ export function OrganisationDialog({
   const manageable = members.filter((member) => member.relation === "member" && member.state !== "suspended");
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="org-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("org.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="org-head">
-          <div>
-            {renamingOrg && org ? (
-              <form className="org-rename" onSubmit={renameOrg}>
-                <Input
-                  size="compact"
-                  value={orgNameDraft}
-                  maxLength={120}
-                  aria-label={t("org.renameOrg")}
-                  onChange={(event) => setOrgNameDraft(event.target.value)}
-                />
+    <Dialog
+      title={org?.name ?? t("org.title")}
+      description={isGuest ? t("org.guestBody") : t("org.memberCount", { n: members.length })}
+      size="lg"
+      onClose={onClose}
+    >
+      <section className="org-dialog">
+        <div className="org-head">
+          {renamingOrg && org ? (
+            <form className="org-rename" onSubmit={renameOrg}>
+              <Input
+                size="compact"
+                value={orgNameDraft}
+                maxLength={120}
+                aria-label={t("org.renameOrg")}
+                onChange={(event) => setOrgNameDraft(event.target.value)}
+              />
+              <Button
+                type="submit"
+                size="compact"
+                variant="primary"
+                loading={busy}
+                disabled={!orgNameDraft.trim()}
+              >
+                {t("org.save")}
+              </Button>
+              <Button size="compact" variant="ghost" onClick={() => setRenamingOrg(false)}>
+                {t("org.cancel")}
+              </Button>
+            </form>
+          ) : (
+            <div className="org-title">
+              {org?.kind === "personal" && (
+                <span className="org-badge personal">{t("org.personal")}</span>
+              )}
+              {isOrgAdmin && org && (
                 <Button
-                  type="submit"
                   size="compact"
-                  variant="primary"
-                  loading={busy}
-                  disabled={!orgNameDraft.trim()}
+                  variant="ghost"
+                  onClick={() => {
+                    setRenamingOrg(true);
+                    setOrgNameDraft(org.name);
+                  }}
                 >
-                  {t("org.save")}
+                  {t("org.rename")}
                 </Button>
-                <Button size="compact" variant="ghost" onClick={() => setRenamingOrg(false)}>
-                  {t("org.cancel")}
-                </Button>
-              </form>
-            ) : (
-              <div className="org-title">
-                <h2>{org?.name ?? t("org.title")}</h2>
-                {org?.kind === "personal" && (
-                  <span className="org-badge personal">{t("org.personal")}</span>
-                )}
-                {isOrgAdmin && org && (
-                  <Button
-                    size="compact"
-                    variant="ghost"
-                    onClick={() => {
-                      setRenamingOrg(true);
-                      setOrgNameDraft(org.name);
-                    }}
-                  >
-                    {t("org.rename")}
-                  </Button>
-                )}
-              </div>
-            )}
-            <p className="muted">
-              {isGuest ? t("org.guestBody") : t("org.memberCount", { n: members.length })}
-            </p>
-          </div>
-          <div className="org-head-actions">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => setCreatingOrg((value) => !value)}
-            >
-              + {t("org.newOrg")}
-            </button>
-            <button type="button" className="dialog-close" onClick={onClose} aria-label={t("org.close")}>
-              ×
-            </button>
-          </div>
-        </header>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setCreatingOrg((value) => !value)}
+          >
+            + {t("org.newOrg")}
+          </button>
+        </div>
 
         {creatingOrg && (
           <form className="org-create" onSubmit={createOrg}>
@@ -794,6 +782,6 @@ export function OrganisationDialog({
           </button>
         </footer>
       </section>
-    </div>
+    </Dialog>
   );
 }

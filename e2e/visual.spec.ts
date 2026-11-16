@@ -18,16 +18,31 @@ import {
 /**
  * Visual evidence and screen contracts (roadmap Q2.1).
  *
- * PNGs in `spec/baselines/` are the artefact a person reviews; regenerate them with
- * `pnpm baselines`. The automated gate is a set of invariants that do not depend on the
- * platform's font rasterizer: connector pixels are sampled where the routing must differ,
- * and every dialog must fit the viewport without horizontal overflow.
+ * PNGs in `spec/baselines/` are compared in the Linux browser (`pnpm e2e:visual`,
+ * ADR-222) and regenerated on purpose with `pnpm baselines`. On any other browser the
+ * comparison is skipped, because a diff there means "another platform" (ADR-091); the
+ * invariants below run everywhere: connector pixels are sampled where the routing must
+ * differ, and every dialog must fit the viewport without horizontal overflow.
  */
-const update = Boolean(process.env.REMO_UPDATE_BASELINES);
+const linuxBrowser = Boolean(process.env.REMO_BROWSER_WS);
+/**
+ * Same binary, software rendering: repeated runs are pixel-identical. A ratio was too
+ * loose — 0.2 % of the timer dialog is ~400 px, more than its digits moving by 4 px.
+ * Twenty pixels leave room for a stray antialiased edge and nothing larger.
+ */
+const MAX_DIFF_PIXELS = 20;
 
-async function capture(page: Page, target: ReturnType<Page["locator"]>, name: string) {
-  if (!update) return;
-  await target.screenshot({ path: `spec/baselines/${name}.png` });
+async function capture(page: Page, target: ReturnType<Page["locator"]>, name: string, mask: ReturnType<Page["locator"]>[] = []) {
+  if (!linuxBrowser) return;
+  // Every scenario registers a fresh account, and the avatar's colour follows the account.
+  const avatar = page.locator(".account-button");
+  await expect(target).toHaveScreenshot(`${name}.png`, { maxDiffPixels: MAX_DIFF_PIXELS, mask: [avatar, ...mask] });
+}
+
+/** A region of the page rather than an element: a row of the canvas, the bottom edge. */
+async function captureClip(page: Page, name: string, clip: { x: number; y: number; width: number; height: number }) {
+  if (!linuxBrowser) return;
+  await expect(page).toHaveScreenshot(`${name}.png`, { maxDiffPixels: MAX_DIFF_PIXELS, clip });
 }
 
 function canvasPixels(page: Page) {
@@ -79,21 +94,16 @@ test("three connector routings paint differently", async ({ page }) => {
 
   const pixels = await canvasPixels(page);
   await capture(page, page.locator("[data-testid=connector-states]"), "connectors");
-  if (update) {
-    // The stage-1 debt named three baselines; each row is also its own file so a review
-    // can look at one routing without hunting inside the overview.
-    const box = await page.locator("[data-testid=connector-states] canvas").boundingBox();
-    if (box) {
-      for (const [name, top, height] of [
-        ["straight", 30, 120],
-        ["elbow", 160, 160],
-        ["curved", 300, 155],
-      ] as const) {
-        await page.screenshot({
-          path: `spec/baselines/connector-${name}.png`,
-          clip: { x: box.x, y: box.y + top, width: box.width, height },
-        });
-      }
+  // The stage-1 debt named three baselines; each row is also its own file so a review
+  // can look at one routing without hunting inside the overview.
+  const box = await page.locator("[data-testid=connector-states] canvas").boundingBox();
+  if (box) {
+    for (const [name, top, height] of [
+      ["straight", 30, 120],
+      ["elbow", 160, 160],
+      ["curved", 300, 155],
+    ] as const) {
+      await captureClip(page, `connector-${name}`, { x: box.x, y: box.y + top, width: box.width, height });
     }
   }
   console.log("connector pixels", pixels);
@@ -167,8 +177,8 @@ test("the board, export, timer and vote screens fit the viewport", async ({ page
   await expect(page.getByRole("menuitem", { name: /Timer/ })).toContainText("05:00");
   await page.getByRole("menuitem", { name: /Timer/ }).click();
   await expect(page.locator(".timer-face")).toBeVisible();
-  await capture(page, page.locator(".timer-dialog"), "timer");
-  await page.locator(".timer-dialog .dialog-close").click();
+  await capture(page, page.getByRole("dialog", { name: "Shared timer" }), "timer");
+  await page.getByRole("dialog", { name: "Shared timer" }).getByRole("button", { name: "Close", exact: true }).click();
 
   const created = await page.request.post(`/api/boards/${account.boardId}/vote-sessions`, {
     data: { objectIds: ["obj-a", "obj-b"], votesPerSubject: 2, minutes: 10, anonymous: true },
@@ -300,12 +310,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
   ).toBeEnabled();
 
   await capture(page, page.locator(".tool-rail"), "rail");
-  if (update) {
-    await page.screenshot({
-      path: "spec/baselines/canvas-bottom.png",
-      clip: { x: 0, y: 900 - 120, width: 1440, height: 120 },
-    });
-  }
+  await captureClip(page, "canvas-bottom", { x: 0, y: 900 - 120, width: 1440, height: 120 });
 
   // The voting line uses the same slot and the hint steps aside (§10.4, Н1). The note
   // the test just made is in scope, next to its nearest neighbour, so the artefact shows
@@ -912,4 +917,17 @@ test("a clipped label is marked and named", async ({ page }) => {
   await page.mouse.move(framedView.rect.left + framedView.rect.width - 40, framedView.rect.top + 100);
   await expect(page.getByRole("tooltip")).toHaveCount(0);
   await capture(page, page.locator(".canvas-wrap"), "text-overflow");
+});
+
+/**
+ * Room access after the M3 pilot (sketch D1): labelled fields, one primary action, the
+ * public link on, a group heading per block. The link holds the room id, so it is masked.
+ */
+test("room access reads as one form", async ({ page }) => {
+  await freshBoard(page, "visual-share");
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Room access" });
+  await dialog.getByRole("button", { name: "Turn on", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Turn off", exact: true })).toBeVisible();
+  await capture(page, dialog, "share", [dialog.getByRole("textbox", { name: "Public link" })]);
 });

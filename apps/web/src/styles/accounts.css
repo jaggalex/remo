@@ -92,8 +92,6 @@
 }
 
 .auth-field input,
-.share-add input,
-.share-add select,
 .share-link-url input {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill);
@@ -105,7 +103,6 @@
 }
 
 .auth-field input:focus,
-.share-add input:focus,
 .share-link-url input:focus {
   outline: none;
   border-color: var(--border-focus);
@@ -252,7 +249,6 @@
   font-size: 11.5px;
   color: var(--text-muted);
 }
-
 
 /* Docs and release at the bottom of the account menu: the product's own way out. */
 .account-about {

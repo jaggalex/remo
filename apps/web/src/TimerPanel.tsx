@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatRemaining, type TimerPhase } from "@remo/model";
+import { Dialog } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n } from "./i18n";
 
@@ -47,30 +48,14 @@ export function TimerPanel({
   const started = phase !== "idle";
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="share-dialog timer-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("facilitation.timer.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="share-head">
-          <div>
-            <h2>
-              {t("facilitation.timer.title")} <HelpLink topicId="facilitation.timer" />
-            </h2>
-            <p className="muted">{t("facilitation.timer.body")}</p>
-          </div>
-          <button
-            type="button"
-            className="dialog-close"
-            onClick={onClose}
-            aria-label={t("facilitation.timer.close")}
-          >
-            ×
-          </button>
-        </header>
+    <Dialog
+      title={t("facilitation.timer.title")}
+      description={t("facilitation.timer.body")}
+      help={<HelpLink topicId="facilitation.timer" />}
+      size="sm"
+      onClose={onClose}
+    >
+      <section className="share-dialog timer-dialog">
 
         <div className={`timer-face ${phase}`}>
           <strong>{formatRemaining(remainingMs)}</strong>
@@ -144,6 +129,6 @@ export function TimerPanel({
           </>
         )}
       </section>
-    </div>
+    </Dialog>
   );
 }

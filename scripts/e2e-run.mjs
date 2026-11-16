@@ -10,11 +10,15 @@
  *
  * The server is always the dedicated test PostgreSQL from `REMO_TEST_POSTGRES_URL`; there is
  * no explicit-database escape hatch that could bypass the installed environment identity.
+ *
+ * `--linux-browser` runs the scenarios against Chromium in the Playwright Linux image, the
+ * one browser the visual baselines are compared in (ADR-222).
  */
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { e2eDatabaseName, normalizeRunSuffix } from "./db-identifiers.mjs";
 import { testPostgresUrl } from "./test-environment.mjs";
+import { startLinuxBrowser } from "./linux-browser.mjs";
 
 const env = { ...process.env };
 if (!env.E2E_RUN_ID) env.E2E_RUN_ID = `${process.pid}_${randomBytes(4).toString("hex")}`;
@@ -29,12 +33,17 @@ const suffix = normalizeRunSuffix(explicit !== "" ? explicit : base > 0 ? String
 env.REMO_E2E_DATABASE_NAME = e2eDatabaseName(suffix, env.E2E_RUN_ID);
 
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-const args = process.argv.slice(2);
+const linux = process.argv.includes("--linux-browser");
+const args = process.argv.slice(2).filter((arg) => arg !== "--linux-browser");
+
+const browser = linux ? await startLinuxBrowser() : null;
+if (browser) env.REMO_BROWSER_WS = browser.wsEndpoint;
 
 const tests = spawnSync(pnpm, ["exec", "playwright", "test", ...args], {
   stdio: "inherit",
   env,
 });
+browser?.stop();
 if (tests.error) throw tests.error;
 
 const cleanup = spawnSync(process.execPath, ["scripts/e2e-db.mjs", "--teardown"], {

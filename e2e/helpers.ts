@@ -259,6 +259,8 @@ export async function addComment(page: Page, text: string): Promise<void> {
   await page.mouse.click(box.x + 40, box.y + box.height - 60);
   const composer = page.locator(".comment-composer textarea");
   await expect(composer).toBeVisible();
+  // The composer is a Dialog; its text field asked for focus and keeps it.
+  await expect(composer).toBeFocused();
   await composer.fill(text);
   await page.locator(".comment-composer").getByRole("button", { name: "Create" }).click();
   await expect(page.locator(".comments-thread")).toContainText(text);

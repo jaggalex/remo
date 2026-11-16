@@ -45,6 +45,8 @@ steps.push(
 );
 if (withE2e) {
   steps.push({ name: "e2e", cmd: pnpm, args: ["e2e"] });
+  // Baselines are compared only in the Linux browser container (ADR-222).
+  steps.push({ name: "visual", cmd: pnpm, args: ["e2e:visual"] });
   // The guide audit reads `docs-site/`; a clean checkout has no generated output yet.
   // Build it first, then audit; `guide:check` below still catches a stale source tree.
   steps.push({ name: "guide build", cmd: pnpm, args: ["guide:build"] });

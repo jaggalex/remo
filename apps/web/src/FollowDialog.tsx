@@ -1,3 +1,4 @@
+import { Dialog } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n } from "./i18n";
 
@@ -35,31 +36,14 @@ export function FollowDialog({
   if (!open) return null;
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="share-dialog follow-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("follow.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="share-head">
-          <div>
-            <h2>
-              {t("follow.title")} <HelpLink topicId="facilitation.follow" />
-            </h2>
-            <p className="muted">{t("follow.body")}</p>
-          </div>
-          <button
-            type="button"
-            className="dialog-close"
-            onClick={onClose}
-            aria-label={t("follow.close")}
-          >
-            ×
-          </button>
-        </header>
-
+    <Dialog
+      title={t("follow.title")}
+      description={t("follow.body")}
+      help={<HelpLink topicId="facilitation.follow" />}
+      size="sm"
+      onClose={onClose}
+    >
+      <div className="follow-dialog">
         <p className="follow-count">{count("followers", followers.length)}</p>
         {followers.length ? (
           <ul className="follow-names">
@@ -103,7 +87,7 @@ export function FollowDialog({
             </span>
           </label>
         )}
-      </section>
-    </div>
+      </div>
+    </Dialog>
   );
 }

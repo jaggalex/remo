@@ -9039,3 +9039,38 @@ The production app role must be distinct from the migration role and subject to 
 **Consequences.** A failed database preparation leaves the verified backup and the
 previous release available. The controller stops before starting the new services.
 Recovery after a database failure remains an explicit operator action.
+
+## ADR-222: Baselines are compared in one Linux browser, locally and in CI (supersedes the "no pixel diff" part of ADR-091)
+
+**Context.** ADR-091 kept `spec/baselines/` as review artefacts and refused a pixel diff
+until the browser renders the same locally and in CI: a macOS-versus-Linux diff fails on
+font antialiasing alone. As a result, `capture()` only wrote PNGs. A visual change that
+nobody regenerated passed every gate, so the design-system migration (audit plan M3–M18)
+had no check that a screen still looked the way its baseline shows. The condition ADR-091
+named is a browser that is the same in both places. The fonts are already bundled
+(`packages/ui/src/fonts.css`), so the browser and its platform are the only variables.
+
+**Decision.**
+
+- **The visual scenarios drive one browser: Chromium inside the official Playwright image**
+  (`mcr.microsoft.com/playwright:v<version>-noble`, `linux/amd64`, the version pinned to
+  `@playwright/test`). The tests stay on the host and connect to it with
+  `connectOptions.wsEndpoint`; the page reaches the host's servers through
+  `exposeNetwork: "<loopback>"`. `scripts/linux-browser.mjs` starts and stops the container;
+  `scripts/e2e-run.mjs --linux-browser` wraps a run with it.
+- **`capture()` compares** with `toHaveScreenshot` against `spec/baselines/<name>.png`,
+  with a small tolerance for antialiasing. It compares only on that browser. On any other
+  browser it does nothing, because a diff there would mean "another platform".
+- **The baselines are Linux renders.** `pnpm baselines` regenerates them on the same browser
+  (`updateSnapshots: "all"`); a missing baseline fails instead of being written silently.
+- **`pnpm e2e:visual` and `pnpm verify --e2e` run the visual scenarios on that browser.**
+  The full `pnpm e2e` keeps running them on the host browser for their semantic
+  invariants, as before.
+- Parts of a screen that change between runs (times, generated names) are masked in the
+  scenario, not tolerated by a wider threshold.
+
+**Consequences.** A visual change fails until someone runs `pnpm baselines` and commits the
+new PNGs, which is the review ADR-091 asked for. Docker is required for `pnpm e2e:visual`,
+`pnpm baselines` and the full gate. The browser under emulation on an arm64 laptop is
+slower, but it is the same binary as in CI. Upgrading Playwright means regenerating the
+baselines in the same change.

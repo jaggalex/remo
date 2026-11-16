@@ -84,12 +84,19 @@ export function Dialog({ title, description, help, size = "md", footer, onClose,
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   if ((import.meta as { env?: { DEV?: boolean } }).env?.DEV && footer && countPrimary(footer) > 1) console.warn(`[@remo/ui] Dialog “${title}”: more than one primary/danger button (П2).`);
+  // Focus at first render, kept only for the case below.
+  const [atRender] = useState(() => (typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null)));
   useEffect(() => {
     if (inline) return;
-    const previous = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
-    return () => previous?.focus?.();
-  }, [inline]);
+    const active = document.activeElement as HTMLElement | null;
+    // The opener is what holds focus now (a menu has already handed focus back to its
+    // trigger). If a field in the dialog took focus on mount (autoFocus), it keeps it, and
+    // the opener is what held focus when the dialog first rendered.
+    const tookFocus = Boolean(ref.current?.contains(active));
+    const opener = tookFocus ? atRender : active;
+    if (!tookFocus) ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    return () => opener?.focus?.();
+  }, [inline, atRender]);
   const onKey = (e: KeyboardEvent) => {
     if (e.key === "Escape" && onClose && dismissable) { e.stopPropagation(); onClose(); }
     if (e.key === "Tab" && !inline && ref.current) {
@@ -102,8 +109,10 @@ export function Dialog({ title, description, help, size = "md", footer, onClose,
   const box = (
     <div ref={ref} className={cx("rm-dialog", `rm-dialog-${size}`)} role={alert ? "alertdialog" : "dialog"} aria-modal={inline ? undefined : true} aria-labelledby={titleId} onKeyDown={onKey}>
       <div className="rm-dialog-head">
-        <h2 id={titleId} className="rm-dialog-title">{title}</h2>
-        {help && <span className="rm-dialog-help">{help}</span>}
+        <div className="rm-dialog-heading">
+          <h2 id={titleId} className="rm-dialog-title">{title}</h2>
+          {help && <span className="rm-dialog-help">{help}</span>}
+        </div>
         {onClose && dismissable && <IconButton icon="close" label={t("close")} size="compact" onClick={onClose} />}
       </div>
       {description && <p className="rm-dialog-desc">{description}</p>}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import type { AgentThreadDetail, AgentThreadSummary, RoomAgentState, RoomTaskKind } from "./roomAgentApi";
 import { formatMoment } from "./format";
+import { Dialog } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n, type TranslationKey } from "./i18n";
 
@@ -237,30 +238,21 @@ export function RoomAgentPanel({
   if (!open) return null;
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="agent-dialog room-agent"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("roomAgent.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="org-head">
-          <div>
-            <h2>
-              {t("roomAgent.title")} <HelpLink topicId="agents.room" />
-              {state?.assigned && (
-                <span className="room-agent-badge" title={t("roomAgent.ai")}>
-                  {state.assigned.name} · {t("roomAgent.ai")}
-                </span>
-              )}
-            </h2>
-            <p className="muted">{boardTitle}</p>
-          </div>
-          <button type="button" className="dialog-close" onClick={onClose} aria-label={t("presentation.close")}>
-            ×
-          </button>
-        </header>
+    <Dialog
+      title={t("roomAgent.title")}
+      description={boardTitle}
+      help={<HelpLink topicId="agents.room" />}
+      size="md"
+      onClose={onClose}
+    >
+      <section className="agent-dialog room-agent">
+        {state?.assigned && (
+          <p className="room-agent-assigned">
+            <span className="room-agent-badge" title={t("roomAgent.ai")}>
+              {state.assigned.name} · {t("roomAgent.ai")}
+            </span>
+          </p>
+        )}
 
         {error && <p className="auth-error">{error}</p>}
         {notice && <p className="muted agent-notice">{notice}</p>}
@@ -584,6 +576,6 @@ export function RoomAgentPanel({
           </form>
         )}
       </section>
-    </div>
+    </Dialog>
   );
 }

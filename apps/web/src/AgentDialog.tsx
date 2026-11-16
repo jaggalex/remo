@@ -14,6 +14,7 @@ import { skillDescriptionKey } from "./skillText";
 import { formatMoment } from "./format";
 import { newIdempotencyKey } from "./idempotency";
 import { HelpLink } from "./help/HelpLink";
+import { Dialog } from "@remo/ui";
 import { useI18n } from "./i18n";
 
 /**
@@ -323,25 +324,14 @@ export function AgentDialog({
   const tasks = data?.tasks ?? [];
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="agent-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("agents.dialogTitle")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="org-head">
-          <div>
-            <h2>
-              {t("agents.dialogTitle")} <HelpLink topicId="agents.task" />
-            </h2>
-            <p className="muted">{boardTitle}</p>
-          </div>
-          <button type="button" className="dialog-close" onClick={onClose} aria-label={t("agents.close")}>
-            ×
-          </button>
-        </header>
+    <Dialog
+      title={t("agents.dialogTitle")}
+      description={boardTitle}
+      help={<HelpLink topicId="agents.task" />}
+      size="md"
+      onClose={onClose}
+    >
+      <section className="agent-dialog">
 
         {error && (
           <div className="agent-error">
@@ -794,6 +784,6 @@ export function AgentDialog({
           </>
         )}
       </section>
-    </div>
+    </Dialog>
   );
 }
