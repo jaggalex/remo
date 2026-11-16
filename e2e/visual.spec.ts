@@ -394,6 +394,13 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
  */
 test("the header stays on one row and its menus fit the viewport", async ({ page }) => {
   await freshBoard(page, "visual-header");
+  // The first-use hint hides itself after six seconds, so whether it is in a capture
+  // depended on how fast the run got there. This test is about the header: open the
+  // room as a returning visitor, who has already seen the hint.
+  await page.evaluate(() => window.localStorage.setItem("remo.canvas.hint", "seen"));
+  await page.reload();
+  await expect(page.locator(".topbar")).toBeVisible();
+  await expect(page.locator(".canvas-hint")).toHaveCount(0);
 
   for (const width of [1024, 1280, 1920]) {
     await page.setViewportSize({ width, height: 900 });
