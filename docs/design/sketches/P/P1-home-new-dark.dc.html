@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>P1 Главная — новый пользователь — тёмная</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&amp;display=swap">
+<style>body{margin:0} button{font:inherit;cursor:default} a{color:#8DB6F0} a:hover{color:#F3F2F0}</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #1E2136; color: #F3F2F0; font-family: 'Golos Text', system-ui, sans-serif">
+
+  <header style="position: absolute; left: 24px; right: 24px; top: 24px; height: 44px; display: flex; align-items: center; gap: 14px; z-index: 6">
+    <a href="#" aria-label="REMO — на главную" style="display: flex"><svg width="30" height="30" viewBox="0 0 200 200" role="img" aria-label="REMO"><g fill="#F3F2F0"><circle cx="53" cy="48" r="37"/><rect x="111" y="12" width="72" height="72" rx="12"/><path d="M30.02,106 H169.98 A12,12 0 0 1 181.81,120.03 A83,83 0 0 1 18.19,120.03 A12,12 0 0 1 30.02,106 Z"/></g></svg></a>
+    <span style="font-size: 18px; font-weight: 500">Комнаты</span>
+    <span style="width: 1px; height: 24px; background: #2C2F45"></span>
+    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 500">Личная · Анна Ким <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="display: block; flex-shrink: 0"><path d="M4.25 6.25L8 10.25L12.25 6.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span style="flex-grow: 1"></span>
+    <span style="width: 36px; height: 36px; border-radius: 50%; background: #23263B; border: 1.5px solid #0F7B6C; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #F3F2F0">АК</span><span style="display: inline-flex; align-items: center; gap: 2px; margin-left: 2px; padding-left: 8px; border-left: 1px solid #2C2F45"><button type="button" aria-label="Тема: светлая. Переключить на тёмную" style="border-radius: 999px; font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; white-space: nowrap; border: 0; width: 36px; height: 36px; background: transparent; color: #F3F2F0"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" style="display: block"><circle cx="8" cy="8" r="2.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1.05 1.05M11.35 11.35l1.05 1.05M3.6 12.4l1.05-1.05M11.35 4.65l1.05-1.05" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button><button type="button" aria-label="Язык: русский. Switch to English" style="border-radius: 999px; font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; white-space: nowrap; border: 0; width: 36px; height: 36px; background: transparent; color: #F3F2F0; font-size: 13px; font-weight: 600">RU</button></span>
+  </header>
+  <main style="position: absolute; left: 50%; transform: translateX(-50%); top: 170px; width: 720px">
+    <h1 style="font-size: 28px; line-height: 34px; font-weight: 600; margin: 0">Ваши комнаты</h1>
+    <p style="font-size: 15px; line-height: 22px; color: #BFB9B1; margin: 0">Здесь появятся комнаты, в которых вы работаете.</p>
+    <button type="button" style="border-radius: 999px; font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; white-space: nowrap; justify-content: flex-start; width: 100%; height: 64px; margin-top: 28px; padding: 0 28px; background: #F3F2F0; color: #1E2136; border: 0; font-size: 17px; font-weight: 500"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="display: block; flex-shrink: 0"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Новая комната</button>
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 28px"><span style="font-size: 14px; color: #BFB9B1">Посмотреть пример:</span><button type="button" style="border-radius: 999px; font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; white-space: nowrap; background: #23263B; color: #F3F2F0; border: 1px solid #8A8781; height: 36px; padding: 0 18px; font-size: 14px; font-weight: 500">История</button><button type="button" style="border-radius: 999px; font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; white-space: nowrap; background: #23263B; color: #F3F2F0; border: 1px solid #8A8781; height: 36px; padding: 0 18px; font-size: 14px; font-weight: 500">Схема</button><button type="button" style="border-radius: 999px; font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; white-space: nowrap; background: #23263B; color: #F3F2F0; border: 1px solid #8A8781; height: 36px; padding: 0 18px; font-size: 14px; font-weight: 500">План</button></div>
+    <div style="margin-top: 22px"><a href="#" style="font-size: 14px">Как это работает →</a></div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
