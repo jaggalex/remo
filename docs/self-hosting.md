@@ -102,7 +102,7 @@ pnpm db:repaint --apply --yes
 
 ## Tenant isolation (RLS)
 
-Row-level security is complete for schema 18 (ADR-178). The service connects as `remo_app`,
+The production service connects as `remo_app` (ADR-178),
 a role with data privileges only: it owns no table and cannot bypass a policy. Every request
 that touches tenant data sets `app.org_id` on its own connection and the pool resets it
 before reuse; a query without the setting returns zero rows, not every tenant's rows. Schema
@@ -135,10 +135,9 @@ lookups run as that role and return no rows otherwise.
 
 All tenant tables are protected: the room's content and access tables, organisations and
 seats, teams, invitations, integration tokens, agents, AI logs and anchors, audit, webhooks
-and the event outbox. `pnpm db:rls --check` reports every tenant table protected (exit 0). `pnpm db:rls:enable --check`
-covers 37 tables: 32 tenant tables, `orgs`, and four tables that inherit their tenant through
-a parent. Neither command is part of `pnpm db:check` or `pnpm verify`; run them after a schema
-change and before a release.
+and the event outbox. `pnpm db:rls --check` inventories tenant tables. `pnpm db:rls:enable --check`
+verifies RLS and policies on all 40 protected tables in schema 20. The production release
+controller applies and verifies the policies before it starts the updated service.
 
 `users`, `sessions`, `agent_tokens`, `ai_credentials` and `schema_meta` are global
 identity/secrets and stay outside tenant RLS: they are read before an organisation exists,
@@ -187,8 +186,12 @@ mode `600`, and not a symlink. To select another private file, set
 `REMO_DEPLOY_ENV_FILE` to its path. If the default file is absent, you can supply the
 three variables through the environment, for example in CI.
 
-The script runs the full gate, keeps revisions and images for rollback, and checks
-the health endpoints after the switch.
+The script checks SSH access before running the full test suite. On the server it builds
+the new images, then checks that the application, migration and backup connections point
+to the same database. It stops the app, verifies a PostgreSQL dump, and prepares the
+target schema and RLS in one transaction. The new containers start after the transaction
+commits. The script prints the public health response and verifies the expected commit,
+schema and guide URL. Revisions, images and verified dumps stay on the server for recovery.
 
 ## Backups and upgrades
 

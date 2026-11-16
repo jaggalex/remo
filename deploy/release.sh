@@ -46,6 +46,9 @@ fi
 git cat-file -e "$revision:deploy/compose.production.yml" || {
   echo 'Commit deployment files before the first release.' >&2; exit 1;
 }
+ssh_options=(-o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=3 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
+echo "Checking SSH access to $HOST"
+ssh "${ssh_options[@]}" "$HOST" 'test -f /srv/remo/shared/production.env && test -x /srv/remo/remo'
 pnpm verify --e2e
 [[ $(git rev-parse HEAD) == "$revision" ]] || { echo 'HEAD changed during verification.' >&2; exit 1; }
 git diff --quiet && git diff --cached --quiet || {
@@ -56,9 +59,10 @@ trap 'rm -rf "$work"' EXIT
 version=$(node -p "require('./package.json').version")
 build=$(git rev-list --count HEAD)
 git archive --format=tar.gz --output="$work/$revision.tar.gz" "$revision"
-ssh "$HOST" 'test -f /srv/remo/shared/production.env && test -x /srv/remo/remo'
-scp "$work/$revision.tar.gz" "$HOST:/srv/remo/releases/$revision.tar.gz"
-ssh "$HOST" "REMO_VERSION='$version' REMO_BUILD='$build' bash -s -- '$revision'" <<'REMOTE'
+echo "Uploading $revision to $HOST"
+scp "${ssh_options[@]}" "$work/$revision.tar.gz" "$HOST:/srv/remo/releases/$revision.tar.gz"
+echo "Deploying $revision on $HOST"
+ssh "${ssh_options[@]}" "$HOST" "REMO_VERSION='$version' REMO_BUILD='$build' bash -s -- '$revision'" <<'REMOTE'
 set -Eeuo pipefail
 revision=$1
 [[ $revision =~ ^[0-9a-f]{40}$ ]]
@@ -78,8 +82,19 @@ if [[ ! -d "$directory" ]]; then
   staging=""
 fi
 rm -f "/srv/remo/releases/$revision.tar.gz"
-/srv/remo/remo deploy "$revision"
+bash "$directory/deploy/remo" deploy "$revision"
 REMOTE
-curl --fail --silent --show-error "$APP_ORIGIN/api/health"
+health=$(curl --fail --silent --show-error "$APP_ORIGIN/api/health")
+printf '%s\n' "$health"
+schema=$(sed -n 's/^export const SCHEMA_VERSION = \([0-9][0-9]*\);$/\1/p' apps/sync/schema-version.mjs)
+node -e '
+  const [revision, schema, health] = process.argv.slice(1);
+  const current = JSON.parse(health);
+  if (!schema || current.ok !== true || current.commit !== revision || current.schema !== Number(schema)) {
+    console.error("Public health did not report the expected commit and schema.");
+    process.exit(1);
+  }
+' "$revision" "$schema" "$health"
+curl --fail --silent --show-error --output /dev/null "$APP_ORIGIN/"
 curl --fail --silent --show-error --output /dev/null "$DOCS_ORIGIN/guide/ru/overview/index.html"
 echo "Published $revision"

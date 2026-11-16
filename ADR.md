@@ -9022,3 +9022,20 @@ the style; the section panel gains the row. The field is optional, so existing d
 read unchanged and no migration is needed. Tests cover size-aware Auto height and width,
 the command merge/clear, the painter font and the panel controls. Per-axis header
 typography, rich text, underline and font-family changes remain out of scope.
+
+## ADR-221: Prepare the production database before starting a release
+
+**Context.** A production update can add tenant tables. The schema migration creates
+them, while the RLS SQL installs the policies. Starting the service between those
+steps can leave the new tables without tenant policies.
+
+**Decision.** The release controller checks the two database connections before
+stopping Remo. With application writers stopped, it saves and verifies a PostgreSQL
+dump. A one-off process from the new sync image then uses the regular migration
+under its advisory lock. It applies and checks RLS in the same transaction as the
+migration. Only then does the controller start sync and web and check their health.
+The production app role must be distinct from the migration role and subject to RLS.
+
+**Consequences.** A failed database preparation leaves the verified backup and the
+previous release available. The controller stops before starting the new services.
+Recovery after a database failure remains an explicit operator action.

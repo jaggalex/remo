@@ -90,12 +90,11 @@ function migrationClient(version) {
   };
 }
 
-async function migrateAt(version) {
-  const client = migrationClient(version);
+async function migrateAt(version, finalize, client = migrationClient(version)) {
   const store = Object.create(PostgresStore.prototype);
   store.pool = { connect: async () => client };
   store.log = { log() {}, error() {} };
-  await store.migrate();
+  await store.migrate(finalize);
   return client.queries;
 }
 
@@ -110,5 +109,22 @@ describe("schema migration gate", () => {
   it("skips schema.sql when the database is current", async () => {
     const queries = await migrateAt(SCHEMA_VERSION);
     expect(queries.some((text) => text.includes("create table if not exists boards"))).toBe(false);
+  });
+
+  it("verifies release policies before committing the schema", async () => {
+    const queries = await migrateAt(SCHEMA_VERSION - 1, (client) => client.query("verify policies"));
+    expect(queries[1]).toBe("begin");
+    expect(queries.slice(-3)).toEqual([
+      "verify policies", "commit", "select pg_advisory_unlock($1)",
+    ]);
+  });
+
+  it("rolls back schema changes when release policy checks fail", async () => {
+    const client = migrationClient(SCHEMA_VERSION - 1);
+    await expect(migrateAt(SCHEMA_VERSION - 1, () => {
+      throw new Error("policy check failed");
+    }, client)).rejects.toThrow("policy check failed");
+    expect(client.queries).not.toContain("commit");
+    expect(client.queries.slice(-2)).toEqual(["rollback", "select pg_advisory_unlock($1)"]);
   });
 });
