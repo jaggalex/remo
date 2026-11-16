@@ -30,7 +30,7 @@ test("exports a PNG and downloads and restores a backup with a Cyrillic filename
   await page.getByRole("menuitem", { name: "Export…" }).click();
   await page.locator(".export-dialog .export-choice", { hasText: "Whole room" }).click();
   const downloadPromise = page.waitForEvent("download");
-  await page.locator(".export-dialog .share-button").click();
+  await page.locator(".export-dialog").getByRole("button", { name: "Export", exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.png$/);
   await expect(page.locator(".export-status.done")).toBeVisible({ timeout: 20_000 });
@@ -39,7 +39,7 @@ test("exports a PNG and downloads and restores a backup with a Cyrillic filename
   await dialog.getByRole("radio", { name: /Room backup/ }).click();
   const [backup] = await Promise.all([
     page.waitForEvent("download"),
-    dialog.locator(".share-button").click(),
+    dialog.getByRole("button", { name: "Export", exact: true }).click(),
   ]);
   expect(backup.suggestedFilename()).toBe("план-ёж.remo-backup.json");
   const contents = await readFile(await backup.path());
@@ -110,7 +110,7 @@ test("exports a selection with the line between the selected objects", async ({ 
   await expect(page.locator(".export-dialog .export-note")).toContainText("3 objects");
 
   const downloadPromise = page.waitForEvent("download");
-  await page.locator(".export-dialog .share-button").click();
+  await page.locator(".export-dialog").getByRole("button", { name: "Export", exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.pdf$/);
   await expect(page.locator(".export-status.done")).toBeVisible({ timeout: 20_000 });
@@ -128,7 +128,7 @@ test("exports a PNG with comment pins and the legend", async ({ page }) => {
   await page.locator(".export-dialog .export-choice", { hasText: "Whole room" }).click();
   await expect(page.locator(".export-comments input")).toBeChecked();
   const downloadPromise = page.waitForEvent("download");
-  await page.locator(".export-dialog .share-button").click();
+  await page.locator(".export-dialog").getByRole("button", { name: "Export", exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.png$/);
   await expect(page.locator(".export-status.done")).toBeVisible({ timeout: 20_000 });
@@ -193,7 +193,7 @@ test("exports a table grid and carries its layout in the backup", async ({ page 
   await page.getByRole("menuitem", { name: "Export…" }).click();
   await page.locator(".export-dialog .export-choice", { hasText: "Whole room" }).click();
   const pngPromise = page.waitForEvent("download");
-  await page.locator(".export-dialog .share-button").click();
+  await page.locator(".export-dialog").getByRole("button", { name: "Export", exact: true }).click();
   const png = await pngPromise;
   expect(png.suggestedFilename()).toMatch(/\.png$/);
   const pngBytes = await readFile(await png.path());
@@ -204,7 +204,7 @@ test("exports a table grid and carries its layout in the backup", async ({ page 
   await dialog.getByRole("radio", { name: /Room backup/ }).click();
   const [backup] = await Promise.all([
     page.waitForEvent("download"),
-    dialog.locator(".share-button").click(),
+    dialog.getByRole("button", { name: "Export", exact: true }).click(),
   ]);
   const bundle = JSON.parse((await readFile(await backup.path())).toString());
   expect(bundle.widgets[frameId].layout).toMatchObject({ kind: "table" });

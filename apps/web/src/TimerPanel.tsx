@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatRemaining, type TimerPhase } from "@remo/model";
-import { Dialog } from "@remo/ui";
+import { Button, Dialog, Input } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n } from "./i18n";
 
@@ -77,21 +77,21 @@ export function TimerPanel({
             {started && (
               <div className="timer-actions">
                 {running && (
-                  <button type="button" className="ghost-button" onClick={onPause}>
+                  <Button variant="ghost" onClick={onPause}>
                     {t("facilitation.timer.pause")}
-                  </button>
+                  </Button>
                 )}
                 {paused && (
-                  <button type="button" className="ghost-button" onClick={onResume}>
+                  <Button variant="ghost" onClick={onResume}>
                     {t("facilitation.timer.resume")}
-                  </button>
+                  </Button>
                 )}
-                <button type="button" className="ghost-button" onClick={onExtend}>
+                <Button variant="ghost" onClick={onExtend}>
                   {t("facilitation.timer.extend")}
-                </button>
-                <button type="button" className="ghost-button" onClick={onReset}>
+                </Button>
+                <Button variant="ghost" onClick={onReset}>
                   {t("facilitation.timer.reset")}
-                </button>
+                </Button>
               </div>
             )}
 
@@ -99,30 +99,26 @@ export function TimerPanel({
               <h3>{started ? t("facilitation.timer.restart") : t("facilitation.timer.start")}</h3>
               <div className="timer-presets">
                 {presets.map((minutes) => (
-                  <button
+                  <Button
                     key={minutes}
-                    type="button"
-                    className="export-choice"
                     onClick={() => onStart(minutes)}
                   >
-                    <strong>{t("facilitation.timer.minutes", { n: minutes })}</strong>
-                  </button>
+                    {t("facilitation.timer.minutes", { n: minutes })}
+                  </Button>
                 ))}
               </div>
               <div className="timer-custom">
-                <label>
-                  {t("facilitation.timer.custom")}
-                  <input
+                <Input
+                  label={t("facilitation.timer.custom")}
                     type="number"
                     min={1}
                     max={1440}
                     value={custom}
                     onChange={(event) => setCustom(Number(event.target.value) || 1)}
                   />
-                </label>
-                <button type="button" className="share-button" onClick={() => onStart(custom)}>
+                <Button variant="primary" onClick={() => onStart(custom)}>
                   {t("facilitation.timer.start")}
-                </button>
+                </Button>
               </div>
               <p className="muted">{t("facilitation.timer.startHint")}</p>
             </section>

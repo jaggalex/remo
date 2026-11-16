@@ -1,3 +1,4 @@
+import { Button, IconButton } from "@remo/ui";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
@@ -88,9 +89,7 @@ export function InfoCard({ state, onClose, onOpenThread }: {
             </>
           )}
         </span>
-        <button type="button" onClick={onClose} title={t("info.close")} aria-label={t("info.close")}>
-          ×
-        </button>
+        <IconButton icon="close" size="compact" label={t("info.close")} onClick={onClose} />
       </div>
       <dl>
         {state.rows.map((row) => (
@@ -101,14 +100,14 @@ export function InfoCard({ state, onClose, onOpenThread }: {
         ))}
       </dl>
       {state.draftFrameId && onOpenThread && (
-        <button type="button" className="link-button" onClick={() => {
+        <Button variant="ghost" size="compact" onClick={() => {
           void onOpenThread(state.draftFrameId!).then((opened) => {
             if (opened) onClose();
             else setMissingThread(state);
           });
         }}>
           {t("roomAgent.openThread")}
-        </button>
+        </Button>
       )}
       {missingThread === state && <p className="muted">{t("roomAgent.threadMissing")}</p>}
     </div>

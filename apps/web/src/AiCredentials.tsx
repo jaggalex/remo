@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Banner } from "@remo/ui";
+import { Banner, Button, Input, Select } from "@remo/ui";
 import { api, type AiCredential, type AiPolicy } from "./api";
 import { useI18n } from "./i18n";
 
@@ -100,9 +100,7 @@ export function AiCredentials({
           </span>
         </div>
         <div className="ai-key-actions">
-          <button
-            type="button"
-            className="link-button"
+          <Button variant="ghost" size="compact"
             disabled={busy}
             onClick={() =>
               void run(async () => {
@@ -110,38 +108,31 @@ export function AiCredentials({
                 else await api.testOrgCredential(orgId, key.id);
                 setNotice(t("aiKeys.tested"));
               })
-            }
-          >
+            }>
             {t("aiKeys.test")}
-          </button>
+          </Button>
           {!key.isDefault && (
-            <button
-              type="button"
-              className="link-button"
+            <Button variant="ghost" size="compact"
               disabled={busy}
               onClick={() =>
                 void run(async () => {
                   if (scope === "personal") await api.defaultUserCredential(key.id);
                   else await api.orgCredentialDefault(orgId, key.id);
                 })
-              }
-            >
+              }>
               {t("aiKeys.default")}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            className="link-button danger"
+          <Button variant="ghost" size="compact"
             disabled={busy}
             onClick={() =>
               void run(async () => {
                 if (scope === "personal") await api.deleteUserCredential(key.id);
                 else await api.deleteOrgCredential(orgId, key.id);
               })
-            }
-          >
+            }>
             {t("aiKeys.revoke")}
-          </button>
+          </Button>
         </div>
       </li>
     ));
@@ -163,9 +154,13 @@ export function AiCredentials({
       {notice && <p className="muted">{notice}</p>}
 
       {isOrgAdmin && (
-        <label className="ai-key-mode">
-          <span>{t("aiKeys.mode")}</span>
-          <select
+        <Select
+          label={t("aiKeys.mode")}
+          options={[
+            { value: "either", label: t("aiKeys.modeEither") },
+            { value: "org", label: t("aiKeys.modeOrg") },
+            { value: "personal", label: t("aiKeys.modePersonal") },
+          ]}
             value={policy.keyMode}
             disabled={busy}
             onChange={(event) =>
@@ -176,25 +171,17 @@ export function AiCredentials({
                 });
               })
             }
-          >
-            <option value="either">{t("aiKeys.modeEither")}</option>
-            <option value="org">{t("aiKeys.modeOrg")}</option>
-            <option value="personal">{t("aiKeys.modePersonal")}</option>
-          </select>
-        </label>
+          />
       )}
 
       <section className="ai-key-section">
         <div className="ai-key-head">
           <strong>{t("aiKeys.orgTitle")}</strong>
           {isOrgAdmin && (
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => setForm(form === "org" ? null : "org")}
-            >
+            <Button
+              onClick={() => setForm(form === "org" ? null : "org")}>
               {t("aiKeys.add")}
-            </button>
+            </Button>
           )}
         </div>
         {form === "org" && isOrgAdmin && keyForm("org")}
@@ -205,13 +192,10 @@ export function AiCredentials({
       <section className="ai-key-section">
         <div className="ai-key-head">
           <strong>{t("aiKeys.personalTitle")}</strong>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => setForm(form === "personal" ? null : "personal")}
-          >
+          <Button
+            onClick={() => setForm(form === "personal" ? null : "personal")}>
             {t("aiKeys.add")}
-          </button>
+          </Button>
         </div>
         {form === "personal" && keyForm("personal")}
         <ul>{rows(personal, "personal")}</ul>
@@ -233,41 +217,35 @@ export function AiCredentials({
         }}
       >
         <div className="agent-budget">
-          <label className="agent-field">
-            <span>{t("aiKeys.provider")}</span>
-            <select value={provider} onChange={(event) => setProvider(event.target.value)}>
-              <option value="openrouter">OpenRouter</option>
-              <option value="cerebras">Cerebras</option>
-              <option value="openai">OpenAI</option>
-              <option value="custom">{t("aiKeys.custom")}</option>
-            </select>
-          </label>
-          <label className="agent-field">
-            <span>{t("aiKeys.model")}</span>
-            <input
+          <Select
+            label={t("aiKeys.provider")}
+            value={provider}
+            options={[
+              { value: "openrouter", label: "OpenRouter" },
+              { value: "cerebras", label: "Cerebras" },
+              { value: "openai", label: "OpenAI" },
+              { value: "custom", label: t("aiKeys.custom") },
+            ]}
+            onChange={(event) => setProvider(event.target.value)}
+          />
+          <Input
+            label={t("aiKeys.model")}
               value={model}
               onChange={(event) => setModel(event.target.value)}
               placeholder="openai/gpt-4o-mini"
             />
-          </label>
         </div>
         {provider === "custom" && (
-          <label className="agent-field">
-            <span>{t("aiKeys.baseUrl")}</span>
-            <input
+          <Input
+            label={t("aiKeys.baseUrl")}
               value={baseUrl}
               onChange={(event) => setBaseUrl(event.target.value)}
               placeholder="https://gateway.example.com/v1"
             />
-          </label>
         )}
-        <label className="agent-field">
-          <span>{t("aiKeys.label")}</span>
-          <input value={label} onChange={(event) => setLabel(event.target.value)} />
-        </label>
-        <label className="agent-field">
-          <span>{t("aiKeys.secret")}</span>
-          <input
+        <Input label={t("aiKeys.label")} value={label} onChange={(event) => setLabel(event.target.value)} />
+        <Input
+          label={t("aiKeys.secret")}
             type="password"
             name="providerSecret"
             autoComplete="new-password"
@@ -278,17 +256,13 @@ export function AiCredentials({
             onChange={(event) => setSecret(event.target.value)}
             placeholder="sk-…"
           />
-        </label>
         <div className="agent-actions">
           <span className="muted">{t("aiKeys.secretNote")}</span>
-          <button
-            type="button"
-            className="primary-button"
+          <Button variant="primary"
             disabled={busy || !secret.trim()}
-            onClick={() => submit(scope)}
-          >
+            onClick={() => submit(scope)}>
             {t("aiKeys.save")}
-          </button>
+          </Button>
         </div>
       </form>
     );

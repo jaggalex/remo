@@ -92,7 +92,7 @@ test("a named group keeps its label after reload", async ({ page }) => {
   // the inspector's button is the same command from the side panel.
   await page.locator(".arrange-bar").getByRole("button", { name: "Group", exact: true }).click();
   await page.getByRole("button", { name: "Properties", exact: true }).click();
-  const field = page.locator(".group-name-field input");
+  const field = page.getByRole("textbox", { name: "Group name" });
   await watchSave(page);
   await expect(field).toBeVisible();
   await field.fill("Onboarding");

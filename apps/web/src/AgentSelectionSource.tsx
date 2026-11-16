@@ -1,3 +1,4 @@
+import { Button } from "@remo/ui";
 import type { SelectionPreview } from "./agentPayload";
 import { useI18n } from "./i18n";
 
@@ -46,12 +47,12 @@ export function AgentSelectionSource({
             </p>
           )}
           <div className="agent-source-actions">
-            <button type="button" className="link-button" onClick={onRemove}>
+            <Button variant="ghost" size="compact" onClick={onRemove}>
               {t("agents.source.remove")}
-            </button>
-            <button type="button" className="link-button" onClick={onOnly}>
+            </Button>
+            <Button variant="ghost" size="compact" onClick={onOnly}>
               {t("agents.source.only")}
-            </button>
+            </Button>
           </div>
           {selectionOnly && <p className="muted">{t("agents.source.onlyIntent")}</p>}
         </>

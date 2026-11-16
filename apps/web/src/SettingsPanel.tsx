@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Dialog } from "@remo/ui";
+import { Button, Checkbox, Dialog, Input, Select, Textarea } from "@remo/ui";
 import { useI18n } from "./i18n";
 import {
   DEFAULT_SETTINGS,
@@ -54,16 +54,15 @@ export function SettingsPanel({
     step = 1,
     key?: string,
   ) => (
-    <label className="setting" key={key}>
-      <span className="setting-label">{label}</span>
-      <input
-        type="number"
-        value={value}
-        step={step}
-        onChange={(event) => set(Number(event.target.value))}
-      />
-      <small>{hint}</small>
-    </label>
+    <Input
+      key={key}
+      type="number"
+      label={label}
+      hint={hint}
+      value={value}
+      step={step}
+      onChange={(event) => set(Number(event.target.value))}
+    />
   );
 
   const applyJson = () => {
@@ -111,9 +110,13 @@ export function SettingsPanel({
 
         <section>
           <h3>{t("settings.gridStyle")}</h3>
-          <label className="setting">
-            <span className="setting-label">{t("settings.gridStyleLabel")}</span>
-            <select
+          <Select
+            label={t("settings.gridStyleLabel")}
+            options={[
+              { value: "lines", label: t("canvas.gridLines") },
+              { value: "dots", label: t("canvas.gridDots") },
+              { value: "off", label: t("canvas.gridOff") },
+            ]}
               value={draft.grid.style}
               onChange={(event) =>
                 patch({
@@ -121,12 +124,7 @@ export function SettingsPanel({
                   grid: { ...draft.grid, style: event.target.value as BoardSettings["grid"]["style"] },
                 })
               }
-            >
-              <option value="lines">{t("canvas.gridLines")}</option>
-              <option value="dots">{t("canvas.gridDots")}</option>
-              <option value="off">{t("canvas.gridOff")}</option>
-            </select>
-          </label>
+            />
         </section>
 
         <section>
@@ -137,17 +135,14 @@ export function SettingsPanel({
             draft.snapping.thresholdPx,
             (thresholdPx) => patch({ ...draft, snapping: { ...draft.snapping, thresholdPx } }),
           )}
-          <label className="setting setting-check">
-            <span className="setting-label">{t("settings.guides")}</span>
-            <input
-              type="checkbox"
+          <Checkbox
+            label={t("settings.guides")}
+            hint={t("settings.guidesHint")}
               checked={draft.snapping.guides}
               onChange={(event) =>
                 patch({ ...draft, snapping: { ...draft.snapping, guides: event.target.checked } })
               }
             />
-            <small>{t("settings.guidesHint")}</small>
-          </label>
         </section>
 
         <section>
@@ -186,9 +181,13 @@ export function SettingsPanel({
 
         <section>
           <h3>{t("settings.connectors")}</h3>
-          <label className="setting">
-            <span className="setting-label">{t("settings.connectorShape")}</span>
-            <select
+          <Select
+            label={t("settings.connectorShape")}
+            options={[
+              { value: "straight", label: t("line.straight") },
+              { value: "elbowed", label: t("line.elbowed") },
+              { value: "curved", label: t("line.curved") },
+            ]}
               value={draft.connectors.shape}
               onChange={(event) =>
                 patch({
@@ -196,12 +195,7 @@ export function SettingsPanel({
                   connectors: { ...draft.connectors, shape: event.target.value as BoardSettings["connectors"]["shape"] },
                 })
               }
-            >
-              <option value="straight">{t("line.straight")}</option>
-              <option value="elbowed">{t("line.elbowed")}</option>
-              <option value="curved">{t("line.curved")}</option>
-            </select>
-          </label>
+            />
           {number(
             t("settings.connectorWidth"),
             t("settings.connectorWidthHint"),
@@ -235,21 +229,19 @@ export function SettingsPanel({
 
         <section>
           <h3>{t("settings.text")}</h3>
-          <label className="setting">
-            <span className="setting-label">{t("settings.fontFamily")}</span>
-            <input
-              type="text"
+          <Input
+            label={t("settings.fontFamily")}
+            hint={t("settings.fontFamilyHint")}
               value={draft.text.fontFamily}
               onChange={(event) => patch({ ...draft, text: { fontFamily: event.target.value } })}
             />
-            <small>{t("settings.fontFamilyHint")}</small>
-          </label>
         </section>
 
         <section>
           <h3>{t("settings.json")}</h3>
-          <textarea
+          <Textarea
             className="settings-json"
+            rows={8}
             value={json}
             spellCheck={false}
             onChange={(event) => setJson(event.target.value)}
@@ -257,12 +249,12 @@ export function SettingsPanel({
           />
           {error && <p className="settings-error">{error}</p>}
           <div className="settings-actions">
-            <button type="button" onClick={applyJson}>
+            <Button size="compact" onClick={applyJson}>
               {t("settings.applyJson")}
-            </button>
-            <button type="button" onClick={() => patch(DEFAULT_SETTINGS)}>
+            </Button>
+            <Button size="compact" onClick={() => patch(DEFAULT_SETTINGS)}>
               {t("settings.reset")}
-            </button>
+            </Button>
           </div>
         </section>
       </div>

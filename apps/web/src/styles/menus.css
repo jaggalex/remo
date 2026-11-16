@@ -28,7 +28,7 @@
   margin-bottom: 4px;
 }
 
-.context-menu button {
+.context-menu button:not(.rm-btn) {
   text-align: left;
   border: 0;
   background: transparent;
@@ -39,37 +39,27 @@
   cursor: pointer;
 }
 
-.context-menu button:hover:not(:disabled) {
+.context-menu button:not(.rm-btn):hover:not(:disabled) {
   background: var(--bg-hover);
 }
 
-.context-menu button:disabled {
+.context-menu button:not(.rm-btn):disabled {
   color: var(--text-muted);
   cursor: default;
 }
 
-.context-menu button.danger {
+.context-menu button:not(.rm-btn).danger {
   color: var(--danger);
 }
 
 .context-menu-rename {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 2px;
 }
 
-.context-menu-rename input {
+.context-menu-rename .rm-field {
   flex: 1;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill);
-  padding: 6px 8px;
-  font: inherit;
-  font-size: 13px;
-}
-
-.context-menu-rename button {
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill);
-  padding: 6px 10px;
-  font-size: 12px;
+  min-width: 0;
 }

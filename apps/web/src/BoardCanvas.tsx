@@ -1,3 +1,4 @@
+import { Button } from "@remo/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   layoutKanban,
@@ -771,9 +772,9 @@ export function BoardCanvas({
       />
       {!readOnly && selectedKanbanId && selectedKanban && (
         <div className="kanban-bar">
-          <button type="button" onClick={() => onAddColumn(selectedKanbanId)}>
+          <Button size="compact" onClick={() => onAddColumn(selectedKanbanId)}>
             {t("inspector.addColumn")}
-          </button>
+          </Button>
           <span className="muted">{t("canvas.widenHint")}</span>
         </div>
       )}

@@ -150,92 +150,8 @@
   font: var(--type-caption);
 }
 
-.new-board-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
-}
-
-.new-board-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-panel);
-  cursor: pointer;
-}
-
 /* The radio covers the whole card: one hit area, and the native control keeps focus. */
-.new-board-card input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.new-board-card b {
-  color: var(--text-primary);
-  font: var(--type-label);
-  font-weight: 600;
-}
-
-.new-board-card span {
-  color: var(--text-secondary);
-  font: var(--type-caption);
-}
-
 /* Selected is a border and weight, not colour alone. */
-.new-board-card.is-checked {
-  border: 2px solid var(--border-focus);
-  padding: calc(var(--space-3) - 1px);
-}
-
-.new-board-card:has(input:focus-visible) {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
-}
-
-.new-board-dialog select {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 13px;
-  color: var(--ink);
-  background: var(--bg-panel);
-}
-
-.group-name-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.group-name-field input {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 6px 8px;
-  font: inherit;
-  font-size: 13px;
-  color: var(--ink);
-  background: var(--bg-app);
-}
-
-.group-name-field input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 1px var(--border-focus);
-}
-
 .card-fields {
   display: flex;
   flex-direction: column;
@@ -251,32 +167,6 @@
   color: var(--ink);
 }
 
-.card-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.card-field select,
-.card-field input {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 5px 7px;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--ink);
-  background: var(--bg-app);
-}
-
-.card-field select:focus,
-.card-field input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 1px var(--border-focus);
-}
-
 .card-dates {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -288,25 +178,6 @@
   flex-direction: column;
   gap: 6px;
   margin-top: 6px;
-}
-
-.wip-field {
-  display: grid;
-  grid-template-columns: 1fr 72px;
-  align-items: center;
-  gap: 8px;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.wip-field input {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 4px 6px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--ink);
-  background: var(--bg-app);
 }
 
 .tags-panel,
@@ -323,33 +194,6 @@
   display: grid;
   grid-template-columns: 1fr 86px auto;
   gap: 6px;
-}
-
-.tag-add input,
-.tag-add select,
-.tag-name-input,
-.tag-row select,
-.link-row input,
-.link-row select {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 5px 7px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--ink);
-  background: var(--bg-app);
-}
-
-.tag-add button,
-.link-row button {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  padding: 5px 8px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--ink);
-  background: var(--bg-hover);
-  cursor: pointer;
 }
 
 .tag-list {
@@ -423,13 +267,17 @@
 
 .link-row {
   display: flex;
+  align-items: flex-end;
   gap: 6px;
 }
 
-.link-row input,
-.link-row select {
+.link-row .rm-field {
   flex: 1;
   min-width: 0;
+}
+
+.link-current .rm-btn {
+  max-width: 100%;
 }
 
 .link-current {
@@ -437,23 +285,6 @@
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-}
-
-.link-current button {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font: inherit;
-  font-size: 11.5px;
-  color: var(--text-accent);
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.link-current .danger-link {
-  color: var(--text-danger);
 }
 
 .present-bar,
@@ -484,10 +315,9 @@
   top: calc(var(--topbar-height) + var(--space-6));
 }
 
-.present-bar button,
-.present-follow button,
-.present-join button,
-.presentation-list button {
+/* Only the arrow glyphs are still raw buttons: they wait for chevron/arrow icons (M4). */
+.present-bar button:not(.rm-btn),
+.presentation-list button:not(.rm-btn) {
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   padding: 4px 8px;

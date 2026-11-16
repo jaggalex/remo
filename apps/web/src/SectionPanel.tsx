@@ -21,7 +21,7 @@ import {
   type TableLayout,
   type Widget,
 } from "@remo/model";
-import { Button, ConfirmDialog, Icon, Segmented, Textarea } from "@remo/ui";
+import { Button, Checkbox, ConfirmDialog, Icon, Segmented, Textarea } from "@remo/ui";
 import { AxisSizeButton } from "./AxisSizeControl";
 import { TableAppearanceControls } from "./TableAppearanceControls";
 import { TableHeaderSize } from "./TableHeaderSize";
@@ -367,50 +367,46 @@ export function SectionPanel({
       {blockSpan && (
         <div className="section-group">
           <h3>{t("section.size.block")}</h3>
-          <label className="section-check">
-            <input
-              type="checkbox"
-              checked={blockAuto}
-              disabled={readOnly}
-              ref={(node) => {
-                if (node) node.indeterminate = blockMixed;
-              }}
-              onChange={(event) => {
-                const auto = event.currentTarget.checked;
-                if (auto) {
-                  board.transact(() => {
-                    for (const axis of blockAxes) {
-                      setAxisAutoResize(board, frame.id, axis.id, true);
-                    }
-                  });
-                  return;
-                }
-                // Freeze what the person sees now, before the first axis changes the
-                // layout, so every axis of the block keeps its visible size (ADR-206).
-                const grid = layoutTable(frame, widgets);
-                const sizes = [
-                  ...blockColumns.map((axis) => ({
-                    axis,
-                    px: Math.round(
-                      grid?.columns.find((column) => column.axis.id === axis.id)?.width ?? 0,
-                    ),
-                  })),
-                  ...blockRows.map((axis) => ({
-                    axis,
-                    px: Math.round(
-                      grid?.rows.find((row) => row.axis.id === axis.id)?.height ?? 0,
-                    ),
-                  })),
-                ];
+          <Checkbox
+            className="section-check"
+            label={t("section.size.autoResize")}
+            checked={blockAuto}
+            indeterminate={blockMixed}
+            disabled={readOnly}
+            onChange={(event) => {
+              const auto = event.currentTarget.checked;
+              if (auto) {
                 board.transact(() => {
-                  for (const { axis, px } of sizes) {
-                    if (px > 0) setAxisSize(board, frame.id, axis.id, px);
+                  for (const axis of blockAxes) {
+                    setAxisAutoResize(board, frame.id, axis.id, true);
                   }
                 });
-              }}
-            />
-            <span>{t("section.size.autoResize")}</span>
-          </label>
+                return;
+              }
+              // Freeze what the person sees now, before the first axis changes the
+              // layout, so every axis of the block keeps its visible size (ADR-206).
+              const grid = layoutTable(frame, widgets);
+              const sizes = [
+                ...blockColumns.map((axis) => ({
+                  axis,
+                  px: Math.round(
+                    grid?.columns.find((column) => column.axis.id === axis.id)?.width ?? 0,
+                  ),
+                })),
+                ...blockRows.map((axis) => ({
+                  axis,
+                  px: Math.round(
+                    grid?.rows.find((row) => row.axis.id === axis.id)?.height ?? 0,
+                  ),
+                })),
+              ];
+              board.transact(() => {
+                for (const { axis, px } of sizes) {
+                  if (px > 0) setAxisSize(board, frame.id, axis.id, px);
+                }
+              });
+            }}
+          />
           <p className="muted">{t("section.size.blockHint")}</p>
         </div>
       )}
@@ -510,17 +506,15 @@ export function SectionPanel({
                 disabled={readOnly}
               />
             </div>
-            <label className="section-check">
-                <input
-                  type="checkbox"
-                  checked={Boolean(selected.vertical)}
-                  disabled={readOnly}
-                  onChange={(event) =>
-                    setAxisVertical(board, frame.id, selected.id, event.currentTarget.checked)
-                  }
-                />
-              <span>{t("section.axis.rotate")}</span>
-            </label>
+            <Checkbox
+              className="section-check"
+              label={t("section.axis.rotate")}
+              checked={Boolean(selected.vertical)}
+              disabled={readOnly}
+              onChange={(event) =>
+                setAxisVertical(board, frame.id, selected.id, event.currentTarget.checked)
+              }
+            />
             <div className="section-axis-actions">
               <Button
                 size="compact"

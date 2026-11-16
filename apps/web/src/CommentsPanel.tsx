@@ -6,7 +6,7 @@ import { commentsApi, type CommentAnchor, type CommentMessage, type CommentThrea
 import { currentRoom } from "./identity";
 import { threadInFrame } from "./commentScope";
 import { CommentPlacementLayer } from "./CommentPlacementLayer";
-import { ConfirmDialog as UiConfirmDialog, Dialog, Icon } from "@remo/ui";
+import { Button, ConfirmDialog as UiConfirmDialog, Dialog, Icon, IconButton, Switch, Textarea } from "@remo/ui";
 import { formatMoment } from "./format";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
@@ -249,8 +249,9 @@ export function CommentsPanel({
           onClose={() => setPendingAnchor(null)}
         >
           <div className="auth-dialog comment-composer">
-            <textarea
+            <Textarea
               autoFocus
+              aria-label={t("comments.prompt")}
               maxLength={4000}
               value={draft}
               placeholder={t("comments.prompt")}
@@ -260,17 +261,14 @@ export function CommentsPanel({
               }}
             />
             <div className="auth-actions">
-              <button type="button" className="ghost-button" onClick={() => setPendingAnchor(null)}>
+              <Button onClick={() => setPendingAnchor(null)}>
                 {t("comments.cancel")}
-              </button>
-              <button
-                type="button"
-                className="primary-button"
+              </Button>
+              <Button variant="primary"
                 disabled={!draft.trim() || busy}
-                onClick={submitComment}
-              >
+                onClick={submitComment}>
                 {t("comments.create")}
-              </button>
+              </Button>
             </div>
           </div>
         </Dialog>
@@ -297,22 +295,18 @@ export function CommentsPanel({
             <b>
               {t("comments.title")} <HelpLink topicId="comments.thread" />
             </b>
-            <button type="button" onClick={() => onOpen(false)} aria-label={t("comments.close")}>
-              ✕
-            </button>
+            <IconButton icon="close" size="compact" label={t("comments.close")} onClick={() => onOpen(false)} />
           </header>
           <div className="comments-actions">
-            <button type="button" disabled={!canComment || !online || busy} onClick={startPlacing}>
+            <Button size="compact" disabled={!canComment || !online || busy} onClick={startPlacing}>
               {t("comments.new")}
-            </button>
-            <label className="comments-toggle">
-              <input
-                type="checkbox"
-                checked={showResolved}
-                onChange={(event) => setShowResolved(event.target.checked)}
-              />
-              {t("comments.showResolved")}
-            </label>
+            </Button>
+            <Switch
+              className="comments-toggle"
+              label={t("comments.showResolved")}
+              checked={showResolved}
+              onChange={(event) => setShowResolved(event.target.checked)}
+            />
           </div>
           {presentingFrameId && <p className="muted">{t("comments.slide")}</p>}
           {!online && <p className="comments-offline">{t("comments.offline")}</p>}
@@ -322,7 +316,7 @@ export function CommentsPanel({
               <li key={thread.id}>
                 <button
                   type="button"
-                  className={thread.id === active ? "active" : undefined}
+                  className={`comments-list-item${thread.id === active ? " active" : ""}`}
                   onClick={() => openThread(thread)}
                 >
                   <b>{anchorLabel(thread)}</b>
@@ -339,8 +333,8 @@ export function CommentsPanel({
             <section className="comments-thread">
               <div className="comments-thread-head">
                 <span>{anchorLabel(activeThread)}</span>
-                <button
-                  type="button"
+                <Button
+                  size="compact"
                   disabled={!canComment || !online || busy}
                   onClick={() =>
                     void run(() =>
@@ -349,7 +343,7 @@ export function CommentsPanel({
                   }
                 >
                   {activeThread.resolvedAt ? t("comments.reopen") : t("comments.resolve")}
-                </button>
+                </Button>
               </div>
               {activeThread.comments.map((comment) => (
                 <article key={comment.id} className="comment-message">
@@ -364,34 +358,33 @@ export function CommentsPanel({
                   <p>{comment.deletedAt ? t("comments.deleted") : comment.body}</p>
                   {!comment.deletedAt &&
                     (comment.authorId === meId || canManage) && (
-                      <button
-                        type="button"
-                        className="link-button danger"
+                      <Button variant="ghost" size="compact"
                         disabled={busy}
-                        onClick={() => remove(comment)}
-                      >
+                        onClick={() => remove(comment)}>
                         {t("comments.delete")}
-                      </button>
+                      </Button>
                     )}
                 </article>
               ))}
               {canComment && !activeThread.resolvedAt && (
                 <div className="comment-reply">
-                  <textarea
+                  <Textarea
                     value={reply}
                     maxLength={4000}
+                    aria-label={t("comments.replyPlaceholder")}
                     placeholder={
                       online ? t("comments.replyPlaceholder") : t("comments.replyOffline")
                     }
                     onChange={(event) => setReply(event.target.value)}
                   />
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="compact"
                     disabled={busy || !online || !reply.trim()}
                     onClick={sendReply}
                   >
                     {t("comments.send")}
-                  </button>
+                  </Button>
                 </div>
               )}
             </section>

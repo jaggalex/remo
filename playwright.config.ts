@@ -41,7 +41,8 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never", outputFolder: REPORT_DIR }]],
   // Baselines are compared only in the Linux browser and written only on purpose (ADR-222).
   snapshotPathTemplate: "spec/baselines/{arg}{ext}",
-  updateSnapshots: process.env.REMO_UPDATE_BASELINES ? "all" : "none",
+  // "changed": rewrite only what is outside the tolerance (ADR-223).
+  updateSnapshots: process.env.REMO_UPDATE_BASELINES ? "changed" : "none",
   use: {
     ...(process.env.REMO_BROWSER_WS
       ? { connectOptions: { wsEndpoint: process.env.REMO_BROWSER_WS, exposeNetwork: "<loopback>" } }

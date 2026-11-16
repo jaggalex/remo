@@ -28,23 +28,6 @@
   color: var(--faint);
 }
 
-.info-card-head button {
-  border: 0;
-  background: transparent;
-  border-radius: var(--radius-pill);
-  width: 22px;
-  height: 22px;
-  font-size: 15px;
-  line-height: 1;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.info-card-head button:hover {
-  background: var(--bg-hover);
-  color: var(--ink);
-}
-
 .info-card dl {
   margin: 0;
   display: flex;

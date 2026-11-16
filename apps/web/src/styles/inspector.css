@@ -20,23 +20,6 @@
   gap: 8px;
 }
 
-.inspector-close {
-  border: 0;
-  background: transparent;
-  border-radius: 7px;
-  width: 24px;
-  height: 24px;
-  font-size: 16px;
-  line-height: 1;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.inspector-close:hover {
-  background: var(--bg-hover);
-  color: var(--ink);
-}
-
 .inspector-intro {
   margin: 0 0 4px;
 }
@@ -65,26 +48,6 @@
   display: flex;
   gap: 4px;
   width: 100%;
-}
-
-.layer-row button {
-  flex: 1;
-  border: 1px solid var(--line);
-  background: var(--bg-panel);
-  border-radius: var(--radius-pill);
-  padding: 5px 0;
-  font-size: 13px;
-  line-height: 1.1;
-  cursor: pointer;
-}
-
-.layer-row button:hover {
-  background: var(--bg-hover);
-}
-
-.layer-row button.locked {
-  background: var(--accent-soft);
-  border-color: transparent;
 }
 
 .inspector-danger-note {
@@ -138,23 +101,6 @@
 .history-row b {
   color: var(--ink);
   font-weight: 600;
-}
-
-.danger-link {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  margin: -2px 0 10px;
-  font: inherit;
-  font-size: 11.5px;
-  color: var(--faint);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-
-.danger-link:hover {
-  color: var(--danger);
 }
 
 .counts {
@@ -268,33 +214,10 @@
   margin-top: 9px;
 }
 
-.kanban-actions button,
-.selection-actions button {
-  border: 1px solid var(--line);
-  background: var(--bg-panel);
-  border-radius: var(--radius-pill);
-  padding: 5px 9px;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-
-.kanban-actions button:hover,
-.selection-actions button:hover:not(:disabled) {
-  background: var(--bg-app);
-  border-color: var(--line-strong);
-}
-
 .selection-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-
-.selection-actions button:disabled {
-  color: var(--text-muted);
-  cursor: default;
 }
 
 .palette {

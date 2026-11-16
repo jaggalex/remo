@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog } from "@remo/ui";
+import { Button, Dialog, Input, Tabs } from "@remo/ui";
 import { api, type SessionUser } from "./api";
 import { useI18n } from "./i18n";
 
@@ -61,46 +61,29 @@ export function AuthDialog({
   return (
     <Dialog title={t("auth.title")} size="sm" onClose={onClose}>
       <form className="auth-dialog" onSubmit={submit}>
-        <div className="auth-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "login"}
-            className={mode === "login" ? "active" : undefined}
-            onClick={() => setMode("login")}
-          >
-            {t("auth.login")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "register"}
-            className={mode === "register" ? "active" : undefined}
-            onClick={() => setMode("register")}
-          >
-            {t("auth.register")}
-          </button>
-        </div>
+        <Tabs
+          label={t("auth.title")}
+          tabs={[
+            { id: "login", label: t("auth.login") },
+            { id: "register", label: t("auth.register") },
+          ]}
+          value={mode}
+          onChange={(id) => setMode(id as typeof mode)}
+        />
 
         {mode === "register" && (
-          <label className="auth-field">
-            <span>{t("auth.name")}</span>
-            <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" />
-          </label>
+          <Input label={t("auth.name")} value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" />
         )}
-        <label className="auth-field">
-          <span>{t("auth.email")}</span>
-          <input
+        <Input
+          label={t("auth.email")}
             type="email"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoComplete="email"
           />
-        </label>
-        <label className="auth-field">
-          <span>{t("auth.password")}</span>
-          <input
+        <Input
+          label={t("auth.password")}
             type="password"
             required
             minLength={mode === "register" ? 10 : undefined}
@@ -108,18 +91,15 @@ export function AuthDialog({
             onChange={(event) => setPassword(event.target.value)}
             autoComplete={mode === "register" ? "new-password" : "current-password"}
           />
-        </label>
 
         {mode === "register" && <p className="auth-hint">{t("auth.passwordHint")}</p>}
         {error && <p className="auth-error">{error}</p>}
 
         <div className="auth-actions">
-          <button type="button" className="ghost-button" onClick={onClose}>
-            {t("auth.cancel")}
-          </button>
-          <button type="submit" className="primary-button" disabled={busy}>
+          <Button onClick={onClose}>{t("auth.cancel")}</Button>
+          <Button type="submit" variant="primary" disabled={busy}>
             {busy ? t("auth.working") : mode === "register" ? t("auth.create") : t("auth.enter")}
-          </button>
+          </Button>
         </div>
         <p className="auth-hint">{t("auth.noEmail")}</p>
       </form>

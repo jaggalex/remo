@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ApiError, api, type AppActionMessage, type InstalledApp, type PanelNode } from "./api";
-import { Dialog } from "@remo/ui";
+import { Button, Dialog } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n, type TranslationKey } from "./i18n";
 
@@ -98,15 +98,12 @@ export function AppsPanel({
     }
     if (node.type === "button" && node.labelKey && node.action) {
       return (
-        <button
+        <Button
           key={node.id ?? node.labelKey}
-          type="button"
-          className="ghost-button"
           disabled={busy === node.action}
-          onClick={() => void invoke(app, node)}
-        >
+          onClick={() => void invoke(app, node)}>
           {t(key(node.labelKey))}
-        </button>
+        </Button>
       );
     }
     // `field` and anything the host does not know draw nothing: the vocabulary is closed.

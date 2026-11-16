@@ -1,3 +1,4 @@
+import { Button, Input } from "@remo/ui";
 import { useState } from "react";
 import { api, ApiError } from "./api";
 import { useI18n } from "./i18n";
@@ -47,7 +48,7 @@ export function LinkPasswordGate({
           });
       }}
     >
-      <input
+      <Input
         type="password"
         autoFocus
         autoComplete="current-password"
@@ -56,9 +57,9 @@ export function LinkPasswordGate({
         value={password}
         onChange={(event) => setPassword(event.target.value)}
       />
-      <button type="submit" className="primary-button" disabled={busy || !password}>
+      <Button variant="primary" type="submit" disabled={busy || !password}>
         {t("iam.unlock")}
-      </button>
+      </Button>
       {error && <p className="auth-error">{error}</p>}
     </form>
   );

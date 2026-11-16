@@ -1,3 +1,4 @@
+import { Button, Input } from "@remo/ui";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export interface MenuItem {
@@ -113,13 +114,14 @@ export function ContextMenu({
               onClose();
             }}
           >
-            <input
+            <Input
+              size="compact"
               autoFocus
               value={renameValue}
               onChange={(event) => setRenameValue(event.target.value)}
               aria-label={item.label}
             />
-            <button type="submit">OK</button>
+            <Button type="submit" variant="primary" size="compact">OK</Button>
           </form>
         ) : (
           <button

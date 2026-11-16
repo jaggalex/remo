@@ -11,7 +11,7 @@ import {
 import type { BoardConnection, Presence } from "@remo/doc";
 import { cellRect, layoutTable, type Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
-import { Button, Dialog, Input } from "@remo/ui";
+import { Button, Dialog, IconButton, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { usePresentation } from "./usePresentation";
@@ -162,9 +162,9 @@ export function PresentationLayer({
           <button type="button" onClick={presentation.next} aria-label={t("presentation.next")}>
             ›
           </button>
-          <button type="button" onClick={presentation.stop}>
+          <Button size="compact" onClick={presentation.stop}>
             {t("presentation.stop")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -175,9 +175,9 @@ export function PresentationLayer({
               name: presentation.presenterName ?? t("presentation.someone"),
             })}
           </span>
-          <button type="button" onClick={presentation.join}>
+          <Button variant="primary" size="compact" onClick={presentation.join}>
             {t("presentation.watch")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -189,12 +189,12 @@ export function PresentationLayer({
             })}
             {cellLabel && <span className="present-cell-label">{cellLabel}</span>}
           </span>
-          <button type="button" onClick={presentation.returnToPresenter}>
+          <Button variant="primary" size="compact" onClick={presentation.returnToPresenter}>
             {t("presentation.return")}
-          </button>
-          <button type="button" onClick={presentation.leave}>
+          </Button>
+          <Button size="compact" onClick={presentation.leave}>
             {t("presentation.leave")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -233,13 +233,7 @@ export function PresentationLayer({
                   >
                     ↓
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => removePresentationSlide(board, id)}
-                    aria-label={t("presentation.remove")}
-                  >
-                    ✕
-                  </button>
+                  <IconButton icon="close" size="compact" label={t("presentation.remove")} onClick={() => removePresentationSlide(board, id)} />
                 </li>
               ))}
             </ol>

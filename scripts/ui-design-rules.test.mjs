@@ -47,6 +47,32 @@ describe("design rules", () => {
     ]);
   });
 
+  it("leaves composite-widget items and allow-listed controls, counts an ordinary button", () => {
+    const root = tree({
+      "apps/web/src/B.tsx": [
+        '<button role="menuitem" onClick={() => go()}>Open</button>',
+        '<button type="button" className={`comment-pin${active ? " active" : ""}`} onClick={() => x > 1}>1</button>',
+        '<button type="button" className={on ? "peer following" : "peer"}>A</button>',
+        '<button type="button" className="peer-ish" onClick={() => a > b}>No</button>',
+        '<button type="button" onClick={apply}>Apply</button>',
+      ].join("\n"),
+    });
+    const lines = scanDesignRules(root).filter((f) => f.rule === "DS-CTRL-01/button").map((f) => f.line);
+    expect(lines).toEqual([4, 5]);
+  });
+
+  it("leaves an in-place editor and reads a field tag past an arrow function", () => {
+    const root = tree({
+      "apps/web/src/C.tsx": [
+        '<input className="board-title" onBlur={(e) => e.target.value > ""} />',
+        '<input type="file" onChange={(e) => go(e)} />',
+        '<input value={x} onChange={(e) => set(e.target.value)} />',
+      ].join("\n"),
+    });
+    const lines = scanDesignRules(root).filter((f) => f.rule === "DS-CTRL-01/field").map((f) => f.line);
+    expect(lines).toEqual([3]);
+  });
+
   it("ratchets: more fails, less must be tightened, tightening never raises a count", () => {
     const baseline = { "a.css": { "DS-TYPE-01": 3, "DS-SPACE-01": 2 } };
     const counts = countFindings([

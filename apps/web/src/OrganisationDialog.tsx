@@ -12,7 +12,7 @@ import {
 import { formatMoment, initials } from "./format";
 import { AgentsPanel } from "./AgentsPanel";
 import { OrganisationTeams } from "./OrganisationTeams";
-import { Button, Dialog, Input } from "@remo/ui";
+import { Button, Checkbox, Dialog, Input, Tabs } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { ABOUT, ABOUT_LABEL } from "./about";
@@ -431,18 +431,15 @@ export function OrganisationDialog({
               )}
             </div>
           )}
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => setCreatingOrg((value) => !value)}
-          >
+          <Button
+            onClick={() => setCreatingOrg((value) => !value)}>
             + {t("org.newOrg")}
-          </button>
+          </Button>
         </div>
 
         {creatingOrg && (
           <form className="org-create" onSubmit={createOrg}>
-            <input
+            <Input
               autoFocus
               value={newOrgName}
               maxLength={120}
@@ -450,44 +447,23 @@ export function OrganisationDialog({
               aria-label={t("org.orgNamePlaceholder")}
               onChange={(event) => setNewOrgName(event.target.value)}
             />
-            <button type="submit" className="primary-button" disabled={busy || !newOrgName.trim()}>
+            <Button variant="primary" type="submit" disabled={busy || !newOrgName.trim()}>
               {t("org.createOrg")}
-            </button>
+            </Button>
           </form>
         )}
 
         {!isGuest && (
-          <nav className="org-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "people"}
-              className={tab === "people" ? "active" : undefined}
-              onClick={() => setTab("people")}
-            >
-              {t("org.people")}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "agents"}
-              className={tab === "agents" ? "active" : undefined}
-              onClick={() => setTab("agents")}
-            >
-              {t("org.agents")}
-            </button>
-            {seesAudit && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === "audit"}
-                className={tab === "audit" ? "active" : undefined}
-                onClick={() => setTab("audit")}
-              >
-                {t("org.audit")}
-              </button>
-            )}
-          </nav>
+          <Tabs
+            label={t("org.title")}
+            tabs={[
+              { id: "people", label: t("org.people") },
+              { id: "agents", label: t("org.agents") },
+              ...(seesAudit ? [{ id: "audit", label: t("org.audit") }] : []),
+            ]}
+            value={tab}
+            onChange={(id) => setTab(id as typeof tab)}
+          />
         )}
 
         {error && <p className="auth-error">{error}</p>}
@@ -520,20 +496,18 @@ export function OrganisationDialog({
                   });
                 }}
               >
-                <input
+                <Input
                   type="email"
                   value={inviteEmail}
                   placeholder={t("org.invitePlaceholder")}
                   aria-label={t("org.invitePlaceholder")}
                   onChange={(event) => setInviteEmail(event.target.value)}
                 />
-                <button
+                <Button variant="primary"
                   type="submit"
-                  className="primary-button"
-                  disabled={busy || !inviteEmail.trim()}
-                >
+                  disabled={busy || !inviteEmail.trim()}>
                   {t("org.invite")}
-                </button>
+                </Button>
               </form>
             )}
 
@@ -541,17 +515,14 @@ export function OrganisationDialog({
               <div className="share-invite">
                 <p className="muted">{t("org.inviteReady")}</p>
                 <div className="share-link-url">
-                  <input readOnly value={inviteUrl} onFocus={(event) => event.target.select()} />
-                  <button
-                    type="button"
-                    className="ghost-button"
+                  <Input readOnly aria-label={t("org.inviteReady")} value={inviteUrl} onFocus={(event) => event.target.select()} />
+                  <Button
                     onClick={() => {
                       void navigator.clipboard?.writeText(inviteUrl);
                       setCopied(true);
-                    }}
-                  >
+                    }}>
                     {copied ? t("org.copied") : t("org.copy")}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -566,17 +537,14 @@ export function OrganisationDialog({
                       <span className="muted">
                         {t("org.expires", { date: formatMoment(invitation.expires_at, lang) })}
                       </span>
-                      <button
-                        type="button"
-                        className="link-button"
+                      <Button variant="ghost" size="compact"
                         disabled={busy}
                         onClick={() =>
                           orgId &&
                           void run(() => api.revokeInvitation(orgId, invitation.id))
-                        }
-                      >
+                        }>
                         {t("org.revoke")}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -617,46 +585,34 @@ export function OrganisationDialog({
                       {isUserAdmin && !self && member.relation === "member" && (
                         <div className="org-person-actions">
                           {isOrgAdmin && (
-                            <button
-                              type="button"
-                              className="link-button"
+                            <Button variant="ghost" size="compact"
                               aria-expanded={editingRoles === member.id}
                               onClick={() =>
                                 setEditingRoles((current) =>
                                   current === member.id ? null : member.id,
                                 )
-                              }
-                            >
+                              }>
                               {t("org.rolesAction")}
-                            </button>
+                            </Button>
                           )}
                           {member.state === "suspended" ? (
-                            <button
-                              type="button"
-                              className="link-button"
+                            <Button variant="ghost" size="compact"
                               disabled={busy}
-                              onClick={() => orgId && void run(() => api.restoreMember(orgId, member.id))}
-                            >
+                              onClick={() => orgId && void run(() => api.restoreMember(orgId, member.id))}>
                               {t("org.restore")}
-                            </button>
+                            </Button>
                           ) : (
-                            <button
-                              type="button"
-                              className="link-button"
+                            <Button variant="ghost" size="compact"
                               disabled={busy}
-                              onClick={() => orgId && void run(() => api.suspendMember(orgId, member.id))}
-                            >
+                              onClick={() => orgId && void run(() => api.suspendMember(orgId, member.id))}>
                               {t("org.suspend")}
-                            </button>
+                            </Button>
                           )}
-                          <button
-                            type="button"
-                            className="link-button danger"
+                          <Button variant="ghost" size="compact"
                             disabled={busy}
-                            onClick={() => setConfirmRemove(member.id)}
-                          >
+                            onClick={() => setConfirmRemove(member.id)}>
                             {t("org.remove")}
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -664,9 +620,7 @@ export function OrganisationDialog({
                     {isOrgAdmin && editingRoles === member.id && (
                       <div className="org-role-editor">
                         {ORG_ROLES.map((role) => (
-                          <label key={role}>
-                            <input
-                              type="checkbox"
+                          <Checkbox key={role} label={roleLabel(role)}
                               checked={member.roles.includes(role)}
                               disabled={busy}
                               onChange={(event) => {
@@ -681,8 +635,6 @@ export function OrganisationDialog({
                                 });
                               }}
                             />
-                            {roleLabel(role)}
-                          </label>
                         ))}
                       </div>
                     )}
@@ -691,21 +643,15 @@ export function OrganisationDialog({
                       <div className="org-confirm">
                         <p>{t("org.removeConfirm", { name: member.name })}</p>
                         <div>
-                          <button
-                            type="button"
-                            className="primary-button danger"
+                          <Button variant="danger"
                             disabled={busy}
-                            onClick={() => void removeMember(member.id)}
-                          >
+                            onClick={() => void removeMember(member.id)}>
                             {t("org.removeYes")}
-                          </button>
-                          <button
-                            type="button"
-                            className="ghost-button"
-                            onClick={() => setConfirmRemove(null)}
-                          >
+                          </Button>
+                          <Button
+                            onClick={() => setConfirmRemove(null)}>
                             {t("org.cancel")}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -777,9 +723,9 @@ export function OrganisationDialog({
         <footer className="org-foot">
           <HelpLink topicId="about.remo">{`${ABOUT_LABEL} · ${ABOUT.license}`}</HelpLink>
           <span className="muted">{me.email}</span>
-          <button type="button" className="ghost-button" disabled={busy} onClick={() => void signOut()}>
+          <Button disabled={busy} onClick={() => void signOut()}>
             {t("org.signOut")}
-          </button>
+          </Button>
         </footer>
       </section>
     </Dialog>

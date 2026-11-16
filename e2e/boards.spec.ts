@@ -17,7 +17,7 @@ test("creates a board from the board list and opens the chosen template", async 
   await page.locator(".new-board-dialog input").first().fill("M0 launch");
   await page.locator(".new-board-dialog").getByRole("radio", { name: /With an example/ }).check();
   await page.locator(".new-board-dialog select").selectOption("kanban-framework");
-  await page.locator(".new-board-dialog .primary-button").click();
+  await page.locator(".new-board-dialog").getByRole("button", { name: "Create room" }).click();
 
   await expect(page).toHaveURL(/room=m0-launch/);
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
@@ -72,7 +72,7 @@ test("an empty board stays empty and a rename reaches the board list", async ({ 
   await expect(
     page.locator(".new-board-dialog").getByRole("radio", { name: /Empty room/ }),
   ).toBeChecked();
-  await page.locator(".new-board-dialog .primary-button").click();
+  await page.locator(".new-board-dialog").getByRole("button", { name: "Create room" }).click();
 
   await expect(page).toHaveURL(/room=empty-launch/);
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });

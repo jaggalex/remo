@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import type { AgentThreadDetail, AgentThreadSummary, RoomAgentState, RoomTaskKind } from "./roomAgentApi";
 import { formatMoment } from "./format";
-import { Dialog } from "@remo/ui";
+import { Button, Dialog, Select, Switch, Textarea } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n, type TranslationKey } from "./i18n";
 
@@ -264,29 +264,21 @@ export function RoomAgentPanel({
           <div className="agent-enable">
             {state.canAssign ? (
               <div className="agent-form">
-                <label className="agent-field">
-                  <span>{t("roomAgent.choose")}</span>
-                  <select
-                    value={assignId}
-                    onChange={(event) => setAssignId(event.target.value)}
-                    disabled={!state.agents.length || busy}
-                  >
-                    {state.agents.map((agent) => (
-                      <option key={agent.id} value={agent.id}>
-                        {agent.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <Select
+                  label={t("roomAgent.choose")}
+                  options={[
+                    ...state.agents.map((agent) => ({ value: agent.id, label: agent.name })),
+                  ]}
+                  value={assignId}
+                  onChange={(event) => setAssignId(event.target.value)}
+                  disabled={!state.agents.length || busy}
+                />
                 <div className="agent-actions">
-                  <button
-                    type="button"
-                    className="primary-button"
+                  <Button variant="primary"
                     disabled={!assignId || busy}
-                    onClick={() => void run(() => api.assignRoomAgent(boardId, assignId))}
-                  >
+                    onClick={() => void run(() => api.assignRoomAgent(boardId, assignId))}>
                     {t("roomAgent.assign")}
-                  </button>
+                  </Button>
                 </div>
                 {!state.agents.length && <p className="muted">{t("roomAgent.noAgents")}</p>}
               </div>
@@ -300,39 +292,34 @@ export function RoomAgentPanel({
           <div className="room-agent-assignment">
             <span>{t("roomAgent.assigned", { name: state.assigned.name })}</span>
             <span className="room-agent-assignment-actions">
-              <button type="button" className="link-button" onClick={onOpenSettings}>
+              <Button variant="ghost" size="compact" onClick={onOpenSettings}>
                 {t("roomAgent.settings")}
-              </button>
+              </Button>
               {state.owner && (
-                <button
-                  type="button"
-                  className="link-button"
+                <Button variant="ghost" size="compact"
                   disabled={busy}
-                  onClick={() => void run(() => api.assignRoomAgent(boardId, null))}
-                >
+                  onClick={() => void run(() => api.assignRoomAgent(boardId, null))}>
                   {t("roomAgent.unassign")}
-                </button>
+                </Button>
               )}
             </span>
           </div>
         )}
 
         {state?.delegates.length ? (
-          <fieldset className="agent-field">
+          <fieldset className="agent-delegates">
             <legend>{t("roomAgent.delegates")}</legend>
             {state.delegates.map((member) => (
-              <label key={member.id}>
-                <input
-                  type="checkbox"
-                  checked={member.enabled}
-                  disabled={busy}
-                  onChange={(event) => {
-                    const enabled = event.target.checked;
-                    void run(() => api.setRoomAgentDelegate(boardId, member.id, enabled));
-                  }}
-                />
-                {member.name}
-              </label>
+              <Switch
+                key={member.id}
+                label={member.name}
+                checked={member.enabled}
+                disabled={busy}
+                onChange={(event) => {
+                  const enabled = event.target.checked;
+                  void run(() => api.setRoomAgentDelegate(boardId, member.id, enabled));
+                }}
+              />
             ))}
           </fieldset>
         ) : null}
@@ -344,17 +331,15 @@ export function RoomAgentPanel({
           <div className="room-agent-threads-head">
             <h3 className="muted">{t("roomAgent.threads")}</h3>
             {canAsk && threadId && (
-              <button type="button" className="link-button" onClick={() => {
+              <Button variant="ghost" size="compact" onClick={() => {
                 setIntent("");
                 setNewTask(true);
               }}>
                 {t("roomAgent.newTask")}
-              </button>
+              </Button>
             )}
             {state?.owner && threads.length > 0 && (
-              <button
-                type="button"
-                className="link-button danger"
+              <Button variant="ghost" size="compact"
                 onClick={() => {
                   if (!confirmClear) {
                     setConfirmClear(true);
@@ -366,10 +351,9 @@ export function RoomAgentPanel({
                     setThreadId(null);
                     setDetail(null);
                   });
-                }}
-              >
+                }}>
                 {confirmClear ? t("roomAgent.confirmClear") : t("roomAgent.clearHistory")}
-              </button>
+              </Button>
             )}
           </div>
           {threads.length === 0 && <p className="muted">{t("roomAgent.empty")}</p>}
@@ -430,20 +414,14 @@ export function RoomAgentPanel({
                 )}
                 {message.frame_ids[0] && hasFrame(message.frame_ids[0]) && (
                   <div className="agent-actions">
-                    <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => onShowFrame(message.frame_ids[0]!)}
-                    >
+                    <Button variant="ghost" size="compact"
+                      onClick={() => onShowFrame(message.frame_ids[0]!)}>
                       {t("roomAgent.show")}
-                    </button>
-                    {canEdit && <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => onFitFrame(message.frame_ids[0]!)}
-                    >
+                    </Button>
+                    {canEdit && <Button variant="ghost" size="compact"
+                      onClick={() => onFitFrame(message.frame_ids[0]!)}>
                       {t("roomAgent.fitFrame")}
-                    </button>}
+                    </Button>}
                   </div>
                 )}
               </div>
@@ -451,27 +429,22 @@ export function RoomAgentPanel({
 
             {active && canStop && (
               <div className="agent-actions">
-                <button type="button" className="link-button danger" onClick={stop} disabled={busy}>
+                <Button variant="ghost" size="compact" onClick={stop} disabled={busy}>
                   {t("roomAgent.stop")}
-                </button>
+                </Button>
               </div>
             )}
             {!active && latestFrame?.frame_ids[0] && canUndoFrame(latestFrame.frame_ids[0]) && (
               <div className="agent-actions">
-                <button
-                  type="button"
-                  className="link-button"
-                  onClick={() => onUndoFrame(latestFrame.frame_ids[0]!)}
-                >
+                <Button variant="ghost" size="compact"
+                  onClick={() => onUndoFrame(latestFrame.frame_ids[0]!)}>
                   {t("roomAgent.undo")}
-                </button>
+                </Button>
               </div>
             )}
             {state?.owner && threadId && (
               <div className="agent-actions">
-                <button
-                  type="button"
-                  className="link-button danger"
+                <Button variant="ghost" size="compact"
                   onClick={() => {
                     if (confirmDelete !== threadId) {
                       setConfirmDelete(threadId);
@@ -483,12 +456,11 @@ export function RoomAgentPanel({
                       setThreadId(null);
                       setDetail(null);
                     });
-                  }}
-                >
+                  }}>
                   {confirmDelete === threadId
                     ? t("roomAgent.confirmDelete")
                     : t("roomAgent.deleteThread")}
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -502,76 +474,53 @@ export function RoomAgentPanel({
               submit(clarify);
             }}
           >
-            <label className="agent-field agent-intent">
-              <span>{clarify ? t("roomAgent.clarifyPlaceholder") : t("roomAgent.newTask")}</span>
-              <textarea
-                value={intent}
-                placeholder={t("roomAgent.placeholder")}
-                onChange={(event) => {
-                  if (!threadId) setNewTask(true);
-                  setIntent(event.target.value);
-                }}
-                rows={3}
-                maxLength={2000}
-                disabled={busy}
-              />
-            </label>
+            <Textarea
+              className="agent-intent"
+              label={clarify ? t("roomAgent.clarifyPlaceholder") : t("roomAgent.newTask")}
+              value={intent}
+              placeholder={t("roomAgent.placeholder")}
+              onChange={(event) => {
+                if (!threadId) setNewTask(true);
+                setIntent(event.target.value);
+              }}
+              rows={3}
+              maxLength={2000}
+              disabled={busy}
+            />
             <div className="agent-actions">
               {!clarify && (
-                <label className="agent-field">
-                  <span>{t("roomAgent.newTask")}</span>
-                  <select
-                    value={kind}
-                    onChange={(event) =>
-                      setKind(
-                      event.target.value as
-                        | "process"
-                        | "delivery-plan"
-                        | "problem-map"
-                        | "requirements"
-                        | "mvp-scoping"
-                        | "retrospective"
-                        | "decision"
-                        | "meeting-actions"
-                        | "prioritization"
-                        | "competitors"
-                        | "architecture-decision"
-                        | "idea-generation"
-                        | "dependency-mapping"
-                        | "user-flow-design"
-                        | "architecture-mapping",
-                    )
-                    }
-                    disabled={busy}
-                  >
-                    <option value="process">{t("roomAgent.process")}</option>
-                    <option value="delivery-plan">{t("roomAgent.deliveryPlan")}</option>
-                    <option value="requirements">{t("roomAgent.requirements")}</option>
-                    <option value="mvp-scoping">{t("roomAgent.mvp")}</option>
-                    <option value="retrospective">{t("roomAgent.retrospective")}</option>
-                    <option value="decision">{t("roomAgent.decision")}</option>
-                    <option value="meeting-actions">{t("roomAgent.meetingActions")}</option>
-                    <option value="prioritization">{t("roomAgent.prioritization")}</option>
-                    <option value="competitors">{t("roomAgent.competitors")}</option>
-                    <option value="architecture-decision">{t("roomAgent.architectureDecision")}</option>
-                    <option value="idea-generation">{t("roomAgent.ideas")}</option>
-                    <option value="dependency-mapping">{t("roomAgent.dependencies")}</option>
-                    <option value="user-flow-design">{t("roomAgent.userFlow")}</option>
-                    <option value="architecture-mapping">{t("roomAgent.architecture")}</option>
-                    <option value="problem-map">{t("roomAgent.problemMap")}</option>
-                  </select>
-                </label>
+                <Select
+                  label={t("roomAgent.newTask")}
+                  options={[
+                    { value: "process", label: t("roomAgent.process") },
+                    { value: "delivery-plan", label: t("roomAgent.deliveryPlan") },
+                    { value: "requirements", label: t("roomAgent.requirements") },
+                    { value: "mvp-scoping", label: t("roomAgent.mvp") },
+                    { value: "retrospective", label: t("roomAgent.retrospective") },
+                    { value: "decision", label: t("roomAgent.decision") },
+                    { value: "meeting-actions", label: t("roomAgent.meetingActions") },
+                    { value: "prioritization", label: t("roomAgent.prioritization") },
+                    { value: "competitors", label: t("roomAgent.competitors") },
+                    { value: "architecture-decision", label: t("roomAgent.architectureDecision") },
+                    { value: "idea-generation", label: t("roomAgent.ideas") },
+                    { value: "dependency-mapping", label: t("roomAgent.dependencies") },
+                    { value: "user-flow-design", label: t("roomAgent.userFlow") },
+                    { value: "architecture-mapping", label: t("roomAgent.architecture") },
+                    { value: "problem-map", label: t("roomAgent.problemMap") },
+                  ]}
+                  value={kind}
+                  onChange={(event) => setKind(event.target.value as typeof kind)}
+                  disabled={busy}
+                />
               )}
               <span className="muted">
                 {t("roomAgent.sources", { count: selectedIds.length })}
               </span>
-              <button
+              <Button variant="primary"
                 type="submit"
-                className="primary-button"
-                disabled={busy || intent.trim().length < 3}
-              >
+                disabled={busy || intent.trim().length < 3}>
                 {clarify ? t("roomAgent.send") : t("roomAgent.create")}
-              </button>
+              </Button>
             </div>
           </form>
         )}

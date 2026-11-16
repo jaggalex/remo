@@ -195,11 +195,3 @@
   font-size: 12px;
 }
 
-.kanban-bar button {
-  border: 0;
-  background: var(--bg-hover);
-  border-radius: var(--radius-pill);
-  padding: 5px 9px;
-  font: inherit;
-  cursor: pointer;
-}

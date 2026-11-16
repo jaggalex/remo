@@ -137,14 +137,6 @@
   gap: var(--space-1);
 }
 
-.section-check {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font: var(--type-label);
-  color: var(--ink);
-}
-
 .section-look-toggle {
   display: flex;
   align-items: center;
@@ -751,13 +743,6 @@
   margin: 0 0 var(--space-2);
   font: var(--type-label);
   font-weight: 600;
-}
-
-.section-layout-option {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  font: var(--type-body);
 }
 
 .section-layout-actions {

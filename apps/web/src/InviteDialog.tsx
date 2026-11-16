@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog } from "@remo/ui";
+import { Button, Dialog } from "@remo/ui";
 import { api } from "./api";
 import { useI18n } from "./i18n";
 
@@ -60,13 +60,13 @@ export function InviteDialog({
         {accepted && <p className="muted">{t("invite.accepted")}</p>}
         <div className="auth-actions">
           {signedIn ? (
-            <button type="button" className="primary-button" disabled={busy || accepted} onClick={() => void accept()}>
+            <Button variant="primary" disabled={busy || accepted} onClick={() => void accept()}>
               {busy ? t("auth.working") : t("invite.accept")}
-            </button>
+            </Button>
           ) : (
-            <button type="button" className="primary-button" onClick={onSignIn}>
+            <Button variant="primary" onClick={onSignIn}>
               {t("invite.signInFirst")}
-            </button>
+            </Button>
           )}
         </div>
       </section>

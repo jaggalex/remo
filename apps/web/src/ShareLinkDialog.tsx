@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { Dialog } from "@remo/ui";
+import { useId } from "react";
+import { Button, Dialog, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 
 /**
@@ -17,7 +17,7 @@ export function ShareLinkDialog({
   onClose: () => void;
 }) {
   const { t } = useI18n();
-  const field = useRef<HTMLInputElement | null>(null);
+  const fieldId = useId();
   if (!link) return null;
   return (
     <Dialog
@@ -27,28 +27,25 @@ export function ShareLinkDialog({
       onClose={onClose}
     >
       <div className="auth-dialog">
-        <input
-          ref={field}
-          className="share-fallback-input"
+        <Input
+          id={fieldId}
+          aria-label={t("board.shareFallbackTitle")}
           readOnly
           autoFocus
           value={link}
           onFocus={(event) => event.target.select()}
         />
         <div className="auth-actions">
-          <button type="button" onClick={onClose}>
-            {t("delete.cancel")}
-          </button>
-          <button
-            type="button"
-            className="primary-button"
+          <Button onClick={onClose}>{t("delete.cancel")}</Button>
+          <Button
+            variant="primary"
             onClick={() => {
-              field.current?.select();
+              (document.getElementById(fieldId) as HTMLInputElement | null)?.select();
               void navigator.clipboard?.writeText(link).catch(() => {});
             }}
           >
             {t("board.copyAction")}
-          </button>
+          </Button>
         </div>
       </div>
     </Dialog>

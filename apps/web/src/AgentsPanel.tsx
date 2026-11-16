@@ -1,3 +1,4 @@
+import { Button, Input, Switch } from "@remo/ui";
 import { useCallback, useEffect, useState } from "react";
 import { api, type Agent, type AgentSkill, type AgentToken } from "./api";
 import { formatMoment } from "./format";
@@ -98,9 +99,7 @@ export function AgentsPanel({
           <p className="muted">{t("agents.body")}</p>
         </div>
         {isOrgAdmin && (
-          <label className="org-agents-switch">
-            <input
-              type="checkbox"
+          <Switch className="org-agents-switch" label={t("agents.orgSwitch")}
               checked={enabled}
               disabled={busy}
               onChange={(event) => {
@@ -110,8 +109,6 @@ export function AgentsPanel({
                 });
               }}
             />
-            {t("agents.orgSwitch")}
-          </label>
         )}
       </div>
 
@@ -134,15 +131,15 @@ export function AgentsPanel({
               });
             }}
           >
-            <input
+            <Input
               value={name}
               placeholder={t("agents.namePlaceholder")}
               aria-label={t("agents.namePlaceholder")}
               onChange={(event) => setName(event.target.value)}
             />
-            <button type="submit" className="primary-button" disabled={busy || !name.trim()}>
+            <Button variant="primary" type="submit" disabled={busy || !name.trim()}>
               {t("agents.create")}
-            </button>
+            </Button>
           </form>
 
           <ul className="org-agent-list">
@@ -172,17 +169,12 @@ export function AgentsPanel({
                     </div>
                     {canManage && (
                       <div className="org-person-actions">
-                        <button
-                          type="button"
-                          className="link-button"
+                        <Button variant="ghost" size="compact"
                           aria-expanded={openAgent === agent.id}
-                          onClick={() => void openTokens(agent.id)}
-                        >
+                          onClick={() => void openTokens(agent.id)}>
                           {t("agents.keysAction")}
-                        </button>
-                        <button
-                          type="button"
-                          className="link-button"
+                        </Button>
+                        <Button variant="ghost" size="compact"
                           disabled={busy}
                           onClick={() =>
                             void run(() =>
@@ -190,10 +182,9 @@ export function AgentsPanel({
                                 state: agent.state === "active" ? "disabled" : "active",
                               }),
                             )
-                          }
-                        >
+                          }>
                           {agent.state === "active" ? t("agents.disable") : t("agents.enable")}
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -202,9 +193,7 @@ export function AgentsPanel({
                     <div className="org-agent-tokens">
                       <div className="org-agent-tokens-head">
                         <strong>{t("agents.tokens")}</strong>
-                        <button
-                          type="button"
-                          className="ghost-button"
+                        <Button
                           disabled={busy}
                           onClick={() =>
                             void run(async () => {
@@ -216,26 +205,22 @@ export function AgentsPanel({
                               setCopied(false);
                               setTokens((await api.agentTokens(agent.id)).tokens);
                             })
-                          }
-                        >
+                          }>
                           {t("agents.newToken")}
-                        </button>
+                        </Button>
                       </div>
                       {secret && (
                         <div className="share-invite">
                           <p className="muted">{t("agents.secretOnce")}</p>
                           <div className="share-link-url">
-                            <input readOnly value={secret} onFocus={(event) => event.target.select()} />
-                            <button
-                              type="button"
-                              className="ghost-button"
+                            <Input readOnly aria-label={t("agents.secretOnce")} value={secret} onFocus={(event) => event.target.select()} />
+                            <Button
                               onClick={() => {
                                 void navigator.clipboard?.writeText(secret);
                                 setCopied(true);
-                              }}
-                            >
+                              }}>
                               {copied ? t("agents.copied") : t("agents.copy")}
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -249,19 +234,16 @@ export function AgentsPanel({
                                 : t("agents.expires", { date: formatMoment(token.expires_at, lang) })}
                             </span>
                             {!token.revoked_at && (
-                              <button
-                                type="button"
-                                className="link-button danger"
+                              <Button variant="ghost" size="compact"
                                 disabled={busy}
                                 onClick={() =>
                                   void run(async () => {
                                     await api.revokeAgentToken(agent.id, token.id);
                                     setTokens((await api.agentTokens(agent.id)).tokens);
                                   })
-                                }
-                              >
+                                }>
                                 {t("agents.revoke")}
-                              </button>
+                              </Button>
                             )}
                           </li>
                         ))}

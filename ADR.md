@@ -9074,3 +9074,72 @@ new PNGs, which is the review ADR-091 asked for. Docker is required for `pnpm e2
 `pnpm baselines` and the full gate. The browser under emulation on an arm64 laptop is
 slower, but it is the same binary as in CI. Upgrading Playwright means regenerating the
 baselines in the same change.
+
+## ADR-223: Regenerating baselines rewrites only what changed (amends ADR-222)
+
+**Context.** ADR-222 regenerated baselines with `updateSnapshots: "all"`. That rewrites
+every PNG whose bytes differ, including screens that pass the comparison and differ by a
+few antialiased pixels. The first regeneration after a dialog change rewrote seven
+unrelated baselines, so the diff no longer showed which screens actually changed.
+
+**Decision.** `pnpm baselines` uses `updateSnapshots: "changed"`: only a baseline outside
+the comparison tolerance is rewritten. A missing baseline is still written only in that
+mode and fails otherwise.
+
+**Consequences.** A regeneration diff lists the screens that changed and nothing else. A
+baseline can drift by up to the tolerance without being rewritten; the tolerance stays
+20 pixels, so that drift is invisible.
+
+## ADR-224: Specialised buttons are named in one allow-list (DS-CTRL-01)
+
+**Context.** DS-CTRL-01 counted every raw `<button>` as a deviation. After the dialogs, panels
+and inspector moved onto `Button` / `IconButton`, the remaining raw buttons were not
+ordinary actions. They were items of an ARIA composite widget (menu items, radio cards,
+tabs), controls anchored to the canvas that scale with the zoom (table edges, section
+titles, comment pins), selectable rows and tiles (axis rows, comment threads, room tiles),
+disclosure rows, and identity chips (avatars, peers, the room path). Forcing them into
+`Button` would give a pin or an avatar the shape of an action button. If the rule kept
+counting them, the ratchet could never reach zero.
+
+**Decision.** `scripts/ui-design-rules.mjs` skips a raw button when either:
+
+- its `role` is a composite-widget item (`menuitem`, `menuitemradio`, `menuitemcheckbox`,
+  `radio`, `tab`, `option`); or
+- its static class names one of the controls in `BUTTON_ALLOW`, each tagged with its reason
+  (canvas, disclosure, row, tile, identity, menu).
+
+One file, `object-panel/ColorWindow.tsx`, is allowed whole, because every button there is a
+colour swatch. The list is the only place an exception is made. Adding to it is a reviewed
+change to the script, with the reason written next to the class.
+
+**Consequences.** DS-CTRL-01/button counts only buttons that should become `Button` or
+`IconButton`. Today that is the four presentation arrows, which wait for chevron and arrow
+icons. A new specialised control needs its class added to the list, or it fails the
+ratchet. A class on the list that is misused for an ordinary action passes the rule, so the
+reviewer of that change is the guard.
+
+## ADR-225: In-place text editors are the only raw fields (DS-CTRL-01, extends ADR-224)
+
+**Context.** M5 moved the product's form fields onto `Input`, `Select`, `Textarea`,
+`Checkbox`, `Switch`, `Radio` and `ChoiceCard`. Three raw fields remained:
+- the section title on the canvas;
+- the table header text editor;
+- the room title in the header.
+
+Each one replaces a piece of text in place, at that text's position and size, while the
+person renames it. A DS field brings a label above it and a box of a fixed height, which
+would move the text being edited. The rule also read a field's opening tag only up to its
+first `>`, so `onChange={(e) => …}` cut the tag short, and an exemption such as
+`type="file"` could be missed.
+
+**Decision.**
+- `scripts/ui-design-rules.mjs` reads a field's whole opening tag the way it reads a
+  button's.
+- It skips a raw field whose static class is in `FIELD_ALLOW`: today
+  `section-title-input`, `table-header-editor` and `board-title`, each tagged "in place".
+  `file`, `hidden`, `color` and `range` inputs stay exempt as before.
+- As with ADR-224, the list in the script is the only place an exception is made.
+
+**Consequences.** DS-CTRL-01/field is zero, so a new raw field fails the ratchet unless it
+is an in-place editor added to the list. The «Новая комната» start cards use `ChoiceCard`,
+and the context-menu rename uses `Input`. Neither needed an exception.

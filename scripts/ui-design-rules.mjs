@@ -37,6 +37,68 @@ export const RULES = {
   "DS-ICON-01": "a text glyph as an icon (× ✕ → …); use Icon / IconButton",
 };
 
+/**
+ * DS-CTRL-01 asks for Button / IconButton where a raw <button> is an ordinary action. Some
+ * buttons are not that: an item inside an ARIA composite widget, a control anchored to the
+ * canvas, a selectable row or tile, a disclosure row, an identity chip. They keep their own
+ * shape on purpose (ADR-224), so they are named here with the reason, and nowhere else.
+ */
+const COMPOSITE_ROLES = new Set(["menuitem", "menuitemradio", "menuitemcheckbox", "radio", "tab", "option"]);
+export const BUTTON_ALLOW = {
+  // On the canvas, positioned in board coordinates; their size follows the zoom.
+  "table-insert": "canvas", "table-edge-add": "canvas", "table-header": "canvas",
+  "section-title": "canvas", "section-view-badge": "canvas", "comment-pin": "canvas",
+  // A row that opens or closes the part under it.
+  "section-fill-row": "disclosure", "section-look-toggle": "disclosure", "tool-rail-caret": "disclosure",
+  // A row or tile that is picked, not an action.
+  "section-axis-row": "row", "comments-list-item": "row", "room-agent-thread": "row",
+  "home-tile-main": "tile", "home-emoji": "tile", "home-emoji-none": "tile",
+  // Who and where: the avatar or name is the control.
+  "agent-avatar": "identity", "peer": "identity", "account-button": "identity", "topbar-path-button": "identity",
+  // The DS menu row.
+  "rm-menu-item": "menu",
+};
+/** Files whose every raw button is a swatch: the colour sample is the control. */
+const BUTTON_ALLOW_FILES = new Set(["apps/web/src/object-panel/ColorWindow.tsx"]);
+
+/** End of the opening tag that starts at `from`, skipping `>` inside `{…}` and strings. */
+function openTagEnd(text, from) {
+  let depth = 0;
+  let quote = null;
+  for (let i = from; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) {
+      if (c === quote) quote = null;
+    } else if (depth === 0 && (c === '"' || c === "'")) quote = c;
+    else if (c === "{") depth += 1;
+    else if (c === "}") depth -= 1;
+    else if (c === ">" && depth === 0) return i;
+  }
+  return text.length;
+}
+
+/** Static class words of a tag: the literal itself, or the string parts of an expression. */
+function classWords(tag) {
+  const cls = tag.match(/\bclassName=(?:"([^"]*)"|\{([\s\S]*?)\}\s*(?:[a-zA-Z-]+=|\/?$))/);
+  if (!cls) return [];
+  return (cls[1] ?? cls[2].replace(/\$\{[^}]*\}/g, " ")).match(/[a-z][a-z0-9-]*/g) ?? [];
+}
+
+function allowedButton(tag) {
+  const role = tag.match(/\brole="([a-z]+)"/);
+  if (role && COMPOSITE_ROLES.has(role[1])) return true;
+  return classWords(tag).some((word) => word in BUTTON_ALLOW);
+}
+
+/**
+ * DS-CTRL-01/field, the same way (ADR-225): an editor that replaces a piece of text in
+ * place, sized and placed like the text it edits, is not a form field with a label.
+ */
+export const FIELD_ALLOW = {
+  "section-title-input": "in place", "table-header-editor": "in place", "board-title": "in place",
+};
+const allowedField = (tag) => classWords(tag).some((word) => word in FIELD_ALLOW);
+
 function walk(directory, extensions, out = []) {
   if (!existsSync(directory)) return out;
   for (const entry of readdirSync(directory)) {
@@ -99,14 +161,19 @@ function declaration(prop, value, at, add) {
   }
 }
 
-function tsxFindings(text, add) {
+function tsxFindings(text, add, path = "") {
   const lineAt = (offset) => text.slice(0, offset).split("\n").length;
   if (/role="(?:alert)?dialog"/.test(text) && /aria-modal/.test(text)) {
     for (const match of text.matchAll(/aria-modal/g)) add("UX-DIALOG-01", lineAt(match.index));
   }
-  for (const match of text.matchAll(/<button\b/g)) add("DS-CTRL-01/button", lineAt(match.index));
-  for (const match of text.matchAll(/<(?:input|select|textarea)\b[^>]*>/g)) {
-    if (/type="(?:file|hidden|color|range)"/.test(match[0])) continue;
+  if (!BUTTON_ALLOW_FILES.has(path)) {
+    for (const match of text.matchAll(/<button\b/g)) {
+      if (!allowedButton(text.slice(match.index, openTagEnd(text, match.index)))) add("DS-CTRL-01/button", lineAt(match.index));
+    }
+  }
+  for (const match of text.matchAll(/<(?:input|select|textarea)\b/g)) {
+    const tag = text.slice(match.index, openTagEnd(text, match.index));
+    if (/type="(?:file|hidden|color|range)"/.test(tag) || allowedField(tag)) continue;
     add("DS-CTRL-01/field", lineAt(match.index));
   }
   for (const match of text.matchAll(/>\s*[✕×✓→←↑↓⋯…]\s*</g)) add("DS-ICON-01", lineAt(match.index));
@@ -121,7 +188,7 @@ export function scanDesignRules(root) {
     const add = (rule, line) => findings.push({ file: path, rule, line });
     const text = readFileSync(file, "utf8");
     if (kind === "css") cssFindings(text, defined, add);
-    else tsxFindings(text, add);
+    else tsxFindings(text, add, path.split("\\").join("/"));
   };
   for (const file of walk(join(root, "apps/web/src"), [".css"])) scan(file, "css");
   for (const file of walk(join(root, "apps/web/src"), [".tsx"])) scan(file, "tsx");

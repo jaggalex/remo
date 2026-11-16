@@ -1,3 +1,4 @@
+import { Button, Select } from "@remo/ui";
 import { useMemo, useState } from "react";
 import type { Widget } from "@remo/model";
 import { cardAssignees, cardsMatching, type CardFilter } from "./cardFilter";
@@ -31,32 +32,31 @@ export function CardFilterPanel({
   return (
     <div className="card-filter">
       <div className="card-fields-head">{t("filter.title")}</div>
-      <label className="card-field">
-        <span>{t("filter.assignee")}</span>
-        <select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}>
-          <option value="">{t("filter.anyone")}</option>
-          {assignees.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="card-field">
-        <span>{t("filter.due")}</span>
-        <select
-          value={due}
-          onChange={(event) => setDue(event.target.value as CardFilter["due"])}
-        >
-          <option value="any">{t("filter.anyDue")}</option>
-          <option value="overdue">{t("filter.overdue")}</option>
-          <option value="none">{t("filter.noDue")}</option>
-        </select>
-      </label>
+      <Select
+        label={t("filter.assignee")}
+        size="compact"
+        options={[
+          { value: "", label: t("filter.anyone") },
+          ...assignees.map((person) => ({ value: person.id, label: person.name })),
+        ]}
+        value={assigneeId}
+        onChange={(event) => setAssigneeId(event.target.value)}
+      />
+      <Select
+        label={t("filter.due")}
+        size="compact"
+        options={[
+          { value: "any", label: t("filter.anyDue") },
+          { value: "overdue", label: t("filter.overdue") },
+          { value: "none", label: t("filter.noDue") },
+        ]}
+        value={due}
+        onChange={(event) => setDue(event.target.value as CardFilter["due"])}
+      />
       <div className="kanban-actions">
-        <button type="button" onClick={apply}>
+        <Button size="compact" onClick={apply}>
           {t("filter.apply")}
-        </button>
+        </Button>
       </div>
       {found !== null && (
         <p className="muted">

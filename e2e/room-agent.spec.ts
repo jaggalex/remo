@@ -52,8 +52,8 @@ test("a selected editor publishes a shared editable draft and loses launch acces
     });
     expect(publicLink.status()).toBe(409);
 
-    const delegate = ownerPanel.getByRole("checkbox", { name: "Olga Editor" });
-    await delegate.click();
+    const delegate = ownerPanel.getByRole("switch", { name: "Olga Editor" });
+    await ownerPanel.locator(".agent-delegates label", { hasText: "Olga Editor" }).click();
     await expect(delegate).toBeChecked();
     const create = editorPanel.getByRole("button", { name: "Create draft" });
     await expect(create).toBeVisible();
@@ -105,7 +105,7 @@ test("a selected editor publishes a shared editable draft and loses launch acces
     expect(await remoteX()).toBe(editedX);
 
     await page.getByRole("button", { name: "Assigned: Planner" }).click();
-    await delegate.click();
+    await ownerPanel.locator(".agent-delegates label", { hasText: "Olga Editor" }).click();
     await expect(delegate).not.toBeChecked();
     await expect(editorPanel.getByRole("textbox")).toHaveCount(0);
     expect((await editor.request.post(endpoint, { data: { intent } })).status()).toBe(403);

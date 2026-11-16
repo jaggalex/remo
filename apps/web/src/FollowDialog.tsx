@@ -1,4 +1,4 @@
-import { Dialog } from "@remo/ui";
+import { Button, Dialog, Switch } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n } from "./i18n";
 
@@ -56,36 +56,24 @@ export function FollowDialog({
         )}
 
         <div className="follow-actions">
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={followers.length === 0}
-            onClick={onStopFollowers}
-          >
+          <Button disabled={followers.length === 0} onClick={onStopFollowers}>
             {t("follow.stopFollowers")}
-          </button>
-          <button
-            type="button"
-            className="share-button"
-            disabled={peers === 0}
-            onClick={onBringEveryone}
-          >
+          </Button>
+          <Button variant="primary" disabled={peers === 0} onClick={onBringEveryone}>
             {t("follow.bringEveryone")}
-          </button>
+          </Button>
         </div>
 
         {canFacilitate && (
-          <label className="follow-auto">
-            <input
-              type="checkbox"
+          <Switch
+            className="follow-auto"
               checked={allowBringEveryone}
               onChange={(event) => onToggleAuto(event.target.checked)}
-            />
-            <span>
+            label={<>
               {t("follow.auto")}
               <span className="muted"> — {t("follow.autoHint")}</span>
-            </span>
-          </label>
+            </>}
+          />
         )}
       </div>
     </Dialog>
