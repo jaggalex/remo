@@ -245,3 +245,31 @@ describe("header text, explicit lines and manual header size (ADR-217)", () => {
     expect(grid.headerWidth).toBe(TABLE_HEADER_WIDTH);
   });
 });
+
+
+describe("header typography (ADR-220)", () => {
+  const table = (headerText: { size?: number; weight?: "regular" | "medium" | "bold" }) => ({
+    ...frame(),
+    layout: {
+      kind: "table" as const,
+      columns: [{ id: "c1", title: "First\nsecond\nthird" }],
+      rows: [{ id: "r1", title: "A rather long row name" }],
+      appearance: { headerText },
+    },
+  });
+
+  it("grows the Auto band and strip with the chosen size", () => {
+    const small = layoutTable(table({}), [])!;
+    const large = layoutTable(table({ size: 24 }), [])!;
+    expect(large.headerHeight).toBeGreaterThan(small.headerHeight);
+    expect(large.headerWidth).toBeGreaterThan(small.headerWidth);
+  });
+
+  it("keeps a manual header size exact and lets the text ellipsize", () => {
+    const manual = layoutTable(
+      { ...table({ size: 24 }), layout: { ...table({ size: 24 }).layout, headerHeight: 60 } },
+      [],
+    )!;
+    expect(manual.headerHeight).toBe(60);
+  });
+});

@@ -16,6 +16,7 @@ import {
 import { Button, Input, Segmented } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { ColorGridSection } from "./object-panel/ColorWindow";
+import { TableHeaderTextControls } from "./TableHeaderTextControls";
 
 /**
  * Borders and padding of a table (ADR-208).
@@ -217,6 +218,7 @@ export function TableAppearanceControls({
           </div>
         </div>
       )}
+      <TableHeaderTextControls board={board} frame={frame} disabled={disabled} />
     </>
   );
 }

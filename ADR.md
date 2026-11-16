@@ -8977,3 +8977,48 @@ first-time hint is a local preference, not a document or audit field. Tests cove
 interior boundary pointer drag, the corner segments, the keyboard separators, the number
 field gestures, multiline titles in the panel and the locked summary. Body resizing,
 multi-axis resizing, snapping and per-side headers remain out of scope.
+
+## ADR-220: Header text has one table-level typography (extends ADR-201, ADR-208, ADR-217, ADR-219)
+
+**Status:** accepted (2026-11-15).
+
+**Context.** Table headers were painted at a fixed 12 px in the secondary text colour. The
+appearance group could change the header fill, border and padding, but there was no way to
+choose the header text size, weight, italic, colour or alignment. On a wide table a person
+wanted a larger header for a presentation, and on a dense one a smaller one; the only
+workaround was to change the header text itself or the whole theme. Per-axis overrides were
+considered and deferred: the first step is one honest table-level setting.
+
+**Decision.**
+
+- **One typography per table.** `TableAppearance.headerText` is an optional object:
+  `size` (8–48 world pixels, default 12), `weight` (`regular`, `medium`, `bold`; default
+  regular), `italic` (default false), `color` (default the palette's secondary text) and
+  `align` (`left`, `center`, `right`; default left). Absent fields mean the default; an
+  absent object means no override.
+- **It applies to every header.** Column and row headers use the same typography; header
+  cells are a band of the table, not independent text objects. Per-axis overrides are a
+  later ADR if the need is proven.
+- **Geometry reads the size.** The header line height is `round(size × 4 / 3)` and the
+  approximate character advance is `size × 0.55`. Auto header height, wrapping and the
+  vertical row/column width follow the chosen size; the Auto caps (260 px) stay. A manual
+  `headerHeight`/`headerWidth` remains exact, so text that no longer fits is ellipsized,
+  never squeezed or scaled.
+- **The painter and the reader share it.** The painter uses the same size, weight, italic,
+  colour and alignment; the accessibility mirror and export read the layout, not a second
+  text model. Alignment applies to horizontal headers; a vertical header stays centred in
+  its strip.
+- **One command and one panel row.** `setTableHeaderText` merges a patch or clears the
+  override; the "Header text" row in **Table appearance** offers a scrubbed size field,
+  weight and alignment choices, an italic switch, the named colour grid and "As before".
+  No second toolbar and no rich text.
+- **No contrast auto-correction.** The colour is chosen from the named palette; the person
+  is responsible for contrast against the chosen header fill, as with every other table
+  fill. A future contrast warning is a separate change.
+
+**Consequences.** `@remo/model` gains the optional type, the sanitizer, resolved defaults
+and size-aware header metrics; `@remo/doc` gains `setTableHeaderText`; `@remo/canvas` paints
+the style; the section panel gains the row. The field is optional, so existing documents
+read unchanged and no migration is needed. Tests cover size-aware Auto height and width,
+the command merge/clear, the painter font and the panel controls. Per-axis header
+typography, rich text, underline and font-family changes remain out of scope.

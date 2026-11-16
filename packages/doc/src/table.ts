@@ -8,6 +8,7 @@ import {
   type TableAxis,
   type TableAxisSize,
   type TableBorder,
+  type TableHeaderText,
   type TableLayout,
   type Widget,
 } from "@remo/model";
@@ -679,5 +680,50 @@ export function setTableHeaderSize(
     next[field] = Math.round(Math.min(2000, Math.max(minimum, px)));
   }
   board.transact(() => writeLayout(board, frame, next));
+  return true;
+}
+
+
+/** Merge or clear the table-level header typography (ADR-220). */
+export function setTableHeaderText(
+  board: BoardDocument,
+  frameId: string,
+  patch: Partial<TableHeaderText> | null,
+): boolean {
+  const frame = editableFrame(board, frameId);
+  if (!frame?.layout || frame.layout.kind !== "table") return false;
+  const layout = frame.layout;
+  const appearance: TableAppearance = { ...(layout.appearance ?? {}) };
+  if (patch == null) {
+    delete appearance.headerText;
+  } else {
+    const next = { ...(appearance.headerText ?? {}) };
+    if ("size" in patch) {
+      if (patch.size == null) delete next.size;
+      else next.size = Math.round(Math.min(48, Math.max(8, patch.size)));
+    }
+    if ("weight" in patch) {
+      if (patch.weight == null) delete next.weight;
+      else next.weight = patch.weight;
+    }
+    if ("italic" in patch) {
+      if (patch.italic == null) delete next.italic;
+      else next.italic = patch.italic;
+    }
+    if ("color" in patch) {
+      if (!patch.color) delete next.color;
+      else next.color = patch.color;
+    }
+    if ("align" in patch) {
+      if (patch.align == null) delete next.align;
+      else next.align = patch.align;
+    }
+    if (Object.keys(next).length) appearance.headerText = next;
+    else delete appearance.headerText;
+  }
+  const nextLayout: TableLayout = { ...layout };
+  if (Object.keys(appearance).length) nextLayout.appearance = appearance;
+  else delete nextLayout.appearance;
+  board.transact(() => writeLayout(board, frame, nextLayout));
   return true;
 }

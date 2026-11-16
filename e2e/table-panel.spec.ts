@@ -910,6 +910,35 @@ test("borders and padding are edited in the table appearance group", async ({ pa
     .toBe(32);
 });
 
+test("header text size, weight, italic, colour and alignment are table-level", async ({
+  page,
+}) => {
+  const { frameId, panel } = await openTable(page, "table-header-text");
+  await panel.getByRole("button", { name: "Table appearance", exact: true }).click();
+  const group = panel.locator(".section-header-text");
+  const size = group.getByRole("spinbutton", { name: "Size", exact: true });
+  await size.fill("20");
+  await size.press("Enter");
+  await group.getByRole("radio", { name: "Bold", exact: true }).click();
+  await group.getByRole("checkbox", { name: "Italic", exact: true }).check();
+  await group.getByRole("radio", { name: "Center", exact: true }).click();
+  await group
+    .getByRole("radiogroup", { name: "Text colour", exact: true })
+    .getByRole("radio")
+    .first()
+    .click();
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.appearance?.headerText;
+    })
+    .toMatchObject({ size: 20, weight: "bold", italic: true, align: "center" });
+  expect(
+    (await widgets(page)).find((widget) => widget.id === frameId)!.layout!.appearance!.headerText!
+      .color,
+  ).toBeTruthy();
+});
+
 test("a multiline axis name edits in the panel", async ({ page }) => {
   const { frameId, panel } = await openTable(page, "table-panel-multiline");
   const header = page.getByRole("button", { name: "Columns: Column 1" });
