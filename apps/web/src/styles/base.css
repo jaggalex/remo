@@ -1,15 +1,5 @@
 :root {
   color-scheme: light;
-  /* Legacy names from before @remo/ui, kept as aliases for one release (ТЗ §9). */
-  --ink: var(--text-primary);
-  --muted: var(--text-secondary);
-  --faint: var(--text-muted);
-  --line: var(--border-subtle);
-  --line-strong: var(--border-strong);
-  --accent-strong: var(--accent-hover);
-  --surface: var(--bg-panel);
-  --canvas: var(--bg-canvas);
-  --radius: var(--radius-md);
   /*
    * What the bottom-centre plate must leave free on the left for the zoom controls.
    * A layout constant of this screen, not a design-system size: the HUD is 208 px wide
@@ -58,8 +48,8 @@ body,
 }
 
 body {
-  color: var(--ink);
-  background: var(--canvas);
+  color: var(--text-primary);
+  background: var(--bg-canvas);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -113,5 +103,5 @@ button.rm-btn:disabled {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--canvas);
+  background: var(--bg-canvas);
 }

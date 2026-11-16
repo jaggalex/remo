@@ -349,7 +349,7 @@ export function ExportDialog({
       size="md"
       onClose={onClose}
     >
-      <section className="share-dialog export-dialog">
+      <section className="dialog-stack export-dialog">
 
         <section className="export-section">
           <h3>

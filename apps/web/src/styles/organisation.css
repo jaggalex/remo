@@ -10,41 +10,36 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .org-head h2 {
   margin: 0;
-  font-size: 16px;
+  font: var(--type-title);
 }
 
 .org-head p {
   margin: 2px 0 0;
-  font-size: 12px;
+  font: var(--type-caption);
 }
 
 .org-invite {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
-.org-invite input {
+.org-invite .rm-field {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 7px 9px;
-  font: inherit;
-  font-size: 12.5px;
 }
 
 .org-pending h3 {
-  margin: 0 0 4px;
-  font-size: 11px;
+  margin: 0 0 var(--space-1);
+  font: var(--type-caption);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .org-pending ul {
@@ -53,17 +48,17 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .org-pending li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 9px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  font-size: 12.5px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font: var(--type-label);
 }
 
 .org-pending-email {
@@ -79,19 +74,19 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .org-person {
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
 }
 
 .org-person-main {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2);
 }
 
 .org-avatar {
@@ -103,7 +98,7 @@
   place-items: center;
   background: var(--bg-hover);
   color: var(--text-secondary);
-  font-size: 11.5px;
+  font: var(--type-caption);
   font-weight: 600;
 }
 
@@ -113,11 +108,11 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  font-size: 13px;
+  font: var(--type-label);
 }
 
 .org-person-name .muted {
-  font-size: 11.5px;
+  font: var(--type-caption);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -125,16 +120,16 @@
 .org-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
   margin-top: 2px;
 }
 
 .org-badge {
-  padding: 1px 6px;
-  border-radius: 999px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
   background: var(--bg-hover);
   color: var(--text-secondary);
-  font-size: 10.5px;
+  font: var(--type-caption);
 }
 
 .org-badge.admin {
@@ -146,7 +141,7 @@
   margin-left: var(--space-2);
   background: var(--accent-soft);
   color: var(--text-accent);
-  font-size: 10px;
+  font: var(--type-caption);
   letter-spacing: 0.02em;
   text-transform: uppercase;
   vertical-align: middle;
@@ -163,7 +158,7 @@
 }
 
 .org-badge.you {
-  margin-left: 6px;
+  margin-left: var(--space-2);
   background: var(--success-soft);
   color: var(--state-success);
 }
@@ -178,17 +173,17 @@
 .org-role-editor {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 8px 10px;
-  border-top: 1px solid var(--line);
-  font-size: 12.5px;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-label);
 }
 
 .org-confirm,
 .org-blocked {
-  padding: 9px 10px;
-  border-top: 1px solid var(--line);
-  font-size: 12.5px;
+  padding: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-body);
 }
 
 .org-blocked {
@@ -197,22 +192,22 @@
 
 .org-confirm p,
 .org-blocked p {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
 }
 
 .org-confirm > div {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .org-blocked ul {
-  margin: 0 0 6px;
-  padding-left: 18px;
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
 }
 
 .org-note {
   margin: 0;
-  font-size: 11.5px;
+  font: var(--type-caption);
 }
 
 .org-audit {
@@ -224,8 +219,8 @@
 }
 
 .org-audit li {
-  padding: 7px 2px;
-  border-bottom: 1px solid var(--line);
+  padding: var(--space-2) 2px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .org-audit li:last-child {
@@ -235,35 +230,23 @@
 .org-audit-head {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  font-size: 12.5px;
+  gap: var(--space-2);
+  font: var(--type-label);
 }
 
 .org-audit-meta {
   margin-top: 1px;
-  font-size: 11.5px;
+  font: var(--type-caption);
 }
 
 .org-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-  font-size: 12px;
-}
-
-.link-button.danger {
-  color: var(--text-danger);
-}
-
-.primary-button.danger {
-  background: var(--danger);
-}
-
-.primary-button.danger:hover {
-  background: var(--danger-hover);
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-caption);
 }
 
 @media (max-width: 560px) {

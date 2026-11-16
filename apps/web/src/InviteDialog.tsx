@@ -55,7 +55,7 @@ export function InviteDialog({
 
   return (
     <Dialog title={t("invite.title")} description={t("invite.body")} size="sm">
-      <section className="auth-dialog">
+      <section className="dialog-stack">
         {error && <p className="auth-error">{error}</p>}
         {accepted && <p className="muted">{t("invite.accepted")}</p>}
         <div className="auth-actions">

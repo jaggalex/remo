@@ -26,7 +26,7 @@ export function ShareLinkDialog({
       size="sm"
       onClose={onClose}
     >
-      <div className="auth-dialog">
+      <div className="dialog-stack">
         <Input
           id={fieldId}
           aria-label={t("board.shareFallbackTitle")}

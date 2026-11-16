@@ -181,7 +181,7 @@
 .cw-ink-chip {
   width: 14px;
   height: 14px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   box-shadow: inset 0 0 0 1px var(--border-strong);
   flex: none;
 }
@@ -219,14 +219,16 @@
   box-sizing: border-box;
   border-style: solid;
   border-radius: var(--radius-sm);
-  font: 600 12px/1 var(--font-sans);
+  font: var(--type-caption);
+  font-weight: 600;
+  line-height: 1;
 }
 
 .sb-auto {
   min-width: 28px;
-  padding: 0 6px;
+  padding: 0 var(--space-2);
   height: 26px;
-  font-size: 12px;
+  font: var(--type-caption);
   font-weight: 600;
 }
 
@@ -234,12 +236,12 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  font-size: 12px;
+  font: var(--type-caption);
   font-weight: 600;
 }
 
 .sb-font {
-  gap: 4px;
+  gap: var(--space-1);
   padding: 0 2px;
 }
 
@@ -247,11 +249,11 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  font-size: 13px;
+  font: var(--type-label);
 }
 
 .sb-mark.sb-bold {
-  font-weight: 700;
+  font-weight: 600;
 }
 .sb-mark.sb-italic {
   font-style: italic;
@@ -267,11 +269,11 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  font-size: 14px;
+  font-size: var(--icon-sm);
 }
 
 .sb-align-glyph {
-  font-size: 14px;
+  font-size: var(--icon-sm);
   line-height: 1;
 }
 
@@ -304,19 +306,6 @@
 .sticky-bar .sb-align-cell.is-selected span {
   background: var(--accent);
   box-shadow: 0 -3px 0 var(--accent);
-}
-
-/* Four directions to the note that will be created, one undo step (ADR-027). */
-.sb-links {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.sticky-bar .sb-links .rm-btn {
-  width: 32px;
-  height: 28px;
-  padding: 0;
-  font-size: 15px;
 }
 
 /* "More" is the end of the bar: delete lives inside, after a separator (ADR-120). */

@@ -118,7 +118,7 @@ export function AppsPanel({
       size="sm"
       onClose={onClose}
     >
-      <section className="share-dialog apps-dialog">
+      <section className="dialog-stack apps-dialog">
 
         {error ? <p className="export-status error">{error}</p> : null}
 

@@ -27,10 +27,6 @@
   .topbar-path {
     display: none;
   }
-  .history,
-  .divider {
-    display: none;
-  }
   .board-title,
   .board-title-button {
     max-width: 170px;

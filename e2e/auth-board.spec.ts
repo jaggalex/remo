@@ -22,7 +22,7 @@ test("a signed-out visitor signs in from the access gate", async ({ page, browse
     await expect(visitor.locator(".access-gate")).toBeVisible({ timeout: 20_000 });
     await visitor.getByRole("button", { name: "Sign in" }).click();
 
-    const dialog = visitor.locator(".auth-dialog");
+    const dialog = visitor.getByRole("dialog").filter({ has: visitor.locator('input[type="email"]') });
     await expect(dialog).toBeVisible();
     // Playwright's actionability check waits for the element to receive the click. The
     // gate used to share --z-dialog with the backdrop and, being later in the DOM, paint
@@ -55,7 +55,7 @@ test("an organisation invitation works after signing in from the link", async ({
 
     const prompt = guest.getByRole("dialog", { name: "You are invited" });
     await prompt.getByRole("button", { name: "Sign in to accept" }).click();
-    const login = guest.locator(".auth-dialog");
+    const login = guest.getByRole("dialog").filter({ has: guest.locator('input[type="email"]') });
     await login.locator('input[type="email"]').fill(email);
     await login.locator('input[type="password"]').fill(PASSWORD);
     await login.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -236,7 +236,7 @@ test("a public-link visitor who signs in gets a writable socket", async ({ page,
 
     await openAccount(visitor);
     await visitor.getByRole("button", { name: "Sign in", exact: true }).click();
-    const dialog = visitor.locator(".auth-dialog");
+    const dialog = visitor.getByRole("dialog").filter({ has: visitor.locator('input[type="email"]') });
     await expect(dialog).toBeVisible();
     await dialog.locator('input[type="email"]').fill(account.email);
     await dialog.locator('input[type="password"]').fill(PASSWORD);

@@ -6,52 +6,32 @@
 .app-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
   background: var(--bg-hover);
 }
 
 .app-card h3 {
   margin: 0;
-  font-size: 13px;
+  font: var(--type-subtitle);
 }
 
 .app-text {
   margin: 0;
-  font-size: 13px;
-  color: var(--ink);
+  font: var(--type-body);
+  color: var(--text-primary);
 }
 
 .app-answer {
   margin: 0;
-  font-size: 13px;
-  color: var(--accent-strong);
-}
-
-.link-button {
-  border: 0;
-  background: transparent;
-  color: var(--accent-strong);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: var(--radius-pill);
-}
-
-.link-button:hover {
-  background: var(--accent-soft);
-}
-
-.link-button:disabled {
-  opacity: 0.5;
-  cursor: default;
+  font: var(--type-body);
+  color: var(--accent-hover);
 }
 
 .share-link-url {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .share-link-url .rm-field {
@@ -62,9 +42,9 @@
 .share-invite {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border-radius: 10px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
   background: var(--bg-app);
 }
 

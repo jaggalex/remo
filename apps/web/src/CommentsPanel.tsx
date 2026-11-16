@@ -248,7 +248,7 @@ export function CommentsPanel({
           size="md"
           onClose={() => setPendingAnchor(null)}
         >
-          <div className="auth-dialog comment-composer">
+          <div className="dialog-stack comment-composer">
             <Textarea
               autoFocus
               aria-label={t("comments.prompt")}

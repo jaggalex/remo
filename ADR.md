@@ -9143,3 +9143,161 @@ first `>`, so `onChange={(e) => …}` cut the tag short, and an exemption such a
 **Consequences.** DS-CTRL-01/field is zero, so a new raw field fails the ratchet unless it
 is an in-place editor added to the list. The «Новая комната» start cards use `ChoiceCard`,
 and the context-menu rename uses `Input`. Neither needed an exception.
+
+## ADR-226: Interface text uses only the type scale (DS-TYPE-01, DS-TYPE-02)
+
+**Context.** The product's style sheets set 173 font sizes as literals, in 17 values between
+8 and 44 px, and 13 weights of 700. The scale in `tokens.json` has seven interface styles
+(display, title, subtitle, body, label, caption, kbd) and loads weights 400 to 600 for
+interface text. A change to the scale does not reach a literal, and one window could show
+five sizes, with a group heading larger than the window title (E-03). Two kinds of text
+had no style: the room path in the header, and the large numerals of the timer and the
+reaction burst.
+
+**Decision.**
+- Interface text is set with `font: var(--type-*)`. A literal `font-size` or a `font`
+  shorthand with a pixel size fails DS-TYPE-01.
+- Two styles are added to `tokens.json`:
+  - `path` is 400 18/24, the room path in the header. The product and reference 1 show
+    the path at 18 px. The audit's draft value of 20 px would change the header, which
+    no one asked for. The room title is the same style at weight 500, as the title
+    editor already was.
+  - `numeral` is 600 44/48, for the timer face and the reaction burst.
+- A style is chosen by role first:
+  - running text of 12.5 px or more (paragraphs, messages, notices, empty states) is
+    `body`;
+  - a group heading in a dialog is `subtitle`, unless it is an overline;
+  - a window or page title is `title`;
+  - an overline (small uppercase heading) is `caption` at weight 600.
+- Where the role does not settle it, the size picks the style:
+
+  | Size | Style |
+  |---|---|
+  | 24 and above | display |
+  | 16–18 | title |
+  | 15 | subtitle |
+  | 14 | body |
+  | 12.5–13 | label |
+  | 12 and below | caption |
+
+- A style's own line height applies. Literal line heights are dropped, except
+  `line-height: 1` on a single glyph.
+- An emoji or a text glyph standing in for an icon is sized by the icon tokens
+  (`--icon-sm`, `--icon-md`), not the type scale.
+- Weight is the style's own for a title, subtitle, path or numeral. Other text that was
+  600 or 700, including `h*`, `b` and `strong` that were bold by default, and that maps
+  to a lighter style keeps `font-weight: 600`. 700 is not used in interface text
+  (DS-TYPE-02).
+- Canvas object text is outside the interface scale (DS-TYPE-01 exception). The inline
+  editor shows bold at 700 because the painter draws `bold` at 700, and the editor must
+  match it. This is the only entry in `TYPE_ALLOW` in `scripts/ui-design-rules.mjs`,
+  named with its reason (DS-EXT-03).
+- Rules whose classes no component uses any more are deleted, not converted. Two rules
+  that still restyled a DS `Input` after M5 (`.org-invite input`, `.link-gate input`) are
+  replaced by layout on `.rm-field`.
+
+**Consequences.** DS-TYPE-01 and DS-TYPE-02 are zero, so the ratchet fails a new literal
+size or weight. Panels whose running text was 12.5 px now read at 14 px, and small labels
+move from 11–11.5 px to 12 px, so almost every visual baseline is regenerated on purpose
+(ADR-223). The shared copy of the design system needs the same two styles.
+
+## ADR-227: Spacing, radius and motion use only tokens (DS-SPACE-01, DS-SHAPE-01, DS-MOTION-01)
+
+**Context.** After M6 the product's style sheets still held 248 spacing literals, 42 radius
+literals and 7 motion literals (E-05). About half the spacing values were off the 4 px grid
+(6, 10, 7, 9, 5, 18 …), and radii included 7, 9, 11 and 12 px, which the scale does not
+have. A change to the scale did not reach them. The radius rule also flagged
+`var(--radius-2xl) var(--radius-2xl) 0 0`, because it counted the zeros.
+
+**Decision.**
+- Padding, margin and gap use `var(--space-*)`. A literal of 0–2 px stays: hairlines and
+  optical nudges are not spacing (as the rule already says).
+- An off-grid value goes to the nearest 4 px step. A value exactly between two steps goes
+  to the one that is a multiple of 8, the primary rhythm of the grid:
+
+  | Literal | Token |
+  |---|---|
+  | 6, 10 | `space-2` (8) |
+  | 14, 18 | `space-4` (16) |
+  | 22, 26 | `space-6` (24) |
+  | 3, 5 | `space-1` (4) |
+  | 7, 9 | `space-2` (8) |
+  | 11, 13 | `space-3` (12) |
+
+- A radius uses the nearest `--radius-*` token; a value exactly between two goes to the
+  smaller. So 3 becomes `xs`; 7 and 8 become `sm`; 9, 11 and 12 become `md`.
+- Transitions use `var(--dur-1) var(--ease)`; 100 ms and 120 ms are both `dur-1`.
+- One motion token is added: `dur-reaction` (1600 ms), the rise and fade of a reaction
+  burst. It is longer than any interface transition on purpose. The burst is already
+  switched off under `prefers-reduced-motion`.
+- The radius rule ignores zeros, as the spacing rule does.
+
+**Consequences.** DS-SPACE-01, DS-SHAPE-01 and DS-MOTION-01 are zero, so the ratchet fails
+a new literal. Many panels get 1–2 px tighter or looser: most 10 px paddings become 8 and
+most 6 px gaps become 8. Visual baselines are regenerated on purpose (ADR-223).
+
+## ADR-228: Product styles name colours by role only (DS-COLOR-01)
+
+**Context.** After M7 the product's style sheets still used 128 names from the previous
+system (`--ink`, `--muted`, `--faint`, `--line`, `--canvas`, `--accent-strong`, `--surface`).
+`base.css` keeps these as aliases of semantic tokens, "for one release". Fourteen
+declarations used raw scale steps (`--warning-300`, `--success-600`, `--accent-50` …).
+A raw step has one value in both themes, so a warning text set in `--warning-600` stayed
+dark brown on the dark theme. The DS `Banner` draws a warning with a soft background and no
+border, but three warning notices in the product drew a `--warning-300` border.
+
+**Decision.**
+- Each alias is replaced by its target from `base.css`: `--ink` → `--text-primary`,
+  `--muted` → `--text-secondary`, `--faint` → `--text-muted`, `--line` →
+  `--border-subtle`, `--line-strong` → `--border-strong`, `--accent-strong` →
+  `--accent-hover`, `--surface` → `--bg-panel`, `--canvas` → `--bg-canvas`. Nothing
+  changes on screen. M9 deletes the alias block.
+- Each raw step gets the semantic role it stands for:
+  - warning and success text use `--state-warning` and `--state-success`;
+  - the agent status dots use `--state-warning` (running, queued), `--state-success`
+    (ready) and `--danger` (error);
+  - the warning notices' border is `--warning-soft`, the colour of their background, as
+    the `Banner` has no visible border;
+  - the room-agent badge uses `--agent-soft` and `--text-agent`;
+  - the room-agent message's left rule uses `--border-strong` for a person and `--agent`
+    for the agent. The message's meta line already names the author, so the difference
+    is not carried by colour alone.
+- No new token is needed.
+
+**Consequences.** DS-COLOR-01 (alias and primitive) is zero, so the ratchet fails a new raw
+step or old name. In the light theme the status text and dots are one step darker (700
+instead of 500/600), and the warning notices lose their ochre outline. In the dark theme
+these colours now follow the theme.
+
+## ADR-229: The design rules are a strict gate, with named pending items (DS-EXT-03)
+
+**Context.** The design rules started as a ratchet over 1,167 existing deviations
+(M0): `scripts/ui-design-baseline.json` held a count per file and rule, a higher count
+failed, and a lower one had to be locked in with `--tighten`. After M1–M9, seven findings
+are left:
+- four raw buttons and two text glyphs in `PresentationLayer.tsx`: the slide arrows,
+  which wait for icons the illustrator has been asked for (`chevron-left`, `arrow-up`,
+  `arrow-down`);
+- the `…` between page numbers on the home page, which is punctuation, not an icon.
+
+A count per file cannot tell which line is allowed, and it says nothing about why.
+
+**Decision.**
+- The baseline file and `--tighten` are removed. `node scripts/ui-rules-check.mjs` fails
+  on any design finding and prints its rule ID, `file:line` and what to use instead.
+- An exception is a named line in `scripts/ui-design-rules.mjs`, next to the rule it
+  bends, with the reason (DS-EXT-03):
+  - `BUTTON_ALLOW`, `FIELD_ALLOW` and `TYPE_ALLOW` stay as they are (ADR-224, ADR-225,
+    ADR-226);
+  - `ICON_ALLOW` names a class whose glyph is text, today `home-page-gap`;
+  - `PENDING` names a file, rule and count that waits for something outside the code,
+    with the reason. Today it has two entries for `PresentationLayer.tsx`, both waiting
+    for the slide-arrow icons.
+- A `PENDING` entry that no longer matches fails, whether there are more findings or
+  fewer. When the icons arrive, the entry has to be deleted in the same change that uses
+  them.
+
+**Consequences.** There is no stored count to raise by accident and no step that
+quietly accepts a regression. The rules are only as wide as their patterns: DS-ICON-01
+matches `✕ × ✓ → ← ↑ ↓ ⋯ …`. Glyphs such as `‹ ›` and `⇤ ↔` are not caught yet, and
+widening the pattern is a separate change.

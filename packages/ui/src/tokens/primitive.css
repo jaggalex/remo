@@ -125,6 +125,7 @@
   --z-toast: 400;
   --dur-1: 120ms;
   --dur-2: 180ms;
+  --dur-reaction: 1600ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --font-sans: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;

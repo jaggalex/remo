@@ -1,23 +1,18 @@
 /* ---------------------------------------------------------- settings --- */
 
 .settings-panel h3 {
-  margin: 18px 0 6px;
-  font-size: 12px;
+  margin: var(--space-4) 0 var(--space-2);
+  font: var(--type-caption);
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }
 
-.settings-note {
-  margin: 6px 0 0;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
 .setting-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .settings-json {
@@ -27,12 +22,12 @@
 
 .settings-error {
   color: var(--text-danger);
-  font-size: 12px;
+  font: var(--type-caption);
 }
 
 .settings-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 

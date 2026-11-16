@@ -111,7 +111,7 @@ export function NewBoardDialog({
       onClose={onClose}
       dismissable={!busy}
     >
-      <form className="auth-dialog new-board-dialog" onSubmit={submit}>
+      <form className="dialog-stack new-board-dialog" onSubmit={submit}>
         <Input
           label={t("newBoard.name")}
             autoFocus

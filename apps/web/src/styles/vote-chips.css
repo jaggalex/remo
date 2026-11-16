@@ -202,14 +202,14 @@ button.peer:disabled {
   z-index: var(--z-bar);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px 6px 14px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   border: 1px solid var(--accent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--bg-panel);
   box-shadow: var(--shadow-pop);
-  font-size: 12.5px;
-  color: var(--ink);
+  font: var(--type-label);
+  color: var(--text-primary);
 }
 
 .follow-pill.paused {
@@ -225,20 +225,20 @@ button.peer:disabled {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
   max-width: min(520px, calc(100vw - 32px));
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
   background: var(--bg-panel);
   box-shadow: var(--shadow-pop);
-  font-size: 12.5px;
-  color: var(--ink);
+  font: var(--type-label);
+  color: var(--text-primary);
 }
 
 .follow-invite-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .follow-dialog {
@@ -247,32 +247,31 @@ button.peer:disabled {
 
 .follow-count {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--ink);
+  font: var(--type-title);
+  color: var(--text-primary);
 }
 
 .follow-names {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .follow-names li {
-  padding: 3px 9px;
-  border-radius: 999px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
   background: var(--bg-hover);
-  font-size: 12px;
-  color: var(--ink);
+  font: var(--type-caption);
+  color: var(--text-primary);
 }
 
 .follow-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .comments-panel {
@@ -284,11 +283,11 @@ button.peer:disabled {
   width: min(380px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px;
+  gap: var(--space-2);
+  padding: var(--space-4);
   overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   background: var(--bg-panel);
   box-shadow: var(--shadow-pop);
 }
@@ -300,7 +299,7 @@ button.peer:disabled {
 .comment-reply {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .comments-panel header,
@@ -315,8 +314,8 @@ button.peer:disabled {
 .comments-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11.5px;
+  gap: var(--space-1);
+  font: var(--type-caption);
   color: var(--text-muted);
 }
 
@@ -326,7 +325,7 @@ button.peer:disabled {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .comments-list button {
@@ -334,13 +333,12 @@ button.peer:disabled {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 8px;
+  padding: var(--space-2);
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-primary);
-  font: inherit;
-  font-size: 12px;
+  font: var(--type-caption);
   text-align: left;
   cursor: pointer;
 }
@@ -348,34 +346,33 @@ button.peer:disabled {
 .comments-list button:hover,
 .comments-list button.active {
   background: var(--bg-hover);
-  border-color: var(--line);
+  border-color: var(--border-subtle);
 }
 
 .comments-thread {
-  border-top: 1px solid var(--line);
-  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .comment-message {
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 7px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
   background: var(--bg-app);
 }
 
 .comment-meta {
   justify-content: space-between;
-  font-size: 11px;
+  font: var(--type-caption);
   color: var(--text-muted);
 }
 
 .comment-message p {
-  margin: 5px 0;
-  font-size: 12.5px;
-  line-height: 1.4;
+  margin: var(--space-1) 0;
+  font: var(--type-body);
   white-space: pre-wrap;
 }
 
@@ -395,8 +392,8 @@ button.peer:disabled {
 .reaction-burst {
   position: absolute;
   transform: translate(-50%, -50%);
-  font-size: 42px;
-  animation: reaction-rise 1.6s ease-out forwards;
+  font: var(--type-numeral);
+  animation: reaction-rise var(--dur-reaction) var(--ease) forwards;
 }
 
 @keyframes reaction-rise {
@@ -433,14 +430,14 @@ button.peer:disabled {
   place-items: center;
   min-width: 28px;
   height: 28px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   pointer-events: auto;
   border: 1px solid var(--accent);
-  border-radius: 999px 999px 999px 4px;
+  border-radius: var(--radius-pill) var(--radius-pill) var(--radius-pill) var(--radius-xs);
   background: var(--bg-panel);
   color: var(--text-primary);
   box-shadow: var(--shadow-bar);
-  font-size: 13px;
+  font: var(--type-label);
   cursor: pointer;
 }
 
@@ -456,26 +453,26 @@ button.peer:disabled {
 }
 
 .comment-pin-count {
-  font-size: 10.5px;
-  font-weight: 700;
+  font: var(--type-caption);
+  font-weight: 600;
 }
 
 .comments-offline {
   margin: 0;
-  padding: 6px 8px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
+  padding: var(--space-2);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: 11.5px;
+  font: var(--type-caption);
 }
 
 .card-filter {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .export-comments {
@@ -493,15 +490,15 @@ button.peer:disabled {
 .agent-error-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 4px 0 8px;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 var(--space-2);
 }
 
 .org-create {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 8px 0;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
 }
 
 .org-create .rm-field {
@@ -510,9 +507,9 @@ button.peer:disabled {
 }
 
 .org-teams {
-  border-top: 1px solid var(--line);
-  margin-top: 12px;
-  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
 }
 
 .org-team-list {
@@ -525,7 +522,7 @@ button.peer:disabled {
 }
 
 .org-team-list li {
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: var(--space-2);
   font: var(--type-body);
@@ -556,7 +553,7 @@ button.peer:disabled {
 .org-team-members {
   margin-top: var(--space-2);
   padding-left: var(--space-3);
-  border-left: 1px solid var(--line);
+  border-left: 1px solid var(--border-subtle);
 }
 
 .org-team-member-list {
@@ -588,25 +585,25 @@ button.peer:disabled {
   top: 18px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 7px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
   background: var(--bg-panel);
   color: var(--text-primary);
   box-shadow: var(--shadow-bar);
-  font-size: 12px;
+  font: var(--type-caption);
   pointer-events: none;
 }
 
 .comment-placement-target {
   position: absolute;
   transform: translate(12px, 12px);
-  padding: 3px 7px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--accent);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--bg-panel);
   color: var(--text-primary);
-  font-size: 11px;
+  font: var(--type-caption);
   white-space: nowrap;
   pointer-events: none;
 }

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { compareWithBaseline, countFindings, scanDesignRules, tighten } from "./ui-design-rules.mjs";
+import { scanDesignRules, strictProblems } from "./ui-design-rules.mjs";
 
 function tree(files) {
   const root = mkdtempSync(join(tmpdir(), "ui-design-"));
@@ -73,18 +73,59 @@ describe("design rules", () => {
     expect(lines).toEqual([3]);
   });
 
-  it("ratchets: more fails, less must be tightened, tightening never raises a count", () => {
-    const baseline = { "a.css": { "DS-TYPE-01": 3, "DS-SPACE-01": 2 } };
-    const counts = countFindings([
-      { file: "a.css", rule: "DS-TYPE-01", line: 1 },
-      { file: "a.css", rule: "DS-TYPE-01", line: 2 },
-      { file: "a.css", rule: "DS-SPACE-01", line: 3 },
-      { file: "a.css", rule: "DS-SPACE-01", line: 4 },
-      { file: "a.css", rule: "DS-SPACE-01", line: 5 },
-    ]);
-    const { worse, better } = compareWithBaseline(counts, baseline);
-    expect(worse).toEqual([{ file: "a.css", rule: "DS-SPACE-01", now: 3, was: 2 }]);
-    expect(better).toEqual([{ file: "a.css", rule: "DS-TYPE-01", now: 2, was: 3 }]);
-    expect(tighten(counts, baseline)).toEqual({ "a.css": { "DS-SPACE-01": 2, "DS-TYPE-01": 2 } });
+  it("exempts canvas text by selector, every part of a selector list, and nothing else", () => {
+    const root = tree({
+      "apps/web/src/a.css": [
+        ".inline-editor b,",
+        ".inline-editor strong {",
+        "  font-weight: 700;",
+        "}",
+        ".inline-editor b, .label { font-weight: 700; }",
+        ".label {",
+        "  font-size: 13px;",
+        "}",
+      ].join("\n"),
+    });
+    const lines = scanDesignRules(root).filter((f) => f.rule.startsWith("DS-TYPE")).map((f) => f.line);
+    expect(lines).toEqual([5, 7]);
+  });
+
+  it("reads zeros in a radius as no radius, and flags any other literal", () => {
+    const root = tree({
+      "apps/web/src/a.css": [
+        ".a { border-radius: var(--radius-sm) var(--radius-sm) 0 0; }",
+        ".b { border-radius: 0; }",
+        ".c { border-radius: 10px 10px 0 0; }",
+      ].join("\n"),
+    });
+    const lines = scanDesignRules(root).filter((f) => f.rule === "DS-SHAPE-01").map((f) => f.line);
+    expect(lines).toEqual([3]);
+  });
+
+  it("fails every finding by rule and line, and holds a pending entry to its exact count", () => {
+    const pending = [{ file: "a.tsx", rule: "DS-ICON-01", count: 2, why: "icons on order" }];
+    const finding = (file, rule, line) => ({ file, rule, line });
+    expect(strictProblems([finding("a.tsx", "DS-ICON-01", 3), finding("a.tsx", "DS-ICON-01", 9)], pending)).toEqual([]);
+
+    const extra = strictProblems([finding("b.css", "DS-TYPE-01", 4)], []);
+    expect(extra).toHaveLength(1);
+    expect(extra[0]).toMatch(/^DS-TYPE-01 b\.css:4 — /);
+
+    const more = strictProblems(
+      [1, 2, 3].map((line) => finding("a.tsx", "DS-ICON-01", line)),
+      pending,
+    );
+    expect(more).toEqual([expect.stringMatching(/pending 2, found 3 \(lines 1, 2, 3\)/)]);
+
+    const fewer = strictProblems([finding("a.tsx", "DS-ICON-01", 3)], pending);
+    expect(fewer).toEqual([expect.stringMatching(/pending 2, found 1 .*delete the PENDING entry/)]);
+  });
+
+  it("leaves a glyph that is punctuation by its class", () => {
+    const root = tree({
+      "apps/web/src/C.tsx": ['<span className="home-page-gap">…</span>', "<span>…</span>"].join("\n"),
+    });
+    const lines = scanDesignRules(root).filter((f) => f.rule === "DS-ICON-01").map((f) => f.line);
+    expect(lines).toEqual([2]);
   });
 });

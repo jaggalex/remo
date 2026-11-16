@@ -47,7 +47,7 @@
   place-items: center;
   box-sizing: border-box;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-panel);
   z-index: var(--z-canvas-overlay);
   cursor: default;

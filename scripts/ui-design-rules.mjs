@@ -2,13 +2,10 @@
  * Design-system rules the colour and layer checks do not cover: type, weight, spacing,
  * radius, motion, colour roles, DS controls, modal dialogs and icons.
  *
- * The product has many existing deviations, so this is a ratchet, not a wall: the count
- * of each rule in each file may only go down. `ui-design-baseline.json` records the
- * counts; a file that gains a deviation fails, and a file that loses one fails until the
- * baseline is tightened, so an improvement cannot be undone later in the same file.
- * Rules whose baseline is zero are absolute. The rule ids are the audit's
- * (DS-TYPE-01 …); the migration plan brings every count to zero, then the baseline
- * goes away.
+ * A strict gate (ADR-229): any finding fails, with its rule ID and line. The rule ids are
+ * the audit's (DS-TYPE-01 …). An exception is a named line next to the rule it bends,
+ * with its reason (DS-EXT-03): BUTTON_ALLOW, FIELD_ALLOW, TYPE_ALLOW, ICON_ALLOW, and
+ * PENDING for what waits on something outside the code.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -99,6 +96,24 @@ export const FIELD_ALLOW = {
 };
 const allowedField = (tag) => classWords(tag).some((word) => word in FIELD_ALLOW);
 
+/**
+ * DS-TYPE-01/02 exceptions by selector (ADR-226). Canvas object text is not interface
+ * text: the inline editor must draw bold the way the painter does, at 700.
+ */
+export const TYPE_ALLOW = {
+  ".inline-editor b": "canvas text: the painter's bold is 700",
+  ".inline-editor strong": "canvas text: the painter's bold is 700",
+};
+/** DS-ICON-01 exceptions by class (ADR-229): the glyph is text, not an icon. */
+export const ICON_ALLOW = {
+  "home-page-gap": "punctuation: the gap between page numbers",
+};
+
+const allowedType = (selector) => {
+  const parts = selector.split(",").map((part) => part.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every((part) => part in TYPE_ALLOW);
+};
+
 function walk(directory, extensions, out = []) {
   if (!existsSync(directory)) return out;
   for (const entry of readdirSync(directory)) {
@@ -131,9 +146,23 @@ function definedVariables(root) {
 const stripVars = (value) => value.replace(/var\([^()]*(?:\([^()]*\)[^()]*)*\)/g, "");
 
 function cssFindings(text, defined, add) {
+  // The selector of the block being read, so a type exception can be named by it.
+  let pending = "";
+  let selector = "";
   text.split("\n").forEach((raw, index) => {
     const line = raw.split("/*")[0];
     const at = index + 1;
+    if (line.includes("{")) {
+      selector = (pending + " " + line.slice(0, line.lastIndexOf("{"))).trim();
+      pending = "";
+    } else if (!line.includes(";") && !line.includes("}")) {
+      pending += ` ${line}`;
+    }
+    if (line.includes("}")) pending = "";
+    const addRule = (rule, where) => {
+      if (rule.startsWith("DS-TYPE") && allowedType(selector)) return;
+      add(rule, where);
+    };
     for (const match of line.matchAll(/var\((--[a-z0-9-]+)\s*(,)?/g)) {
       const [, name, fallback] = match;
       if (ALIASES.has(name)) add("DS-COLOR-01/alias", at);
@@ -142,7 +171,7 @@ function cssFindings(text, defined, add) {
     }
     // Declarations may share a line with their selector: `.x { font-size: 13px; }`.
     const body = line.includes("{") ? line.slice(line.lastIndexOf("{") + 1) : line;
-    for (const decl of body.matchAll(/(?:^|;)\s*([a-z-]+)\s*:\s*([^;}]+)/g)) declaration(decl[1], decl[2], at, add);
+    for (const decl of body.matchAll(/(?:^|;)\s*([a-z-]+)\s*:\s*([^;}]+)/g)) declaration(decl[1], decl[2], at, addRule);
   });
 }
 
@@ -154,7 +183,7 @@ function declaration(prop, value, at, add) {
   else if (/^(padding|margin|gap|row-gap|column-gap)(-[a-z]+)?$/.test(prop)) {
     // 0–2 px are hairline and optical nudges, not spacing.
     if ([...bare.matchAll(/(?<![\w.-])(\d+(?:\.\d+)?)px/g)].some((m) => Number(m[1]) > 2)) add("DS-SPACE-01", at);
-  } else if (prop.startsWith("border") && prop.includes("radius") && /\d/.test(bare) && !/^\s*(0|50%)\s*$/.test(bare)) {
+  } else if (prop.startsWith("border") && prop.includes("radius") && /[1-9]/.test(bare) && !/^\s*(0|50%)\s*$/.test(bare)) {
     add("DS-SHAPE-01", at);
   } else if (["transition", "animation", "transition-duration"].includes(prop) && /\d+m?s\b/.test(bare)) {
     add("DS-MOTION-01", at);
@@ -176,7 +205,12 @@ function tsxFindings(text, add, path = "") {
     if (/type="(?:file|hidden|color|range)"/.test(tag) || allowedField(tag)) continue;
     add("DS-CTRL-01/field", lineAt(match.index));
   }
-  for (const match of text.matchAll(/>\s*[✕×✓→←↑↓⋯…]\s*</g)) add("DS-ICON-01", lineAt(match.index));
+  for (const match of text.matchAll(/>\s*[✕×✓→←↑↓⋯…]\s*</g)) {
+    const tagStart = text.lastIndexOf("<", match.index);
+    const tag = text.slice(tagStart, match.index + 1);
+    if (classWords(tag).some((word) => word in ICON_ALLOW)) continue;
+    add("DS-ICON-01", lineAt(match.index));
+  }
 }
 
 /** Every finding as { file, rule, line }, scanned from the product sources. */
@@ -195,50 +229,54 @@ export function scanDesignRules(root) {
   return findings;
 }
 
-/** Counts per file and rule: { "apps/web/src/x.css": { "DS-TYPE-01": 3 } }. */
-export function countFindings(findings) {
-  const counts = {};
-  for (const { file, rule } of findings) {
-    counts[file] ??= {};
-    counts[file][rule] = (counts[file][rule] ?? 0) + 1;
-  }
-  return counts;
-}
+/**
+ * Findings that wait for something outside the code, by file, rule and exact count
+ * (ADR-229). An entry that no longer matches fails, so it is deleted with the fix.
+ */
+export const PENDING = [
+  {
+    file: "apps/web/src/PresentationLayer.tsx",
+    rule: "DS-CTRL-01/button",
+    count: 4,
+    why: "slide arrows wait for chevron-left, arrow-up and arrow-down from the illustrator",
+  },
+  {
+    file: "apps/web/src/PresentationLayer.tsx",
+    rule: "DS-ICON-01",
+    count: 2,
+    why: "the ↑ ↓ glyphs of the slide arrows, the same icons",
+  },
+];
 
 /**
- * Compare current counts with the baseline. `worse` fails the check; `better` fails
- * too until the baseline is tightened, so the ratchet only ever moves down.
+ * The gate: every finding not covered by a pending entry, and every pending entry whose
+ * count no longer matches. Each problem names the rule ID and where to look.
  */
-export function compareWithBaseline(counts, baseline) {
-  const worse = [];
-  const better = [];
-  const files = new Set([...Object.keys(counts), ...Object.keys(baseline)]);
-  for (const file of files) {
-    const now = counts[file] ?? {};
-    const was = baseline[file] ?? {};
-    for (const rule of new Set([...Object.keys(now), ...Object.keys(was)])) {
-      const n = now[rule] ?? 0;
-      const b = was[rule] ?? 0;
-      if (n > b) worse.push({ file, rule, now: n, was: b });
-      else if (n < b) better.push({ file, rule, now: n, was: b });
+export function strictProblems(findings, pending = PENDING) {
+  const problems = [];
+  const key = (file, rule) => `${file}\u0000${rule}`;
+  const waiting = new Map(pending.map((entry) => [key(entry.file, entry.rule), entry]));
+  const seen = new Map();
+  for (const finding of findings) {
+    const k = key(finding.file, finding.rule);
+    if (waiting.has(k)) {
+      seen.set(k, (seen.get(k) ?? 0) + 1);
+      continue;
+    }
+    problems.push(`${finding.rule} ${finding.file}:${finding.line} — ${RULES[finding.rule]}`);
+  }
+  for (const entry of pending) {
+    const now = seen.get(key(entry.file, entry.rule)) ?? 0;
+    if (now !== entry.count) {
+      const lines = findings
+        .filter((f) => f.file === entry.file && f.rule === entry.rule)
+        .map((f) => f.line)
+        .join(", ");
+      problems.push(
+        `${entry.rule} ${entry.file}: pending ${entry.count}, found ${now}${lines ? ` (lines ${lines})` : ""} — ` +
+          (now < entry.count ? "update or delete the PENDING entry" : RULES[entry.rule]),
+      );
     }
   }
-  return { worse, better };
-}
-
-/** The tightened baseline: never higher than before, per file and rule. */
-export function tighten(counts, baseline) {
-  const next = {};
-  for (const [file, rules] of Object.entries(counts)) {
-    for (const [rule, n] of Object.entries(rules)) {
-      const was = baseline[file]?.[rule];
-      const value = was === undefined ? n : Math.min(n, was);
-      if (value > 0) (next[file] ??= {})[rule] = value;
-    }
-  }
-  return Object.fromEntries(
-    Object.keys(next)
-      .sort()
-      .map((file) => [file, Object.fromEntries(Object.keys(next[file]).sort().map((r) => [r, next[file][r]]))]),
-  );
+  return problems;
 }

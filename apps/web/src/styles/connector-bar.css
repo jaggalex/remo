@@ -43,10 +43,10 @@
   place-items: center;
   width: 28px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 13px;
+  font: var(--type-label);
   font-weight: 600;
 }
 
@@ -96,14 +96,14 @@
 .sb-width-glyph i {
   display: block;
   width: 18px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--text-primary);
 }
 
 .sb-width-sample {
   display: block;
   width: 24px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--text-primary);
 }
 

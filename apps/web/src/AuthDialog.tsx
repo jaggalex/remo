@@ -60,7 +60,7 @@ export function AuthDialog({
 
   return (
     <Dialog title={t("auth.title")} size="sm" onClose={onClose}>
-      <form className="auth-dialog" onSubmit={submit}>
+      <form className="dialog-stack" onSubmit={submit}>
         <Tabs
           label={t("auth.title")}
           tabs={[

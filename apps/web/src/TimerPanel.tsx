@@ -55,7 +55,7 @@ export function TimerPanel({
       size="sm"
       onClose={onClose}
     >
-      <section className="share-dialog timer-dialog">
+      <section className="dialog-stack timer-dialog">
 
         <div className={`timer-face ${phase}`}>
           <strong>{formatRemaining(remainingMs)}</strong>
