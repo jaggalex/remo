@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useEffect, useId, useRef, useState, type InputHTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import type { IconName } from "../icons";
 import { Icon } from "./basics";
 import { cx, forced, type Forced } from "./util";
@@ -261,6 +261,201 @@ export function ChoiceCard({
         </label>
         );
       })}
+    </div>
+  );
+}
+
+
+/**
+ * A bounded number that can be typed, stepped or scrubbed by its label.
+ *
+ * Scrubbing is the coarse path and typing is the exact one: a click still puts a caret in
+ * the field, so the gesture never takes the keyboard away. The label is the scrub track
+ * because it costs no room in an inspector; the steppers stay out of the Tab order.
+ */
+export interface NumberFieldProps {
+  label: string;
+  value: number | null;
+  onCommit: (value: number | null) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  largeStep?: number;
+  suffix?: string;
+  /** An empty field is a value of its own, such as Auto. */
+  allowEmpty?: boolean;
+  disabled?: boolean;
+  hint?: string;
+  id?: string;
+  size?: "compact" | "default";
+  increaseLabel: string;
+  decreaseLabel: string;
+}
+
+export function NumberField({
+  label,
+  value,
+  onCommit,
+  min,
+  max,
+  step = 1,
+  largeStep = 10,
+  suffix,
+  allowEmpty,
+  disabled,
+  hint,
+  id: given,
+  size,
+  increaseLabel,
+  decreaseLabel,
+}: NumberFieldProps) {
+  const auto = useId();
+  const id = given ?? auto;
+  const input = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState(value == null ? "" : String(Math.round(value)));
+  const [drag, setDrag] = useState<{ startX: number; from: number; value: number } | null>(null);
+
+  useEffect(() => {
+    if (!drag) setDraft(value == null ? "" : String(Math.round(value)));
+  }, [value, drag]);
+
+  const clamp = (next: number) =>
+    Math.round(Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min ?? Number.NEGATIVE_INFINITY, next)));
+
+  const commit = (next: number | null) => {
+    if (next == null) {
+      if (allowEmpty) onCommit(null);
+      setDraft(allowEmpty ? "" : value == null ? "" : String(Math.round(value)));
+      return;
+    }
+    if (!Number.isFinite(next)) return;
+    const clamped = clamp(next);
+    onCommit(clamped);
+    setDraft(String(clamped));
+  };
+
+  const commitDraft = () => {
+    const text = draft.trim();
+    if (!text) {
+      commit(null);
+      return;
+    }
+    const next = Number(text);
+    if (!Number.isFinite(next)) {
+      setDraft(value == null ? "" : String(Math.round(value)));
+      return;
+    }
+    commit(next);
+  };
+
+  const stepBy = (delta: number) => {
+    if (disabled) return;
+    commit((value ?? min ?? 0) + delta);
+  };
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLSpanElement>) => {
+    if (disabled || event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const from = value ?? min ?? 0;
+    setDrag({ startX: event.clientX, from, value: from });
+  };
+
+  const onPointerMove = (event: ReactPointerEvent<HTMLSpanElement>) => {
+    if (!drag || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    const factor = event.shiftKey ? largeStep : step;
+    const next = clamp(drag.from + (event.clientX - drag.startX) * factor);
+    setDraft(String(next));
+    setDrag({ ...drag, value: next });
+  };
+
+  const onPointerUp = (event: ReactPointerEvent<HTMLSpanElement>) => {
+    if (!drag || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    const next = drag.value;
+    const moved = next !== Math.round(drag.from);
+    setDrag(null);
+    if (moved) onCommit(next);
+    else input.current?.focus();
+  };
+
+  const own = {
+    role: "spinbutton",
+    "aria-valuemin": min,
+    "aria-valuemax": max,
+    "aria-valuenow": value ?? undefined,
+    "aria-label": label,
+  } as const;
+
+  return (
+    <div className={cx("rm-number", size && `rm-${size}`, disabled && "is-disabled")}>
+      <span
+        className="rm-number-label"
+        title={label}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => setDrag(null)}
+      >
+        {label}
+      </span>
+      <div className={cx("rm-input", "rm-number-box", size && `rm-${size}`, disabled && "is-disabled")}>
+        <input
+          ref={input}
+          id={id}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          value={draft}
+          disabled={disabled}
+          aria-describedby={hint ? `${id}-hint` : undefined}
+          {...own}
+          onChange={(event) => setDraft(event.currentTarget.value.replace(/[^0-9]/g, ""))}
+          onBlur={commitDraft}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commitDraft();
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              setDraft(value == null ? "" : String(Math.round(value)));
+            } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+              event.preventDefault();
+              stepBy(event.key === "ArrowUp" ? (event.shiftKey ? largeStep : step) : -(event.shiftKey ? largeStep : step));
+            } else if (event.key === "Home" && min != null) {
+              event.preventDefault();
+              commit(min);
+            } else if (event.key === "End" && max != null) {
+              event.preventDefault();
+              commit(max);
+            }
+          }}
+        />
+        {suffix && <span className="rm-input-affix">{suffix}</span>}
+        <span className="rm-number-steps">
+          <button
+            type="button"
+            className="rm-number-step"
+            tabIndex={-1}
+            aria-label={decreaseLabel}
+            disabled={disabled || (value != null && min != null && value <= min)}
+            onClick={() => stepBy(-step)}
+          >
+            <Icon name="minus" size={12} />
+          </button>
+          <button
+            type="button"
+            className="rm-number-step"
+            tabIndex={-1}
+            aria-label={increaseLabel}
+            disabled={disabled || (value != null && max != null && value >= max)}
+            onClick={() => stepBy(step)}
+          >
+            <Icon name="plus" size={12} />
+          </button>
+        </span>
+      </div>
+      {hint && <div className="rm-number-hint" id={`${id}-hint`}>{hint}</div>}
     </div>
   );
 }

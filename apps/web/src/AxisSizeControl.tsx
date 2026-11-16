@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { setAxisAutoResize, setAxisSize, type BoardDocument } from "@remo/doc";
 import {
+  clampAxisSize,
   layoutTable,
   type TableAxis,
   type TableAxisSize,
   type Widget,
 } from "@remo/model";
-import { Button, Input, Popover, Segmented } from "@remo/ui";
+import { Button, NumberField, Popover, Segmented } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { PanelWindow } from "./object-panel/PanelWindow";
 
@@ -57,26 +58,14 @@ export function AxisSizePopover({
   onClose: () => void;
 }) {
   const { t } = useI18n();
-  const [draft, setDraft] = useState(() => String(axisSizeValue(board, frame, kind, axis.id)));
   const manual = axisIsManual(axis);
   const preset = typeof axis.size === "string" && axis.size !== "auto" ? axis.size : "";
   const name = axis.title || t("section.axis.untitled");
   const size = axisSizeValue(board, frame, kind, axis.id);
 
-  useEffect(() => setDraft(String(size)), [size, axis.id]);
-
   const setMode = (mode: string) => {
     if (disabled) return;
     setAxisAutoResize(board, frame.id, axis.id, mode === "auto");
-  };
-
-  const commit = () => {
-    const px = Number(draft);
-    if (!draft.trim() || !Number.isFinite(px) || px <= 0) {
-      setDraft(String(size));
-      return;
-    }
-    if (Math.round(px) !== size) setAxisSize(board, frame.id, axis.id, px);
   };
 
   return (
@@ -121,28 +110,22 @@ export function AxisSizePopover({
             },
           ]}
         />
-        <div className="axis-size-px">
-          <Input
-            inputMode="numeric"
-            size="compact"
-            suffix={t("section.size.unit")}
-            label={t("section.size.pxField")}
-            value={draft}
-            disabled={disabled}
-            onChange={(event) => setDraft(event.currentTarget.value.replace(/[^0-9]/g, ""))}
-            onBlur={commit}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                commit();
-              } else if (event.key === "Escape") {
-                event.preventDefault();
-                setDraft(String(size));
-              }
-            }}
-          />
-          <span className="muted axis-size-now">{t("section.size.px", { n: size })}</span>
-        </div>
+        <NumberField
+          label={t(kind === "column" ? "section.size.width" : "section.size.height")}
+          value={size}
+          min={kind === "column" ? 120 : 72}
+          max={2400}
+          suffix={t("section.size.unit")}
+          allowEmpty
+          disabled={disabled}
+          size="compact"
+          increaseLabel={t("section.size.increase")}
+          decreaseLabel={t("section.size.decrease")}
+          onCommit={(value) => {
+            if (value == null) setAxisAutoResize(board, frame.id, axis.id, true);
+            else setAxisSize(board, frame.id, axis.id, clampAxisSize(kind, value));
+          }}
+        />
         <p className="muted axis-size-keys">{t("section.size.keyboardHint")}</p>
       </div>
     </Popover>
