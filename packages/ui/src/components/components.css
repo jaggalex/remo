@@ -444,3 +444,44 @@
 .rm-vote-foot { display: flex; justify-content: flex-end; }
 .rm-vote-empty { font: 400 13px/18px var(--font-sans); color: var(--text-secondary); }
 }
+
+/* ---------- NumberField ---------- */
+.rm-number { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.rm-number-label {
+  font: var(--type-label);
+  color: var(--text-primary);
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+  white-space: nowrap;
+}
+.rm-number.is-disabled .rm-number-label { color: var(--text-muted); cursor: default; }
+.rm-number-box { flex: 1; min-width: 0; padding-right: var(--space-1); }
+.rm-number-box input { width: 100%; font-variant-numeric: tabular-nums; }
+.rm-number-steps {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.rm-number:hover .rm-number-steps,
+.rm-number:focus-within .rm-number-steps { opacity: 1; pointer-events: auto; }
+.rm-number-step {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.rm-number-step:hover { color: var(--text-primary); background: var(--bg-active, var(--bg-hover)); }
+.rm-number-step:disabled { color: var(--text-muted); cursor: not-allowed; }
+.rm-number-hint { font: var(--type-caption); color: var(--text-secondary); }
+@media (pointer: coarse) {
+  .rm-number-steps { opacity: 1; pointer-events: auto; }
+  .rm-number-step { width: 28px; height: 28px; }
+}

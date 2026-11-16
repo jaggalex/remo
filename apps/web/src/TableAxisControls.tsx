@@ -5,6 +5,7 @@ import { layoutTable, type Camera, type TableGrid } from "@remo/canvas";
 import { clampAxisSize, type Widget } from "@remo/model";
 import { Icon } from "@remo/ui";
 import { useI18n } from "./i18n";
+import { TableBandCorner } from "./TableBandCorner";
 
 type AxisKind = "column" | "row";
 
@@ -326,6 +327,13 @@ export function TableAxisControls({
                   <span>{t("section.axes.addRow")}</span>
                 </button>
             </>
+            <TableBandCorner
+              board={board}
+              frame={frame}
+              grid={grid}
+              camera={camera}
+              viewport={viewport}
+            />
           </div>
         );
       })}

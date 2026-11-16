@@ -26,6 +26,7 @@ describe("components render with the strings contract", () => {
     ["ConfirmDialog", h(UI.ConfirmDialog, { inline: true, count: 12 })],
     ["Tabs", h(UI.Tabs, { tabs: [{ id: "a", label: "A", count: 3 }] })],
     ["Segmented", h(UI.Segmented, { options: [{ value: "5", label: "5" }, { value: "10", label: "10" }], value: "5", onChange: () => {} })],
+    ["NumberField", h(UI.NumberField, { label: "Width", value: 245, min: 64, max: 2000, suffix: "px", onCommit: () => {}, increaseLabel: "Increase", decreaseLabel: "Decrease" })],
     ["ChoiceCard", h(UI.ChoiceCard, { options: [{ value: "a", title: "A", hint: "h" }, { value: "b", title: "B" }], value: "a", onChange: () => {} })],
     ["Toast", h(UI.Toast, { tone: "danger", title: "x" })],
     ["TopBar", h(UI.TopBar, { boardName: "Retro", sync: "offline", readOnly: true, presence: ["A"] })],

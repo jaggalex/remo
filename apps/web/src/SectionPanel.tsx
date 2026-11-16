@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BoardDocument } from "@remo/doc";
 import {
   addAxis,
@@ -21,7 +21,7 @@ import {
   type TableLayout,
   type Widget,
 } from "@remo/model";
-import { Button, ConfirmDialog, Icon, Input, Segmented } from "@remo/ui";
+import { Button, ConfirmDialog, Icon, Segmented, Textarea } from "@remo/ui";
 import { AxisSizeButton } from "./AxisSizeControl";
 import { TableAppearanceControls } from "./TableAppearanceControls";
 import { TableHeaderSize } from "./TableHeaderSize";
@@ -104,31 +104,42 @@ function AxisNameField({
 }) {
   const { t } = useI18n();
   const [value, setValue] = useState(axis.title);
+  const cancelled = useRef(false);
 
   useEffect(() => setValue(axis.title), [axis.id, axis.title]);
 
   const commit = () => {
+    if (cancelled.current) {
+      cancelled.current = false;
+      return;
+    }
     if (value.trim() === axis.title.trim()) return;
     renameAxis(board, frameId, axis.id, value);
   };
 
   return (
-    <Input
-      label={t("section.axis.title")}
-      value={value}
-      maxLength={80}
-      disabled={disabled}
-      onChange={(event) => setValue(event.currentTarget.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.currentTarget.blur();
-        } else if (event.key === "Escape") {
-          setValue(axis.title);
-          event.currentTarget.blur();
-        }
-      }}
-    />
+    <div className="section-axis-name">
+      <Textarea
+        label={t("section.axis.title")}
+        hint={t("section.axis.titleHint")}
+        value={value}
+        rows={2}
+        maxLength={80}
+        disabled={disabled}
+        onChange={(event) => setValue(event.currentTarget.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey && !event.altKey) {
+            event.preventDefault();
+            event.currentTarget.blur();
+          } else if (event.key === "Escape") {
+            cancelled.current = true;
+            setValue(axis.title);
+            event.currentTarget.blur();
+          }
+        }}
+      />
+    </div>
   );
 }
 
@@ -447,16 +458,26 @@ export function SectionPanel({
                   const objects = axisObjects(widgets, frame.id, kind, axis.id).length;
                   const isSelected = axis.id === axisId;
                   const title = axis.title || t("section.axis.untitled");
+                  const lines = axis.title.split("\n").length;
+                  const linesLabel =
+                    lines === 1
+                      ? t("section.axis.titleLinesOne")
+                      : lines < 5
+                        ? t("section.axis.titleLinesFew", { n: lines })
+                        : t("section.axis.titleLinesMany", { n: lines });
                   return (
                     <button
                       key={axis.id}
                       type="button"
                       className={`section-axis-row${isSelected ? " is-selected" : ""}`}
                       aria-pressed={isSelected}
-                      aria-label={`${title} — ${count("objects", objects)}`}
+                      aria-label={`${title.replace(/\n/g, " ")} — ${count("objects", objects)}`}
                       onClick={() => selectAxis(isSelected ? null : axis.id)}
                     >
                       <span className="section-axis-title">{title}</span>
+                      {lines > 1 && (
+                        <span className="section-axis-lines">{linesLabel}</span>
+                      )}
                       <span className="section-axis-meta" aria-hidden="true">
                         {objects}
                       </span>
