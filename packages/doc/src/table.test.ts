@@ -16,6 +16,7 @@ import {
   setTableBorder,
   setTableFill,
   setTableHeaderSize,
+  setTableHeaderText,
   setTablePadding,
   showTable,
   splitCell,
@@ -795,5 +796,42 @@ describe("header size and vertical rows (ADR-217)", () => {
     expect(tableLayoutOf(board, "f")!.headerHeight).toBe(140);
     expect(setTableHeaderSize(board, "f", "width", null)).toBe(true);
     expect(tableLayoutOf(board, "f")!.headerWidth).toBeUndefined();
+  });
+});
+
+
+describe("header typography (ADR-220)", () => {
+  function boardWithTable(): BoardDocument {
+    return boardWith([
+      {
+        ...frame(),
+        layout: {
+          kind: "table",
+          columns: [{ id: "c1", title: "A" }],
+          rows: [{ id: "r1", title: "1" }],
+        },
+      },
+    ]);
+  }
+
+  it("merges fields, removes one and clears the whole override", () => {
+    const board = boardWithTable();
+    expect(setTableHeaderText(board, "f", { size: 20 })).toBe(true);
+    expect(setTableHeaderText(board, "f", { weight: "bold", italic: true })).toBe(true);
+    expect(tableLayoutOf(board, "f")!.appearance!.headerText).toEqual({
+      size: 20,
+      weight: "bold",
+      italic: true,
+    });
+    expect(setTableHeaderText(board, "f", { color: "#123456", align: "center" })).toBe(true);
+    expect(setTableHeaderText(board, "f", { color: undefined })).toBe(true);
+    expect(tableLayoutOf(board, "f")!.appearance!.headerText).toEqual({
+      size: 20,
+      weight: "bold",
+      italic: true,
+      align: "center",
+    });
+    expect(setTableHeaderText(board, "f", null)).toBe(true);
+    expect(tableLayoutOf(board, "f")!.appearance?.headerText).toBeUndefined();
   });
 });

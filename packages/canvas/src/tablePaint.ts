@@ -1,7 +1,8 @@
 import {
+  headerLineHeight,
   headerText,
   tableCellBorder,
-  TABLE_HEADER_LINE_HEIGHT,
+  tableHeaderTextStyle,
   TABLE_HEADER_PADDING,
   type TableBorder,
   type Widget,
@@ -94,7 +95,12 @@ export function drawTable(
   const headerFill = appearance?.headers ?? appearance?.table ?? palette.hover;
   const tableFill = appearance?.table;
   const line = 1 / zoom;
-  const headerFont = `12px ${fontFamily}`;
+  const headerStyle = tableHeaderTextStyle(layout);
+  const headerWeight =
+    headerStyle.weight === "bold" ? 600 : headerStyle.weight === "medium" ? 500 : 400;
+  const headerFont = `${headerStyle.italic ? "italic " : ""}${headerWeight} ${headerStyle.size}px ${fontFamily}`;
+  const headerColor = headerStyle.color ?? palette.textSecondary;
+  const headerLine = headerLineHeight(headerStyle.size);
   const borders = appearance?.borders;
   const stroke = (border: TableBorder | undefined, fallback: string, fallbackWidth = 1) => {
     if (border?.style === "none") return false;
@@ -128,7 +134,7 @@ export function drawTable(
     resetStroke();
 
     const text = headerText(column.axis.title);
-    ctx.fillStyle = palette.textSecondary;
+    ctx.fillStyle = headerColor;
     ctx.font = headerFont;
     if (column.axis.vertical) {
       ctx.save();
@@ -138,7 +144,7 @@ export function drawTable(
       ctx.textBaseline = "middle";
       // Explicit lines stack across the column; each line is shortened only when it
       // cannot fit the band (ADR-217).
-      const lineHeight = TABLE_HEADER_LINE_HEIGHT;
+      const lineHeight = headerLine;
       const lines = text.split("\n");
       lines.forEach((line, index) =>
         ctx.fillText(
@@ -149,7 +155,7 @@ export function drawTable(
       );
       ctx.restore();
     } else {
-      const lineHeight = TABLE_HEADER_LINE_HEIGHT;
+      const lineHeight = headerLine;
       const maxLines = Math.max(
         1,
         Math.floor((rect.height - TABLE_HEADER_PADDING * 2) / lineHeight),
@@ -162,9 +168,15 @@ export function drawTable(
       );
       const total = lines.length * lineHeight;
       const start = rect.y + (rect.height - total) / 2 + lineHeight / 2;
-      ctx.textAlign = "left";
+      ctx.textAlign = headerStyle.align;
+      const textX =
+        headerStyle.align === "center"
+          ? rect.x + rect.width / 2
+          : headerStyle.align === "right"
+            ? rect.x + rect.width - TABLE_HEADER_PADDING
+            : rect.x + TABLE_HEADER_PADDING;
       lines.forEach((line, index) =>
-        ctx.fillText(line, rect.x + TABLE_HEADER_PADDING, start + index * lineHeight),
+        ctx.fillText(line, textX, start + index * lineHeight),
       );
     }
   }
@@ -176,7 +188,7 @@ export function drawTable(
     const border = borders?.rows?.[row.axis.id] ?? borders?.headers ?? borders?.table;
     if (stroke(border, palette.borderSubtle)) ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
     resetStroke();
-    ctx.fillStyle = palette.textSecondary;
+    ctx.fillStyle = headerColor;
     ctx.font = headerFont;
     const text = headerText(row.axis.title);
     if (row.axis.vertical) {
@@ -185,7 +197,7 @@ export function drawTable(
       ctx.rotate(-Math.PI / 2);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      const lineHeight = TABLE_HEADER_LINE_HEIGHT;
+      const lineHeight = headerLine;
       const lines = text.split("\n");
       lines.forEach((line, index) =>
         ctx.fillText(
@@ -196,7 +208,7 @@ export function drawTable(
       );
       ctx.restore();
     } else {
-      const lineHeight = TABLE_HEADER_LINE_HEIGHT;
+      const lineHeight = headerLine;
       const maxLines = Math.max(
         1,
         Math.floor((rect.height - TABLE_HEADER_PADDING * 2) / lineHeight),
@@ -209,9 +221,15 @@ export function drawTable(
       );
       const total = lines.length * lineHeight;
       const start = rect.y + (rect.height - total) / 2 + lineHeight / 2;
-      ctx.textAlign = "left";
+      ctx.textAlign = headerStyle.align;
+      const textX =
+        headerStyle.align === "center"
+          ? rect.x + rect.width / 2
+          : headerStyle.align === "right"
+            ? rect.x + rect.width - TABLE_HEADER_PADDING
+            : rect.x + TABLE_HEADER_PADDING;
       lines.forEach((line, index) =>
-        ctx.fillText(line, rect.x + TABLE_HEADER_PADDING, start + index * lineHeight),
+        ctx.fillText(line, textX, start + index * lineHeight),
       );
     }
   }

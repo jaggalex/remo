@@ -22,6 +22,20 @@ export interface TableAxis {
   vertical?: boolean;
 }
 
+export type TableHeaderTextWeight = "regular" | "medium" | "bold";
+export type TableHeaderTextAlign = "left" | "center" | "right";
+
+/** The one typography of column and row headers (ADR-220). */
+export interface TableHeaderText {
+  /** World pixels; absent means 12. */
+  size?: number;
+  weight?: TableHeaderTextWeight;
+  italic?: boolean;
+  /** Named or custom text colour; absent means the palette's secondary text. */
+  color?: string;
+  align?: TableHeaderTextAlign;
+}
+
 export type TableBorderStyle = "solid" | "dashed" | "none";
 
 /** One border of a table area (ADR-208). Width is in screen pixels at 100 % zoom. */
@@ -46,6 +60,8 @@ export interface TableAppearance {
   borders?: TableBorderOverrides;
   /** Cell content padding in world units; absent means the default (ADR-208). */
   paddings?: TablePaddingOverrides;
+  /** One typography for every header cell (ADR-220). */
+  headerText?: TableHeaderText;
 }
 
 export interface TableBorderOverrides {
