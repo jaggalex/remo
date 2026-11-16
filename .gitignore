@@ -25,3 +25,7 @@ playwright-report/
 # Generated design preview and Python bytecode cache
 /docs/design/assets/preview.html
 __pycache__/
+
+# Design workspace stays local; only product docs and baselines are tracked.
+/docs/design/sketches/
+/docs/design/visual/S/
