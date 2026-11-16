@@ -910,6 +910,24 @@ test("borders and padding are edited in the table appearance group", async ({ pa
     .toBe(32);
 });
 
+test("a multiline axis name edits in the panel", async ({ page }) => {
+  const { frameId, panel } = await openTable(page, "table-panel-multiline");
+  const header = page.getByRole("button", { name: "Columns: Column 1" });
+  if ((await header.getAttribute("aria-pressed")) !== "true") await header.click();
+  const field = panel.getByLabel("Axis name");
+  await field.fill("First");
+  await field.press("Shift+Enter");
+  await field.type("second");
+  await field.press("Enter");
+  await expect
+    .poll(async () => {
+      const layout = (await widgets(page)).find((widget) => widget.id === frameId)!.layout!;
+      return layout.columns![0]!.title;
+    })
+    .toBe("First\nsecond");
+  await expect(panel.getByText("2 lines", { exact: true })).toBeVisible();
+});
+
 test("header lines, vertical rows and manual header size", async ({ page }) => {
   const { frameId, panel } = await openTable(page, "table-header-lines");
   const header = page.getByRole("button", { name: "Columns: Column 1" });
@@ -979,7 +997,7 @@ test("duplicates a column from the header menu", async ({ page }) => {
 });
 
 test("a locked table disables the title and the view badge", async ({ page }) => {
-  await openTable(page, "table-locked");
+  const { panel } = await openTable(page, "table-locked");
   await page.keyboard.press("Meta+Shift+l");
   await expect
     .poll(() => page.locator(".badge-lock").count())
@@ -988,6 +1006,9 @@ test("a locked table disables the title and the view badge", async ({ page }) =>
   await expect(badge).toBeDisabled();
   await page.getByRole("button", { name: "Rename section" }).dblclick();
   await expect(page.locator(".section-title-input")).toHaveCount(0);
+  // Read-only is a value, not a disabled form (ADR-219).
+  await expect(panel.locator(".section-readonly")).toContainText("Header height: Auto");
+  await expect(panel.getByRole("spinbutton", { name: "Header height" })).toHaveCount(0);
 });
 
 test("the block size switch is one undo step", async ({ page }) => {
@@ -1043,3 +1064,67 @@ test("the context menu switches the view and reports it", async ({ page }) => {
     .toBe(false);
 });
 
+
+test("the header corner sizes the band and the strip, and the grip resets both", async ({
+  page,
+}) => {
+  const { frameId } = await openTable(page, "table-band-corner");
+  const layout = () =>
+    widgets(page).then((all) => all.find((widget) => widget.id === frameId)!.layout as {
+      headerHeight?: number;
+      headerWidth?: number;
+    });
+
+  const height = page.getByRole("separator", { name: "Header height", exact: true });
+  const heightBox = (await height.boundingBox())!;
+  await page.mouse.move(heightBox.x + heightBox.width / 2, heightBox.y + heightBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    heightBox.x + heightBox.width / 2,
+    heightBox.y + heightBox.height / 2 + 60,
+    { steps: 4 },
+  );
+  await page.mouse.up();
+  await expect.poll(async () => (await layout()).headerHeight).toBeGreaterThan(40);
+
+  const width = page.getByRole("separator", { name: "Header width", exact: true });
+  const widthBox = (await width.boundingBox())!;
+  await page.mouse.move(widthBox.x + widthBox.width / 2, widthBox.y + widthBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(widthBox.x + widthBox.width / 2 + 40, widthBox.y + widthBox.height / 2, {
+    steps: 4,
+  });
+  await page.mouse.up();
+  await expect.poll(async () => (await layout()).headerWidth).toBeGreaterThan(128);
+
+  await page.locator(".table-band-grip").dblclick();
+  await expect
+    .poll(async () => {
+      const next = await layout();
+      return [next.headerHeight, next.headerWidth];
+    })
+    .toEqual([undefined, undefined]);
+});
+
+test("the header size field scrubs by its label and steps with the keyboard", async ({
+  page,
+}) => {
+  const { frameId, panel } = await openTable(page, "table-header-scrub");
+  const height = () =>
+    widgets(page).then(
+      (all) =>
+        (all.find((widget) => widget.id === frameId)!.layout as { headerHeight?: number })
+          .headerHeight,
+    );
+  const label = panel.locator(".rm-number-label").filter({ hasText: "Header height" });
+  await label.scrollIntoViewIfNeeded();
+  const box = (await label.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(height).toBeGreaterThan(40);
+  const scrubbed = (await height())!;
+  await panel.getByLabel("Header height").press("ArrowUp");
+  await expect.poll(height).toBeGreaterThan(scrubbed);
+});
