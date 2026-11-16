@@ -5,12 +5,20 @@ import { drawTable } from "./tablePaint";
 
 function fakeContext() {
   const calls: string[] = [];
+  const fonts: string[] = [];
   const state: Record<string | symbol, unknown> = {};
   const ctx = new Proxy(state, {
     get(target, key) {
       if (key in target) return target[key];
       if (key === "measureText") {
         return (text: string) => ({ width: String(text).length * 6.6 });
+      }
+      if (key === "fillText") {
+        return (..._args: unknown[]) => {
+          calls.push("fillText");
+          fonts.push(String(target.font));
+          return undefined;
+        };
       }
       return (..._args: unknown[]) => {
         calls.push(String(key));
@@ -22,7 +30,7 @@ function fakeContext() {
       return true;
     },
   });
-  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls };
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, fonts };
 }
 
 const frame: Widget = {
@@ -54,6 +62,20 @@ describe("drawTable (ADR-196)", () => {
     expect(calls).toContain("fillText");
     expect(calls).toContain("rotate");
     expect(calls.filter((call) => call === "strokeRect").length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("scales header text with the camera, like table content", () => {
+    const fontAt = (zoom: number) => {
+      const { ctx, fonts } = fakeContext();
+      drawTable(ctx, frame, [], zoom, DEFAULT_PALETTE, "sans-serif");
+      expect(fonts.length).toBeGreaterThan(0);
+      return new Set(fonts);
+    };
+    // The font is a world-unit size, so the same string is used at every zoom and the
+    // canvas transform scales it on screen. Dividing by zoom would pin it to the screen.
+    expect(fontAt(1)).toEqual(new Set(["12px sans-serif"]));
+    expect(fontAt(2)).toEqual(new Set(["12px sans-serif"]));
+    expect(fontAt(0.5)).toEqual(new Set(["12px sans-serif"]));
   });
 
   it("does nothing for an inactive table", () => {

@@ -8907,3 +8907,73 @@ names.
 disabled view item with the lock reason; the panel border widths follow ADR-208; the axis
 menu and panel gain one command entry. No model change. Tests cover duplicate from the
 header, the locked section, the block-switch undo and the context-menu switch.
+
+## ADR-219: Sizing is direct manipulation on every header boundary, one scrub field and a header corner (extends ADR-196, ADR-201, ADR-206, ADR-217)
+
+**Status:** accepted (2026-11-15).
+
+**Context.** The first table slice made every axis boundary a resize handle, but the handles
+were painted under the header hit areas: only the outer edge of the last column and row was
+reachable. Sizes could only be typed into fields, the header band and the row-name strip had
+no direct control at all, and a header title's line break was discoverable only inside the
+canvas editor. The S1–S13 design series fixes the anatomy; this record makes the behaviour
+binding.
+
+**Decision.**
+
+- **Every axis boundary is a handle.** Columns resize on the vertical boundaries of the
+  column-header band; rows resize on the horizontal boundaries of the row-name strip. The
+  resize layer paints above the header buttons, so an interior boundary is as reachable as
+  the outer edge. The hit strip is 12 screen pixels on each side (24 on a coarse pointer)
+  and does not scale with the camera. A 3 px movement starts a drag; below it the click
+  reaches the header. Hover shows a 1 px accent line, drag shows the value chip and a 1 px
+  dashed guide through the table, release commits one command and one undo, `Esc` cancels.
+  Double-click returns the axis to Auto; the same handle is a `separator` for the keyboard
+  (`←/→` or `↑/↓` 8 px, `Shift` 40 px, `Delete` Auto).
+- **No resize from the table body in v1.** `Alt` already pans the board on pointer down and
+  anchors an object resize at its centre (ADR-212). A body-line handle would give one
+  gesture two meanings. The header boundaries and the corner cover the case; a future body
+  resize needs a different gesture and a new ADR.
+- **The header corner is chrome, not a cell.** The intersection of the two bands has no cell
+  identity: no cell selection, range, merge target, drop target or screen-reader cell. Its
+  bottom edge sets the header height, its right edge sets the row-strip width. A 20×20 grip
+  sits at the corner; double-click resets both sizes to Auto, dragging the grip does
+  nothing. The full line through the table is a guide, never a hit area, so a click near a
+  cell edge still selects the cell. The keyboard gets two separators (height, then width)
+  rather than the grip.
+- **One number field for every table number.** A `NumberField` in `@remo/ui` replaces the
+  table's numeric `Input`s: axis size, header width and height, border width, cell padding.
+  Dragging its label scrubs the value (1 px of pointer = 1 px; `Shift` ×10; `Alt/Option`
+  finer, and only inside the field — on the canvas `Alt` pans). Arrow keys step 1 and 10,
+  `Home`/`End` jump to the bounds, typing still sets an exact value, `Enter` commits,
+  `Esc` reverts, and an empty field means Auto where the parameter has an Auto mode. Live
+  preview while scrubbing, one undo on release.
+- **A header title is multiline in the panel too.** The panel name field is a text area
+  (at least two rows; grows to four, then scrolls), with the same keys as the canvas:
+  `Enter` commits, `Shift+Enter` and `Alt/Option+Enter` insert a line, `Esc` cancels. The
+  axis list shows the first line and a "N lines" tag; the full text is in a tooltip. The
+  model does not change: it is still the one axis-title string.
+- **Locked and read-only replace controls with values.** A locked section or a viewer role
+  does not show a disabled form; the size group shows read-only text such as
+  "Manual · 245 px" and "Header: 64 px / Auto", with the reason first. No separators, no
+  pointer changes, nothing in the tab order.
+- **Touch uses the same two separators.** The corner exposes the height and width
+  separators with a 24 px zone. There is no long press and no new canvas gesture.
+- **Hints are quiet and local.** The panel explains the current mode; the first-time hint
+  ("Drag a boundary to resize · Double-click for Auto") is shown once per user and is
+  dismissed by its close control or by the first resize. The editor shows the
+  `Shift+Enter` hint only while editing. The first-time hint is a local UI preference, not
+  document data.
+- **Two new tokens, no new colours.** `--table-handle-hit` (12 px, 24 on touch) and
+  `--table-band-grip` (20 px). Lines, chip and focus ring use the existing `border-focus`,
+  `bg-inverse`, `text-inverse` and `border-strong`.
+
+**Consequences.** `TableAxisControls` paints after the header layer (the z-order fix already
+shipped) and gains the header-band edges, the row-strip edges and the corner. `@remo/ui`
+gains the `NumberField`; the section panel uses it and shows the read-only summary when
+writing is not allowed. The panel name field becomes a text area. Sizes stay per axis plus
+the existing `headerWidth`/`headerHeight`; there is no schema change and no migration. The
+first-time hint is a local preference, not a document or audit field. Tests cover an
+interior boundary pointer drag, the corner segments, the keyboard separators, the number
+field gestures, multiline titles in the panel and the locked summary. Body resizing,
+multi-axis resizing, snapping and per-side headers remain out of scope.
