@@ -9325,3 +9325,34 @@ want one turn it on once in settings. A browser that saved settings before this 
 keeps lines until its owner switches them off. Product visual baselines that showed the
 canvas are regenerated without the grid. Snapping does not depend on the grid being drawn,
 so nothing about placement changes.
+
+## ADR-231: A tooltip waits, can be dismissed with Escape, and stays while the pointer is on it (A11Y-04)
+
+**Context.** `Tooltip` in `@remo/ui` was pure CSS: it appeared the moment the pointer
+touched its trigger, Escape did nothing, and `pointer-events: none` made it vanish as soon
+as the pointer left the trigger for the tip itself (audit E-17). This fails WCAG 2.2
+1.4.13, "Content on hover or focus". It matters more once the header becomes icons
+(M14b), when the tooltip is the only place a control's name is visible.
+
+**Decision.**
+- **Delay.** A tooltip appears 500 ms after the pointer rests on its trigger, so passing
+  over a row of icons does not flash a tip for each one. Keyboard focus shows it at once:
+  someone tabbing has already chosen the control.
+- **Dismissible.** Escape hides an open tooltip without moving the pointer or focus. It
+  stays hidden until the pointer leaves the trigger or focus leaves it. Escape is not
+  consumed, so a canvas, menu or dialog still gets it as before.
+- **Hoverable.** The tip stays open while the pointer is over the trigger, over the tip,
+  or crossing the gap between them. The tip still lets clicks through
+  (`pointer-events: none`): whether the pointer is "on" it is decided by geometry, so an
+  open tip never blocks the control or canvas under it.
+- **Persistent.** It hides when the pointer and focus have both left, or on Escape, and
+  not on a timer.
+- Touch does not open tooltips; a long press is the canvas's gesture.
+- The shortcut inside a tooltip is drawn without a key outline: on the inverse plate the
+  outline was a second frame inside the first.
+- `open` keeps its meaning, forcing the tip open for the design-system gallery.
+
+**Consequences.** Hovering now needs a moment before a name appears. Tests that read a
+tooltip after hovering have to wait for it, and tests that photograph a screen do not see
+stray tips from a pointer that happens to rest on a trigger, unless it rests there for
+500 ms.

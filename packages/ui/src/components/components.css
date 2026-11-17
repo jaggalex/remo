@@ -178,12 +178,14 @@
 .rm-badge-x:hover { background: var(--bg-active); }
 .rm-tooltip-wrap { position: relative; display: inline-flex; }
 .rm-tooltip { position: absolute; z-index: var(--z-popover); display: none; align-items: center; gap: var(--space-2); white-space: nowrap; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--bg-inverse); color: var(--text-inverse); font: 500 12px/16px var(--font-sans); pointer-events: none; }
-.rm-tooltip .rm-kbd { background: transparent; color: var(--text-inverse); border-color: var(--text-muted); }
+/* On the inverse plate a key outline would be a second frame inside the first (ADR-231). */
+.rm-tooltip .rm-kbd { background: transparent; color: var(--text-inverse); border: 0; padding: 0; }
 .rm-tooltip-bottom { top: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
 .rm-tooltip-top { bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
 .rm-tooltip-right { left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
 .rm-tooltip-bottom.rm-tooltip-end, .rm-tooltip-top.rm-tooltip-end { left: auto; right: 0; transform: none; }
-.rm-tooltip-wrap:hover .rm-tooltip, .rm-tooltip-wrap:focus-within .rm-tooltip, .rm-tooltip-wrap.is-open .rm-tooltip { display: inline-flex; }
+/* Shown by state, not :hover — the delay, Escape and the hover bridge live in Tooltip (ADR-231). */
+.rm-tooltip-wrap.is-open .rm-tooltip { display: inline-flex; }
 
 /* ---------- Menu ---------- */
 .rm-menu { width: 240px; padding: var(--space-2); background: var(--bg-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); box-shadow: var(--shadow-pop); box-sizing: border-box; }

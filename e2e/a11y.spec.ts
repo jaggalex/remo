@@ -239,3 +239,46 @@ test("modal dialogs keep the keyboard inside and return focus", async ({ page })
     await expect(opener(), `${name}: focus returns to the opener`).toBeFocused();
   }
 });
+
+test("a tooltip waits, stays under the pointer and closes on Escape (WCAG 1.4.13)", async ({ page }) => {
+  await freshBoard(page, "a11y-tooltip");
+  const tool = page.getByRole("button", { name: "Text", exact: true });
+  const tip = page.getByRole("tooltip").filter({ hasText: /^Text/ });
+  const box = (await tool.boundingBox())!;
+
+  // Hover: nothing at once, the tip after the delay (ADR-231: 500 ms).
+  const start = Date.now();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(tip).toBeHidden();
+  await expect(tip).toBeVisible();
+  expect(Date.now() - start).toBeGreaterThanOrEqual(400);
+
+  // Hoverable: crossing the gap onto the tip keeps it open.
+  const tipBox = (await tip.boundingBox())!;
+  await page.mouse.move(box.x + box.width + 2, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.move(tipBox.x + tipBox.width / 2, tipBox.y + tipBox.height / 2, { steps: 4 });
+  await page.waitForTimeout(200);
+  await expect(tip).toBeVisible();
+
+  // Dismissible without moving the pointer, and the tip lets clicks through.
+  expect(await tip.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
+  await page.keyboard.press("Escape");
+  await expect(tip).toBeHidden();
+
+  // Leaving closes it; coming back opens it again.
+  await page.mouse.move(box.x + 400, box.y + 200);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(tip).toBeVisible();
+  await page.mouse.move(box.x + 400, box.y + 200);
+  await expect(tip).toBeHidden();
+
+  // Keyboard focus shows it at once, and Escape hides it with focus kept.
+  // A key press first, so the browser treats the focus as keyboard focus (:focus-visible).
+  await page.keyboard.press("Shift");
+  await tool.focus();
+  await expect(tool).toBeFocused();
+  await expect(tip).toBeVisible({ timeout: 300 });
+  await page.keyboard.press("Escape");
+  await expect(tip).toBeHidden();
+  await expect(tool).toBeFocused();
+});

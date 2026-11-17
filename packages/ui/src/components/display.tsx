@@ -1,4 +1,15 @@
-import { cloneElement, isValidElement, useId, type CSSProperties, type ReactElement, type ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import type { IconName } from "../icons";
 import { useUiStrings } from "../i18n";
 import { Icon, Kbd } from "./basics";
@@ -79,12 +90,96 @@ export interface TooltipProps {
   children: ReactElement;
 }
 
+/** How long the pointer rests on a trigger before its tip appears (ADR-231). */
+export const TOOLTIP_DELAY_MS = 500;
+/** The tip sits 6–8 px from its trigger; the pointer may cross that gap without losing it. */
+const TOOLTIP_BRIDGE_PX = 10;
+
+function inside(rect: DOMRect, x: number, y: number, pad = 0) {
+  return x >= rect.left - pad && x <= rect.right + pad && y >= rect.top - pad && y <= rect.bottom + pad;
+}
+
+/**
+ * WCAG 1.4.13 (ADR-231): the tip waits before appearing on hover, Escape dismisses it,
+ * and it stays while the pointer is over the trigger, the tip or the gap between them.
+ * The tip keeps `pointer-events: none`, so "over the tip" is geometry: an open tip never
+ * takes a click from whatever lies under it.
+ */
 export function Tooltip({ label, shortcut, side = "bottom", align = "center", open, children }: TooltipProps) {
   const id = useId();
+  const wrap = useRef<HTMLSpanElement>(null);
+  const tip = useRef<HTMLSpanElement>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const [hover, setHover] = useState(false);
+  const [focus, setFocus] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const shown = open || ((hover || focus) && !dismissed);
+
+  const clearTimer = () => {
+    if (timer.current !== undefined) window.clearTimeout(timer.current);
+    timer.current = undefined;
+  };
+  useEffect(() => clearTimer, []);
+
+  // While open, follow the pointer outside the trigger and listen for Escape.
+  useEffect(() => {
+    if (!shown || open) return;
+    const onMove = (event: PointerEvent) => {
+      const trigger = wrap.current?.getBoundingClientRect();
+      const box = tip.current?.getBoundingClientRect();
+      const over =
+        (trigger && inside(trigger, event.clientX, event.clientY)) ||
+        (box && inside(box, event.clientX, event.clientY, TOOLTIP_BRIDGE_PX));
+      if (!over) setHover(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      // The pointer may be on the tip, outside the trigger, where no leave event will
+      // reach it: end the hover here so the next entry starts fresh.
+      setDismissed(true);
+      setHover(false);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [shown, open]);
+
+  const onPointerEnter = (event: ReactPointerEvent) => {
+    if (event.pointerType === "touch" || hover) return;
+    clearTimer();
+    timer.current = window.setTimeout(() => {
+      setDismissed(false);
+      setHover(true);
+    }, TOOLTIP_DELAY_MS);
+  };
+  const onPointerLeave = () => {
+    // A pending or dismissed tip ends here; an open one is closed by the geometry check
+    // above, so the pointer can cross to the tip.
+    clearTimer();
+    if (!shown) setHover(false);
+  };
+  useEffect(() => {
+    if (!hover && !focus) setDismissed(false);
+  }, [hover, focus]);
+
   return (
-    <span className={cx("rm-tooltip-wrap", open && "is-open")}>
+    <span
+      ref={wrap}
+      className={cx("rm-tooltip-wrap", shown && "is-open")}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      onPointerDown={() => clearTimer()}
+      onFocus={(event) => {
+        // Keyboard focus shows the tip at once; a click's focus does not.
+        if ((event.target as HTMLElement).matches?.(":focus-visible")) setFocus(true);
+      }}
+      onBlur={() => setFocus(false)}
+    >
       {isValidElement(children) ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, { "aria-describedby": id }) : children}
-      <span role="tooltip" id={id} className={cx("rm-tooltip", `rm-tooltip-${side}`, align === "end" && "rm-tooltip-end")}>
+      <span ref={tip} role="tooltip" id={id} className={cx("rm-tooltip", `rm-tooltip-${side}`, align === "end" && "rm-tooltip-end")}>
         {label}
         {shortcut && <Kbd keys={shortcut} />}
       </span>
