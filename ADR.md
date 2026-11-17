@@ -9301,3 +9301,27 @@ A count per file cannot tell which line is allowed, and it says nothing about wh
 quietly accepts a regression. The rules are only as wide as their patterns: DS-ICON-01
 matches `✕ × ✓ → ← ↑ ↓ ⋯ …`. Glyphs such as `‹ ›` and `⇤ ↔` are not caught yet, and
 widening the pattern is a separate change.
+
+## ADR-230: The background grid is off by default (amends ADR-031, ADR-032)
+
+**Context.** ADR-031 made the grid optional and chose lines as the default, to match the
+source product. The design system has since settled on a light desk under paper with no
+pattern (DESIGN.md §4, `bg-canvas`): the lines compete with sticky notes, cards and the
+section table's own rules, and the owner decided on 16.11 that a fresh canvas has no grid
+(audit decision R5).
+
+**Decision.**
+- `DEFAULT_SETTINGS.grid.style` in `apps/web/src/settings.ts` is `"off"`. Lines and dots
+  stay in the settings panel, unchanged; the cell size stays 40.
+- The grid is still a per-browser preference (ADR-032): the change is in the default,
+  not in where the choice lives. A browser with no saved settings, and an unknown value
+  read from storage, both get no grid.
+- There is no migration. Saved settings are the whole object (`remo.settings`), so a
+  browser that has saved any setting keeps the grid style it saved, whether or not the
+  person chose it on purpose.
+
+**Consequences.** New people and new browsers see the canvas without a grid; people who
+want one turn it on once in settings. A browser that saved settings before this change
+keeps lines until its owner switches them off. Product visual baselines that showed the
+canvas are regenerated without the grid. Snapping does not depend on the grid being drawn,
+so nothing about placement changes.

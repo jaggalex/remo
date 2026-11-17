@@ -17,11 +17,11 @@
     "how-to/export-backup",
     "capabilities/export"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-16",
   "translations": {
     "en": {
-      "sourceHash": "sha256:555869a4c0288160cf3f1d48fafd6f76378afbfe1571929ccea01a51d24d0b42",
-      "targetHash": "sha256:3c8b60363db711dbbd296728826c30d4b0ea6e77605d59bbd3a894817a0f5c0f"
+      "sourceHash": "sha256:c77782d911a4022a4e22e8e5a89df70e7feef31854a06ba1806690d449e9573a",
+      "targetHash": "sha256:bff472e14b3766a2249bea0e5cb37200a4efc450d908f18fc62c487b3c38fc53"
     }
   }
 }

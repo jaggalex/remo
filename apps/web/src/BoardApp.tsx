@@ -748,7 +748,7 @@ export function BoardApp() {
           editingId={editingId}
           onEdit={editWidget}
           synced={synced} fitKey={`${active}#${cameraEpoch}`}
-          grid={settings.grid.style ?? "lines"}
+          grid={settings.grid.style}
           hintAllowed={hintAllowed}
           settings={settings}
           readOnly={writeBlocked}
