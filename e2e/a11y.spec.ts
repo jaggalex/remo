@@ -13,6 +13,7 @@ import {
   seedNote,
   seedObject,
   selectKanbanCard,
+  zoomInTo,
 } from "./helpers";
 
 /**
@@ -50,8 +51,13 @@ test("the counter on the object has no serious accessibility violations", async 
   expect(created.status()).toBe(201);
   const chip = page.locator(".vote-chip").first();
   await expect(chip).toBeVisible({ timeout: 10_000 });
-  // Both controls of the "my vote" shape are on screen: the one that takes a vote back
-  // and the one that is off with a reason.
+  // The compact counter of a fitted view is scanned too (ADR-235), then the full one with
+  // both controls of the "my vote" shape: the one that takes a vote back and the one that
+  // is off with a reason.
+  await expect(chip).toHaveClass(/compact/);
+  await expectNoSerious(page, "compact vote counter", ".vote-chip");
+  await zoomInTo(page, 0.85);
+  await expect(chip).not.toHaveClass(/compact/);
   await chip.getByRole("button", { name: /Vote for/ }).click();
   await expect(chip).toHaveClass(/mine/);
   await expect(chip.locator(".vote-chip-caption")).toHaveText("· yours");

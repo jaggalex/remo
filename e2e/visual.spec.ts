@@ -363,10 +363,17 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
     expect(withVote.scrollWidth).toBeLessThanOrEqual(withVote.innerWidth);
   }
 
+  // Fitted, a note is smaller on screen than the full counter: the number and one "+" at
+  // the 24 px minimum target, without the words, so nothing covers the object (ADR-235).
+  const chips = page.locator(".vote-chip");
+  await expect(chips.first()).toHaveClass(/compact/);
+  await expect(chips.first().getByRole("button")).toHaveCount(1);
+  await expect(chips.first().getByRole("button", { name: /Vote for/ })).toBeVisible();
+  await capture(page, page.locator(".canvas-wrap"), "vote-chips-overview");
+
   // The counter on the object (§10.3): the same corner on every object, and two of the
   // shapes a running session shows — «0 +» on a neighbour and my own vote in words.
-  // Zoom in first: the artefact is reviewed by a person, and at the fitted 37 % the
-  // note is smaller than its counter.
+  // Zoom in for the full form: at the fitted zoom the note has no room for it.
   for (let step = 0; step < 3; step += 1) {
     await page.getByRole("button", { name: "Zoom in" }).click();
   }

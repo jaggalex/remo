@@ -410,7 +410,6 @@ function paintWidget(
         widget.height,
         widget,
         { fontFamily: theme.fontFamily, palette, statusLabel: theme.cardStatus },
-        zoom,
       );
       if (editing) break;
       if (widget.title) {

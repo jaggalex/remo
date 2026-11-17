@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { addSticky, freshBoard, openBoard, openFacilitation } from "./helpers";
+import {
+  addSticky,
+  freshBoard,
+  openBoard,
+  openFacilitation,
+  zoomInTo,
+} from "./helpers";
 
 test("the shared timer counts down, pauses and resumes", async ({ page }) => {
   await freshBoard(page, "timer");
@@ -144,7 +150,8 @@ test("votes are cast on the object itself and stop when the session ends", async
   const ended = await page.request.post(`/api/vote-sessions/${sessionId}/end`);
   expect(ended.ok()).toBeTruthy();
   await expect(page.locator(".vote-chip-button")).toHaveCount(0, { timeout: 10_000 });
-  await expect(page.locator(".vote-chip")).toContainText("total");
+  // Fitted, the compact counter is the number alone; its name still says it is the total.
+  await expect(page.locator(".vote-chip")).toHaveAttribute("aria-label", "Final vote count: 0");
   await expect(page.locator(".vote-board-bar")).toContainText("Voting is over");
 });
 
@@ -253,8 +260,19 @@ test("the counter sits inside its object, never moves the board and names my vot
   const chip = page.locator(".vote-chip").first();
   await expect(chip).toBeVisible();
 
+  // Fitted, the note is too small on screen for the full counter: the number and the "+"
+  // stay, the words go, and the pill is the 24 px minimum target (ADR-235).
+  await expect(chip).toHaveClass(/compact/);
+  expect((await chip.boundingBox())!.height).toBe(24);
+  await expect(chip.getByRole("button", { name: /Vote for/ })).toBeVisible();
+
+  // Zoomed in, the note has room for the full counter.
+  await zoomInTo(page, 0.85);
+  await expect(chip).not.toHaveClass(/compact/);
+
   // §10.3: the same 8 px inside the object's bottom-right, in the object's own frame.
-  const geometry = await page.evaluate((id) => {
+  // Polled: switching form changes the measured size, and placement follows on the next frame.
+  const measure = () => page.evaluate((id) => {
     const probe = window as unknown as {
       __remo: {
         camera: { x: number; y: number; zoom: number };
@@ -278,6 +296,8 @@ test("the counter sits inside its object, never moves the board and names my vot
         rect.left >= wrap.left && rect.top >= wrap.top && rect.right <= wrap.right && rect.bottom <= wrap.bottom,
     };
   }, objectId);
+  await expect.poll(async () => Math.abs((await measure()).rightGap - 8) <= 1).toBe(true);
+  const geometry = await measure();
   expect(geometry.height).toBe(32);
   expect(Math.abs(geometry.rightGap - 8)).toBeLessThanOrEqual(1);
   expect(Math.abs(geometry.bottomGap - 8)).toBeLessThanOrEqual(1);

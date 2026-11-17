@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { IconButton } from "@remo/ui";
 import { useI18n } from "../i18n";
-import { chipPlacement, type Box } from "./chipPlacement";
+import { chipPlacement, voteChipForm, type Box } from "./chipPlacement";
 
 /**
  * One counter on one object (ADR-119 §4.3, §10.3, ADR-117).
@@ -19,6 +19,10 @@ import { chipPlacement, type Box } from "./chipPlacement";
  * The size is measured before paint and the position comes from `chipPlacement`, so the
  * chip never covers a connector's label or a neighbour, never leaves the canvas, and the
  * object under it never moves.
+ *
+ * On an object too small on screen for the full counter, the compact form keeps the number
+ * and one 24 px button — "+" to vote, or "−" on my own vote — and drops the words (ADR-235):
+ * a counter must not hide what it counts, and voting from an overview must still work.
  */
 export function VoteChip({
   id,
@@ -85,6 +89,7 @@ export function VoteChip({
         : votes > 0
           ? "others"
           : "none";
+  const compact = voteChipForm(object) === "compact";
   const place = chipPlacement({ object, chip: size, viewport, obstacles, leftInset });
   const measured = size.width > 0;
   /** Why the "+" cannot be used — the reason stays the same while a request is in flight. */
@@ -105,18 +110,18 @@ export function VoteChip({
       ref={ref}
       role="group"
       aria-label={aria}
-      className={`vote-chip ${state}`}
+      className={`vote-chip ${state}${compact ? " compact" : ""}`}
       style={{ left: place.left, top: place.top, visibility: measured ? undefined : "hidden" }}
     >
       <span className="vote-chip-count" aria-hidden="true">
         {votes}
       </span>
-      {running && mine && (
+      {!compact && running && mine && (
         <span className="vote-chip-caption" aria-hidden="true">
           {t("facilitation.vote.chipMine")}
         </span>
       )}
-      {!running && (
+      {!compact && !running && (
         <span className="vote-chip-caption" aria-hidden="true">
           {t("facilitation.vote.total")}
         </span>
@@ -132,7 +137,7 @@ export function VoteChip({
           onClick={() => onWithdraw(id)}
         />
       )}
-      {running && (
+      {running && !(compact && mine) && (
         <IconButton
           icon="plus"
           className="vote-chip-button plus"

@@ -156,14 +156,35 @@
   color: var(--text-muted);
 }
 
+/* Compact (ADR-235): on an object too small for the full counter, its number and one
+   button at the 24 px minimum target; the words go. My vote keeps the accent plate. */
+.vote-chip.compact {
+  height: var(--space-6);
+  padding: 0 0 0 var(--space-2);
+  gap: 0;
+  font: var(--type-caption);
+  font-weight: 600;
+}
+
+.vote-chip.compact.ended {
+  padding: 0 var(--space-2);
+}
+
+.vote-chip.compact .vote-chip-button {
+  width: var(--space-6);
+  height: var(--space-6);
+}
+
 /* Touch: the target grows to 44 px and the chip with it (макет Vote-Board), while the
    pill keeps its compact shape — it is still one line by content, not a panel. */
 @media (pointer: coarse) {
-  .vote-chip {
+  .vote-chip,
+  .vote-chip.compact:not(.ended) {
     height: var(--space-11);
   }
 
-  .vote-chip .vote-chip-button {
+  .vote-chip .vote-chip-button,
+  .vote-chip.compact .vote-chip-button {
     width: var(--space-11);
     height: var(--space-11);
   }

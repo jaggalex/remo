@@ -9468,3 +9468,45 @@ when it is selected).
 the dark theme the sheet is separated by tone, which was checked on `vote-chips-dark.png`;
 with `panel` it was the same colour as the ground. Baselines with cards are regenerated,
 and a painter test pins that an unselected card has no stroke.
+
+## ADR-235: Content attached to an object follows its zoom; controls keep their screen size (amends ADR-117)
+
+**Context.** ADR-117 pins a vote counter to its object, and `chipPlacement` recomputes the
+position at every zoom. The counter itself is a DOM pill of fixed screen size: 32 px with
+its buttons, or «N итог» after the session. Zoomed out to a fitted room (37 % in the
+baselines), a 160-unit note is about 60 px tall, and the counter covers most of it. The
+results then hide the very objects they count. Nothing decided this: ADR-117 says where
+the counter sits, not how big it is.
+
+The card face has the same defect inside the canvas. `cardMeta.ts` drew status, assignee
+and dates at a fixed screen size (`9.5 / zoom` px), while the title is in world units. Zoomed
+out, the small print was larger than the title and left the card; zoomed in, it shrank
+on a growing card.
+
+Some things on the canvas are rightly screen-constant, because they are controls or
+signals, not content: the lock badge and the clipped-text mark (ADR-193), selection
+handles, object toolbars, cursors, comment pins, section titles and the table's `+`
+controls. This decision does not change them.
+
+**Decision.**
+- **One rule.** What describes an object (its counts and its small print) belongs to the
+  object and follows its zoom. What acts on the view or marks a state stays at screen size.
+- **Vote counter, two forms** (`voteChipForm` in `vote/chipPlacement.ts`):
+  - **Full** (the five states of ADR-117, with `−` and `+`) when the object on screen is at
+    least 128 × 64 px. At that size the 32 px counter takes at most half the object's
+    height, and its buttons keep their 28 px targets.
+  - **Compact** below that size: the number and one button in a 24 px pill. The button is
+    `+` to vote, or `−` on my own vote, which keeps its accent plate. 24 px is the WCAG
+    2.5.8 minimum target, and on a touch screen the pill stays 44 px. The words («ваш»,
+    «итог») and the second button are what the compact form drops. Voting from a fitted
+    overview is the normal case, so the counter stays usable there.
+  - An ended session's compact counter is the number alone, because there is nothing left
+    to press.
+  - The accessible name stays the same in both forms («Голосов за объект: N», «итог: N»).
+- **Card small print** is drawn in world units at the size it had at 100 %. It now scales
+  with the card and the title, and at 100 % nothing changes.
+
+**Consequences.** In a fitted overview, every object shows its count without being covered.
+Zoomed out, a person can still vote and withdraw, without the counter covering the
+object. A new baseline, `vote-chips-overview.png`, shows the compact form at the
+fitted zoom.

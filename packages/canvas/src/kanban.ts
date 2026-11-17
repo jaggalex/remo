@@ -187,7 +187,6 @@ export function drawKanban(
             statusLabel:
               options.cardStatus ?? { todo: "To do", in_progress: "In progress", done: "Done" },
           },
-          zoom,
         )
       : placement.y;
 

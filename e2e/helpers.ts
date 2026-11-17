@@ -338,3 +338,15 @@ export async function applyDefaultTableLayout(page: Page): Promise<void> {
   await expect(card).toBeVisible();
   await card.getByRole("button", { name: "Apply", exact: true }).click();
 }
+
+/**
+ * Zoom in with the zoom panel until the camera reaches `min`. The buttons zoom around the
+ * centre, where a new object is created, so that object stays in view.
+ */
+export async function zoomInTo(page: Page, min: number): Promise<void> {
+  const zoom = () =>
+    page.evaluate(() => (window as unknown as { __remo: { camera: { zoom: number } } }).__remo.camera.zoom);
+  while ((await zoom()) < min) {
+    await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  }
+}
