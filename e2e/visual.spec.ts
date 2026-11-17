@@ -635,6 +635,10 @@ test("the section panel shows the table and its axes", async ({ page }) => {
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Columns: Column 1" }).click();
   await expect(panel.getByLabel("Axis name")).toHaveValue("Column 1");
+  // An empty header size is Auto, named by the field itself rather than a bare unit.
+  const headerHeight = panel.getByRole("spinbutton", { name: "Header height" });
+  await expect(headerHeight).toHaveAttribute("placeholder", "Auto");
+  await expect(panel.locator(".table-header-size .rm-input-affix")).toHaveCount(0);
   await page.getByRole("button", { name: "Fit", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
@@ -642,6 +646,11 @@ test("the section panel shows the table and its axes", async ({ page }) => {
 
   await page.waitForTimeout(300);
   await capture(page, page.locator(".app"), "section-panel");
+
+  // The header group sits below the fold of the panel: its spacing and Auto need their own picture.
+  const headerGroup = panel.locator(".table-header-group");
+  await headerGroup.scrollIntoViewIfNeeded();
+  await capture(page, headerGroup, "section-panel-header");
 });
 
 /** World point → client point for the canvas, the same inverse the handlers use. */

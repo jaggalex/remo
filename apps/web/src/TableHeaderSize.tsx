@@ -28,7 +28,7 @@ export function TableHeaderSize({
 
   if (disabled) {
     return (
-      <div className="section-field">
+      <div className="section-field table-header-group">
         <span className="section-field-label">{t("section.size.header")}</span>
         <div className="section-readonly">
           <span>
@@ -43,7 +43,7 @@ export function TableHeaderSize({
   }
 
   return (
-    <div className="section-field">
+    <div className="section-field table-header-group">
       <span className="section-field-label">{t("section.size.header")}</span>
       <div className="table-header-size">
         <NumberField
@@ -53,6 +53,7 @@ export function TableHeaderSize({
           max={2000}
           suffix={t("section.size.unit")}
           allowEmpty
+          placeholder={t("section.size.auto")}
           disabled={disabled}
           increaseLabel={t("section.size.increase")}
           decreaseLabel={t("section.size.decrease")}
@@ -65,6 +66,7 @@ export function TableHeaderSize({
           max={2000}
           suffix={t("section.size.unit")}
           allowEmpty
+          placeholder={t("section.size.auto")}
           disabled={disabled}
           increaseLabel={t("section.size.increase")}
           decreaseLabel={t("section.size.decrease")}

@@ -31,6 +31,8 @@ pnpm baselines
 | `vote-chips-dark.png` | The same counters in the dark theme: plate, my accent, the muted disabled «+» |
 | `agent-plan.png` | The plan preview in the room (ADR-188): two dashed notes joined by a dashed line, and the task panel with counts and bounds |
 | `agent-plan-tidy.png` | The tidy preview in the room: five notes, their dashed ghosts in one column, the US block hull and the task panel |
+| `section-panel.png` | A section in table view with its panel: view, axes and the top of the Header group |
+| `section-panel-header.png` | The Header group scrolled into view: empty sizes read «Auto», with no unit |
 
 The automatic gate is **not** a byte comparison (ADR-091): macOS and Linux rasterize
 text differently. `e2e/visual.spec.ts` samples pixels where the three routings must

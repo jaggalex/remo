@@ -111,7 +111,7 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 | Browser scenarios | 177 in 36 files |
 | Help topics | 34 (RU + EN) |
 | Portal pages | 69 |
-| Baselines | 29 product + 12 DS |
+| Baselines | 30 product + 12 DS |
 | Largest file | `apps/web/src/BoardApp.tsx` — 800 lines |
 <!-- generated:state:end -->
 

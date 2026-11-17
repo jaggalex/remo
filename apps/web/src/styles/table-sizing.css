@@ -3,6 +3,11 @@
 
 /* ------------------------------------------------ table band corner --- */
 
+/* Header is a group of its own, not a third axis list: 24 above it, as between groups. */
+.table-header-group {
+  margin-top: var(--space-6);
+}
+
 .table-header-size {
   display: flex;
   flex-direction: column;
