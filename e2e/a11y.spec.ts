@@ -318,21 +318,33 @@ test("header and zoom icons are named in their tooltips (ADR-232)", async ({ pag
   expect(await word.evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
 });
 
-test("selection actions are named icons, and the rare ones sit behind More actions (ADR-233)", async ({ page }) => {
+test("selection actions are one row of named icons, the rest behind More actions (ADR-237)", async ({ page }) => {
   await freshBoard(page, "a11y-selection-actions");
   await selectKanbanCard(page);
   const inspector = page.locator("aside.inspector");
   const actions = inspector.getByRole("group", { name: "Selection actions" });
-  for (const name of ["Copy", "Copy link", "Cut", "Duplicate", "Delete"]) {
+  for (const name of ["Copy", "Copy link", "Cut", "Duplicate", "Delete", "More actions"]) {
     await expect(actions.getByRole("button", { name, exact: true })).toBeVisible();
   }
-  await expect(inspector.getByRole("button", { name: "Edit text", exact: true })).toBeVisible();
+  // One row that fits: the last icon ends inside the panel's content box.
+  const fit = await inspector.evaluate((panel) => {
+    const style = getComputedStyle(panel);
+    const right = panel.getBoundingClientRect().right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
+    const buttons = [...panel.querySelectorAll<HTMLElement>(".selection-row button")];
+    const tops = new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top)));
+    return { past: Math.round(buttons.at(-1)!.getBoundingClientRect().right - right), rows: tops.size };
+  });
+  expect(fit.past).toBeLessThanOrEqual(0);
+  expect(fit.rows).toBe(1);
 
   const more = inspector.getByRole("button", { name: "More actions", exact: true });
   await more.click();
   const menu = page.getByRole("menu", { name: "More actions" });
-  await expect(menu.getByRole("menuitem", { name: /^Nudge/ })).toBeFocused();
-  await expect(menu.getByRole("menuitem", { name: /^Info/ })).toBeVisible();
+  for (const name of [/^Edit text/, /^Connect/, /^Nudge/, /^Info/, /^Clear selection/]) {
+    await expect(menu.getByRole("menuitem", { name })).toBeVisible();
+  }
+  // Focus lands on the first item that can be used.
+  await expect(menu.locator('[role="menuitem"]:not([aria-disabled="true"])').first()).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(more).toBeFocused();

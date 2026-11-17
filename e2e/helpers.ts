@@ -365,3 +365,15 @@ export async function objectCount(page: Page, type?: string): Promise<number> {
     type ?? null,
   );
 }
+
+/**
+ * Open a folded group of the properties panel by its row name (ADR-236). Clicking an
+ * open row would close it, so it is opened only when closed.
+ */
+export async function openFold(page: Page, name: string | RegExp): Promise<void> {
+  const fold = page.locator("aside.inspector details.inspector-fold").filter({
+    has: page.locator("summary", { hasText: name }),
+  });
+  if ((await fold.getAttribute("open")) === null) await fold.locator("summary").click();
+  await expect(fold).toHaveAttribute("open", "");
+}

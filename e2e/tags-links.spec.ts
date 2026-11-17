@@ -1,15 +1,20 @@
 import { test, expect } from "@playwright/test";
-import { freshBoard, selectKanbanCard } from "./helpers";
+import { freshBoard, selectKanbanCard, openFold } from "./helpers";
 
 test("a tag and a safe external link survive a reload", async ({ page }) => {
   await freshBoard(page, "tags-links");
   const cardId = await selectKanbanCard(page);
 
+  // Tags and Name and link are folded rows (ADR-236): open them to edit.
+  await openFold(page, "Tags");
+  await openFold(page, "Name and link");
   const tags = page.locator(".tags-panel");
   await tags.locator(".tag-add input").fill("Priority");
   await tags.locator(".tag-add button").click();
   await expect(tags.locator(".tag-assign .tag-chip")).toHaveText("Priority");
   await tags.locator(".tag-assign input[type=checkbox]").first().check();
+  // The folded row says what it holds without opening it.
+  await expect(page.locator(".tags-fold .inspector-fold-value")).toHaveText("Priority");
 
   const link = page.locator(".link-panel");
   await link.locator('input[type="url"]').fill("https://example.com");
@@ -28,6 +33,7 @@ test("an internal link points to another object", async ({ page }) => {
   await freshBoard(page, "internal-link");
   const cardId = await selectKanbanCard(page);
 
+  await openFold(page, "Name and link");
   const link = page.locator(".link-panel");
   await expect(link.locator("select option")).not.toHaveCount(0);
   await link.locator("select").selectOption({ index: 1 });

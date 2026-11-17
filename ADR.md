@@ -9556,3 +9556,33 @@ something selected, it is about that thing only. Replacing the room is no longer
 click away from the counts. Browser tests that used the room counts as a probe of the
 document read the document instead (`objectCount` in `e2e/helpers.ts`), because the
 counts are now on screen only when nothing is selected.
+
+## ADR-237: Selection actions are one row of icons (supersedes the row layout of ADR-233)
+
+**Context.** ADR-233 (sketch D3) laid out the selection actions in three parts:
+- the icon row;
+- «Изменить текст» and «Соединить» as words;
+- «Порядок и закрепление» as its own captioned group.
+
+That takes 141 px. Sketch D4, accepted for the properties panel on the same day,
+draws one row and asks that a selected section's panel fit one 900 px screen without
+scrolling (ADR-236). With the three parts it was 161 px too tall.
+
+**Decision.**
+- The panel shows one row of icon buttons:
+  - `copy`, `link`, `cut`, `duplicate`;
+  - a separator;
+  - one grouping slot, `group-make`, or `group-break` when the selection is a group;
+  - `layer-up` and the lock;
+  - then `trash` and «⋯» on the right.
+- «⋯ Ещё действия» holds the rest:
+  - «Изменить текст» and «Соединить», with their reasons when off;
+  - «На передний план», «Назад» and «На задний план»;
+  - «Сдвинуть →», «Инфо» and «Снять выделение».
+- Every command keeps its label as the icon's name and tooltip (ADR-231). The
+  commands are unchanged (ADR-093). ADR-233's other decisions (kanban state as a group,
+  axis rows without outlines) stand.
+
+**Consequences.** The panel gains about 100 px. Editing text and connecting take two
+clicks from the panel; double-click on the object and the connector tool still do it in
+one.

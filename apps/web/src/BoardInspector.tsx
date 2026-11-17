@@ -9,6 +9,8 @@ import { currentRoom } from "./identity";
 import { CardFilterPanel } from "./CardFilterPanel";
 import { Button, IconButton, Input } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
+import { InspectorFold } from "./InspectorFold";
+import { objectText } from "./vote/voteLabels";
 import { useI18n } from "./i18n";
 import {
   CardFieldsPanel,
@@ -114,14 +116,28 @@ function InspectorBody(props: BoardInspectorProps) {
       ? { id: selectedWidget.id, state: kanbanStates[selectedWidget.id]! }
       : null;
   const subject = selectedIds.length === 0 ? "room" : kanban ? "kanban" : "selection";
+  // The header names the subject: its kind, then its own name (ADR-236, sketch D4).
   const kicker =
-    subject === "room" ? t("inspector.kindRoom") : subject === "kanban" ? typeName("kanban") : null;
+    subject === "room"
+      ? t("inspector.kindRoom")
+      : selectedWidget
+        ? section?.layout?.kind === "table"
+          ? t("inspector.kindTable", { kind: typeName("frame") })
+          : typeName(selectedWidget.type)
+        : null;
   const heading =
     subject === "room"
       ? board.title || t("board.untitled")
-      : subject === "kanban"
-        ? selectedWidget?.title || typeName("kanban")
+      : selectedWidget
+        ? subjectName(selectedWidget) || typeName(selectedWidget.type)
         : t("inspector.selection", { count: selectedIds.length });
+  // One help per panel, about the subject it shows.
+  const helpTopic = section ? "section.table" : card ? "cards.fields" : "room.panel";
+  const tagNames = (selectedWidget?.tagIds ?? [])
+    .map((id) => (board.tags.get(id) as { name?: string } | undefined)?.name)
+    .filter(Boolean)
+    .join(", ");
+  const nameValue = selectedWidget?.name || (selectedWidget?.link ? t("inspector.hasLink") : t("inspector.none"));
 
   return (
         <aside className="inspector" aria-label={t("inspector.overview")}>
@@ -130,7 +146,7 @@ function InspectorBody(props: BoardInspectorProps) {
               {kicker && <span className="inspector-kicker">{kicker}</span>}
               <h2 className="inspector-title">{heading}</h2>
             </div>
-            <HelpLink topicId="room.panel" label={t("inspector.help")} className="help-link icon-link" />
+            <HelpLink topicId={helpTopic} label={t("inspector.help")} className="help-link icon-link" />
             <IconButton icon="close" size="compact" label={t("inspector.hide")} onClick={toggleInspector} />
           </div>
 
@@ -200,25 +216,28 @@ function InspectorBody(props: BoardInspectorProps) {
                   disabled={writeBlocked}
                 />
               )}
+              {/* Rare groups fold to one row each (ADR-236). */}
               {selectedWidget && (
-                <ObjectNameField board={board} widget={selectedWidget} disabled={writeBlocked} />
+                <InspectorFold label={t("inspector.nameAndLink")} value={nameValue} className="name-link-fold">
+                  <ObjectNameField board={board} widget={selectedWidget} disabled={writeBlocked} />
+                  <ObjectLinkPanel
+                    board={board}
+                    widget={selectedWidget}
+                    widgets={widgets}
+                    disabled={writeBlocked}
+                    onOpenObject={onOpenObject}
+                  />
+                </InspectorFold>
               )}
-              {selectedWidget && (
-                <ObjectLinkPanel
+              <InspectorFold label={t("tags.title")} value={tagNames || t("inspector.none")} className="tags-fold">
+                <TagsPanel
                   board={board}
-                  widget={selectedWidget}
                   widgets={widgets}
+                  selectedIds={selectedIds}
+                  setSelectedIds={setSelectedIds}
                   disabled={writeBlocked}
-                  onOpenObject={onOpenObject}
                 />
-              )}
-              <TagsPanel
-                board={board}
-                widgets={widgets}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-                disabled={writeBlocked}
-              />
+              </InspectorFold>
             </>
           )}
 
@@ -319,4 +338,10 @@ function KanbanStatePanel({
       <p className="muted">{t("inspector.wipHint")}</p>
     </div>
   );
+}
+
+/** What a person calls an object: its name, else its title or text, as voting rows do. */
+function subjectName(widget: Widget): string {
+  const line = (widget.name || objectText(widget)).split("\n")[0]!.trim();
+  return line.length > 48 ? `${line.slice(0, 47)}…` : line;
 }

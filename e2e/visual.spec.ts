@@ -701,6 +701,10 @@ test("the section panel shows the table and its axes", async ({ page }) => {
   await expect(layoutDialog).toBeVisible();
   await layoutDialog.getByRole("button", { name: "Apply", exact: true }).click();
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
+  // A selected section fits one screen at 900 px, without scrolling (ADR-236, sketch D4).
+  const inspectorBox = page.locator("aside.inspector");
+  const overflow = await inspectorBox.evaluate((el) => el.scrollHeight - el.clientHeight);
+  expect(overflow, "the section panel needs no scrolling").toBeLessThanOrEqual(0);
   await page.getByRole("button", { name: "Columns: Column 1" }).click();
   await expect(panel.getByLabel("Axis name")).toHaveValue("Column 1");
   // An empty header size is Auto, named by the field itself rather than a bare unit.

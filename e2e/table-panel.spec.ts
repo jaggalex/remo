@@ -8,6 +8,7 @@ import {
   seedNote,
   seedObject,
   startPresentation,
+  openFold,
 } from "./helpers";
 
 interface ProbeWidget {
@@ -890,7 +891,7 @@ test("cancelling the layout dialog leaves the section free", async ({ page }) =>
 
 test("borders and padding are edited in the table appearance group", async ({ page }) => {
   const { frameId, panel } = await openTable(page, "table-borders");
-  await panel.getByRole("button", { name: "Table appearance", exact: true }).click();
+  await openFold(page, "Table appearance");
   await panel.getByRole("button", { name: /Borders/, exact: false }).click();
   await panel.getByRole("radio", { name: "2 px", exact: true }).click();
   await expect
@@ -914,7 +915,7 @@ test("header text size, weight, italic, colour and alignment are table-level", a
   page,
 }) => {
   const { frameId, panel } = await openTable(page, "table-header-text");
-  await panel.getByRole("button", { name: "Table appearance", exact: true }).click();
+  await openFold(page, "Table appearance");
   const group = panel.locator(".section-header-text");
   const size = group.getByRole("spinbutton", { name: "Size", exact: true });
   await size.fill("20");
@@ -1036,7 +1037,7 @@ test("a locked table disables the title and the view badge", async ({ page }) =>
   await page.getByRole("button", { name: "Rename section" }).dblclick();
   await expect(page.locator(".section-title-input")).toHaveCount(0);
   // Read-only is a value, not a disabled form (ADR-219).
-  await expect(panel.locator(".section-readonly")).toContainText("Header height: Auto");
+  await expect(panel.locator(".table-header-group .section-readonly")).toContainText("Header height: Auto");
   await expect(panel.getByRole("spinbutton", { name: "Header height" })).toHaveCount(0);
 });
 

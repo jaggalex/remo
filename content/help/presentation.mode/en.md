@@ -13,7 +13,7 @@ Show the room one slide at a time. You can use a frame or another object as a sl
 
 1. Click the ▶ icon (Start presentation) in the header. Result: a panel with the slides and an object list.
 2. Add an object with **Add** or **Add selection**, and find it by name, title or text. Reorder slides with the arrows; **Add all frames** adds the remaining frames. A slide label comes from the object name, then its title or text; a short id sits beside it to tell same-named objects apart.
-3. Name objects in advance in the inspector: select an object and fill in **Name**. The name is not painted on the canvas, does not have to be unique, and the ID beside it is read-only.
+3. Name objects in advance on the **Properties** panel: select an object, open **Name and link** and fill in **Name**. The name is not painted on the canvas and does not have to be unique.
 4. Click **Start presentation** in the panel. Result: the first slide appears with a counter.
 5. Move with **‹** and **›** or the **PageDown** and **PageUp** keys: the arrow keys pan the canvas, not the slides.
 6. Participants see "{name} is showing the room" and click **Watch**; they join the current slide.

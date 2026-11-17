@@ -19,8 +19,6 @@ export const ruSection = {
   "section.layout.apply": "Применить",
   "section.view.free": "Свободно",
   "section.view.table": "Таблица",
-  "section.view.hint": "Только для этого раздела.",
-  "section.badge.table": "Таблица",
   "section.axes": "Оси",
   "section.axes.addColumn": "Колонка",
   "section.axes.addRow": "Строка",

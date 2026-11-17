@@ -1,37 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import type { BoardDocument } from "@remo/doc";
 import type { Widget } from "@remo/model";
-import { Button, IconButton, Menu, Tooltip, type IconName, type MenuItem } from "@remo/ui";
+import { IconButton, Menu, Tooltip, type IconName, type MenuItem } from "@remo/ui";
 import { commandById, type CommandContext } from "./commands";
 import { isEditable } from "./BoardCanvas";
 import { useI18n, type TranslationKey } from "./i18n";
 import { useMenuFocus } from "./useMenuFocus";
 
-/** The clipboard and grouping row: a command id and its icon, in reading order. */
+/** The clipboard part of the row: a command id and its icon, in reading order. */
 const CLIPBOARD: ReadonlyArray<readonly [string, IconName]> = [
   ["copy", "copy"],
   ["copyLink", "link"],
   ["cut", "cut"],
   ["duplicate", "duplicate"],
 ];
-const GROUPING: ReadonlyArray<readonly [string, IconName]> = [
-  ["group", "group-make"],
-  ["ungroup", "group-break"],
-];
-const LAYERS: ReadonlyArray<readonly [string, IconName]> = [
-  ["front", "layer-top"],
-  ["forward", "layer-up"],
-  ["backward", "layer-down"],
-  ["back", "layer-bottom"],
-];
+/** Layer commands that live in «⋯»; "forward" keeps its slot in the row. */
+const MORE_LAYERS = ["front", "backward", "back"] as const;
 
 /**
- * Selection actions in the room overview, one frame per level (ADR-233, sketch D3).
+ * Selection actions: one row of icons without outlines (ADR-237, sketch D4).
  *
- * Icons without outlines in groups: clipboard · grouping · delete, then the actions whose
- * meaning no icon carries as words, the rare ones behind «⋯», and order and lock as their
- * own captioned group. Every button runs a command App already owns (ADR-093); this file
- * only arranges them.
+ * Clipboard · one grouping slot · bring forward and lock · delete and «⋯». Everything
+ * else, including the actions no icon names well, is in «⋯». Every button runs a command
+ * App already owns (ADR-093); this file only arranges them.
  */
 export function SelectionActions({
   commandContext,
@@ -90,8 +81,35 @@ export function SelectionActions({
     );
   };
 
-  const info = commandById("info");
+  const run = (id: string) => {
+    const command = commandById(id);
+    return command
+      ? {
+          label: t(command.label(commandContext) as TranslationKey),
+          disabled: !command.enabled(commandContext),
+          onSelect: () => command.run(commandContext),
+        }
+      : null;
+  };
+  const editable =
+    selectedIds.length === 1 && widgets.some((w) => w.id === selectedIds[0] && isEditable(w));
+  const info = run("info");
   const more: MenuItem[] = [
+    {
+      label: t("inspector.editText"),
+      hint: t("inspector.editTextTitle"),
+      disabled: !editable,
+      onSelect: () => setEditingId(selectedIds[0] ?? null),
+    },
+    {
+      label: t("inspector.connect"),
+      hint: canJoinSelection ? t("inspector.connectTitle") : t("inspector.connectHint"),
+      disabled: !canJoinSelection,
+      onSelect: connectSelection,
+    },
+    { separator: true },
+    ...MORE_LAYERS.map(run).filter((item): item is NonNullable<typeof item> => item !== null),
+    { separator: true },
     {
       label: t("inspector.nudge"),
       onSelect: () => {
@@ -101,19 +119,12 @@ export function SelectionActions({
         setWidgetPositions(board, positions);
       },
     },
-    ...(info
-      ? [
-          {
-            label: t(info.label(commandContext) as TranslationKey),
-            hint: t("inspector.infoTitle"),
-            icon: "info" as const,
-            disabled: !info.enabled(commandContext),
-            onSelect: () => info.run(commandContext),
-          },
-        ]
-      : []),
+    ...(info ? [{ ...info, hint: t("inspector.infoTitle"), icon: "info" as const }] : []),
     { label: t("inspector.clear"), onSelect: () => setSelectedIds([]) },
   ];
+  const ungroup = commandById("ungroup");
+  const grouping: readonly [string, IconName] =
+    ungroup?.enabled(commandContext) ? ["ungroup", "group-break"] : ["group", "group-make"];
   const lock = commandById("lock");
 
   return (
@@ -121,28 +132,10 @@ export function SelectionActions({
       <div className="selection-row" role="group" aria-label={t("inspector.actions")}>
         {CLIPBOARD.map((entry) => commandButton(entry))}
         <span className="selection-sep" aria-hidden="true" />
-        {GROUPING.map((entry) => commandButton(entry))}
+        {commandButton(grouping)}
+        {commandButton(["forward", "layer-up"])}
+        {lock && commandButton([lock.id, selectionLocked ? "lock" : "unlock"], { selected: selectionLocked })}
         <span className="selection-push">{commandButton(["delete", "trash"])}</span>
-      </div>
-      <div className="selection-row">
-        <Button
-          variant="ghost"
-          size="compact"
-          disabled={selectedIds.length !== 1 || !widgets.some((w) => w.id === selectedIds[0] && isEditable(w))}
-          onClick={() => setEditingId(selectedIds[0] ?? null)}
-          title={t("inspector.editTextTitle")}
-        >
-          {t("inspector.editText")}
-        </Button>
-        <Button
-          variant="ghost"
-          size="compact"
-          disabled={!canJoinSelection}
-          onClick={connectSelection}
-          title={canJoinSelection ? t("inspector.connectTitle") : t("inspector.connectHint")}
-        >
-          {t("inspector.connect")}
-        </Button>
         <span
           className="selection-more"
           onKeyDown={(event) => {
@@ -184,17 +177,6 @@ export function SelectionActions({
             />
           )}
         </span>
-      </div>
-      <div className="selection-group">
-        <h3>{t("inspector.layer")}</h3>
-        <div className="selection-row" role="group" aria-label={t("inspector.layer")}>
-          {LAYERS.map((entry) => commandButton(entry))}
-          {lock && (
-            <span className="selection-push">
-              {commandButton([lock.id, selectionLocked ? "lock" : "unlock"], { selected: selectionLocked })}
-            </span>
-          )}
-        </div>
       </div>
     </div>
   );

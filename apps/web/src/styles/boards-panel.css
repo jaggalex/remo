@@ -92,10 +92,13 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+/* One kind of group heading in the panel (DS-TYPE-03, ADR-236): the caption overline. */
 .card-fields-head {
   font: var(--type-caption);
   font-weight: 600;
-  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 /* One under the other (E-16): side by side in a 230 px panel, each native date field was

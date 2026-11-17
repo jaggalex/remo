@@ -10,7 +10,7 @@ The **Properties** panel on the right describes one subject: whatever is selecte
 | A kanban | the selection actions and **Kanban state**: columns, swimlanes and WIP limits |
 | A section, a card or another object | the selection actions and that object's fields |
 
-Selection actions are icons with tooltips; the rare ones are under **⋯ More actions**.
+Selection actions are icons with tooltips; the rare ones are under **⋯ More actions**. Rare groups fold to a row with their value and a chevron: **Name and link**, **Tags**. The object ID is in **⋯ → Info**.
 
 ## Check
 

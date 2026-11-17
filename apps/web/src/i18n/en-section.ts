@@ -19,8 +19,6 @@ export const enSection = {
   "section.layout.apply": "Apply",
   "section.view.free": "Free",
   "section.view.table": "Table",
-  "section.view.hint": "For this section only.",
-  "section.badge.table": "Table",
   "section.axes": "Axes",
   "section.axes.addColumn": "Column",
   "section.axes.addRow": "Row",

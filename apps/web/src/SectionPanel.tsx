@@ -21,7 +21,7 @@ import {
   type TableLayout,
   type Widget,
 } from "@remo/model";
-import { Button, Checkbox, ConfirmDialog, Icon, Segmented, Textarea } from "@remo/ui";
+import { Button, Checkbox, ConfirmDialog, Segmented, Textarea } from "@remo/ui";
 import { AxisSizeButton } from "./AxisSizeControl";
 import { TableAppearanceControls } from "./TableAppearanceControls";
 import { TableHeaderSize } from "./TableHeaderSize";
@@ -29,9 +29,9 @@ import { setSectionView } from "./sectionView";
 import { duplicateAxisNear } from "./tableActions";
 import { openSectionLayout } from "./sectionLayoutStore";
 import { AxisDeleteDialog } from "./AxisDeleteDialog";
-import { HelpLink } from "./help/HelpLink";
 import { colorName } from "./object-panel/colorWindowData";
 import { ColorGridSection } from "./object-panel/ColorWindow";
+import { InspectorFold } from "./InspectorFold";
 import { useI18n } from "./i18n";
 import { setTableAxisSelection, useTableAxisSelection } from "./tableSelection";
 import { useTableCellSelection } from "./tableCellSelection";
@@ -194,7 +194,6 @@ export function SectionPanel({
   const selectAxis = (id: string | null) => {
     setTableAxisSelection(id ? { frameId: frame.id, axisId: id } : null);
   };
-  const [lookOpen, setLookOpen] = useState(false);
   const [fillOpen, setFillOpen] = useState<FillTarget | null>(null);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{
@@ -208,7 +207,6 @@ export function SectionPanel({
   const selectedKind: AxisKind | null = column ? "column" : row ? "row" : null;
 
   useEffect(() => {
-    setLookOpen(false);
     setFillOpen(null);
     setPendingDelete(null);
   }, [frame.id]);
@@ -341,13 +339,7 @@ export function SectionPanel({
 
   return (
     <section className="section-panel" aria-label={t("section.title")}>
-      <div className="section-panel-head">
-        <h2>
-          {t("section.title")} <HelpLink topicId="section.table" />
-        </h2>
-        {active && <span className="section-badge">{t("section.badge.table")}</span>}
-      </div>
-      <p className="section-panel-title">{frame.title || t("section.axis.untitled")}</p>
+      {/* The panel header names the section and its view (ADR-236). */}
       {frame.locked && <p className="muted">{t("section.locked")}</p>}
 
       <div className="section-group">
@@ -361,7 +353,6 @@ export function SectionPanel({
             { value: "table", label: t("section.view.table"), disabled: readOnly },
           ]}
         />
-        <p className="muted">{t("section.view.hint")}</p>
       </div>
 
       {blockSpan && (
@@ -585,17 +576,8 @@ export function SectionPanel({
 
       {/* Fills belong to the table; a free section has no cells to colour. */}
       {active && (
-      <div className="section-group">
-        <button
-          type="button"
-          className="section-look-toggle"
-          aria-expanded={lookOpen}
-          onClick={() => setLookOpen((open) => !open)}
-        >
-          <span>{t("section.look")}</span>
-          <Icon name={lookOpen ? "minus" : "plus"} size={14} />
-        </button>
-        {lookOpen && (
+      // The panel's one disclosure (ADR-236): keyed by section, so another section opens folded.
+      <InspectorFold key={frame.id} label={t("section.look")} value="" className="section-look-fold">
           <div className="section-look">
             <p className="muted">{t("section.look.hint")}</p>
             {fillRows.map((entry) => {
@@ -646,8 +628,7 @@ export function SectionPanel({
               disabled={readOnly}
             />
           </div>
-        )}
-      </div>
+      </InspectorFold>
       )}
 
       <div className="section-group section-remove">
@@ -662,8 +643,9 @@ export function SectionPanel({
         <p className="muted section-caption">
           {active ? t("section.table.removeHint") : t("section.table.removeNone")}
         </p>
+        {/* Quiet (ADR-236): the objects stay on the canvas and undo brings the section back. */}
         <Button
-          variant="danger"
+          variant="ghost-danger"
           size="compact"
           disabled={readOnly}
           onClick={() => {

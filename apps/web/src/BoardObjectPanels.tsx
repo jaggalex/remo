@@ -24,9 +24,7 @@ import {
 } from "@remo/doc";
 import { currentRoom } from "./identity";
 import { Button, Checkbox, ConfirmDialog as UiConfirmDialog, Input, Select } from "@remo/ui";
-import { writeClipboard } from "./clipboard";
 import { useI18n, type TranslationKey } from "./i18n";
-import { HelpLink } from "./help/HelpLink";
 
 const TAG_COLOR_KEY: Record<TagColor, TranslationKey> = {
   blue: "tag.color.blue",
@@ -37,11 +35,11 @@ const TAG_COLOR_KEY: Record<TagColor, TranslationKey> = {
 };
 
 /**
- * The interface name of one object, plus its stable id (ADR-165).
+ * The interface name of one object (ADR-165).
  *
- * The name is committed on blur or Enter, so typing is one undo step. The id is shown
- * read-only because it is what a link, a command or a bug report needs; renaming it is
- * not a product operation.
+ * The name is committed on blur or Enter, so typing is one undo step. The stable id is in
+ * «⋯ → Инфо» with its copy button (ADR-236): a link, a command or a bug report needs it,
+ * but it is not something a person edits.
  */
 export function ObjectNameField({
   board,
@@ -54,11 +52,9 @@ export function ObjectNameField({
 }) {
   const { t } = useI18n();
   const [value, setValue] = useState(widget.name ?? "");
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setValue(widget.name ?? "");
-    setCopied(false);
   }, [widget.id, widget.name]);
 
   const commit = () => {
@@ -86,19 +82,6 @@ export function ObjectNameField({
           }
         }}
       />
-      <div className="object-id-row">
-        <span className="muted">{t("inspector.objectId")}</span>
-        <code className="object-id">{widget.id}</code>
-        <Button
-          size="compact"
-          variant="secondary"
-          onClick={() => {
-            void writeClipboard(widget.id).then((ok) => setCopied(ok));
-          }}
-        >
-          {copied ? t("inspector.idCopied") : t("inspector.copyId")}
-        </Button>
-      </div>
     </div>
   );
 }
@@ -179,7 +162,7 @@ export function CardFieldsPanel({
   return (
     <div className="card-fields">
       <div className="card-fields-head">
-        {t("inspector.card")} <HelpLink topicId="cards.fields" />
+        {t("inspector.card")}
       </div>
       <Select
         label={t("card.status")}
@@ -280,9 +263,6 @@ export function ObjectLinkPanel({
 
   return (
     <div className="link-panel">
-      <div className="card-fields-head">
-        {t("link.title")} <HelpLink topicId="tags.links" />
-      </div>
       <div className="link-row">
         <Input
           type="url"
@@ -381,9 +361,6 @@ export function TagsPanel({
 
   return (
     <div className="tags-panel">
-      <div className="card-fields-head">
-        {t("tags.title")} <HelpLink topicId="tags.links" />
-      </div>
       <div className="tag-add">
         <Input
           size="compact"

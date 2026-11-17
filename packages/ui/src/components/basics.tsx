@@ -38,7 +38,8 @@ export function Separator({ vertical }: { vertical?: boolean }) {
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  /** `ghost-danger`: a quiet destructive action whose fill belongs to its confirmation, or that undo reverses (ADR-236). */
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "ghost-danger";
   size?: "compact" | "default";
   icon?: IconName;
   iconEnd?: IconName;

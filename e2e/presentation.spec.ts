@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { addSticky, PASSWORD, freshBoard, startPresentation } from "./helpers";
+import {
+  addSticky,
+  PASSWORD,
+  freshBoard,
+  startPresentation,
+  openFold,
+} from "./helpers";
 
 test("starts, advances and stops a presentation, restoring the camera", async ({ page }) => {
   await freshBoard(page, "presentation");
@@ -35,10 +41,16 @@ test("names any object and puts it into the presentation", async ({ page }) => {
   await page.getByRole("button", { name: "Properties", exact: true }).click();
 
   const inspector = page.locator(".inspector");
+  await openFold(page, "Name and link");
   await inspector.getByLabel("Name").fill("Intro note");
   await page.keyboard.press("Enter");
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
-  await expect(inspector.locator(".object-id")).toHaveText(id);
+  // The panel names the object by its name now, and its ID is in ⋯ → Info (ADR-236).
+  await expect(inspector.locator(".inspector-title")).toHaveText("Intro note");
+  await inspector.getByRole("button", { name: "More actions", exact: true }).click();
+  await page.getByRole("menuitem", { name: /^Info/ }).click();
+  await expect(page.locator(".info-card .object-id")).toHaveText(id);
+  await page.keyboard.press("Escape");
 
   // The projection catches up shortly after the write; search reads props.name.
   await page.waitForTimeout(2_500);
