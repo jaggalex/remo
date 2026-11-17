@@ -227,10 +227,14 @@ test("requirements and MVP drafts use their own layouts", async ({ page }) => {
     ["user-flow-design", "Собери user flow"],
     ["architecture-mapping", "Опиши архитектуру"],
   ] as const) {
+    const before = (await frames(page)).length;
     const created = await page.request.post(`/api/boards/${boardId}/agent-threads`, {
       data: { intent, kind, sourceIds: [] },
     });
     expect(created.ok(), await created.text()).toBeTruthy();
+    // The room has a queued-task limit. Waiting for each skill's frame keeps the next
+    // request below it, instead of racing the fake agent worker on a slow CI machine.
+    await expect.poll(async () => (await frames(page)).length).toBeGreaterThan(before);
   }
   await expect.poll(() => frames(page)).toHaveLength(12);
   const texts = await page.evaluate(() =>
