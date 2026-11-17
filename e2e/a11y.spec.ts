@@ -12,6 +12,7 @@ import {
   register,
   seedNote,
   seedObject,
+  selectKanbanCard,
 } from "./helpers";
 
 /**
@@ -309,4 +310,30 @@ test("header and zoom icons are named in their tooltips (ADR-232)", async ({ pag
   const word = page.locator(".save-state .rm-sync > span");
   await expect(word).toHaveText(/saved/i);
   expect(await word.evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+});
+
+test("selection actions are named icons, and the rare ones sit behind More actions (ADR-233)", async ({ page }) => {
+  await freshBoard(page, "a11y-selection-actions");
+  await selectKanbanCard(page);
+  const inspector = page.locator("aside.inspector");
+  const actions = inspector.getByRole("group", { name: "Selection actions" });
+  for (const name of ["Copy", "Copy link", "Cut", "Duplicate", "Delete"]) {
+    await expect(actions.getByRole("button", { name, exact: true })).toBeVisible();
+  }
+  await expect(inspector.getByRole("button", { name: "Edit text", exact: true })).toBeVisible();
+
+  const more = inspector.getByRole("button", { name: "More actions", exact: true });
+  await more.click();
+  const menu = page.getByRole("menu", { name: "More actions" });
+  await expect(menu.getByRole("menuitem", { name: /^Nudge/ })).toBeFocused();
+  await expect(menu.getByRole("menuitem", { name: /^Info/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(more).toBeFocused();
+
+  await more.click();
+  await menu.getByRole("menuitem", { name: "Clear selection" }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds.length))
+    .toBe(0);
 });

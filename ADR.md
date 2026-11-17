@@ -9395,3 +9395,39 @@ panel was also a second mechanism: `@remo/ui` already has `ZoomControls`, and
 «Фасилитация» until its icon arrives. A name is visible only on hover or focus, which is
 why ADR-231 came first. The help topic `sync.status` and the guide describe the icon
 instead of the word. Header and canvas baselines are regenerated.
+
+## ADR-233: One frame per level in the panels: selection actions are grouped icons (DS-CHROME-06)
+
+**Context.** The «Обзор комнаты» panel is a framed surface, and inside it every selection
+action was an outlined chip. There were 21 chips, plus round layer buttons and an
+outlined «Состояние канбана» box with outlined buttons inside it: 26 frames inside one
+frame (audit E-15, `borders.probe.ts`). Frames nested this way make every control look
+equally important and the panel read as a form. In the section panel, every axis row was
+also outlined, with the selected row outlined in ink. The owner accepted the grouping in
+sketch D3 on 16.11 (decision R11).
+
+**Decision.**
+- **Selection actions** (`SelectionActions.tsx`), in three groups separated by one
+  hairline:
+  - **Clipboard, grouping and delete:** one row of borderless icon buttons:
+    - `copy`, `link`, `cut`, `duplicate`;
+    - a separator, then `group-make` and `group-break`;
+    - `trash` on the right.
+  - Actions without an unambiguous icon keep their word as ghost buttons: «Изменить
+    текст», «Соединить».
+  - The rarely used actions go behind «⋯» («Ещё действия»): «Сдвинуть →», «Инфо»,
+    «Снять выделение».
+  - **Order and lock** is a captioned group: four layer icons, with the lock on the right.
+- Every icon is named in its `aria-label` and tooltip (ADR-231), with the command's own
+  label. The commands themselves are unchanged (ADR-093): this changes their buttons,
+  not their behaviour.
+- **Kanban state** is a group, not a box: no outline or fill. «+ колонка» and «+ дорожка»
+  are ghost buttons. The column chips are fills, which are not frames.
+- **Axis rows** in the section panel have no outline. The selected row is the `bg-active`
+  fill, alongside `aria-pressed`; hover is `bg-hover`.
+- Fields keep their outline: an input needs it to be recognised (≥ 3:1). This is the
+  only exception to DS-CHROME-06.
+
+**Consequences.** The panel has one frame, its own, and separates by space, fill and one
+hairline. «Сдвинуть», «Инфо» and «Снять выделение» take two clicks instead of one. The
+same commands are still reachable from the context menu and their keys.

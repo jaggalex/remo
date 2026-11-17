@@ -3,13 +3,12 @@ import type { BoardDocument } from "@remo/doc";
 import type { ConnectionStatus, Presence } from "@remo/doc";
 import { soleSelectedGroup, type KanbanState, type Widget } from "@remo/model";
 import { api } from "./api";
-import { commandById, type CommandContext } from "./commands";
-import { isEditable } from "./BoardCanvas";
+import type { CommandContext } from "./commands";
 import { addColumn, addSwimlane, groupNameOf, setColumnWip } from "@remo/doc";
 import { currentRoom } from "./identity";
 import { CardFilterPanel } from "./CardFilterPanel";
 import { Button, ConfirmDialog as UiConfirmDialog, IconButton, Input } from "@remo/ui";
-import { useI18n, type TranslationKey } from "./i18n";
+import { useI18n } from "./i18n";
 import {
   CardFieldsPanel,
   GroupNameField,
@@ -19,6 +18,7 @@ import {
 } from "./BoardObjectPanels";
 import { Contained } from "./ErrorBoundary";
 import { SectionPanel } from "./SectionPanel";
+import { SelectionActions } from "./SelectionActions";
 import { TableCellPanel } from "./TableCellPanel";
 
 /**
@@ -112,99 +112,19 @@ function InspectorBody(props: BoardInspectorProps) {
           {selectedIds.length > 0 && (
             <>
               <h2>{t("inspector.selection", { count: selectedIds.length })}</h2>
-              <div className={`selection-actions${writeBlocked ? " readonly" : ""}`}>
-                {(["copy", "copyLink", "cut", "duplicate", "group", "ungroup", "delete"] as const).map((id) => {
-                  const command = commandById(id);
-                  if (!command) return null;
-                  return (
-                    <Button size="compact"
-                      key={id}
-                      disabled={!command.enabled(commandContext)}
-                      onClick={() => command.run(commandContext)}
-                    >
-                      {t(command.label(commandContext) as TranslationKey)}
-                    </Button>
-                  );
-                })}
-                <Button size="compact"
-                  onClick={() => {
-                    const positions = widgets
-                      .filter((w) => selectedIds.includes(w.id) && !w.parentId)
-                      .map((w) => ({ id: w.id, x: w.x + 40, y: w.y }));
-                    setWidgetPositions(board, positions);
-                  }}
-                >
-                  {t("inspector.nudge")}
-                </Button>
-                <Button size="compact"
-                  disabled={!canJoinSelection}
-                  onClick={connectSelection}
-                  title={
-                    canJoinSelection ? t("inspector.connectTitle") : t("inspector.connectHint")
-                  }
-                >
-                  {t("inspector.connect")}
-                </Button>
-                <Button size="compact"
-                  disabled={
-                    selectedIds.length !== 1 ||
-                    !widgets.some((w) => w.id === selectedIds[0] && isEditable(w))
-                  }
-                  onClick={() => setEditingId(selectedIds[0] ?? null)}
-                  title={t("inspector.editTextTitle")}
-                >
-                  {t("inspector.editText")}
-                </Button>
-                <div className="layer-row" role="group" aria-label={t("inspector.layer")}>
-                  {(
-                    [
-                      ["front", "layer-top"],
-                      ["forward", "layer-up"],
-                      ["backward", "layer-down"],
-                      ["back", "layer-bottom"],
-                    ] as const
-                  ).map(([id, icon]) => {
-                    const command = commandById(id);
-                    if (!command) return null;
-                    const label = t(command.label(commandContext) as TranslationKey);
-                    return (
-                      <IconButton key={id} icon={icon} size="compact" label={label} disabled={!command.enabled(commandContext)}
-                        onClick={() => command.run(commandContext)} />
-                    );
-                  })}
-                  {(() => {
-                    const command = commandById("lock");
-                    if (!command) return null;
-                    const label = t(command.label(commandContext) as TranslationKey);
-                    return (
-                      <IconButton
-                        icon={selectionLocked ? "lock" : "unlock"}
-                        size="compact"
-                        label={label}
-                        selected={selectionLocked}
-                        aria-pressed={selectionLocked}
-                        onClick={() => command.run(commandContext)}
-                      />
-                    );
-                  })()}
-                </div>
-                {(() => {
-                  const command = commandById("info");
-                  if (!command) return null;
-                  return (
-                    <Button size="compact"
-                      disabled={!command.enabled(commandContext)}
-                      onClick={() => command.run(commandContext)}
-                      title={t("inspector.infoTitle")}
-                    >
-                      {t(command.label(commandContext) as TranslationKey)}
-                    </Button>
-                  );
-                })()}
-                <Button size="compact" onClick={() => setSelectedIds([])}>
-                  {t("inspector.clear")}
-                </Button>
-              </div>
+              <SelectionActions
+                commandContext={commandContext}
+                widgets={widgets}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
+                board={board}
+                setWidgetPositions={setWidgetPositions}
+                canJoinSelection={canJoinSelection}
+                connectSelection={connectSelection}
+                setEditingId={setEditingId}
+                selectionLocked={selectionLocked}
+                writeBlocked={writeBlocked}
+              />
               {groupId && (
                 <GroupNameField
                   board={board}
@@ -347,10 +267,10 @@ function InspectorBody(props: BoardInspectorProps) {
                 ))}
               </div>
               <div className="kanban-actions">
-                <Button size="compact" disabled={writeBlocked} onClick={() => addColumn(board, id)}>
+                <Button variant="ghost" size="compact" disabled={writeBlocked} onClick={() => addColumn(board, id)}>
                   {t("inspector.addColumn")}
                 </Button>
-                <Button size="compact" disabled={writeBlocked} onClick={() => addSwimlane(board, id)}>
+                <Button variant="ghost" size="compact" disabled={writeBlocked} onClick={() => addSwimlane(board, id)}>
                   {t("inspector.addSwimlane")}
                 </Button>
               </div>

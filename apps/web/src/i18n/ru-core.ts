@@ -398,6 +398,8 @@ export const ruCore = {
   "inspector.editText": "Изменить текст",
   "inspector.editTextTitle": "Изменить текст (Enter)",
   "inspector.clear": "Снять выделение",
+  "inspector.actions": "Действия с выделением",
+  "inspector.moreActions": "Ещё действия",
   "inspector.layer": "Порядок и закрепление",
   "inspector.objectName": "Имя",
   "inspector.objectNameHint":

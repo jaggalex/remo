@@ -44,11 +44,6 @@
   color: var(--text-primary);
 }
 
-.layer-row {
-  display: flex;
-  gap: var(--space-1);
-  width: 100%;
-}
 
 .inspector-danger-note {
   margin: var(--space-4) 0 var(--space-1);
@@ -178,12 +173,9 @@
   color: var(--text-secondary);
 }
 
+/* A group, not a box inside the panel (ADR-233). */
 .kanban-state {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  margin-bottom: var(--space-2);
-  background: var(--bg-app);
+  margin-bottom: var(--space-4);
   font: var(--type-caption);
 }
 
@@ -212,10 +204,57 @@
   margin-top: var(--space-2);
 }
 
+/* Selection actions: icon groups separated by space and one hairline (ADR-233, D3). */
 .selection-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.selection-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.selection-sep {
+  width: 1px;
+  height: var(--space-5);
+  margin: 0 var(--space-1);
+  background: var(--border-subtle);
+}
+
+.selection-push {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.selection-more {
+  position: relative;
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.selection-more > .rm-menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: var(--z-popover);
+}
+
+.selection-group {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.selection-group h3 {
+  margin: 0 0 var(--space-2);
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .palette {

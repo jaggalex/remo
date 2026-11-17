@@ -398,7 +398,9 @@ export const enCore = {
   "inspector.connectHint": "Connectors join notes, text, shapes and stickers",
   "inspector.editText": "Edit text",
   "inspector.editTextTitle": "Edit text (Enter)",
-  "inspector.clear": "Clear",
+  "inspector.clear": "Clear selection",
+  "inspector.actions": "Selection actions",
+  "inspector.moreActions": "More actions",
   "inspector.layer": "Order and lock",
   "inspector.objectName": "Name",
   "inspector.objectNameHint":
