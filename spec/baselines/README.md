@@ -30,6 +30,7 @@ pnpm baselines
 | `vote-chips.png` | Two counters on a note and its neighbour: «0 +» and «1 · ваш − +» |
 | `vote-chips-dark.png` | The same counters in the dark theme: plate, my accent, the muted disabled «+» |
 | `vote-chips-overview.png` | The fitted room during a vote: each counter is only its number, and no object is covered (ADR-235) |
+| `card-fields-panel.png` | A card's fields in the panel: status, assignee, and Start and Due one under the other, each showing its whole date (E-16) |
 | `agent-plan.png` | The plan preview in the room (ADR-188): two dashed notes joined by a dashed line, and the task panel with counts and bounds |
 | `agent-plan-tidy.png` | The tidy preview in the room: five notes, their dashed ghosts in one column, the US block hull and the task panel |
 | `section-panel.png` | A section in table view with its panel: view, axes and the top of the Header group |

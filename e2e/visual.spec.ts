@@ -205,7 +205,37 @@ test("a card with fields is readable", async ({ page }) => {
   await fields.locator('input[type="date"]').nth(1).fill("2026-10-31");
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
+  // The date fields fit the panel and show their whole date (E-16): a field neither
+  // crosses the panel's content edge nor clips its own text under the calendar button.
+  const dates = await page.locator("aside.inspector").evaluate((panel) => {
+    const style = getComputedStyle(panel);
+    const box = panel.getBoundingClientRect();
+    const right = box.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
+    // A date input's text lives in its shadow parts, out of reach of scrollWidth: measure the
+    // date as the browser shows it, in the input's own font, plus the 16 px picker button.
+    const context = document.createElement("canvas").getContext("2d")!;
+    return [...panel.querySelectorAll<HTMLInputElement>(".card-dates input")].map((input) => {
+      context.font = getComputedStyle(input).font;
+      const shown = new Date(`${input.value}T00:00`).toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      });
+      return {
+        past: Math.round(input.closest(".rm-input")!.getBoundingClientRect().right - right),
+        clipped: Math.ceil(context.measureText(shown).width + 16 - input.clientWidth),
+      };
+    });
+  });
+  expect(dates.length).toBe(2);
+  for (const date of dates) {
+    expect(date.past, "a date field ends inside the panel").toBeLessThanOrEqual(0);
+    expect(date.clipped, "a date field shows its whole date").toBeLessThanOrEqual(0);
+  }
+
   await capture(page, page.locator(".layer.board"), "card-fields");
+  await fields.locator('input[type="date"]').nth(1).blur();
+  await capture(page, fields, "card-fields-panel");
 });
 
 /**
@@ -365,11 +395,13 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
 
   // Fitted, a note is smaller on screen than the full counter: the number and one "+" at
   // the 24 px minimum target, without the words, so nothing covers the object (ADR-235).
+  // The session clock counts down while the run goes: masked, or a slow run fails on 09:58.
+  const voteClock = page.locator(".vote-board-clock");
   const chips = page.locator(".vote-chip");
   await expect(chips.first()).toHaveClass(/compact/);
   await expect(chips.first().getByRole("button")).toHaveCount(1);
   await expect(chips.first().getByRole("button", { name: /Vote for/ })).toBeVisible();
-  await capture(page, page.locator(".canvas-wrap"), "vote-chips-overview");
+  await capture(page, page.locator(".canvas-wrap"), "vote-chips-overview", [voteClock]);
 
   // The counter on the object (§10.3): the same corner on every object, and two of the
   // shapes a running session shows — «0 +» on a neighbour and my own vote in words.
@@ -379,7 +411,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
   }
   await page.locator(".vote-chip").first().getByRole("button", { name: /Vote for/ }).click();
   await expect(page.locator(".vote-chip").first()).toHaveClass(/mine/);
-  await capture(page, page.locator(".canvas-wrap"), "vote-chips");
+  await capture(page, page.locator(".canvas-wrap"), "vote-chips", [voteClock]);
 
   // Both themes: the rail is a panel, not a strip of icons on the canvas edge.
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -388,7 +420,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
   await page.keyboard.press("Escape");
   // The same counters in the dark theme: the plate, the accent of my vote and the
   // muted "+" must all be readable there too (§6, both themes).
-  await capture(page, page.locator(".canvas-wrap"), "vote-chips-dark");
+  await capture(page, page.locator(".canvas-wrap"), "vote-chips-dark", [voteClock]);
   await capture(page, page.locator(".tool-rail"), "rail-dark");
 });
 

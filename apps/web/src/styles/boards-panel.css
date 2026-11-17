@@ -98,9 +98,11 @@
   color: var(--text-primary);
 }
 
+/* One under the other (E-16): side by side in a 230 px panel, each native date field was
+   narrower than its own date and the year went under the calendar button. */
 .card-dates {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
