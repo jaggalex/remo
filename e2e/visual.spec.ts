@@ -133,8 +133,10 @@ test("a locked object carries the canvas lock badge", async ({ page }) => {
   await page.keyboard.press("Meta+Shift+l");
   await expect(page.locator(".badge-lock")).toHaveCount(1);
   // The selection badge is a DOM plate over the note's corner; clear it so the
-  // canvas mark, not the plate, is what the baseline records (ADR-193).
+  // canvas mark, not the plate, is what the baseline records (ADR-193). Wait for the
+  // plate to leave the DOM: a slow runner otherwise captured it mid-removal.
   await page.keyboard.press("Escape");
+  await expect(page.locator(".selection-badge")).toHaveCount(0);
   // A single note makes the camera fit it at >400 %; step back to a normal zoom so
   // the 16 px mark is read against the object, not against a magnified canvas.
   for (let step = 0; step < 8; step += 1) {
