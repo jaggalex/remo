@@ -15,8 +15,8 @@ function syncState(save: SaveState): SyncState {
 /**
  * Saving, and the help article about it (ADR-119, Ш4).
  *
- * The word carries the meaning — "Saved", "Offline · 3 changes", "Read only" — and the
- * "?" is an icon button, not a blue underlined link.
+ * Saved and saving are an icon with the word in the tooltip; offline and stopped input
+ * keep the word on screen (ADR-232). The "?" is an icon button, not a blue link.
  */
 export function SyncLine({
   saveState,
@@ -38,7 +38,13 @@ export function SyncLine({
         data-state={saveState.state}
         data-pending={saveState.pending}
       >
-        <SyncStatus state={syncState(saveState)} label={label} hint={title} />
+        <SyncStatus
+          state={syncState(saveState)}
+          label={label}
+          hint={title}
+          quiet
+          alert={saveState.blocked}
+        />
       </span>
       <HelpLink topicId="sync.status" label={t("help.sync")} className="help-link icon-link" />
     </div>

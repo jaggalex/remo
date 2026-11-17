@@ -17,11 +17,11 @@
     "capabilities/connectors",
     "start/first-scenario"
   ],
-  "updated": "2026-11-02",
+  "updated": "2026-11-16",
   "translations": {
     "en": {
-      "sourceHash": "sha256:79d22a4d882c5e60b087c3e0b7ef66a87d5f666fcbeef2f7c7a31b95c7819d69",
-      "targetHash": "sha256:101831f1c6c2eff582a226039e3025a37107680e40cff634f650a989f9953442"
+      "sourceHash": "sha256:71bb8118c45e9de1dbbc54c9d31abc8bbb85905eb56c27c355d3c9f76b8d65a6",
+      "targetHash": "sha256:f35bc0622a962e15227e58aafd6661879c6e8ccc49527935d73ae095e632c470"
     }
   }
 }

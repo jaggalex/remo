@@ -17,11 +17,11 @@
     "reference/api",
     "capabilities/events"
   ],
-  "updated": "2026-10-28",
+  "updated": "2026-11-16",
   "translations": {
     "en": {
-      "sourceHash": "sha256:5643f37342ef773d55c80d2e7f061139bb54551cea9b7db115c22b44e2aa005e",
-      "targetHash": "sha256:9faac8969edde4718dab91742aac4951eafd23ac20a646406c3ac88a9e944ca6"
+      "sourceHash": "sha256:73aa2dc75a21ab461ee7b17813a5b7f4cfe6afed97f7e94485c48cb73f921422",
+      "targetHash": "sha256:545804cb9cd4ab660ba159fec601b2b3e83da1f4dec0d04b7c00e0ace1481f9c"
     }
   }
 }

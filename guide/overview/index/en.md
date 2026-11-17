@@ -29,4 +29,4 @@ Your role in a room determines what you can do with its content. With the Viewer
 - **Run a meeting.** Start a shared timer, collect votes or present selected objects as slides. [Timer and voting](/guide/capabilities/facilitation)
 - **Discuss the work.** Leave a comment on an object or at a point on the canvas. [Comments](/guide/how-to/comment)
 
-**Saved** at the top of the room means the server has confirmed that it stored your changes. [What happens when you lose your connection](/guide/concepts/sync)
+The **Saved** icon (a cloud with a tick) at the top of the room means the server has confirmed that it stored your changes. [What happens when you lose your connection](/guide/concepts/sync)

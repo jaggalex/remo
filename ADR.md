@@ -9356,3 +9356,42 @@ as the pointer left the trigger for the tip itself (audit E-17). This fails WCAG
 tooltip after hovering have to wait for it, and tests that photograph a screen do not see
 stray tips from a pointer that happens to rest on a trigger, unless it rests there for
 500 ms.
+
+## ADR-232: Permanent header and zoom controls are icons, named in tooltips (amends ADR-119, DESIGN.md §2a, §3)
+
+**Context.** The room header labelled its controls with words: «Фасилитация ▾», «Ещё ▾»,
+«Сохранено», «Поделиться», and the zoom panel had «Вписать». The chrome was louder than
+the canvas, and the header's width depended on the language, since Russian is longer than
+English (audit E-14). The owner decided on 16.11 that these controls become icons. The zoom
+panel was also a second mechanism: `@remo/ui` already has `ZoomControls`, and
+`CanvasHud.tsx` drew its own (rule 1 of AGENTS.md).
+
+**Decision.**
+- **«Ещё»** becomes `IconButton` `more` and **«Поделиться»** becomes `IconButton` `share`,
+  variant `primary`. Share stays the one ink-filled control on the room screen (DESIGN.md
+  §2a). After a link is copied, Share shows `check` and is named «Скопировано» until it
+  resets.
+- **Names.** Each control's name is its `aria-label` and its tooltip (ADR-231). The names
+  stay as they were («Ещё», «Поделиться»), so `getByRole(name)` finds the same controls.
+- **Save state.** «Сохранено» and «Сохраняется» are icons. The word stays in the DOM for
+  the `status` live region and for the tooltip, but is not shown. **Offline**, and input
+  stopped because of a full queue, show the icon and the word: these states need a
+  decision, and an icon alone would be easy to miss.
+- **Zoom** uses `ZoomControls` from `@remo/ui`: `−`, percentage, `+`, separator, fit.
+  This is the order DESIGN.md §3 draws. `CanvasHud` keeps only placement and the `?debug`
+  cursor readout.
+  - The fit button keeps the name «Вписать» / "Fit". The design-system string
+    `ds.zoomFit` («Показать всё» / "Fit to screen") changes to match, because the button
+    fits either the selection or the whole room. The longer explanation is its tooltip.
+  - `ZoomControls` gives every button a tooltip.
+  - The percentage is plain text when no reset is provided. The product has no reset to
+    100 %, and a button that does nothing would be a dead control.
+- **«Фасилитация»** stays a word until the illustrator delivers the `facilitation` icon
+  (`docs/design/sketches/audit/icons-request.md`). Drawing a substitute would add a
+  second icon language. When the icon arrives, the button changes in the same way as
+  «Ещё», with no new decision needed.
+
+**Consequences.** The header no longer changes width between languages, apart from
+«Фасилитация» until its icon arrives. A name is visible only on hover or focus, which is
+why ADR-231 came first. The help topic `sync.status` and the guide describe the icon
+instead of the word. Header and canvas baselines are regenerated.

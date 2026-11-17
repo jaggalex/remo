@@ -268,25 +268,6 @@
   color: var(--text-primary);
 }
 
-.share-button {
-  border: 0;
-  background: var(--accent);
-  color: var(--text-on-accent);
-  border-radius: var(--radius-pill);
-  padding: var(--space-2) var(--space-3);
-  font: var(--type-label);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  min-width: 112px;
-  box-shadow: var(--shadow-bar);
-  transition: background var(--dur-1) var(--ease);
-}
-
-.share-button:hover {
-  background: var(--accent-hover);
-}
-
 /* Presence: a row of marks side by side, as on reference 1 (ADR-181). */
 .presence {
   display: flex;

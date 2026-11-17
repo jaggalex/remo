@@ -282,3 +282,31 @@ test("a tooltip waits, stays under the pointer and closes on Escape (WCAG 1.4.13
   await expect(tip).toBeHidden();
   await expect(tool).toBeFocused();
 });
+
+test("header and zoom icons are named in their tooltips (ADR-232)", async ({ page }) => {
+  await freshBoard(page, "a11y-header-icons");
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+
+  // Names stay what they were, so roles find the same controls.
+  const more = page.getByRole("button", { name: "More", exact: true });
+  const share = page.getByRole("button", { name: "Share", exact: true });
+  const fit = page.getByRole("button", { name: "Fit", exact: true });
+  for (const control of [more, share, fit]) {
+    await expect(control).toBeVisible();
+    await expect(control).not.toContainText(/\w/);
+  }
+
+  // Hover shows the name; focus shows it at once.
+  await more.hover();
+  await expect(page.getByRole("tooltip").filter({ hasText: /^More$/ })).toBeVisible();
+  await page.keyboard.press("Shift");
+  await share.focus();
+  await expect(page.getByRole("tooltip").filter({ hasText: /^Room access$/ })).toBeVisible({ timeout: 300 });
+  await fit.hover();
+  await expect(page.getByRole("tooltip").filter({ hasText: /selection/ })).toBeVisible();
+
+  // A calm save state is an icon: the word is in the live region but not drawn.
+  const word = page.locator(".save-state .rm-sync > span");
+  await expect(word).toHaveText(/saved/i);
+  expect(await word.evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+});

@@ -69,7 +69,8 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   /** Required: becomes aria-label. */
   label: string;
   size?: "compact" | "default";
-  variant?: "ghost" | "secondary" | "ghost-danger";
+  /** `primary` only for the screen's one primary action when it is an icon, such as Share (ADR-232). */
+  variant?: "ghost" | "secondary" | "ghost-danger" | "primary";
   selected?: boolean;
   iconSize?: number;
   force?: Forced;

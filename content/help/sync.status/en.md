@@ -1,6 +1,6 @@
 ## Result
 
-The header shows one of three states: **Saved**, **Saving** or **Offline (N)**.
+The header shows one of three states: **Saved**, **Saving** or **Offline (N)**. Saved and Saving are shown as an icon — a cloud with a tick, or a clock; hover it to see the word. Offline is shown as an icon and a word, because it needs your attention.
 
 - **Saved** — the server confirmed that the edits are stored. It does not mean "stored in the browser": confirmation arrives over the socket after the server persists them.
 - **Saving** — an edit was sent but is not acknowledged yet. This is usually under a second.

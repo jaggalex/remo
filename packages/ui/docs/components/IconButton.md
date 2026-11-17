@@ -10,7 +10,7 @@
 default · hover · active · focus-visible · disabled · selected. loading, error, read-only — не применимы: для загрузки — `Button` с `loading`.
 
 ## Потребитель передаёт
-- `icon`, `label` (обязателен; без него — предупреждение в консоли), `size`, `selected` для переключателей, `variant` (`ghost` по умолчанию, `secondary`).
+- `icon`, `label` (обязателен; без него — предупреждение в консоли), `size`, `selected` для переключателей, `variant` (`ghost` по умолчанию, `secondary`; `primary` — только для единственного основного действия экрана, когда оно иконка, как «Поделиться» в шапке комнаты, ADR-232).
 - Подсказку с шорткатом — оберните в Tooltip.
 
 ## Нельзя

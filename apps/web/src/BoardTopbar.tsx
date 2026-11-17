@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { MutableRefObject } from "react";
 import type { Presence, SaveState } from "@remo/doc";
-import { Button, IconButton, Separator, Tooltip } from "@remo/ui";
+import { IconButton, Separator, Tooltip } from "@remo/ui";
 import type { SessionUser } from "./api";
 import type { FollowState } from "./follow";
 import { useI18n } from "./i18n";
@@ -366,14 +366,18 @@ export function BoardTopbar(props: BoardTopbarProps) {
           />
         </Tooltip>
 
-        <Button
-          variant="primary"
-          className="share-button"
-          onClick={() => (canShare ? setShareOpen(true) : void copyShareLink())}
-          title={canShare ? t("share.title") : t("board.copyLinkTitle")}
+        {/* The room's one primary, as an icon named in its tooltip (ADR-232). */}
+        <Tooltip
+          label={copied ? t("board.copied") : canShare ? t("share.title") : t("board.copyLinkTitle")}
+          align="end"
         >
-          {copied ? t("board.copied") : t("board.share")}
-        </Button>
+          <IconButton
+            icon={copied ? "check" : "share"}
+            label={copied ? t("board.copied") : t("board.share")}
+            variant="primary"
+            onClick={() => (canShare ? setShareOpen(true) : void copyShareLink())}
+          />
+        </Tooltip>
         <InterfaceToggles theme={theme} onTheme={setTheme} />
       </div>
     </header>
