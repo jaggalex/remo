@@ -8,8 +8,8 @@
     "en": "Changelog"
   },
   "summary": {
-    "ru": "Версии схемы и что появилось в каждой: от событий до планов агента и палитры.",
-    "en": "Schema versions and what each introduced: from events to agent plans and the palette."
+    "ru": "Версии схемы и что появилось в каждой: от событий до планов агента, дизайн-системы и панелей.",
+    "en": "Schema versions and what each introduced: from events to agent plans, the design system and the panels."
   },
   "related": [
     "support/migrations",
@@ -17,11 +17,11 @@
     "capabilities/apps",
     "admin/deploy"
   ],
-  "updated": "2026-11-06",
+  "updated": "2026-11-17",
   "translations": {
     "en": {
-      "sourceHash": "sha256:ddf9982a6d92db1a17623129ca5b97c5330ad3b26ed83f3b6bb7bae0cc062593",
-      "targetHash": "sha256:c86f7ec9dd9b513e485ef003e47d79b7345bea474e7a7b4940da5a66966b09e0"
+      "sourceHash": "sha256:d1acc196ce79ffb71349f413b95238417f3f8331d67fdc3889179373bb5aa539",
+      "targetHash": "sha256:ff29e386f1482eb512649d424acf2c37b3133922b52cef16ae207720107c401d"
     }
   }
 }
