@@ -20,4 +20,4 @@ A new room is created in your organisation — in a team when one is chosen — 
 
 - A guest cannot create a room: the button is disabled and a direct request is refused. Ask the organisation administrator.
 - Creation belongs to an active organisation member. A view-only link does not grant it.
-- A template can be added later from **More ▾ → Templates…**.
+- A template can be added later from **More (⋯) → Templates…**.

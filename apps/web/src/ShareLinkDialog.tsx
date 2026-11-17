@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useId } from "react";
+import { Button, Dialog, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 
 /**
@@ -16,61 +17,37 @@ export function ShareLinkDialog({
   onClose: () => void;
 }) {
   const { t } = useI18n();
-  const field = useRef<HTMLInputElement | null>(null);
+  const fieldId = useId();
   if (!link) return null;
   return (
-    <div
-      className="dialog-backdrop"
-      role="presentation"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <Dialog
+      title={t("board.shareFallbackTitle")}
+      description={t("board.shareFallbackBody")}
+      size="sm"
+      onClose={onClose}
     >
-      <div
-        className="auth-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("board.shareFallbackTitle")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <div className="share-head">
-          <div>
-            <h2>{t("board.shareFallbackTitle")}</h2>
-            <p className="muted">{t("board.shareFallbackBody")}</p>
-          </div>
-          <button
-            type="button"
-            className="dialog-close"
-            aria-label={t("delete.cancel")}
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
-        <input
-          ref={field}
-          className="share-fallback-input"
+      <div className="dialog-stack">
+        <Input
+          id={fieldId}
+          aria-label={t("board.shareFallbackTitle")}
           readOnly
           autoFocus
           value={link}
           onFocus={(event) => event.target.select()}
         />
         <div className="auth-actions">
-          <button type="button" onClick={onClose}>
-            {t("delete.cancel")}
-          </button>
-          <button
-            type="button"
-            className="primary-button"
+          <Button onClick={onClose}>{t("delete.cancel")}</Button>
+          <Button
+            variant="primary"
             onClick={() => {
-              field.current?.select();
+              (document.getElementById(fieldId) as HTMLInputElement | null)?.select();
               void navigator.clipboard?.writeText(link).catch(() => {});
             }}
           >
             {t("board.copyAction")}
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

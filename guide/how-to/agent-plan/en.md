@@ -16,7 +16,7 @@ You have a description — a brief, a list of stories, a file or selected sticky
 
 ## Steps
 
-1. In the room open **More ▾ → Ask AI…**.
+1. In the room open **More (⋯) → Ask AI…**.
 2. Choose an agent. The list shows only your active agents.
 3. Choose a source. The task text is always there; a file and a selection are added to it.
 

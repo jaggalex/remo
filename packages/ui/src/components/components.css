@@ -178,12 +178,14 @@
 .rm-badge-x:hover { background: var(--bg-active); }
 .rm-tooltip-wrap { position: relative; display: inline-flex; }
 .rm-tooltip { position: absolute; z-index: var(--z-popover); display: none; align-items: center; gap: var(--space-2); white-space: nowrap; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--bg-inverse); color: var(--text-inverse); font: 500 12px/16px var(--font-sans); pointer-events: none; }
-.rm-tooltip .rm-kbd { background: transparent; color: var(--text-inverse); border-color: var(--text-muted); }
+/* On the inverse plate a key outline would be a second frame inside the first (ADR-231). */
+.rm-tooltip .rm-kbd { background: transparent; color: var(--text-inverse); border: 0; padding: 0; }
 .rm-tooltip-bottom { top: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
 .rm-tooltip-top { bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
 .rm-tooltip-right { left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
 .rm-tooltip-bottom.rm-tooltip-end, .rm-tooltip-top.rm-tooltip-end { left: auto; right: 0; transform: none; }
-.rm-tooltip-wrap:hover .rm-tooltip, .rm-tooltip-wrap:focus-within .rm-tooltip, .rm-tooltip-wrap.is-open .rm-tooltip { display: inline-flex; }
+/* Shown by state, not :hover — the delay, Escape and the hover bridge live in Tooltip (ADR-231). */
+.rm-tooltip-wrap.is-open .rm-tooltip { display: inline-flex; }
 
 /* ---------- Menu ---------- */
 .rm-menu { width: 240px; padding: var(--space-2); background: var(--bg-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); box-shadow: var(--shadow-pop); box-sizing: border-box; }
@@ -209,6 +211,8 @@
 .rm-dialog-lg { width: var(--dialog-lg); }
 .rm-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--dialog-padding) var(--dialog-padding) 0; }
 .rm-dialog-title { margin: 0; font: var(--type-title); }
+.rm-dialog-heading { display: flex; align-items: center; gap: var(--space-2); min-width: 0; margin-right: auto; }
+.rm-dialog-help { display: inline-flex; color: var(--text-secondary); }
 .rm-dialog-desc { margin: var(--space-1) var(--dialog-padding) 0; font: var(--type-body); color: var(--text-secondary); }
 .rm-dialog-body { padding: var(--space-4) var(--dialog-padding); overflow: auto; display: flex; flex-direction: column; gap: var(--space-4); min-height: 0; flex: 1 1 auto; }
 .rm-dialog-body > *, .rm-field > *, .rm-input { flex-shrink: 0; }
@@ -280,6 +284,8 @@
 .rm-prop-v { text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- Topbar / Toolbar / Floating ---------- */
+/* Text for assistive technology only: kept in the DOM and the live region, not drawn. */
+.rm-visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .rm-sync, .rm-readonly { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/16px var(--font-sans); white-space: nowrap; }
 .rm-sync-success { color: var(--state-success); }
 .rm-sync-muted { color: var(--text-secondary); }
@@ -299,7 +305,8 @@
 .rm-floatbar-sep { width: 1px; height: 20px; background: var(--border-subtle); margin: 0 var(--space-1); }
 .rm-swatch { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--border-strong); }
 .rm-zoom-value { min-width: 52px; height: var(--control-compact); border: 0; background: transparent; color: var(--text-primary); font: 500 12px/16px var(--font-sans); border-radius: var(--radius-sm); cursor: pointer; }
-.rm-zoom-value:hover { background: var(--bg-hover); }
+button.rm-zoom-value:hover { background: var(--bg-hover); }
+span.rm-zoom-value { display: inline-grid; place-items: center; cursor: default; }
 
 /* ---------- Share ---------- */
 .rm-access { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; }

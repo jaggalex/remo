@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { applySectionTablePlan, type BoardDocument, type SectionTablePlan } from "@remo/doc";
 import type { Widget } from "@remo/model";
-import { Button } from "@remo/ui";
+import { Button, Radio } from "@remo/ui";
 import { useI18n } from "./i18n";
 import {
   setSectionLayoutMode,
@@ -69,24 +69,20 @@ export function SectionLayoutDialog({
       }}
     >
       <h2>{t("section.layout.title")}</h2>
-      <label className="section-layout-option">
-        <input
-          type="radio"
-          name="section-layout-mode"
-          checked={request.mode === "position"}
-          onChange={() => setSectionLayoutMode("position")}
-        />
-        <span>{t("section.layout.byPosition")}</span>
-      </label>
-      <label className="section-layout-option">
-        <input
-          type="radio"
-          name="section-layout-mode"
-          checked={request.mode === "first"}
-          onChange={() => setSectionLayoutMode("first")}
-        />
-        <span>{t("section.layout.firstCell")}</span>
-      </label>
+      <Radio
+        className="section-layout-option"
+        name="section-layout-mode"
+        label={t("section.layout.byPosition")}
+        checked={request.mode === "position"}
+        onChange={() => setSectionLayoutMode("position")}
+      />
+      <Radio
+        className="section-layout-option"
+        name="section-layout-mode"
+        label={t("section.layout.firstCell")}
+        checked={request.mode === "first"}
+        onChange={() => setSectionLayoutMode("first")}
+      />
       <p className="muted">{t("section.layout.preview")}</p>
       <p className="muted">{t("section.layout.hint")}</p>
       <div className="section-layout-actions">

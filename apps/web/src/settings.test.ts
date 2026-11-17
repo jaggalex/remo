@@ -52,6 +52,13 @@ describe("settings", () => {
     expect(settings.shapes.fill).toBe("#fff");
   });
 
+  it("draws no grid unless one was saved (ADR-230)", () => {
+    expect(DEFAULT_SETTINGS.grid.style).toBe("off");
+    expect(normalizeSettings({}).grid.style).toBe("off");
+    expect(normalizeSettings({ grid: { style: "lines" } }).grid.style).toBe("lines");
+    expect(migrateLegacyDefaults(normalizeSettings({ grid: { style: "dots" } })).grid.style).toBe("dots");
+  });
+
   it("reads numbers written as strings, because a JSON paste may", () => {
     const settings = normalizeSettings({ grid: { size: "56" } });
     expect(settings.grid.size).toBe(56);

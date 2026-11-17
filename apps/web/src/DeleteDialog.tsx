@@ -1,4 +1,5 @@
 import { deleteWidgets, deletionSummary, type BoardDocument } from "@remo/doc";
+import { ConfirmDialog } from "@remo/ui";
 import { useI18n } from "./i18n";
 
 /**
@@ -21,34 +22,23 @@ export function DeleteDialog({
 }) {
   const { t, count } = useI18n();
   return (
-    <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onCancel();
-    }}>
-      <div className="auth-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
-        <div className="share-head">
-          <div>
-            <h2 id="delete-title">{t("delete.title")}</h2>
-          </div>
-          <button type="button" className="dialog-close" aria-label={t("delete.cancel")} onClick={onCancel}>✕</button>
-        </div>
-        <p>
-          {objects === 0 && connectors > 0
-            ? t("delete.bodyConnectors", { connectors: count("connectors", connectors) })
-            : connectors > 0
-              ? t("delete.bodyWithConnectors", {
-                  objects: count("objects", objects),
-                  connectors: count("connectors", connectors),
-                })
-              : t("delete.bodyObjects", { objects: count("objects", objects) })}
-        </p>
-        <div className="auth-actions">
-          <button type="button" onClick={onCancel}>{t("delete.cancel")}</button>
-          <button type="button" className="primary-button danger" onClick={onConfirm} autoFocus>
-            {t("delete.confirm")}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      title={t("delete.title")}
+      confirmLabel={t("delete.confirm")}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    >
+      <p>
+        {objects === 0 && connectors > 0
+          ? t("delete.bodyConnectors", { connectors: count("connectors", connectors) })
+          : connectors > 0
+            ? t("delete.bodyWithConnectors", {
+                objects: count("objects", objects),
+                connectors: count("connectors", connectors),
+              })
+            : t("delete.bodyObjects", { objects: count("objects", objects) })}
+      </p>
+    </ConfirmDialog>
   );
 }
 

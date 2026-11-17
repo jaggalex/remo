@@ -68,7 +68,7 @@ export class PostgresStore {
     );
   }
 
-  async connect() {
+  async connect({ finalizeMigration } = {}) {
     const { default: pg } = await import("pg");
     this.pool = new pg.Pool({
       connectionString: this.connectionString,
@@ -105,7 +105,7 @@ export class PostgresStore {
       return Promise.resolve(lease);
     };
     this.pg = pg.default ?? pg;
-    const orphans = await this.migrate();
+    const orphans = await this.migrate(finalizeMigration);
     // An unowned room is closed (ADR-174). Say how many are waiting for the operator
     // script instead of leaving the first visitor to discover it through a 403.
     if (orphans) {
@@ -221,7 +221,7 @@ export class PostgresStore {
     return withoutTenant(() => withTenant(this.pool, orgId ?? null, fn));
   }
 
-  async migrate() {
+  async migrate(finalize) {
     const schema = await readFile(join(HERE, "schema.sql"), "utf8");
     // Several processes may start at once (a dev server, a test suite, a second sync
     // instance). Unlocked, their DDL blocks on the same tables and the slowest one
@@ -237,6 +237,7 @@ export class PostgresStore {
     if (separate) await client.connect();
     try {
       await client.query("select pg_advisory_lock($1)", [721_472_1]);
+      if (finalize) await client.query("begin");
       // A second instance, or a test suite running beside another, must not run DDL on
       // every start: `alter table` takes locks that deadlock with live inserts. The
       // version row turns migration into "check, then apply once" (ADR-089).
@@ -325,11 +326,18 @@ export class PostgresStore {
            'write', 'builtin:room-draft', 'published', now())
          on conflict do nothing`,
       );
-      this.log.log("[sync] schema ready");
       const { rows: orphans } = await client.query(
         "select count(*)::int as n from boards where owner_id is null",
       );
+      if (finalize) {
+        await finalize(client);
+        await client.query("commit");
+      }
+      this.log.log("[sync] schema ready");
       return orphans[0]?.n ?? 0;
+    } catch (error) {
+      if (finalize) await client.query("rollback").catch(() => {});
+      throw error;
     } finally {
       await client.query("select pg_advisory_unlock($1)", [721_472_1]).catch(() => {});
       if (separate) await client.end().catch(() => {});

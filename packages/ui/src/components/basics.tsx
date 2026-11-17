@@ -38,7 +38,8 @@ export function Separator({ vertical }: { vertical?: boolean }) {
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  /** `ghost-danger`: a quiet destructive action whose fill belongs to its confirmation, or that undo reverses (ADR-236). */
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "ghost-danger";
   size?: "compact" | "default";
   icon?: IconName;
   iconEnd?: IconName;
@@ -69,7 +70,8 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   /** Required: becomes aria-label. */
   label: string;
   size?: "compact" | "default";
-  variant?: "ghost" | "secondary" | "ghost-danger";
+  /** `primary` only for the screen's one primary action when it is an icon, such as Share (ADR-232). */
+  variant?: "ghost" | "secondary" | "ghost-danger" | "primary";
   selected?: boolean;
   iconSize?: number;
   force?: Forced;

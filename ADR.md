@@ -9022,3 +9022,597 @@ the style; the section panel gains the row. The field is optional, so existing d
 read unchanged and no migration is needed. Tests cover size-aware Auto height and width,
 the command merge/clear, the painter font and the panel controls. Per-axis header
 typography, rich text, underline and font-family changes remain out of scope.
+
+## ADR-221: Prepare the production database before starting a release
+
+**Context.** A production update can add tenant tables. The schema migration creates
+them, while the RLS SQL installs the policies. Starting the service between those
+steps can leave the new tables without tenant policies.
+
+**Decision.** The release controller checks the two database connections before
+stopping Remo. With application writers stopped, it saves and verifies a PostgreSQL
+dump. A one-off process from the new sync image then uses the regular migration
+under its advisory lock. It applies and checks RLS in the same transaction as the
+migration. Only then does the controller start sync and web and check their health.
+The production app role must be distinct from the migration role and subject to RLS.
+
+**Consequences.** A failed database preparation leaves the verified backup and the
+previous release available. The controller stops before starting the new services.
+Recovery after a database failure remains an explicit operator action.
+
+## ADR-222: Baselines are compared in one Linux browser, locally and in CI (supersedes the "no pixel diff" part of ADR-091)
+
+**Context.** ADR-091 kept `spec/baselines/` as review artefacts and refused a pixel diff
+until the browser renders the same locally and in CI: a macOS-versus-Linux diff fails on
+font antialiasing alone. As a result, `capture()` only wrote PNGs. A visual change that
+nobody regenerated passed every gate, so the design-system migration (audit plan M3–M18)
+had no check that a screen still looked the way its baseline shows. The condition ADR-091
+named is a browser that is the same in both places. The fonts are already bundled
+(`packages/ui/src/fonts.css`), so the browser and its platform are the only variables.
+
+**Decision.**
+
+- **The visual scenarios drive one browser: Chromium inside the official Playwright image**
+  (`mcr.microsoft.com/playwright:v<version>-noble`, `linux/amd64`, the version pinned to
+  `@playwright/test`). The tests stay on the host and connect to it with
+  `connectOptions.wsEndpoint`; the page reaches the host's servers through
+  `exposeNetwork: "<loopback>"`. `scripts/linux-browser.mjs` starts and stops the container;
+  `scripts/e2e-run.mjs --linux-browser` wraps a run with it.
+- **`capture()` compares** with `toHaveScreenshot` against `spec/baselines/<name>.png`,
+  with a small tolerance for antialiasing. It compares only on that browser. On any other
+  browser it does nothing, because a diff there would mean "another platform".
+- **The baselines are Linux renders.** `pnpm baselines` regenerates them on the same browser
+  (`updateSnapshots: "all"`); a missing baseline fails instead of being written silently.
+- **`pnpm e2e:visual` and `pnpm verify --e2e` run the visual scenarios on that browser.**
+  The full `pnpm e2e` keeps running them on the host browser for their semantic
+  invariants, as before.
+- Parts of a screen that change between runs (times, generated names) are masked in the
+  scenario, not tolerated by a wider threshold.
+
+**Consequences.** A visual change fails until someone runs `pnpm baselines` and commits the
+new PNGs, which is the review ADR-091 asked for. Docker is required for `pnpm e2e:visual`,
+`pnpm baselines` and the full gate. The browser under emulation on an arm64 laptop is
+slower, but it is the same binary as in CI. Upgrading Playwright means regenerating the
+baselines in the same change.
+
+## ADR-223: Regenerating baselines rewrites only what changed (amends ADR-222)
+
+**Context.** ADR-222 regenerated baselines with `updateSnapshots: "all"`. That rewrites
+every PNG whose bytes differ, including screens that pass the comparison and differ by a
+few antialiased pixels. The first regeneration after a dialog change rewrote seven
+unrelated baselines, so the diff no longer showed which screens actually changed.
+
+**Decision.** `pnpm baselines` uses `updateSnapshots: "changed"`: only a baseline outside
+the comparison tolerance is rewritten. A missing baseline is still written only in that
+mode and fails otherwise.
+
+**Consequences.** A regeneration diff lists the screens that changed and nothing else. A
+baseline can drift by up to the tolerance without being rewritten; the tolerance stays
+20 pixels, so that drift is invisible.
+
+## ADR-224: Specialised buttons are named in one allow-list (DS-CTRL-01)
+
+**Context.** DS-CTRL-01 counted every raw `<button>` as a deviation. After the dialogs, panels
+and inspector moved onto `Button` / `IconButton`, the remaining raw buttons were not
+ordinary actions. They were items of an ARIA composite widget (menu items, radio cards,
+tabs), controls anchored to the canvas that scale with the zoom (table edges, section
+titles, comment pins), selectable rows and tiles (axis rows, comment threads, room tiles),
+disclosure rows, and identity chips (avatars, peers, the room path). Forcing them into
+`Button` would give a pin or an avatar the shape of an action button. If the rule kept
+counting them, the ratchet could never reach zero.
+
+**Decision.** `scripts/ui-design-rules.mjs` skips a raw button when either:
+
+- its `role` is a composite-widget item (`menuitem`, `menuitemradio`, `menuitemcheckbox`,
+  `radio`, `tab`, `option`); or
+- its static class names one of the controls in `BUTTON_ALLOW`, each tagged with its reason
+  (canvas, disclosure, row, tile, identity, menu).
+
+One file, `object-panel/ColorWindow.tsx`, is allowed whole, because every button there is a
+colour swatch. The list is the only place an exception is made. Adding to it is a reviewed
+change to the script, with the reason written next to the class.
+
+**Consequences.** DS-CTRL-01/button counts only buttons that should become `Button` or
+`IconButton`. Today that is the four presentation arrows, which wait for chevron and arrow
+icons. A new specialised control needs its class added to the list, or it fails the
+ratchet. A class on the list that is misused for an ordinary action passes the rule, so the
+reviewer of that change is the guard.
+
+## ADR-225: In-place text editors are the only raw fields (DS-CTRL-01, extends ADR-224)
+
+**Context.** M5 moved the product's form fields onto `Input`, `Select`, `Textarea`,
+`Checkbox`, `Switch`, `Radio` and `ChoiceCard`. Three raw fields remained:
+- the section title on the canvas;
+- the table header text editor;
+- the room title in the header.
+
+Each one replaces a piece of text in place, at that text's position and size, while the
+person renames it. A DS field brings a label above it and a box of a fixed height, which
+would move the text being edited. The rule also read a field's opening tag only up to its
+first `>`, so `onChange={(e) => …}` cut the tag short, and an exemption such as
+`type="file"` could be missed.
+
+**Decision.**
+- `scripts/ui-design-rules.mjs` reads a field's whole opening tag the way it reads a
+  button's.
+- It skips a raw field whose static class is in `FIELD_ALLOW`: today
+  `section-title-input`, `table-header-editor` and `board-title`, each tagged "in place".
+  `file`, `hidden`, `color` and `range` inputs stay exempt as before.
+- As with ADR-224, the list in the script is the only place an exception is made.
+
+**Consequences.** DS-CTRL-01/field is zero, so a new raw field fails the ratchet unless it
+is an in-place editor added to the list. The «Новая комната» start cards use `ChoiceCard`,
+and the context-menu rename uses `Input`. Neither needed an exception.
+
+## ADR-226: Interface text uses only the type scale (DS-TYPE-01, DS-TYPE-02)
+
+**Context.** The product's style sheets set 173 font sizes as literals, in 17 values between
+8 and 44 px, and 13 weights of 700. The scale in `tokens.json` has seven interface styles
+(display, title, subtitle, body, label, caption, kbd) and loads weights 400 to 600 for
+interface text. A change to the scale does not reach a literal, and one window could show
+five sizes, with a group heading larger than the window title (E-03). Two kinds of text
+had no style: the room path in the header, and the large numerals of the timer and the
+reaction burst.
+
+**Decision.**
+- Interface text is set with `font: var(--type-*)`. A literal `font-size` or a `font`
+  shorthand with a pixel size fails DS-TYPE-01.
+- Two styles are added to `tokens.json`:
+  - `path` is 400 18/24, the room path in the header. The product and reference 1 show
+    the path at 18 px. The audit's draft value of 20 px would change the header, which
+    no one asked for. The room title is the same style at weight 500, as the title
+    editor already was.
+  - `numeral` is 600 44/48, for the timer face and the reaction burst.
+- A style is chosen by role first:
+  - running text of 12.5 px or more (paragraphs, messages, notices, empty states) is
+    `body`;
+  - a group heading in a dialog is `subtitle`, unless it is an overline;
+  - a window or page title is `title`;
+  - an overline (small uppercase heading) is `caption` at weight 600.
+- Where the role does not settle it, the size picks the style:
+
+  | Size | Style |
+  |---|---|
+  | 24 and above | display |
+  | 16–18 | title |
+  | 15 | subtitle |
+  | 14 | body |
+  | 12.5–13 | label |
+  | 12 and below | caption |
+
+- A style's own line height applies. Literal line heights are dropped, except
+  `line-height: 1` on a single glyph.
+- An emoji or a text glyph standing in for an icon is sized by the icon tokens
+  (`--icon-sm`, `--icon-md`), not the type scale.
+- Weight is the style's own for a title, subtitle, path or numeral. Other text that was
+  600 or 700, including `h*`, `b` and `strong` that were bold by default, and that maps
+  to a lighter style keeps `font-weight: 600`. 700 is not used in interface text
+  (DS-TYPE-02).
+- Canvas object text is outside the interface scale (DS-TYPE-01 exception). The inline
+  editor shows bold at 700 because the painter draws `bold` at 700, and the editor must
+  match it. This is the only entry in `TYPE_ALLOW` in `scripts/ui-design-rules.mjs`,
+  named with its reason (DS-EXT-03).
+- Rules whose classes no component uses any more are deleted, not converted. Two rules
+  that still restyled a DS `Input` after M5 (`.org-invite input`, `.link-gate input`) are
+  replaced by layout on `.rm-field`.
+
+**Consequences.** DS-TYPE-01 and DS-TYPE-02 are zero, so the ratchet fails a new literal
+size or weight. Panels whose running text was 12.5 px now read at 14 px, and small labels
+move from 11–11.5 px to 12 px, so almost every visual baseline is regenerated on purpose
+(ADR-223). The shared copy of the design system needs the same two styles.
+
+## ADR-227: Spacing, radius and motion use only tokens (DS-SPACE-01, DS-SHAPE-01, DS-MOTION-01)
+
+**Context.** After M6 the product's style sheets still held 248 spacing literals, 42 radius
+literals and 7 motion literals (E-05). About half the spacing values were off the 4 px grid
+(6, 10, 7, 9, 5, 18 …), and radii included 7, 9, 11 and 12 px, which the scale does not
+have. A change to the scale did not reach them. The radius rule also flagged
+`var(--radius-2xl) var(--radius-2xl) 0 0`, because it counted the zeros.
+
+**Decision.**
+- Padding, margin and gap use `var(--space-*)`. A literal of 0–2 px stays: hairlines and
+  optical nudges are not spacing (as the rule already says).
+- An off-grid value goes to the nearest 4 px step. A value exactly between two steps goes
+  to the one that is a multiple of 8, the primary rhythm of the grid:
+
+  | Literal | Token |
+  |---|---|
+  | 6, 10 | `space-2` (8) |
+  | 14, 18 | `space-4` (16) |
+  | 22, 26 | `space-6` (24) |
+  | 3, 5 | `space-1` (4) |
+  | 7, 9 | `space-2` (8) |
+  | 11, 13 | `space-3` (12) |
+
+- A radius uses the nearest `--radius-*` token; a value exactly between two goes to the
+  smaller. So 3 becomes `xs`; 7 and 8 become `sm`; 9, 11 and 12 become `md`.
+- Transitions use `var(--dur-1) var(--ease)`; 100 ms and 120 ms are both `dur-1`.
+- One motion token is added: `dur-reaction` (1600 ms), the rise and fade of a reaction
+  burst. It is longer than any interface transition on purpose. The burst is already
+  switched off under `prefers-reduced-motion`.
+- The radius rule ignores zeros, as the spacing rule does.
+
+**Consequences.** DS-SPACE-01, DS-SHAPE-01 and DS-MOTION-01 are zero, so the ratchet fails
+a new literal. Many panels get 1–2 px tighter or looser: most 10 px paddings become 8 and
+most 6 px gaps become 8. Visual baselines are regenerated on purpose (ADR-223).
+
+## ADR-228: Product styles name colours by role only (DS-COLOR-01)
+
+**Context.** After M7 the product's style sheets still used 128 names from the previous
+system (`--ink`, `--muted`, `--faint`, `--line`, `--canvas`, `--accent-strong`, `--surface`).
+`base.css` keeps these as aliases of semantic tokens, "for one release". Fourteen
+declarations used raw scale steps (`--warning-300`, `--success-600`, `--accent-50` …).
+A raw step has one value in both themes, so a warning text set in `--warning-600` stayed
+dark brown on the dark theme. The DS `Banner` draws a warning with a soft background and no
+border, but three warning notices in the product drew a `--warning-300` border.
+
+**Decision.**
+- Each alias is replaced by its target from `base.css`: `--ink` → `--text-primary`,
+  `--muted` → `--text-secondary`, `--faint` → `--text-muted`, `--line` →
+  `--border-subtle`, `--line-strong` → `--border-strong`, `--accent-strong` →
+  `--accent-hover`, `--surface` → `--bg-panel`, `--canvas` → `--bg-canvas`. Nothing
+  changes on screen. M9 deletes the alias block.
+- Each raw step gets the semantic role it stands for:
+  - warning and success text use `--state-warning` and `--state-success`;
+  - the agent status dots use `--state-warning` (running, queued), `--state-success`
+    (ready) and `--danger` (error);
+  - the warning notices' border is `--warning-soft`, the colour of their background, as
+    the `Banner` has no visible border;
+  - the room-agent badge uses `--agent-soft` and `--text-agent`;
+  - the room-agent message's left rule uses `--border-strong` for a person and `--agent`
+    for the agent. The message's meta line already names the author, so the difference
+    is not carried by colour alone.
+- No new token is needed.
+
+**Consequences.** DS-COLOR-01 (alias and primitive) is zero, so the ratchet fails a new raw
+step or old name. In the light theme the status text and dots are one step darker (700
+instead of 500/600), and the warning notices lose their ochre outline. In the dark theme
+these colours now follow the theme.
+
+## ADR-229: The design rules are a strict gate, with named pending items (DS-EXT-03)
+
+**Context.** The design rules started as a ratchet over 1,167 existing deviations
+(M0): `scripts/ui-design-baseline.json` held a count per file and rule, a higher count
+failed, and a lower one had to be locked in with `--tighten`. After M1–M9, seven findings
+are left:
+- four raw buttons and two text glyphs in `PresentationLayer.tsx`: the slide arrows,
+  which wait for icons the illustrator has been asked for (`chevron-left`, `arrow-up`,
+  `arrow-down`);
+- the `…` between page numbers on the home page, which is punctuation, not an icon.
+
+A count per file cannot tell which line is allowed, and it says nothing about why.
+
+**Decision.**
+- The baseline file and `--tighten` are removed. `node scripts/ui-rules-check.mjs` fails
+  on any design finding and prints its rule ID, `file:line` and what to use instead.
+- An exception is a named line in `scripts/ui-design-rules.mjs`, next to the rule it
+  bends, with the reason (DS-EXT-03):
+  - `BUTTON_ALLOW`, `FIELD_ALLOW` and `TYPE_ALLOW` stay as they are (ADR-224, ADR-225,
+    ADR-226);
+  - `ICON_ALLOW` names a class whose glyph is text, today `home-page-gap`;
+  - `PENDING` names a file, rule and count that waits for something outside the code,
+    with the reason. Today it has two entries for `PresentationLayer.tsx`, both waiting
+    for the slide-arrow icons.
+- A `PENDING` entry that no longer matches fails, whether there are more findings or
+  fewer. When the icons arrive, the entry has to be deleted in the same change that uses
+  them.
+
+**Consequences.** There is no stored count to raise by accident and no step that
+quietly accepts a regression. The rules are only as wide as their patterns: DS-ICON-01
+matches `✕ × ✓ → ← ↑ ↓ ⋯ …`. Glyphs such as `‹ ›` and `⇤ ↔` are not caught yet, and
+widening the pattern is a separate change.
+
+## ADR-230: The background grid is off by default (amends ADR-031, ADR-032)
+
+**Context.** ADR-031 made the grid optional and chose lines as the default, to match the
+source product. The design system has since settled on a light desk under paper with no
+pattern (DESIGN.md §4, `bg-canvas`): the lines compete with sticky notes, cards and the
+section table's own rules, and the owner decided on 16.11 that a fresh canvas has no grid
+(audit decision R5).
+
+**Decision.**
+- `DEFAULT_SETTINGS.grid.style` in `apps/web/src/settings.ts` is `"off"`. Lines and dots
+  stay in the settings panel, unchanged; the cell size stays 40.
+- The grid is still a per-browser preference (ADR-032): the change is in the default,
+  not in where the choice lives. A browser with no saved settings, and an unknown value
+  read from storage, both get no grid.
+- There is no migration. Saved settings are the whole object (`remo.settings`), so a
+  browser that has saved any setting keeps the grid style it saved, whether or not the
+  person chose it on purpose.
+
+**Consequences.** New people and new browsers see the canvas without a grid; people who
+want one turn it on once in settings. A browser that saved settings before this change
+keeps lines until its owner switches them off. Product visual baselines that showed the
+canvas are regenerated without the grid. Snapping does not depend on the grid being drawn,
+so nothing about placement changes.
+
+## ADR-231: A tooltip waits, can be dismissed with Escape, and stays while the pointer is on it (A11Y-04)
+
+**Context.** `Tooltip` in `@remo/ui` was pure CSS: it appeared the moment the pointer
+touched its trigger, Escape did nothing, and `pointer-events: none` made it vanish as soon
+as the pointer left the trigger for the tip itself (audit E-17). This fails WCAG 2.2
+1.4.13, "Content on hover or focus". It matters more once the header becomes icons
+(M14b), when the tooltip is the only place a control's name is visible.
+
+**Decision.**
+- **Delay.** A tooltip appears 500 ms after the pointer rests on its trigger, so passing
+  over a row of icons does not flash a tip for each one. Keyboard focus shows it at once:
+  someone tabbing has already chosen the control.
+- **Dismissible.** Escape hides an open tooltip without moving the pointer or focus. It
+  stays hidden until the pointer leaves the trigger or focus leaves it. Escape is not
+  consumed, so a canvas, menu or dialog still gets it as before.
+- **Hoverable.** The tip stays open while the pointer is over the trigger, over the tip,
+  or crossing the gap between them. The tip still lets clicks through
+  (`pointer-events: none`): whether the pointer is "on" it is decided by geometry, so an
+  open tip never blocks the control or canvas under it.
+- **Persistent.** It hides when the pointer and focus have both left, or on Escape, and
+  not on a timer.
+- Touch does not open tooltips; a long press is the canvas's gesture.
+- The shortcut inside a tooltip is drawn without a key outline: on the inverse plate the
+  outline was a second frame inside the first.
+- `open` keeps its meaning, forcing the tip open for the design-system gallery.
+
+**Consequences.** Hovering now needs a moment before a name appears. Tests that read a
+tooltip after hovering have to wait for it, and tests that photograph a screen do not see
+stray tips from a pointer that happens to rest on a trigger, unless it rests there for
+500 ms.
+
+## ADR-232: Permanent header and zoom controls are icons, named in tooltips (amends ADR-119, DESIGN.md §2a, §3)
+
+**Context.** The room header labelled its controls with words: «Фасилитация ▾», «Ещё ▾»,
+«Сохранено», «Поделиться», and the zoom panel had «Вписать». The chrome was louder than
+the canvas, and the header's width depended on the language, since Russian is longer than
+English (audit E-14). The owner decided on 16.11 that these controls become icons. The zoom
+panel was also a second mechanism: `@remo/ui` already has `ZoomControls`, and
+`CanvasHud.tsx` drew its own (rule 1 of AGENTS.md).
+
+**Decision.**
+- **«Ещё»** becomes `IconButton` `more` and **«Поделиться»** becomes `IconButton` `share`,
+  variant `primary`. Share stays the one ink-filled control on the room screen (DESIGN.md
+  §2a). After a link is copied, Share shows `check` and is named «Скопировано» until it
+  resets.
+- **Names.** Each control's name is its `aria-label` and its tooltip (ADR-231). The names
+  stay as they were («Ещё», «Поделиться»), so `getByRole(name)` finds the same controls.
+- **Save state.** «Сохранено» and «Сохраняется» are icons. The word stays in the DOM for
+  the `status` live region and for the tooltip, but is not shown. **Offline**, and input
+  stopped because of a full queue, show the icon and the word: these states need a
+  decision, and an icon alone would be easy to miss.
+- **Zoom** uses `ZoomControls` from `@remo/ui`: `−`, percentage, `+`, separator, fit.
+  This is the order DESIGN.md §3 draws. `CanvasHud` keeps only placement and the `?debug`
+  cursor readout.
+  - The fit button keeps the name «Вписать» / "Fit". The design-system string
+    `ds.zoomFit` («Показать всё» / "Fit to screen") changes to match, because the button
+    fits either the selection or the whole room. The longer explanation is its tooltip.
+  - `ZoomControls` gives every button a tooltip.
+  - The percentage is plain text when no reset is provided. The product has no reset to
+    100 %, and a button that does nothing would be a dead control.
+- **«Фасилитация»** stays a word until the illustrator delivers the `facilitation` icon
+  (`docs/design/sketches/audit/icons-request.md`). Drawing a substitute would add a
+  second icon language. When the icon arrives, the button changes in the same way as
+  «Ещё», with no new decision needed.
+
+**Consequences.** The header no longer changes width between languages, apart from
+«Фасилитация» until its icon arrives. A name is visible only on hover or focus, which is
+why ADR-231 came first. The help topic `sync.status` and the guide describe the icon
+instead of the word. Header and canvas baselines are regenerated.
+
+## ADR-233: One frame per level in the panels: selection actions are grouped icons (DS-CHROME-06)
+
+**Context.** The «Обзор комнаты» panel is a framed surface, and inside it every selection
+action was an outlined chip. There were 21 chips, plus round layer buttons and an
+outlined «Состояние канбана» box with outlined buttons inside it: 26 frames inside one
+frame (audit E-15, `borders.probe.ts`). Frames nested this way make every control look
+equally important and the panel read as a form. In the section panel, every axis row was
+also outlined, with the selected row outlined in ink. The owner accepted the grouping in
+sketch D3 on 16.11 (decision R11).
+
+**Decision.**
+- **Selection actions** (`SelectionActions.tsx`), in three groups separated by one
+  hairline:
+  - **Clipboard, grouping and delete:** one row of borderless icon buttons:
+    - `copy`, `link`, `cut`, `duplicate`;
+    - a separator, then `group-make` and `group-break`;
+    - `trash` on the right.
+  - Actions without an unambiguous icon keep their word as ghost buttons: «Изменить
+    текст», «Соединить».
+  - The rarely used actions go behind «⋯» («Ещё действия»): «Сдвинуть →», «Инфо»,
+    «Снять выделение».
+  - **Order and lock** is a captioned group: four layer icons, with the lock on the right.
+- Every icon is named in its `aria-label` and tooltip (ADR-231), with the command's own
+  label. The commands themselves are unchanged (ADR-093): this changes their buttons,
+  not their behaviour.
+- **Kanban state** is a group, not a box: no outline or fill. «+ колонка» and «+ дорожка»
+  are ghost buttons. The column chips are fills, which are not frames.
+- **Axis rows** in the section panel have no outline. The selected row is the `bg-active`
+  fill, alongside `aria-pressed`; hover is `bg-hover`.
+- Fields keep their outline: an input needs it to be recognised (≥ 3:1). This is the
+  only exception to DS-CHROME-06.
+
+**Consequences.** The panel has one frame, its own, and separates by space, fill and one
+hairline. «Сдвинуть», «Инфо» and «Снять выделение» take two clicks instead of one. The
+same commands are still reachable from the context menu and their keys.
+
+## ADR-234: A card on the canvas is paper without an outline; a kanban has no frame of its own (DESIGN.md §8)
+
+**Context.** Inside a section, a kanban drew three frames: the section, the kanban's own
+rounded box, and an outline around every card (audit E-10, E-15). Cards were pills (radius
+`height / 2.6`) with a 1.8 px grey outline, or a 2.5 px accent outline when selected. A free
+card, such as a card in a table section, was painted by a different path in `render.ts`,
+outlined in its `cardTheme` colour (yellow by default). Neither matched DESIGN.md §8:
+«Карточка — белая, `radius-md`». The kanban box also drew three dividers at fixed thirds of
+its width, under the real column separators that `drawKanban` paints. Those thirds lines
+were in the wrong place for any kanban without exactly three columns. On 16.11 the owner
+accepted R6 (a kanban has no outer frame) and R10 (a card is paper; the frame appears only
+when it is selected).
+
+**Decision.**
+- **One card painter.** `drawCardSheet` in `packages/canvas` paints every card face, used by
+  both the kanban matrix and the `card` widget:
+  - fill `raised`: a card lies *on* the kanban's `panel` ground. In light both are white
+    and the shadow separates them. In dark the warm shadow barely shows on a dark ground,
+    so the sheet is one step lighter (`neutral-800` on `neutral-850`);
+  - `radius-md` 10;
+  - a sheet shadow under the bottom edge, in the sticky note's warm `sticker-cast` colour
+    but shorter: offset 3, blur 8, scaled with zoom like the sticky shadow;
+  - no outline.
+- **Selection** is `selectionStroke`, 2 screen px, drawn *outside* the sheet. The only frame
+  on a card is the selection.
+- **The kanban widget** paints only its fill. Columns and swimlanes are separated by
+  `drawKanban`'s hairlines, and the fixed-thirds dividers are gone.
+- The drag origin of a card uses the same radius.
+- **`cardTheme`** stays in the model and the API, but is no longer painted. No UI sets it,
+  and an outline colour would be the frame this decision removes. Showing a card's theme
+  again needs its own decision, for example a stripe.
+
+**Consequences.** A section shows one frame. Cards read as sheets by fill and shadow. In
+the dark theme the sheet is separated by tone, which was checked on `vote-chips-dark.png`;
+with `panel` it was the same colour as the ground. Baselines with cards are regenerated,
+and a painter test pins that an unselected card has no stroke.
+
+## ADR-235: Content attached to an object follows its zoom; controls keep their screen size (amends ADR-117)
+
+**Context.** ADR-117 pins a vote counter to its object, and `chipPlacement` recomputes the
+position at every zoom. The counter itself is a DOM pill of fixed screen size: 32 px with
+its buttons, or «N итог» after the session. Zoomed out to a fitted room (37 % in the
+baselines), a 160-unit note is about 60 px tall, and the counter covers most of it. The
+results then hide the very objects they count. Nothing decided this: ADR-117 says where
+the counter sits, not how big it is.
+
+The card face has the same defect inside the canvas. `cardMeta.ts` drew status, assignee
+and dates at a fixed screen size (`9.5 / zoom` px), while the title is in world units. Zoomed
+out, the small print was larger than the title and left the card; zoomed in, it shrank
+on a growing card.
+
+Some things on the canvas are rightly screen-constant, because they are controls or
+signals, not content: the lock badge and the clipped-text mark (ADR-193), selection
+handles, object toolbars, cursors, comment pins, section titles and the table's `+`
+controls. This decision does not change them.
+
+**Decision.**
+- **One rule.** What describes an object (its counts and its small print) belongs to the
+  object and follows its zoom. What acts on the view or marks a state stays at screen size.
+- **Vote counter, two forms** (`voteChipForm` in `vote/chipPlacement.ts`):
+  - **Full** (the five states of ADR-117, with `−` and `+`) when the object on screen is at
+    least 128 × 64 px. At that size the 32 px counter takes at most half the object's
+    height, and its buttons keep their 28 px targets.
+  - **Compact** below that size: the number and one button in a 24 px pill. The button is
+    `+` to vote, or `−` on my own vote, which keeps its accent plate. 24 px is the WCAG
+    2.5.8 minimum target, and on a touch screen the pill stays 44 px. The words («ваш»,
+    «итог») and the second button are what the compact form drops. Voting from a fitted
+    overview is the normal case, so the counter stays usable there.
+  - An ended session's compact counter is the number alone, because there is nothing left
+    to press.
+  - The accessible name stays the same in both forms («Голосов за объект: N», «итог: N»).
+- **Card small print** is drawn in world units at the size it had at 100 %. It now scales
+  with the card and the title, and at 100 % nothing changes.
+
+**Consequences.** In a fitted overview, every object shows its count without being covered.
+Zoomed out, a person can still vote and withdraw, without the counter covering the
+object. A new baseline, `vote-chips-overview.png`, shows the compact form at the
+fitted zoom.
+
+## ADR-236: The properties panel describes one subject; room-wide and developer content leaves it (amends ADR-093, ADR-197)
+
+**Context.** «Обзор комнаты» is one ribbon for everything (audit E-18, `inspector.probe.ts`).
+With a card selected, it is 2,157 px tall (2.6 screens), with 26 buttons, 14 fields and
+17 headings of three kinds. Whatever is selected, it also shows:
+- the room's counts;
+- the card filter, whose Assignee and Due repeat the selected card's own fields;
+- «Состояние канбана», with its ADR-006 note, even in a room without a kanban;
+- «Заменить комнату», a red button that wipes the room for everyone;
+- «Детали синхронизации» (the undo stack, the room id, peers);
+- «Объём фазы 1», a development checklist.
+
+The owner accepted sketch D4 on 16.11: the panel describes one subject, frequent things
+on top, rare things folded, and developer things out of the product.
+
+**Decision.**
+- **One subject at a time.** The subject is chosen in this order:
+  - nothing selected → **the room**: its counts («В комнате») and the card filter;
+  - a selected kanban → **the kanban**, including its state (columns, swimlanes, WIP);
+  - otherwise **the selection**: actions (ADR-233), then the section, card or object
+    fields as today.
+
+  Room counts, the card filter and kanban state are never shown with another subject.
+- **Moves between surfaces:**
+  - «Заменить комнату…» moves to the room menu, next to «Корзина», with the same
+    confirmation;
+  - «Детали синхронизации» render only in a development build opened with `?debug`, the
+    same switch as the canvas cursor readout. The person has the save icon in the header
+    (ADR-232);
+  - «Объём фазы 1» is deleted, with its `scope.*` strings;
+  - the intro paragraph becomes the panel's help topic, `room.panel`, opened from a «?» in
+    the panel header.
+- **Later steps of the same decision**, one subject per change (plan M18):
+  - the section and the card get a header naming their kind and title;
+  - «Имя и ссылка» and «Теги» fold to one row each, behind a chevron;
+  - an object's ID moves to «⋯ → Инфо»;
+  - «Удалить раздел» becomes a quiet button (`ghost-danger`). Deleting a section keeps its
+    objects and undo restores it, so it gets no confirmation; the danger fill is kept for
+    confirmations.
+
+**Consequences.** With nothing selected, the panel is short and about the room. With
+something selected, it is about that thing only. Replacing the room is no longer one
+click away from the counts. Browser tests that used the room counts as a probe of the
+document read the document instead (`objectCount` in `e2e/helpers.ts`), because the
+counts are now on screen only when nothing is selected.
+
+## ADR-237: Selection actions are one row of icons (supersedes the row layout of ADR-233)
+
+**Context.** ADR-233 (sketch D3) laid out the selection actions in three parts:
+- the icon row;
+- «Изменить текст» and «Соединить» as words;
+- «Порядок и закрепление» as its own captioned group.
+
+That takes 141 px. Sketch D4, accepted for the properties panel on the same day,
+draws one row and asks that a selected section's panel fit one 900 px screen without
+scrolling (ADR-236). With the three parts it was 161 px too tall.
+
+**Decision.**
+- The panel shows one row of icon buttons:
+  - `copy`, `link`, `cut`, `duplicate`;
+  - a separator;
+  - one grouping slot, `group-make`, or `group-break` when the selection is a group;
+  - `layer-up` and the lock;
+  - then `trash` and «⋯» on the right.
+- «⋯ Ещё действия» holds the rest:
+  - «Изменить текст» and «Соединить», with their reasons when off;
+  - «На передний план», «Назад» and «На задний план»;
+  - «Сдвинуть →», «Инфо» and «Снять выделение».
+- Every command keeps its label as the icon's name and tooltip (ADR-231). The
+  commands are unchanged (ADR-093). ADR-233's other decisions (kanban state as a group,
+  axis rows without outlines) stand.
+
+**Consequences.** The panel gains about 100 px. Editing text and connecting take two
+clicks from the panel; double-click on the object and the connector tool still do it in
+one.
+
+## ADR-238: The baseline comparison sees faint changes: a per-pixel threshold from measured noise (amends ADR-222)
+
+**Context.** ADR-222 compares every screen with its baseline, but kept Playwright's default
+per-pixel colour threshold of 0.2. Playwright's threshold t ignores a pixel that differs
+by up to about 264·t grey levels, so 0.2 ignores up to about 52 of 255. Removing the
+background grid in M12 changed 14,000–153,000 pixels per screen by up to 31 levels. That
+passed the comparison, and `pnpm baselines`, which runs in `"changed"` mode, rewrote
+nothing. The same blind spot hid drift: several committed baselines differed from
+today's renders by 21–31 levels and no check noticed.
+
+Run-to-run noise was measured on 17.11 by rendering all 34 product screens twice on the
+pinned Linux browser: at most 2 levels, on at most 32 pixels of a screen.
+
+**Decision.**
+- `capture()` and `captureClip()` compare with **threshold 0.03**, which ignores up to about
+  8 levels: four times the measured noise, and a quarter of the grid's 31. `maxDiffPixels`
+  stays 20.
+- `pnpm baselines` stays in `"changed"` mode. With this threshold a faint change counts as
+  changed, so a screen that did not change keeps its file byte for byte, and the diff of a
+  pull request shows only real changes. ADR-222's sentence saying `"all"` described the
+  configuration wrongly.
+- The baselines that had drifted are regenerated in this change, after each was checked
+  to differ only by the drift (no shift of layout, no lost element).
+
+**Consequences.** A faint deliberate change, such as a tone, a hairline or a shadow, fails
+`pnpm e2e:visual` until its baselines are regenerated. A new source of noise above 8 levels
+fails too: it is masked in the scenario, as ADR-222 already requires, not tolerated by
+raising the threshold. If the browser image is updated and renders differently, the
+baselines are regenerated in the same change.

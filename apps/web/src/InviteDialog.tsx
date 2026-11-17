@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button, Dialog } from "@remo/ui";
 import { api } from "./api";
 import { useI18n } from "./i18n";
 
@@ -53,24 +54,22 @@ export function InviteDialog({
   };
 
   return (
-    <div className="dialog-backdrop" role="presentation">
-      <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="invite-title">
-        <h2 className="invite-title" id="invite-title">{t("invite.title")}</h2>
-        <p className="muted">{t("invite.body")}</p>
+    <Dialog title={t("invite.title")} description={t("invite.body")} size="sm">
+      <section className="dialog-stack">
         {error && <p className="auth-error">{error}</p>}
         {accepted && <p className="muted">{t("invite.accepted")}</p>}
         <div className="auth-actions">
           {signedIn ? (
-            <button type="button" className="primary-button" disabled={busy || accepted} onClick={() => void accept()}>
+            <Button variant="primary" disabled={busy || accepted} onClick={() => void accept()}>
               {busy ? t("auth.working") : t("invite.accept")}
-            </button>
+            </Button>
           ) : (
-            <button type="button" className="primary-button" onClick={onSignIn}>
+            <Button variant="primary" onClick={onSignIn}>
               {t("invite.signInFirst")}
-            </button>
+            </Button>
           )}
         </div>
       </section>
-    </div>
+    </Dialog>
   );
 }

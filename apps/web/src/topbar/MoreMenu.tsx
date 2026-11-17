@@ -1,10 +1,11 @@
 import type { TemplateKey } from "@remo/model";
-import { Button, Menu, Popover, type MenuItem } from "@remo/ui";
+import { Button, IconButton, Menu, Popover, Tooltip, type MenuItem } from "@remo/ui";
 import { useI18n } from "../i18n";
 import { useMenuFocus } from "../useMenuFocus";
 
 /**
- * "More ▾" — everything that has no icon of its own yet (ADR-119, Ш2).
+ * "More" (⋯) — everything that has no icon of its own yet (ADR-119, Ш2). The trigger is
+ * an icon named in its tooltip (ADR-232).
  *
  * Templates, an AI task, apps and Story live here until the "/" line gathers them
  * (ADR-121, stage S4); then this menu disappears. Centre of the top bar stays empty.
@@ -57,16 +58,16 @@ export function MoreMenu({
 
   return (
     <span className="topbar-anchor" ref={anchor}>
-      <Button
-        variant="ghost"
-        iconEnd="chevron-down"
-        className="more-trigger"
-        aria-haspopup={view === "templates" ? "dialog" : "menu"}
-        aria-expanded={view !== null}
-        onClick={() => onView(view === "more" ? null : "more")}
-      >
-        {t("more.menu")}
-      </Button>
+      <Tooltip label={t("more.menu")}>
+        <IconButton
+          icon="more"
+          label={t("more.menu")}
+          className="more-trigger"
+          aria-haspopup={view === "templates" ? "dialog" : "menu"}
+          aria-expanded={view !== null}
+          onClick={() => onView(view === "more" ? null : "more")}
+        />
+      </Tooltip>
       {view === "more" && (
         <Menu label={t("more.menu")} width={248} onClose={() => onView(null)} items={items} />
       )}

@@ -43,6 +43,23 @@ export const CHIP_INSET = 8;
 /** Gap kept between the chip and the canvas edge, so a clamped chip stays clickable. */
 export const CHIP_VIEWPORT_MARGIN = 8;
 
+/**
+ * The smallest object, on screen, that still has room for the full counter with its
+ * buttons (ADR-235): the 32 px counter takes at most half its height, and its widest
+ * running form («1 · ваш − +») fits inside with the corner inset.
+ */
+export const FULL_CHIP_MIN = { width: 128, height: 64 } as const;
+
+/**
+ * Full counter or only its number. Decided by the object's screen size, never by the
+ * chip's own measured size, so switching form cannot make the chip flip back and forth.
+ */
+export function voteChipForm(object: Box): "full" | "compact" {
+  return object.width >= FULL_CHIP_MIN.width && object.height >= FULL_CHIP_MIN.height
+    ? "full"
+    : "compact";
+}
+
 /** How far the chip moves per attempt when something covers its corner. */
 const SLIDE_STEP = 8;
 

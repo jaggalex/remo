@@ -7,6 +7,7 @@ import {
   openBoard,
   openBoardMenu,
   register,
+  objectCount,
 } from "./helpers";
 
 test("creates a board from the board list and opens the chosen template", async ({ page }) => {
@@ -17,12 +18,12 @@ test("creates a board from the board list and opens the chosen template", async 
   await page.locator(".new-board-dialog input").first().fill("M0 launch");
   await page.locator(".new-board-dialog").getByRole("radio", { name: /With an example/ }).check();
   await page.locator(".new-board-dialog select").selectOption("kanban-framework");
-  await page.locator(".new-board-dialog .primary-button").click();
+  await page.locator(".new-board-dialog").getByRole("button", { name: "Create room" }).click();
 
   await expect(page).toHaveURL(/room=m0-launch/);
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
   await expect(page.getByRole("button", { name: /^Room menu: M0 launch/ })).toBeVisible();
-  await expect(page.locator(".counts li", { hasText: "Kanban" })).toContainText(/\d+/);
+  await expect.poll(() => objectCount(page, "kanban")).toBeGreaterThan(0);
 });
 
 test("a new sticky takes the first keystroke and an untouched one disappears", async ({
@@ -42,7 +43,7 @@ test("a new sticky takes the first keystroke and an untouched one disappears", a
   await expect(page.locator(".inline-editor")).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.locator(".inline-editor")).toHaveCount(0);
-  await expect(page.locator(".counts li", { hasText: "Sticky note" })).toContainText("1");
+  await expect.poll(() => objectCount(page, "sticky_note")).toBe(1);
 });
 
 test("copies a deep link to the selected object", async ({ page, context }) => {
@@ -72,11 +73,11 @@ test("an empty board stays empty and a rename reaches the board list", async ({ 
   await expect(
     page.locator(".new-board-dialog").getByRole("radio", { name: /Empty room/ }),
   ).toBeChecked();
-  await page.locator(".new-board-dialog .primary-button").click();
+  await page.locator(".new-board-dialog").getByRole("button", { name: "Create room" }).click();
 
   await expect(page).toHaveURL(/room=empty-launch/);
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
-  await expect(page.locator(".counts li")).toHaveCount(0);
+  await expect.poll(() => objectCount(page)).toBe(0);
 
   const boardId = new URL(page.url()).searchParams.get("room")!;
   // The name is a menu, and renaming is its first item (spec §10, Ш1).
@@ -155,8 +156,8 @@ test("switches the organisation and leaves the previous board", async ({ page })
   await page.getByRole("button", { name: "+ New organisation" }).click();
   await page.locator(".org-create input").first().fill("Second team");
   await page.getByRole("button", { name: "Create organisation" }).click();
-  await expect(page.locator(".org-dialog h2")).toHaveText("Second team");
-  await page.locator(".org-dialog").getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("dialog", { name: "Second team" })).toBeVisible();
+  await page.getByRole("dialog", { name: "Second team" }).getByRole("button", { name: "Close", exact: true }).first().click();
 
   // A board in that organisation, so the filter has something to switch between.
   await page.getByRole("button", { name: "All rooms" }).click();
@@ -210,7 +211,7 @@ test("opening a named board without a template keeps its name and stays empty", 
   await expect(
     page.getByRole("button", { name: /^Room menu: Quarterly planning/ }),
   ).toBeVisible();
-  await expect(page.locator(".counts li")).toHaveCount(0);
+  await expect.poll(() => objectCount(page)).toBe(0);
 
   // The projection is refreshed 1.5 s after the room opens. Wait past it, then read the
   // stored name the app will see on reload.
@@ -229,7 +230,7 @@ test("opening a named board without a template keeps its name and stays empty", 
   await expect(
     page.getByRole("button", { name: /^Room menu: Quarterly planning/ }),
   ).toBeVisible();
-  await expect(page.locator(".counts li")).toHaveCount(0);
+  await expect.poll(() => objectCount(page)).toBe(0);
 });
 
 test("a copy of a board takes its stored name", async ({ page }) => {
@@ -277,6 +278,16 @@ test("a public-link viewer cannot add kanban columns or replace the board", asyn
   try {
     await viewer.goto(`/?room=${account.boardId}&lang=en`);
     await expect(viewer.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+    // Kanban state is the selected kanban's (ADR-236): open the room with it selected.
+    await expect.poll(() => objectCount(viewer, "kanban")).toBeGreaterThan(0);
+    const kanbanId = await viewer.evaluate(
+      () =>
+        (window as unknown as { __remo: { widgets: Array<{ id: string; type: string }> } }).__remo.widgets.find(
+          (widget) => widget.type === "kanban",
+        )!.id,
+    );
+    await viewer.goto(`/?room=${account.boardId}&lang=en&select=${kanbanId}`);
+    await expect(viewer.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
     // ADR-197: the inspector starts closed; open it to read the read-only controls.
     await expect(viewer.locator(".inspector")).toBeHidden();
     await viewer.getByRole("button", { name: "Properties" }).click();
@@ -284,7 +295,9 @@ test("a public-link viewer cannot add kanban columns or replace the board", asyn
     await expect(inspector).toBeVisible();
     await expect(inspector.getByRole("button", { name: "+ column" })).toBeDisabled();
     await expect(inspector.getByRole("button", { name: "+ swimlane" })).toBeDisabled();
-    await expect(inspector.getByRole("button", { name: "Replace room" })).toBeDisabled();
+    // Replacing the room lives in the room menu (ADR-236), off for a viewer.
+    await openBoardMenu(viewer);
+    await expect(viewer.getByRole("menuitem", { name: /^Replace room/ })).toHaveAttribute("aria-disabled", "true");
   } finally {
     await context.close();
   }

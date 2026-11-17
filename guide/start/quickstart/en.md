@@ -11,7 +11,7 @@ Create a room, add two notes and send a teammate a view-only link. Sign in and c
 2. Add a second sticky note and drag it a little to the side.
 3. Select the first sticky note. Connector points appear at its edges. Drag from one of these points to the second sticky note.
 
-Wait for **Saved** at the top of the room. It means the server has stored your changes.
+Wait for the **Saved** icon — a cloud with a tick — at the top of the room; hover it to see the word. It means the server has stored your changes.
 
 ## Share the result
 

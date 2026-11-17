@@ -29,10 +29,16 @@ current() {
   use_release "$(cat "$ROOT/current")"
 }
 backup() {
-  local file="$ROOT/backups/$(date -u +%Y%m%dT%H%M%SZ)-$REMO_RELEASE.dump"
-  compose run --rm -T --no-deps db-tools pg_dump -Fc < /dev/null > "$file.partial"
-  compose run --rm -T --no-deps db-tools pg_restore --list < "$file.partial" > /dev/null
-  mv "$file.partial" "$file"
+  local revision=${1:-$REMO_RELEASE}
+  local partial file
+  partial=$(mktemp "$ROOT/backups/$(date -u +%Y%m%dT%H%M%SZ)-$revision.partial.XXXXXXXX") || return
+  file="${partial%.*.*}-${partial##*.}.dump"
+  if ! compose run --rm -T --no-deps db-tools pg_dump -Fc < /dev/null > "$partial" ||
+     ! compose run --rm -T --no-deps db-tools pg_restore --file=/dev/null < "$partial"; then
+    rm -f "$partial"
+    return 1
+  fi
+  mv "$partial" "$file" || return
   echo "Backup: $file"
 }
 smoke() {
@@ -50,16 +56,27 @@ case ${1:-status} in
       --build-arg REMO_COMMIT="$REMO_COMMIT" \
       sync web
     compose pull db-tools
-    compose run --rm -T --no-deps db-tools psql -v ON_ERROR_STOP=1 -Atc 'select 1' < /dev/null > /dev/null
+    backup_database=$(compose run --rm -T --no-deps db-tools psql -XqAt -v ON_ERROR_STOP=1 -c \
+      'select jsonb_build_array(datname, oid, extract(epoch from pg_postmaster_start_time())::text) from pg_database where datname = current_database()' < /dev/null)
+    [[ -n $backup_database ]] || { echo 'Could not identify the backup database.' >&2; exit 1; }
+    compose run --rm -T --no-deps -e "REMO_BACKUP_DATABASE=$backup_database" \
+      sync node release-db.mjs --check-connections < /dev/null
+    old=""
     if [[ -f "$ROOT/current" ]]; then
       old=$(cat "$ROOT/current")
       compose stop web sync
       trap 'echo "Update failed. Writers may be stopped; dump and previous release are retained. Use remo status/logs and explicit rollback." >&2' ERR
-      backup
-      printf '%s\n' "$old" > "$ROOT/previous"
     fi
-    compose up -d --no-deps --wait --wait-timeout 180 sync
-    compose up -d --no-deps --wait --wait-timeout 120 web
+    if ! backup "${old:-$REMO_RELEASE}"; then
+      if [[ -n $old ]]; then compose start sync web; fi
+      echo 'Backup failed. Database preparation did not start.' >&2
+      exit 1
+    fi
+    compose run --rm -T --no-deps -e "REMO_BACKUP_DATABASE=$backup_database" \
+      sync node release-db.mjs < /dev/null
+    if [[ -n $old ]]; then printf '%s\n' "$old" > "$ROOT/previous"; fi
+    compose up -d --no-build --pull never --no-deps --wait --wait-timeout 180 sync
+    compose up -d --no-build --pull never --no-deps --wait --wait-timeout 120 web
     smoke
     printf '%s\n' "$REMO_RELEASE" > "$ROOT/current.next"
     mv "$ROOT/current.next" "$ROOT/current"

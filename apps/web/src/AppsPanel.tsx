@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ApiError, api, type AppActionMessage, type InstalledApp, type PanelNode } from "./api";
+import { Button, Dialog } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n, type TranslationKey } from "./i18n";
 
@@ -97,15 +98,12 @@ export function AppsPanel({
     }
     if (node.type === "button" && node.labelKey && node.action) {
       return (
-        <button
+        <Button
           key={node.id ?? node.labelKey}
-          type="button"
-          className="ghost-button"
           disabled={busy === node.action}
-          onClick={() => void invoke(app, node)}
-        >
+          onClick={() => void invoke(app, node)}>
           {t(key(node.labelKey))}
-        </button>
+        </Button>
       );
     }
     // `field` and anything the host does not know draw nothing: the vocabulary is closed.
@@ -113,30 +111,14 @@ export function AppsPanel({
   };
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="share-dialog apps-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("apps.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="share-head">
-          <div>
-            <h2>
-              {t("apps.title")} <HelpLink topicId="apps.hello" />
-            </h2>
-            <p className="muted">{t("apps.body")}</p>
-          </div>
-          <button
-            type="button"
-            className="dialog-close"
-            onClick={onClose}
-            aria-label={t("boards.close")}
-          >
-            ×
-          </button>
-        </header>
+    <Dialog
+      title={t("apps.title")}
+      description={t("apps.body")}
+      help={<HelpLink topicId="apps.hello" />}
+      size="sm"
+      onClose={onClose}
+    >
+      <section className="dialog-stack apps-dialog">
 
         {error ? <p className="export-status error">{error}</p> : null}
 
@@ -158,6 +140,6 @@ export function AppsPanel({
           </article>
         ))}
       </section>
-    </div>
+    </Dialog>
   );
 }

@@ -200,7 +200,7 @@ export async function addSticky(page: Page): Promise<string> {
   await editor.fill("Note");
   await page.keyboard.press("Escape");
   await expect(page.locator(".inline-editor")).toHaveCount(0);
-  await expect(page.locator(".counts li", { hasText: "Sticky note" })).toContainText(/\d+/);
+  await expect.poll(() => objectCount(page, "sticky_note")).toBeGreaterThan(0);
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
   return id;
 }
@@ -259,6 +259,8 @@ export async function addComment(page: Page, text: string): Promise<void> {
   await page.mouse.click(box.x + 40, box.y + box.height - 60);
   const composer = page.locator(".comment-composer textarea");
   await expect(composer).toBeVisible();
+  // The composer is a Dialog; its text field asked for focus and keeps it.
+  await expect(composer).toBeFocused();
   await composer.fill(text);
   await page.locator(".comment-composer").getByRole("button", { name: "Create" }).click();
   await expect(page.locator(".comments-thread")).toContainText(text);
@@ -335,4 +337,43 @@ export async function applyDefaultTableLayout(page: Page): Promise<void> {
   const card = page.locator(".section-layout-card");
   await expect(card).toBeVisible();
   await card.getByRole("button", { name: "Apply", exact: true }).click();
+}
+
+/**
+ * Zoom in with the zoom panel until the camera reaches `min`. The buttons zoom around the
+ * centre, where a new object is created, so that object stays in view.
+ */
+export async function zoomInTo(page: Page, min: number): Promise<void> {
+  const zoom = () =>
+    page.evaluate(() => (window as unknown as { __remo: { camera: { zoom: number } } }).__remo.camera.zoom);
+  while ((await zoom()) < min) {
+    await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  }
+}
+
+/**
+ * How many objects of a type the document holds (all types when omitted). Read from the
+ * document, not from the panel: the room's counts are on screen only when nothing is
+ * selected (ADR-236).
+ */
+export async function objectCount(page: Page, type?: string): Promise<number> {
+  return page.evaluate(
+    (wanted) =>
+      ((window as unknown as { __remo?: { widgets?: Array<{ type: string }> } }).__remo?.widgets ?? []).filter(
+        (widget) => !wanted || widget.type === wanted,
+      ).length,
+    type ?? null,
+  );
+}
+
+/**
+ * Open a folded group of the properties panel by its row name (ADR-236). Clicking an
+ * open row would close it, so it is opened only when closed.
+ */
+export async function openFold(page: Page, name: string | RegExp): Promise<void> {
+  const fold = page.locator("aside.inspector details.inspector-fold").filter({
+    has: page.locator("summary", { hasText: name }),
+  });
+  if ((await fold.getAttribute("open")) === null) await fold.locator("summary").click();
+  await expect(fold).toHaveAttribute("open", "");
 }

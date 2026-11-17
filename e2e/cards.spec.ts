@@ -45,13 +45,25 @@ test("selects cards by assignee and due state", async ({ page }) => {
 
   const fields = page.locator(".card-fields");
   await fields.locator("select").nth(1).selectOption({ index: 1 });
-  await page.locator(".card-filter select").first().selectOption({ index: 1 });
-  await page.locator(".card-filter").getByRole("button", { name: "Select cards" }).click();
-  await expect(page.locator(".card-filter")).toContainText("Cards found: 1");
 
-  await page.locator(".card-filter select").nth(1).selectOption("none");
-  await page.locator(".card-filter").getByRole("button", { name: "Select cards" }).click();
-  await expect(page.locator(".card-filter")).toContainText("Cards found: 1");
+  // The filter belongs to the room: it is in the panel with nothing selected (ADR-236),
+  // and what it finds becomes the selection.
+  const selected = () =>
+    page.evaluate(() => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds.length);
+  await page.keyboard.press("Escape");
+  await expect.poll(selected).toBe(0);
+  const filter = page.locator(".card-filter");
+  await filter.locator("select").first().selectOption({ index: 1 });
+  await filter.getByRole("button", { name: "Select cards" }).click();
+  await expect.poll(selected).toBe(1);
+  await expect(filter).toHaveCount(0);
+
+  await page.keyboard.press("Escape");
+  await expect.poll(selected).toBe(0);
+  await filter.locator("select").first().selectOption({ index: 1 });
+  await filter.locator("select").nth(1).selectOption("none");
+  await filter.getByRole("button", { name: "Select cards" }).click();
+  await expect.poll(selected).toBe(1);
 });
 
 test("the empty-cell plus adds a card and focuses its editor", async ({ page }) => {

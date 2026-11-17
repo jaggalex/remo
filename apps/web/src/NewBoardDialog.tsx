@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { TEMPLATE_KEYS, type TemplateKey } from "@remo/model";
+import { Button, ChoiceCard, Dialog, Input, Select } from "@remo/ui";
 import { api, ApiError, type OrgSummary } from "./api";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
@@ -103,28 +104,16 @@ export function NewBoardDialog({
   };
 
   return (
-    <div
-      className="dialog-backdrop"
-      role="presentation"
-      onPointerDown={() => {
-        if (!busy) onClose();
-      }}
+    <Dialog
+      title={t("newBoard.title")}
+      help={<HelpLink topicId="rooms.create" />}
+      size="sm"
+      onClose={onClose}
+      dismissable={!busy}
     >
-      <form
-        className="auth-dialog new-board-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("newBoard.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-        onSubmit={submit}
-      >
-        <h2>
-          {t("newBoard.title")} <HelpLink topicId="rooms.create" />
-        </h2>
-
-        <label className="auth-field">
-          <span>{t("newBoard.name")}</span>
-          <input
+      <form className="dialog-stack new-board-dialog" onSubmit={submit}>
+        <Input
+          label={t("newBoard.name")}
             autoFocus
             required
             maxLength={120}
@@ -132,87 +121,69 @@ export function NewBoardDialog({
             placeholder={t("newBoard.namePlaceholder")}
             onChange={(event) => setTitle(event.target.value)}
           />
-        </label>
 
         {canCreate.length > 1 && (
-          <label className="auth-field">
-            <span>{t("newBoard.org")}</span>
-            <select value={orgId} onChange={(event) => setOrgId(event.target.value)}>
-              {canCreate.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label={t("newBoard.org")}
+            value={orgId}
+            options={canCreate.map((org) => ({ value: org.id, label: org.name }))}
+            onChange={(event) => setOrgId(event.target.value)}
+          />
         )}
 
         {teams.length > 1 && (
-          <label className="auth-field">
-            <span>{t("newBoard.team")}</span>
-            <select value={teamId} onChange={(event) => setTeamId(event.target.value)}>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label={t("newBoard.team")}
+            value={teamId}
+            options={teams.map((team) => ({ value: team.id, label: team.name }))}
+            onChange={(event) => setTeamId(event.target.value)}
+          />
         )}
 
         {/* Two equal choices, not a list: an empty room or one with an example. The
             example list appears only once "With an example" is chosen (P2). */}
         <fieldset className="new-board-start">
           <legend>{t("newBoard.template")}</legend>
-          <div className="new-board-cards">
-            {(["empty", "example"] as const).map((kind) => {
-              const checked = kind === "empty" ? template === "empty" : template !== "empty";
-              return (
-                <label key={kind} className={`new-board-card${checked ? " is-checked" : ""}`}>
-                  <input
-                    type="radio"
-                    name="new-board-start"
-                    checked={checked}
-                    onChange={() =>
-                      setTemplate(kind === "empty" ? "empty" : (TEMPLATE_KEYS[0] as Choice))
-                    }
-                  />
-                  <b>{t(kind === "empty" ? "newBoard.template.empty" : "newBoard.start.example")}</b>
-                  <span>
-                    {t(kind === "empty" ? "newBoard.start.emptyHint" : "newBoard.start.exampleHint")}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
+          <ChoiceCard
+            name="new-board-start"
+            value={template === "empty" ? "empty" : "example"}
+            options={[
+              {
+                value: "empty",
+                title: t("newBoard.template.empty"),
+                hint: t("newBoard.start.emptyHint"),
+              },
+              {
+                value: "example",
+                title: t("newBoard.start.example"),
+                hint: t("newBoard.start.exampleHint"),
+              },
+            ]}
+            onChange={(kind) =>
+              setTemplate(kind === "empty" ? "empty" : (TEMPLATE_KEYS[0] as Choice))
+            }
+          />
           {template !== "empty" && (
-            <label className="auth-field">
-              <span>{t("newBoard.start.which")}</span>
-              <select
-                value={template}
-                onChange={(event) => setTemplate(event.target.value as Choice)}
-              >
-                {TEMPLATE_KEYS.map((key) => (
-                  <option key={key} value={key}>
-                    {t(TEMPLATE_LABEL_KEY[key])}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Select
+              label={t("newBoard.start.which")}
+              value={template}
+              options={TEMPLATE_KEYS.map((key) => ({ value: key, label: t(TEMPLATE_LABEL_KEY[key]) }))}
+              onChange={(event) => setTemplate(event.target.value as Choice)}
+            />
           )}
         </fieldset>
 
         {error && <p className="auth-error">{error}</p>}
 
         <div className="auth-actions">
-          <button type="button" className="ghost-button" disabled={busy} onClick={onClose}>
+          <Button disabled={busy} onClick={onClose}>
             {t("newBoard.cancel")}
-          </button>
-          <button type="submit" className="primary-button" disabled={busy || !orgId}>
+          </Button>
+          <Button type="submit" variant="primary" disabled={busy || !orgId}>
             {busy ? t("newBoard.creating") : t("newBoard.create")}
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Dialog>
   );
 }

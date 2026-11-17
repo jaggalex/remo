@@ -17,7 +17,7 @@ curl -X POST https://boards.example.com/api/orgs/$ORG/apps \
   -d '{"appId":"app.hello"}'
 ```
 
-2. Open the room, then **Ещё ▾** (More) → **Приложения** (Apps).
+2. Open the room, then **Ещё (⋯)** (More) → **Приложения** (Apps).
 3. Result: the panel contains the app and its button.
 
 ## Checking the action

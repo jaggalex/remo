@@ -12,6 +12,7 @@ import {
 import {
   anchorPoint,
   boxOf,
+  CARD_RADIUS,
   connectorHandles,
   connectorPath,
   drawDragOrigin,
@@ -257,7 +258,7 @@ export function paintBoardLayer(input: BoardPaintInput): void {
           height: placement.height,
         },
         camera.zoom,
-        placement.height / 2.6,
+        CARD_RADIUS,
         palette,
       );
     }

@@ -22,7 +22,7 @@ Input: three sticky notes and one frame. Action: drag the sticky notes inside th
 
 ## What you can configure
 
-- grid and snapping to it;
+- the grid: off by default; lines or dots can be turned on in settings;
 - the snap threshold to the edges and centers of neighbours;
 - camera scale and position;
 - room template on creation;

@@ -284,6 +284,11 @@ export interface NumberFieldProps {
   suffix?: string;
   /** An empty field is a value of its own, such as Auto. */
   allowEmpty?: boolean;
+  /**
+   * Names the empty value, such as Auto. While it shows, the unit is hidden: "Auto px"
+   * would read as a size in pixels.
+   */
+  placeholder?: string;
   disabled?: boolean;
   hint?: string;
   id?: string;
@@ -302,6 +307,7 @@ export function NumberField({
   largeStep = 10,
   suffix,
   allowEmpty,
+  placeholder,
   disabled,
   hint,
   id: given,
@@ -407,6 +413,7 @@ export function NumberField({
           inputMode="numeric"
           autoComplete="off"
           value={draft}
+          placeholder={placeholder}
           disabled={disabled}
           aria-describedby={hint ? `${id}-hint` : undefined}
           {...own}
@@ -431,7 +438,7 @@ export function NumberField({
             }
           }}
         />
-        {suffix && <span className="rm-input-affix">{suffix}</span>}
+        {suffix && !(placeholder && draft === "") && <span className="rm-input-affix">{suffix}</span>}
         <span className="rm-number-steps">
           <button
             type="button"

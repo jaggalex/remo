@@ -1,5 +1,6 @@
 import type { CardStatus, Widget } from "@remo/model";
 import { drawCardMeta } from "./cardMeta";
+import { drawCardSheet } from "./cardSheet";
 import type { KanbanLayout } from "./layout";
 import { DEFAULT_PALETTE, type CanvasPalette } from "./palette";
 import { DEFAULT_FONT_FAMILY } from "./textLayout";
@@ -164,12 +165,12 @@ export function drawKanban(
 
     ctx.save();
 
-    ctx.fillStyle = palette.panel;
-    ctx.strokeStyle = selectedCard ? palette.accent : palette.borderSubtle;
-    ctx.lineWidth = (selectedCard ? 2.5 : 1.8) / zoom;
-    roundedRect(ctx, cardLeft, cardTop, placement.width, placement.height, placement.height / 2.6);
-    ctx.fill();
-    ctx.stroke();
+    drawCardSheet(
+      ctx,
+      { x: cardLeft, y: cardTop, width: placement.width, height: placement.height },
+      zoom,
+      { palette, selected: selectedCard },
+    );
 
     // Meta goes on top of the card fill, so the badges are not painted under it.
     const titleY = card
@@ -186,7 +187,6 @@ export function drawKanban(
             statusLabel:
               options.cardStatus ?? { todo: "To do", in_progress: "In progress", done: "Done" },
           },
-          zoom,
         )
       : placement.y;
 
@@ -232,24 +232,6 @@ export function drawKanban(
       ctx.stroke();
     }
   }
-}
-
-function roundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-): void {
-  const r = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + width, y, x + width, y + height, r);
-  ctx.arcTo(x + width, y + height, x, y + height, r);
-  ctx.arcTo(x, y + height, x, y, r);
-  ctx.arcTo(x, y, x + width, y, r);
-  ctx.closePath();
 }
 
 function wrapText(

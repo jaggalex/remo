@@ -1,12 +1,13 @@
 /* ------------------------------------------------------- section panel --- */
 
+/* The panel header names the section (ADR-236): one hairline under the actions, no
+   heading of its own. */
 .section-panel {
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line);
+  margin-top: var(--space-3);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--border-subtle);
 }
 
-.section-panel-head,
 .section-group-head {
   display: flex;
   align-items: center;
@@ -14,27 +15,8 @@
   gap: var(--space-2);
 }
 
-.section-panel-head h2 {
-  margin: 0;
-}
-
-.section-badge {
-  padding: 1px var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--ink);
-  font: var(--type-caption);
-}
-
-.section-panel-title {
-  margin: var(--space-1) 0 var(--space-3);
-  font: var(--type-label);
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
 .section-group {
-  margin-top: var(--space-4);
+  margin-top: var(--space-3);
 }
 
 .section-group h3,
@@ -42,10 +24,10 @@
   display: block;
   margin: 0 0 var(--space-2);
   font: var(--type-caption);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--text-muted);
 }
 
 .section-panel .rm-segmented {
@@ -72,7 +54,7 @@
   display: block;
   margin-bottom: var(--space-1);
   font: var(--type-caption);
-  color: var(--faint);
+  color: var(--text-muted);
 }
 
 .section-axis-list {
@@ -87,10 +69,11 @@
   gap: var(--space-2);
   width: 100%;
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--line);
+  /* One frame per level (ADR-233): a row is a fill, never an outline inside the panel. */
+  border: 0;
   border-radius: var(--radius-md);
-  background: var(--bg-panel);
-  color: var(--ink);
+  background: transparent;
+  color: var(--text-primary);
   font: var(--type-label);
   text-align: left;
   cursor: pointer;
@@ -100,9 +83,13 @@
   background: var(--bg-hover);
 }
 
+.section-axis-row:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
 .section-axis-row.is-selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--bg-active);
 }
 
 .section-axis-title {
@@ -115,7 +102,7 @@
 
 .section-axis-meta {
   flex: none;
-  color: var(--faint);
+  color: var(--text-muted);
   font: var(--type-caption);
   font-variant-numeric: tabular-nums;
 }
@@ -137,30 +124,6 @@
   gap: var(--space-1);
 }
 
-.section-check {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font: var(--type-label);
-  color: var(--ink);
-}
-
-.section-look-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: var(--type-caption);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
 .section-look {
   display: flex;
   flex-direction: column;
@@ -176,7 +139,7 @@
   padding: var(--space-1) 0;
   border: 0;
   background: transparent;
-  color: var(--ink);
+  color: var(--text-primary);
   font: var(--type-label);
   text-align: left;
   cursor: pointer;
@@ -186,7 +149,7 @@
   width: 18px;
   height: 18px;
   flex: none;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
 }
 
@@ -201,7 +164,7 @@
 
 .section-fill-name {
   flex: none;
-  color: var(--muted);
+  color: var(--text-secondary);
   font: var(--type-caption);
 }
 
@@ -222,37 +185,7 @@
 .section-remove {
   margin-top: var(--space-5);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
-}
-
-.section-action {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: var(--type-label);
-  text-align: left;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-
-.section-action:hover {
-  color: var(--accent);
-}
-
-.section-action-danger {
-  color: var(--danger);
-}
-
-.section-action-danger:hover {
-  color: var(--danger);
-}
-
-.section-action.is-disabled {
-  color: var(--faint);
-  text-decoration: none;
-  cursor: not-allowed;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .section-caption {
@@ -508,21 +441,6 @@
   border-top-width: 1.5px;
 }
 
-.section-px {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-.section-px .section-field-label {
-  flex: 1;
-}
-
-.section-px .rm-field {
-  width: 96px;
-}
-
 /* The delete-axis choices wrap instead of clipping a long neighbour name. */
 .axis-delete-actions {
   display: flex;
@@ -564,7 +482,7 @@
 .axis-size-hint,
 .axis-size-keys {
   margin: 0;
-  font: 400 12px/16px var(--font-sans);
+  font: var(--type-caption);
 }
 
 .axis-size-px {
@@ -573,13 +491,7 @@
   gap: var(--space-2);
 }
 
-.axis-size-now {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 /* The header menu's size window hangs beside the header (T13). */
-
 
 /* -------------------------------------------------- cell selection --- */
 
@@ -623,7 +535,7 @@
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  font: 400 12px/16px var(--font-sans);
+  font: var(--type-caption);
 }
 
 /* The cell menu opens at the pointer, above the canvas and the selection layer. */
@@ -712,7 +624,7 @@
   color: var(--text-secondary);
   font: var(--type-caption);
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--dur-1) var(--ease);
 }
 
 .section-title-strip:hover .section-view-badge,
@@ -751,13 +663,6 @@
   margin: 0 0 var(--space-2);
   font: var(--type-label);
   font-weight: 600;
-}
-
-.section-layout-option {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  font: var(--type-body);
 }
 
 .section-layout-actions {

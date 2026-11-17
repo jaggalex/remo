@@ -3,6 +3,17 @@
 Semver. A breaking token change (rename, removal, a role pointing elsewhere) is a major
 version with a note here and a codemod where possible.
 
+## Unreleased
+
+- **Dialog:** optional `help` slot — one help link beside the title. Product dialogs that
+  had a «?» in a hand-made header can move onto `Dialog` without losing it (audit
+  UX-DIALOG-01). Additive; no existing prop changes.
+- **Dialog:** a control that took focus on mount (`autoFocus` on a text field) keeps it;
+  otherwise the first control is focused as before. Focus still returns to the opener,
+  which is now read on the first render, before any child moves focus.
+- **Dialog:** the title and its help link sit together (`rm-dialog-heading`, 8 px apart);
+  the close button stays at the right edge.
+
 ## 1.0.0 — 2026-10-26
 
 First package release (replaces the single-file prototype bundle).

@@ -48,6 +48,7 @@ organisation home, `?room=<id>` is a room.
 | `pnpm verify` | the full gate except browser acceptance |
 | `pnpm verify --e2e` | everything CI runs, including Playwright and the guide audit |
 | `pnpm e2e` | browser acceptance only |
+| `pnpm e2e:visual` | visual baselines compared in the Linux browser (needs Docker) |
 | `pnpm baselines` | regenerate product visual baselines deliberately |
 | `pnpm docs:check` / `pnpm guide:check` | help and portal translation/freshness |
 | `pnpm state:write` / `pnpm state:check` | regenerate or check the facts block below |
@@ -101,11 +102,11 @@ _Факты дерева, проверяются `pnpm state:check`; числа 
 
 | Факт | Значение |
 |---|---|
-| ADR | 220, последний — ADR-220 |
+| ADR | 238, последний — ADR-238 |
 | Версия схемы | 20 |
-| Браузерные сценарии | 174 в 35 файлах |
-| Темы помощи | 34 (RU + EN) |
+| Браузерные сценарии | 181 в 36 файлах |
+| Темы помощи | 35 (RU + EN) |
 | Страницы портала | 69 |
-| Эталоны | 28 продуктовых + 12 DS |
+| Эталоны | 34 продуктовых + 12 DS |
 | Крупнейший файл | `apps/web/src/BoardApp.tsx` — 800 строк |
 <!-- generated:state:end -->

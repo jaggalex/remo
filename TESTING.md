@@ -106,12 +106,12 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 
 | Fact | Value |
 |---|---|
-| ADR | 220, latest ADR-220 |
+| ADR | 238, latest ADR-238 |
 | Schema version | 20 |
-| Browser scenarios | 174 in 35 files |
-| Help topics | 34 (RU + EN) |
+| Browser scenarios | 181 in 36 files |
+| Help topics | 35 (RU + EN) |
 | Portal pages | 69 |
-| Baselines | 28 product + 12 DS |
+| Baselines | 34 product + 12 DS |
 | Largest file | `apps/web/src/BoardApp.tsx` — 800 lines |
 <!-- generated:state:end -->
 
@@ -149,7 +149,7 @@ groups, tools and object panels, and unit suites cover the rest.
 | `export-backup` | real PNG download; backup manifest; restore with confirmation | EXP-2, EXP-7, EXP-8 |
 | `facilitation` | shared timer (countdown/pause/resume), vote cap/end/publish, follow + stop everyone | FAC-1…5, FAC-7…12, FAC-15…17 |
 | `save-offline` | socket loss → `offline (N)` → reconnect → `saved` → reload keeps the note | SYNC-3…5 |
-| `visual` | three connector routings differ; room/export/timer/vote fit 1440×900; PNGs | stage-1 baselines, visual part of FAC/EXP |
+| `visual` | three connector routings differ; room/export/timer/vote fit 1440×900; PNGs compared in the Linux browser (ADR-222) | stage-1 baselines, visual part of FAC/EXP |
 | `a11y` | axe on room, export, timer and vote dialogs | accessibility gate |
 | `perf` | 120 connectors inside the frame budget | stage-1 FPS debt |
 | `cards` | card status, assignee, date range survive a reload | M1 |
@@ -168,11 +168,26 @@ Vite on `:5175` — those are the defaults; every port shifts with `E2E_PORT_BAS
 (ADR-130). Traces and screenshots on failure land in the run's
 `test-results/<label>_<run>` directory and are git-ignored.
 
-Visual evidence lives in `spec/baselines/` (the count is in the block above). Regenerate it deliberately:
+Visual evidence lives in `spec/baselines/` (the count is in the block above). The PNGs are
+Linux renders and are **compared**: `pnpm e2e:visual` (also a step of `pnpm verify --e2e`)
+runs the visual scenarios in Chromium from the Playwright image and fails when more than
+20 pixels of a screen differ by more than about 8 grey levels (ADR-222, ADR-238). Faint
+changes count: a hairline, a tone or a shadow fails until `pnpm baselines` is run. Docker and the image are required:
 
 ```bash
-pnpm baselines        # REMO_UPDATE_BASELINES=1 on e2e/visual.spec.ts
+docker pull --platform linux/amd64 mcr.microsoft.com/playwright:v1.64.1-noble
 ```
+
+```bash
+pnpm e2e:visual       # compare against spec/baselines
+```
+
+```bash
+pnpm baselines        # regenerate deliberately, then review and commit the PNGs
+```
+
+The full `pnpm e2e` still runs `visual.spec.ts` on the host browser for its invariants
+(fits the viewport, connector routings differ) and skips the pixel comparison there.
 
 Facts recorded on 27.10.2026: all screens fit 1440×900 after the topbar label collapse;
 axe reports no serious/critical on the room and three dialogs; 120 connectors run at

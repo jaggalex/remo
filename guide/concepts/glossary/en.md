@@ -39,7 +39,7 @@ One term, one concept. If a word in the documentation differs from the word on s
 | **Personal organisation** | the organisation every account has, marked with the **Personal** badge |
 | **Handle** | the unique `@handle` beside the name; shown in the account menu, presence and comments |
 | **Object name** | an optional label of up to 120 characters for search and presentation; not painted on the canvas |
-| **Object ID** | the permanent identifier; read-only and copyable |
+| **Object ID** | the permanent identifier; read-only, copied from **⋯ → Info** |
 | **Room tile** | a card on the organisation home: emoji, title, team, author and dates |
 | **Trash** | the room archive; a trashed room does not open and the owner can restore it |
 | **Team** | a group inside the organisation; roles can be granted to a team |

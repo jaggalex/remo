@@ -4,29 +4,29 @@ The screen has three zones and menus: the header describes the room and the sess
 
 ## Header
 
-On the left: the logo, **All rooms** (⌘K), the organisation path and the room name. **All rooms** and the organisation name lead to the organisation home. The name is a button with a menu: rename, room settings, export, restore from a backup, create a copy, move to trash.
+On the left: the logo, **All rooms** (⌘K), the organisation path and the room name. **All rooms** and the organisation name lead to the organisation home. The name is a button with a menu: rename, room settings, export, restore from a backup, create a copy, replace the room with a template, move to trash.
 
 On the right, in order from left to right:
 
 | Element | What it opens |
 |---|---|
 | **Facilitation** | timer, voting, shared viewing, reactions |
-| **More** | templates, an AI task, apps |
-| Saving indicator | the save state and the "Saving and offline" help |
+| **More** (⋯) | templates, an AI task, apps |
+| Save icon | the save state and the "Saving and offline" help; the word "Offline" shows next to the icon |
 | Avatar | the account name and `@handle`, cursor name, theme, language, organisation, sign in and out |
 | Participants | who is in the room; clicking a face follows that person |
 | **Properties** | the right panel with object or room properties |
 | **Start presentation** | the slide-order panel |
 | **Discussion** | the comments panel; the counter shows unread comments |
-| **Share** | participant roles and the public link |
+| **Share** (icon) | participant roles and the public link |
 
-The centre of the header stays empty: nothing appears there and nothing needs to be looked for there.
+The centre of the header stays empty: nothing appears there and nothing needs to be looked for there. The buttons on the right are icons; each one's name shows in a tooltip on hover or focus.
 
 ## Menus
 
 | Menu | What it contains |
 |---|---|
-| Room name | rename, settings, export, restore, copy, trash |
+| Room name | rename, settings, export, restore, copy, replace with a template, trash |
 | **Facilitation** | timer, voting, shared viewing, reactions |
 | **More** | templates, an AI task, apps |
 | Avatar | cursor name, theme (system, light, dark), language (Russian, English), active sessions, organisation, sign in and out. Theme and language belong to the account and follow it to another device; before sign-in the browser choice applies |
@@ -50,7 +50,7 @@ Below, in a separate panel, sit **Undo** and **Redo**: history is not a creation
 
 ## Bottom and edges
 
-- Bottom left: **Fit** and zoom: `−`, the percentage, `+`. Fit can frame everything or just the selection.
+- Bottom left: zoom: `−`, the percentage, `+` and **Fit**. Fit can frame everything or just the selection.
 - Bottom centre: the first-visit hint. It disappears after the first gesture on the canvas or after a few seconds.
 - While voting runs, the **Voting is on** line (or "Voting ended") takes this place: votes left, time, the facilitator and a way into the panel. The hint is not shown at the same time.
 - Top left, beside the rail, the selection badge names the selected object's type, size, lock and tags.
@@ -68,8 +68,8 @@ Below, in a separate panel, sit **Undo** and **Redo**: history is not a creation
 | Change the theme or language | the avatar menu; with an account the choice follows you to other devices |
 | Find or end a session on another device | avatar menu → **Active sessions** |
 | Invite a person or turn on the link | **Share** |
-| Add a template | **More ▾ → Templates…** |
-| Set a task for an agent | **More ▾ → Ask AI…** |
+| Add a template | **More (⋯) → Templates…** |
+| Set a task for an agent | **More (⋯) → Ask AI…** |
 | Open all rooms | **All rooms** or ⌘K |
 
 ## What changes with a role

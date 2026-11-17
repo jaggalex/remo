@@ -39,7 +39,14 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["list"], ["html", { open: "never", outputFolder: REPORT_DIR }]],
+  // Baselines are compared only in the Linux browser and written only on purpose (ADR-222).
+  snapshotPathTemplate: "spec/baselines/{arg}{ext}",
+  // "changed": rewrite only what is outside the tolerance (ADR-223).
+  updateSnapshots: process.env.REMO_UPDATE_BASELINES ? "changed" : "none",
   use: {
+    ...(process.env.REMO_BROWSER_WS
+      ? { connectOptions: { wsEndpoint: process.env.REMO_BROWSER_WS, exposeNetwork: "<loopback>" } }
+      : {}),
     baseURL: `http://localhost:${WEB_PORT}`,
     locale: "en-US",
     // The product's design target; 1280 still overflows the topbar (recorded in Q2).

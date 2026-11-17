@@ -11,10 +11,14 @@
  * The same rule applies to layers: a panel names `--z-*`, never a number. The ladder is
  * one primitive series, not a light/dark pair, so both themes share the order (ADR-139).
  *
+ * Design rules (type, spacing, radius, motion, colour roles, DS controls, modal dialogs,
+ * icons) are a strict gate with named exceptions: see `ui-design-rules.mjs` (ADR-229).
+ *
  *   node scripts/ui-rules-check.mjs
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { PENDING, scanDesignRules, strictProblems } from "./ui-design-rules.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const SCAN = join(ROOT, "apps/web/src");
@@ -112,12 +116,17 @@ for (const file of walk(SCAN)) {
 
 problems.push(...layerProblems());
 
+// Design rules: a strict gate; exceptions are named in ui-design-rules.mjs (ADR-229).
+const findings = scanDesignRules(ROOT);
+problems.push(...strictProblems(findings));
+
 if (problems.length) {
-  console.error("UI rules failed (use a token, objectDefaults.ts, or a named layer):");
+  console.error("UI rules failed (use a token, objectDefaults.ts, a named layer, or a @remo/ui component):");
   for (const problem of problems) console.error(`  ${problem}`);
   process.exit(1);
 }
 
 console.log(
-  `UI rules ok: no colour literals outside ${ALLOWED.size} data modules; layers are one named ladder`,
+  `UI rules ok: no colour literals outside ${ALLOWED.size} data modules; layers are one named ladder; ` +
+    `design rules clean, ${PENDING.length} pending items named with a reason`,
 );

@@ -1,3 +1,5 @@
+import { Button } from "@remo/ui";
+import { useId } from "react";
 import { LinkPasswordGate } from "./LinkPasswordGate";
 import type { BoardDocument } from "@remo/doc";
 import { DeleteConfirmation } from "./DeleteDialog";
@@ -28,9 +30,12 @@ export function BoardAccessGate({
   onRetry: () => void;
 }) {
   const { t } = useI18n();
+  const titleId = useId();
+  // Not a dialog: there is no room behind it to return to, and the header above stays
+  // usable (ADR-139); a modal flag would hide that header from screen readers.
   return (
-    <div className="access-gate" role="dialog" aria-modal="true">
-      <h2>{t("iam.noAccess")}</h2>
+    <section className="access-gate" aria-labelledby={titleId}>
+      <h2 id={titleId}>{t("iam.noAccess")}</h2>
       <p className="muted">
         {reason === "PASSWORD_REQUIRED"
           ? t("iam.passwordRequired")
@@ -47,16 +52,16 @@ export function BoardAccessGate({
       ) : (
         <div className="access-actions">
           {!signedIn && (
-            <button type="button" className="primary-button" onClick={onSignIn}>
+            <Button variant="primary" onClick={onSignIn}>
               {t("auth.login")}
-            </button>
+            </Button>
           )}
-          <button type="button" className="ghost-button" onClick={onRetry}>
+          <Button onClick={onRetry}>
             {t("iam.retry")}
-          </button>
+          </Button>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -74,13 +79,10 @@ export function BoardUnclaimedBanner({
   return (
     <div className="unclaimed-banner" role="status">
       <span>{t("iam.unclaimed")}</span>
-      <button
-        type="button"
-        className="primary-button"
-        onClick={() => (signedIn ? onClaim() : onSignIn())}
-      >
+      <Button variant="primary"
+        onClick={() => (signedIn ? onClaim() : onSignIn())}>
         {signedIn ? t("iam.claim") : t("iam.claimLogin")}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -102,17 +104,14 @@ export function FollowPill({
           ? t("follow.paused", { name: follow.targetLabel ?? follow.target })
           : t("follow.following", { name: follow.targetLabel ?? follow.target })}
       </span>
-      <button
-        type="button"
-        className="ghost-button"
-        onClick={() => dispatch(follow.paused ? { type: "resume" } : { type: "unfollow" })}
-      >
+      <Button
+        onClick={() => dispatch(follow.paused ? { type: "resume" } : { type: "unfollow" })}>
         {follow.paused ? t("follow.resume") : t("follow.stop")}
-      </button>
+      </Button>
       {follow.paused && (
-        <button type="button" className="ghost-button" onClick={() => dispatch({ type: "unfollow" })}>
+        <Button onClick={() => dispatch({ type: "unfollow" })}>
           {t("follow.stop")}
-        </button>
+        </Button>
       )}
       <HelpLink topicId="facilitation.follow" />
     </div>
@@ -137,12 +136,12 @@ export function FollowInvite({
     <div className="follow-invite" role="dialog" aria-label={t("follow.inviteTitle")}>
       <span>{t("follow.invite", { name: name ?? from })}</span>
       <div className="follow-invite-actions">
-        <button type="button" className="share-button" onClick={onAccept}>
+        <Button variant="primary" onClick={onAccept}>
           {t("follow.accept")}
-        </button>
-        <button type="button" className="ghost-button" onClick={onDismiss}>
+        </Button>
+        <Button onClick={onDismiss}>
           {t("follow.stay")}
-        </button>
+        </Button>
       </div>
     </div>
   );

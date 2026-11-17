@@ -1,6 +1,8 @@
+import { Button, IconButton } from "@remo/ui";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
+import { writeClipboard } from "./clipboard";
 import type { HelpTopicId } from "./help/topics.generated";
 
 export interface InfoState {
@@ -9,6 +11,8 @@ export interface InfoState {
   y: number;
   title: string;
   rows: Array<{ label: string; value: string }>;
+  /** The object's stable id, shown with a copy button (ADR-236: it left the panel). */
+  id?: string;
   /** A topic that explains the state the card is reporting, if any. */
   helpTopicId?: HelpTopicId;
   draftFrameId?: string;
@@ -88,9 +92,7 @@ export function InfoCard({ state, onClose, onOpenThread }: {
             </>
           )}
         </span>
-        <button type="button" onClick={onClose} title={t("info.close")} aria-label={t("info.close")}>
-          ×
-        </button>
+        <IconButton icon="close" size="compact" label={t("info.close")} onClick={onClose} />
       </div>
       <dl>
         {state.rows.map((row) => (
@@ -100,17 +102,40 @@ export function InfoCard({ state, onClose, onOpenThread }: {
           </div>
         ))}
       </dl>
+      {state.id && <InfoId id={state.id} />}
       {state.draftFrameId && onOpenThread && (
-        <button type="button" className="link-button" onClick={() => {
+        <Button variant="ghost" size="compact" onClick={() => {
           void onOpenThread(state.draftFrameId!).then((opened) => {
             if (opened) onClose();
             else setMissingThread(state);
           });
         }}>
           {t("roomAgent.openThread")}
-        </button>
+        </Button>
       )}
       {missingThread === state && <p className="muted">{t("roomAgent.threadMissing")}</p>}
+    </div>
+  );
+}
+
+/** The id a link, a command or a bug report needs, and one click to copy it. */
+function InfoId({ id }: { id: string }) {
+  const { t } = useI18n();
+  const [copied, setCopied] = useState(false);
+  useEffect(() => setCopied(false), [id]);
+  return (
+    <div className="object-id-row">
+      <span className="muted">{t("inspector.objectId")}</span>
+      <code className="object-id">{id}</code>
+      <Button
+        size="compact"
+        variant="secondary"
+        onClick={() => {
+          void writeClipboard(id).then((ok) => setCopied(ok));
+        }}
+      >
+        {copied ? t("inspector.idCopied") : t("inspector.copyId")}
+      </Button>
     </div>
   );
 }

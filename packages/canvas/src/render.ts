@@ -19,9 +19,10 @@ import {
   type ConnectorPath,
 } from "./connectors";
 import { drawClipMark } from "./clipMark";
-import { roundRect } from "./path";
+import { deviceScale, roundRect } from "./path";
+import { drawCardSheet } from "./cardSheet";
 import { layoutLabel } from "./labelLayout";
-export { roundRect } from "./path";
+export { deviceScale, roundRect } from "./path";
 import { DEFAULT_PALETTE, withAlpha, type CanvasPalette } from "./palette";
 import { layoutRuns, textCapFor } from "./textLayout";
 import { drawRichLine, drawTextInBox } from "./textPaint";
@@ -43,7 +44,8 @@ export { PAINT_RANK, layerKey, paintOrder, rankOf } from "@remo/model";
  * The object itself follows the pointer, so the original place has to keep saying
  * "something came from here" — without it, a drag looks like a copy. Neutral grey and
  * a dashed hairline, like a shadow rather than a second object. `radius` matches the
- * shape of what was lifted: cards are pills, everything else is a rectangle.
+ * shape of what was lifted: cards are sheets with `CARD_RADIUS`, everything else is a
+ * rectangle.
  */
 export function drawDragOrigin(
   ctx: CanvasRenderingContext2D,
@@ -107,14 +109,6 @@ export const STICKY_SHADOW = { offset: 12, blur: 14, inset: 6, dx: 2 } as const;
 /** How much lighter the upper-left corner is and how much darker the lower-right one. */
 export const STICKY_SHEEN = { light: 0.3, dark: -0.03 } as const;
 
-/**
- * Device pixels per world unit. Shadows are not transformed by the canvas matrix, so a
- * shadow that belongs to an object is multiplied by this to follow the object.
- */
-export function deviceScale(ctx: CanvasRenderingContext2D, zoom: number): number {
-  const matrix = typeof ctx.getTransform === "function" ? ctx.getTransform() : null;
-  return matrix ? Math.hypot(matrix.a, matrix.b) : zoom;
-}
 
 
 /** Greedy word wrap; returns the lines that fit into `maxLines`. */
@@ -397,31 +391,17 @@ function paintWidget(
       break;
     }
     case "kanban": {
+      // Only the ground the matrix stands on: the section around it is the one frame, and
+      // `drawKanban` draws the real column and lane separators (ADR-234).
       ctx.fillStyle = palette.panel;
-      ctx.strokeStyle = palette.borderSubtle;
-      ctx.lineWidth = 1 / zoom;
       roundRect(ctx, left, top, widget.width, widget.height, 8);
       ctx.fill();
-      ctx.stroke();
-      ctx.strokeStyle = palette.borderSubtle;
-      for (let i = 1; i < 3; i += 1) {
-        const x = left + (widget.width / 3) * i;
-        ctx.beginPath();
-        ctx.moveTo(x, top);
-        ctx.lineTo(x, top + widget.height);
-        ctx.stroke();
-      }
       break;
     }
     case "card": {
-      // `theme` is the paint theme here; a card's theme is its outline colour.
-      const cardTheme = widget.style?.cardTheme ?? "#ffdd33";
-      ctx.fillStyle = palette.panel;
-      ctx.strokeStyle = cardTheme;
-      ctx.lineWidth = 1.5 / zoom;
-      roundRect(ctx, left, top, widget.width, widget.height, widget.height / 2.6);
-      ctx.fill();
-      ctx.stroke();
+      // The same sheet as a card in a kanban (ADR-234). `cardTheme` is kept in the data
+      // but not painted: an outline colour would be the frame that decision removes.
+      drawCardSheet(ctx, { x: left, y: top, width: widget.width, height: widget.height }, zoom, { palette });
       const titleY = drawCardMeta(
         ctx,
         left,
@@ -430,7 +410,6 @@ function paintWidget(
         widget.height,
         widget,
         { fontFamily: theme.fontFamily, palette, statusLabel: theme.cardStatus },
-        zoom,
       );
       if (editing) break;
       if (widget.title) {

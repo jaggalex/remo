@@ -65,7 +65,8 @@ export interface BoardSettings {
 }
 
 export const DEFAULT_SETTINGS: BoardSettings = {
-  grid: { size: 40, style: "lines" },
+  // No grid: the canvas is a plain desk under paper (ADR-230, DESIGN.md §4).
+  grid: { size: 40, style: "off" },
   snapping: { thresholdPx: 6, guides: true },
   notes: {
     // A whole note between chained notes: the owner tuned this by using the board,

@@ -2,7 +2,7 @@
 
 .home {
   min-height: 100vh;
-  background: var(--canvas);
+  background: var(--bg-canvas);
   color: var(--text-primary);
   font-family: var(--font-sans);
 }
@@ -17,7 +17,7 @@
   min-height: var(--topbar-height);
   padding: 0 var(--space-6);
   /* No band, as on reference 1 (ADR-181): the header sits on the page. */
-  background: var(--canvas);
+  background: var(--bg-canvas);
 }
 
 .home-brand,
@@ -29,7 +29,7 @@
 }
 
 .home-brand {
-  font-size: 13px;
+  font: var(--type-label);
 }
 
 .home-mark {
@@ -128,7 +128,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   background: var(--bg-panel);
-  transition: border-color 120ms ease;
+  transition: border-color var(--dur-1) var(--ease);
 }
 
 .home-tile:hover,
@@ -161,7 +161,7 @@
   margin-bottom: var(--space-1);
   border-radius: var(--radius-lg);
   background: var(--bg-hover);
-  font-size: 24px;
+  font: var(--type-display);
   line-height: 1;
 }
 
@@ -202,7 +202,7 @@
   border-radius: var(--radius-pill);
   background: var(--bg-panel);
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--dur-1) var(--ease);
 }
 
 .home-tile:hover .home-tile-menu,
@@ -238,8 +238,7 @@
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-primary);
-  font: inherit;
-  font-size: 20px;
+  font-size: var(--icon-md);
   cursor: pointer;
 }
 

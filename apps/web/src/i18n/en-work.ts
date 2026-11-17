@@ -330,7 +330,7 @@ export const enWork = {
   "ds.zoom": "Zoom",
   "ds.zoomOut": "Zoom out",
   "ds.zoomIn": "Zoom in",
-  "ds.zoomFit": "Fit to screen",
+  "ds.zoomFit": "Fit",
   "ds.zoomValue": "Zoom {zoom} %, reset to 100 %",
   "ds.timer": "Timer",
   "ds.timerStart": "Start",

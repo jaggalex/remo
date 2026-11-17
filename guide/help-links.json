@@ -32,5 +32,6 @@
   "org.manage": "how-to/account",
   "objects.name": "concepts/board",
   "agents.room": "capabilities/room-agent",
-  "section.table": "capabilities/frames-kanban"
+  "section.table": "capabilities/frames-kanban",
+  "room.panel": "concepts/board-chrome"
 }

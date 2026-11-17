@@ -4,7 +4,7 @@ An app adds a panel to the room. An app is described by a **schema**: the server
 
 ## How to open it
 
-**More ▾ → Apps** in the room header. The panel lists the apps installed in the organisation that owns the room. A room without an organisation says so.
+**More (⋯) → Apps** in the room header. The panel lists the apps installed in the organisation that owns the room. A room without an organisation says so.
 
 ## “Hello”
 

@@ -12,6 +12,8 @@ import {
   register,
   seedNote,
   seedObject,
+  selectKanbanCard,
+  zoomInTo,
 } from "./helpers";
 
 /**
@@ -49,8 +51,13 @@ test("the counter on the object has no serious accessibility violations", async 
   expect(created.status()).toBe(201);
   const chip = page.locator(".vote-chip").first();
   await expect(chip).toBeVisible({ timeout: 10_000 });
-  // Both controls of the "my vote" shape are on screen: the one that takes a vote back
-  // and the one that is off with a reason.
+  // The compact counter of a fitted view is scanned too (ADR-235), then the full one with
+  // both controls of the "my vote" shape: the one that takes a vote back and the one that
+  // is off with a reason.
+  await expect(chip).toHaveClass(/compact/);
+  await expectNoSerious(page, "compact vote counter", ".vote-chip");
+  await zoomInTo(page, 0.85);
+  await expect(chip).not.toHaveClass(/compact/);
   await chip.getByRole("button", { name: /Vote for/ }).click();
   await expect(chip).toHaveClass(/mine/);
   await expect(chip.locator(".vote-chip-caption")).toHaveText("· yours");
@@ -89,7 +96,7 @@ test("dialogs have no serious accessibility violations", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Export…" }).click();
   await expect(page.locator(".export-dialog")).toBeVisible();
   await expectNoSerious(page, "export dialog");
-  await page.locator(".export-dialog .dialog-close").click();
+  await page.getByRole("dialog", { name: "Export" }).getByRole("button", { name: "Close", exact: true }).first().click();
 
   await openFacilitation(page);
   await page.getByRole("menuitem", { name: /Voting/ }).click();
@@ -192,4 +199,159 @@ test("a section table has no serious accessibility violations", async ({ page })
   await expect(page.locator(".table-mirror table")).toHaveCount(1);
   await expectNoSerious(page, "section panel", ".section-panel");
   await expectNoSerious(page, "table mirror", ".table-mirror");
+});
+
+/**
+ * A modal dialog is the @remo/ui Dialog (UX-DIALOG-01): focus moves in, Tab stays in,
+ * Escape closes, focus returns to what opened it. Hand-made dialogs declared
+ * `aria-modal` without doing any of this, so a keyboard user stayed on the canvas.
+ */
+test("modal dialogs keep the keyboard inside and return focus", async ({ page }) => {
+  await freshBoard(page, "a11y-dialog-keys");
+  const cases: Array<{ name: string; open: () => Promise<void>; opener: () => ReturnType<Page["locator"]> }> = [
+    {
+      name: "Export",
+      open: async () => {
+        await openBoardMenu(page);
+        await page.getByRole("menuitem", { name: "Export…" }).click();
+      },
+      opener: () => page.getByRole("button", { name: /^Room menu:/ }),
+    },
+    {
+      name: "Room settings",
+      open: async () => {
+        await openBoardMenu(page);
+        await page.getByRole("menuitem", { name: "Room settings" }).click();
+      },
+      opener: () => page.getByRole("button", { name: /^Room menu:/ }),
+    },
+    {
+      name: "Room access",
+      open: () => page.getByRole("button", { name: "Share", exact: true }).click(),
+      opener: () => page.getByRole("button", { name: "Share", exact: true }),
+    },
+  ];
+  for (const { name, open, opener } of cases) {
+    await open();
+    const dialog = page.getByRole("dialog", { name });
+    await expect(dialog).toBeVisible();
+    const inside = () => dialog.evaluate((el) => el.contains(document.activeElement));
+    await expect.poll(inside, { message: `${name}: focus moves into the dialog` }).toBe(true);
+    for (let step = 0; step < 20; step += 1) {
+      await page.keyboard.press("Tab");
+      expect(await inside(), `${name}: Tab stays inside (step ${step + 1})`).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(opener(), `${name}: focus returns to the opener`).toBeFocused();
+  }
+});
+
+test("a tooltip waits, stays under the pointer and closes on Escape (WCAG 1.4.13)", async ({ page }) => {
+  await freshBoard(page, "a11y-tooltip");
+  const tool = page.getByRole("button", { name: "Text", exact: true });
+  const tip = page.getByRole("tooltip").filter({ hasText: /^Text/ });
+  const box = (await tool.boundingBox())!;
+
+  // Hover: nothing at once, the tip after the delay (ADR-231: 500 ms).
+  const start = Date.now();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(tip).toBeHidden();
+  await expect(tip).toBeVisible();
+  expect(Date.now() - start).toBeGreaterThanOrEqual(400);
+
+  // Hoverable: crossing the gap onto the tip keeps it open.
+  const tipBox = (await tip.boundingBox())!;
+  await page.mouse.move(box.x + box.width + 2, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.move(tipBox.x + tipBox.width / 2, tipBox.y + tipBox.height / 2, { steps: 4 });
+  await page.waitForTimeout(200);
+  await expect(tip).toBeVisible();
+
+  // Dismissible without moving the pointer, and the tip lets clicks through.
+  expect(await tip.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
+  await page.keyboard.press("Escape");
+  await expect(tip).toBeHidden();
+
+  // Leaving closes it; coming back opens it again.
+  await page.mouse.move(box.x + 400, box.y + 200);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(tip).toBeVisible();
+  await page.mouse.move(box.x + 400, box.y + 200);
+  await expect(tip).toBeHidden();
+
+  // Keyboard focus shows it at once, and Escape hides it with focus kept.
+  // A key press first, so the browser treats the focus as keyboard focus (:focus-visible).
+  await page.keyboard.press("Shift");
+  await tool.focus();
+  await expect(tool).toBeFocused();
+  await expect(tip).toBeVisible({ timeout: 300 });
+  await page.keyboard.press("Escape");
+  await expect(tip).toBeHidden();
+  await expect(tool).toBeFocused();
+});
+
+test("header and zoom icons are named in their tooltips (ADR-232)", async ({ page }) => {
+  await freshBoard(page, "a11y-header-icons");
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+
+  // Names stay what they were, so roles find the same controls.
+  const more = page.getByRole("button", { name: "More", exact: true });
+  const share = page.getByRole("button", { name: "Share", exact: true });
+  const fit = page.getByRole("button", { name: "Fit", exact: true });
+  for (const control of [more, share, fit]) {
+    await expect(control).toBeVisible();
+    await expect(control).not.toContainText(/\w/);
+  }
+
+  // Hover shows the name; focus shows it at once.
+  await more.hover();
+  await expect(page.getByRole("tooltip").filter({ hasText: /^More$/ })).toBeVisible();
+  await page.keyboard.press("Shift");
+  await share.focus();
+  await expect(page.getByRole("tooltip").filter({ hasText: /^Room access$/ })).toBeVisible({ timeout: 300 });
+  await fit.hover();
+  await expect(page.getByRole("tooltip").filter({ hasText: /selection/ })).toBeVisible();
+
+  // A calm save state is an icon: the word is in the live region but not drawn.
+  const word = page.locator(".save-state .rm-sync > span");
+  await expect(word).toHaveText(/saved/i);
+  expect(await word.evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+});
+
+test("selection actions are one row of named icons, the rest behind More actions (ADR-237)", async ({ page }) => {
+  await freshBoard(page, "a11y-selection-actions");
+  await selectKanbanCard(page);
+  const inspector = page.locator("aside.inspector");
+  const actions = inspector.getByRole("group", { name: "Selection actions" });
+  for (const name of ["Copy", "Copy link", "Cut", "Duplicate", "Delete", "More actions"]) {
+    await expect(actions.getByRole("button", { name, exact: true })).toBeVisible();
+  }
+  // One row that fits: the last icon ends inside the panel's content box.
+  const fit = await inspector.evaluate((panel) => {
+    const style = getComputedStyle(panel);
+    const right = panel.getBoundingClientRect().right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
+    const buttons = [...panel.querySelectorAll<HTMLElement>(".selection-row button")];
+    const tops = new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top)));
+    return { past: Math.round(buttons.at(-1)!.getBoundingClientRect().right - right), rows: tops.size };
+  });
+  expect(fit.past).toBeLessThanOrEqual(0);
+  expect(fit.rows).toBe(1);
+
+  const more = inspector.getByRole("button", { name: "More actions", exact: true });
+  await more.click();
+  const menu = page.getByRole("menu", { name: "More actions" });
+  for (const name of [/^Edit text/, /^Connect/, /^Nudge/, /^Info/, /^Clear selection/]) {
+    await expect(menu.getByRole("menuitem", { name })).toBeVisible();
+  }
+  // Focus lands on the first item that can be used.
+  await expect(menu.locator('[role="menuitem"]:not([aria-disabled="true"])').first()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(more).toBeFocused();
+
+  await more.click();
+  await menu.getByRole("menuitem", { name: "Clear selection" }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __remo: { selectedIds: string[] } }).__remo.selectedIds.length))
+    .toBe(0);
 });

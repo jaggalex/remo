@@ -5,8 +5,8 @@ An object has an optional **Name** for search and presentation and a permanent *
 ## Steps
 
 1. Select an object in the room.
-2. In the inspector, fill in **Name** and press Enter or click outside the field. An empty value removes the name.
-3. The **ID** beside it is read-only. Click **Copy ID** to paste it into a link, a command or a bug report.
+2. On the **Properties** panel, open the **Name and link** row, fill in **Name** and press Enter or click outside the field. An empty value removes the name.
+3. The read-only **ID** is in **⋯ → Info** (the object menu, or **⋯ More actions** on the panel). Click **Copy ID** to paste it into a link, a command or a bug report.
 
 ## Check
 

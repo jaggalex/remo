@@ -17,3 +17,12 @@ export function roundRect(
   ctx.arcTo(x, y, x + width, y, r);
   ctx.closePath();
 }
+
+/**
+ * Device pixels per world unit. Shadows are not transformed by the canvas matrix, so a
+ * shadow that belongs to an object is multiplied by this to follow the object.
+ */
+export function deviceScale(ctx: CanvasRenderingContext2D, zoom: number): number {
+  const matrix = typeof ctx.getTransform === "function" ? ctx.getTransform() : null;
+  return matrix ? Math.hypot(matrix.a, matrix.b) : zoom;
+}

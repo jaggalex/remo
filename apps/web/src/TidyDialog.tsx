@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentPlan, AppliedAgentPlan, TidyStrategy } from "@remo/doc";
 import type { Widget } from "@remo/model";
-import { Banner, Button, Dialog } from "@remo/ui";
+import { Banner, Button, Dialog, Select } from "@remo/ui";
 import { AgentPlanPanel } from "./AgentPlanPanel";
 import { api, type BoardAgents } from "./api";
 import { cameraStore } from "./cameraStore";
@@ -232,32 +232,27 @@ export function TidyDialog({
       ) : !ready ? (
         <Banner tone="warning" title={t("tidy.title")}>
           {t("tidy.agentsOff")}{" "}
-          <button type="button" className="link-button" onClick={onOpenAgents}>
+          <Button variant="ghost" size="compact" onClick={onOpenAgents}>
             {t("tidy.openAgents")}
-          </button>
+          </Button>
         </Banner>
       ) : !hasAgent ? (
         <Banner tone="warning" title={t("tidy.title")}>
           {t("tidy.needAgent")}{" "}
-          <button type="button" className="link-button" onClick={onOpenAgents}>
+          <Button variant="ghost" size="compact" onClick={onOpenAgents}>
             {t("tidy.openAgents")}
-          </button>
+          </Button>
         </Banner>
       ) : (
-        <label className="agent-field">
-          <span>{t("agents.choose")}</span>
-          <select
-            value={agentId}
-            onChange={(event) => setAgentId(event.target.value)}
-            disabled={busy || !canEdit}
-          >
-            {data.agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label={t("agents.choose")}
+          options={[
+            ...data.agents.map((agent) => ({ value: agent.id, label: agent.name })),
+          ]}
+          value={agentId}
+          onChange={(event) => setAgentId(event.target.value)}
+          disabled={busy || !canEdit}
+        />
       )}
     </Dialog>
   );

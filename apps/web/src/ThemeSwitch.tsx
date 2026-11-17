@@ -1,4 +1,4 @@
-import { Icon } from "@remo/ui";
+import { IconButton } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { useTheme, type Theme } from "./useTheme";
 
@@ -16,14 +16,12 @@ export function ThemeSwitch() {
   const label = t(theme === "light" ? "theme.lightAction" : "theme.darkAction");
 
   return (
-    <button
-      type="button"
+    <IconButton
       className="theme-toggle-button"
-      onClick={() => setTheme(next)}
-      aria-label={label}
+      icon={theme === "light" ? "sun" : "moon"}
+      label={label}
       title={label}
-    >
-      <Icon name={theme === "light" ? "sun" : "moon"} size={16} />
-    </button>
+      onClick={() => setTheme(next)}
+    />
   );
 }

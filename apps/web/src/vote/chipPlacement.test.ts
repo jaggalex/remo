@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Widget } from "@remo/model";
-import {
-  CHIP_INSET,
-  CHIP_VIEWPORT_MARGIN,
-  chipPlacement,
-  connectorLabelBoxes,
-  labelWidth,
-  screenBox,
-  type Box,
-} from "./chipPlacement";
+import { CHIP_INSET, CHIP_VIEWPORT_MARGIN, chipPlacement, connectorLabelBoxes, labelWidth, screenBox, type Box, FULL_CHIP_MIN, voteChipForm } from "./chipPlacement";
 
 /**
  * The counter's position is a rule, not a number that looked right once
@@ -168,5 +160,21 @@ describe("connector label boxes", () => {
         fontFamily: "Inter",
       }),
     ).toEqual([]);
+  });
+});
+
+describe("vote chip form (ADR-235)", () => {
+  const box = (width: number, height: number) => ({ x: 0, y: 0, width, height });
+
+  it("keeps the full counter where it takes at most half the object", () => {
+    expect(voteChipForm(box(FULL_CHIP_MIN.width, FULL_CHIP_MIN.height))).toBe("full");
+    expect(voteChipForm(box(320, 320))).toBe("full");
+  });
+
+  it("shows only the number on an object too small for it", () => {
+    // A 160-unit note at the fitted 37 %: about 59 px on screen.
+    expect(voteChipForm(box(59, 59))).toBe("compact");
+    expect(voteChipForm(box(400, FULL_CHIP_MIN.height - 1))).toBe("compact");
+    expect(voteChipForm(box(FULL_CHIP_MIN.width - 1, 400))).toBe("compact");
   });
 });

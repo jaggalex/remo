@@ -13,7 +13,7 @@ A **frame** is a container. An object inside a frame moves with it and does not 
 
 **Frame size** changes with the corner handles. The contents are neither scaled nor moved: the frame grows or shrinks while objects keep their size and position. After a resize, membership is re-evaluated by the centre: an object whose centre is now outside leaves the frame, and an object whose centre is inside joins it — the smallest suitable frame wins. A frame is at least 160 × 120: below that its title and an object inside do not fit. The size and the new membership are undone with one ⌘Z.
 
-A **kanban** arrives as the **Kanban room** template from **More ▾ → Templates…**: the columns and swimlanes are already there. A card is created by a double click on a cell; a double click on a card opens it for editing. A card belongs to a cell: its position sets the order in the column, not the coordinates on the canvas.
+A **kanban** arrives as the **Kanban room** template from **More (⋯) → Templates…**: the columns and swimlanes are already there. A card is created by a double click on a cell; a double click on a card opens it for editing. A card belongs to a cell: its position sets the order in the column, not the coordinates on the canvas.
 
 A **section table** is the frame's second view. The section's title sits above it on the left; a double click, `F2` or `Enter` renames it, and the **Table** badge after the title opens the **Section / Table** menu. The same switch is in **Properties** and in the context menu. If a free section holds objects, turning the table on asks how to lay out the material — by its current position or everything in the first cell — and shows a preview on the canvas.
 

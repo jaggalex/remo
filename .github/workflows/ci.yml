@@ -78,6 +78,10 @@ jobs:
       - name: Dependency audit
         run: node scripts/dependency-audit.mjs
 
+      # The visual baselines are compared in Chromium from the Playwright image (ADR-222).
+      - name: Linux browser image
+        run: docker pull --platform linux/amd64 "mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble"
+
       # One gate: empty-database migration, file sizes, generated state, typecheck, all
       # tests (DB included), browser acceptance, guide audit, build, docs, design system
       # (ADR-089/090/132).

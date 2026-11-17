@@ -1,3 +1,4 @@
+import { Button, Dialog, Switch } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n } from "./i18n";
 
@@ -35,31 +36,14 @@ export function FollowDialog({
   if (!open) return null;
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="share-dialog follow-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("follow.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="share-head">
-          <div>
-            <h2>
-              {t("follow.title")} <HelpLink topicId="facilitation.follow" />
-            </h2>
-            <p className="muted">{t("follow.body")}</p>
-          </div>
-          <button
-            type="button"
-            className="dialog-close"
-            onClick={onClose}
-            aria-label={t("follow.close")}
-          >
-            ×
-          </button>
-        </header>
-
+    <Dialog
+      title={t("follow.title")}
+      description={t("follow.body")}
+      help={<HelpLink topicId="facilitation.follow" />}
+      size="sm"
+      onClose={onClose}
+    >
+      <div className="follow-dialog">
         <p className="follow-count">{count("followers", followers.length)}</p>
         {followers.length ? (
           <ul className="follow-names">
@@ -72,38 +56,26 @@ export function FollowDialog({
         )}
 
         <div className="follow-actions">
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={followers.length === 0}
-            onClick={onStopFollowers}
-          >
+          <Button disabled={followers.length === 0} onClick={onStopFollowers}>
             {t("follow.stopFollowers")}
-          </button>
-          <button
-            type="button"
-            className="share-button"
-            disabled={peers === 0}
-            onClick={onBringEveryone}
-          >
+          </Button>
+          <Button variant="primary" disabled={peers === 0} onClick={onBringEveryone}>
             {t("follow.bringEveryone")}
-          </button>
+          </Button>
         </div>
 
         {canFacilitate && (
-          <label className="follow-auto">
-            <input
-              type="checkbox"
+          <Switch
+            className="follow-auto"
               checked={allowBringEveryone}
               onChange={(event) => onToggleAuto(event.target.checked)}
-            />
-            <span>
+            label={<>
               {t("follow.auto")}
               <span className="muted"> — {t("follow.autoHint")}</span>
-            </span>
-          </label>
+            </>}
+          />
         )}
-      </section>
-    </div>
+      </div>
+    </Dialog>
   );
 }

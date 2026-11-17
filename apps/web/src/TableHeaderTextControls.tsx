@@ -6,7 +6,7 @@ import {
   type TableHeaderTextWeight,
   type Widget,
 } from "@remo/model";
-import { Button, NumberField, Segmented } from "@remo/ui";
+import { Button, Checkbox, NumberField, Segmented } from "@remo/ui";
 import { ColorGridSection } from "./object-panel/ColorWindow";
 import { useI18n } from "./i18n";
 
@@ -88,17 +88,15 @@ export function TableHeaderTextControls({
           ]}
         />
       </div>
-      <label className="section-check">
-        <input
-          type="checkbox"
-          checked={style.italic}
-          disabled={disabled}
-          onChange={(event) =>
-            setTableHeaderText(board, frame.id, { italic: event.currentTarget.checked })
-          }
-        />
-        <span>{t("section.look.headerTextItalic")}</span>
-      </label>
+      <Checkbox
+        className="section-check"
+        label={t("section.look.headerTextItalic")}
+        checked={style.italic}
+        disabled={disabled}
+        onChange={(event) =>
+          setTableHeaderText(board, frame.id, { italic: event.currentTarget.checked })
+        }
+      />
       <div className="section-header-choice">
         <span className="section-header-label">{t("section.look.headerTextAlign")}</span>
         <Segmented

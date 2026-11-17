@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { MutableRefObject } from "react";
 import type { Presence, SaveState } from "@remo/doc";
-import { Button, IconButton, Separator, Tooltip } from "@remo/ui";
+import { ConfirmDialog, IconButton, Separator, Tooltip } from "@remo/ui";
 import type { SessionUser } from "./api";
 import type { FollowState } from "./follow";
 import { useI18n } from "./i18n";
@@ -57,6 +57,8 @@ export interface BoardTopbarProps {
   onRestore: () => void;
   onDuplicate: () => void;
   onTrash: () => void;
+  /** Replace the room with its template, after the confirmation (ADR-236). */
+  onReplace: () => void;
   voteRunning: boolean;
   voteHint: string;
   timerRunning: boolean;
@@ -107,12 +109,13 @@ export function BoardTopbar(props: BoardTopbarProps) {
   const { t } = useI18n();
   const [menu, setMenu] = useState<MenuView>(null);
   const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [confirmReplace, setConfirmReplace] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const {
     title, titleDraft, setTitleDraft, titleCancelled, renameBoard, orgName, writeBlocked,
     readOnly, onOpenHome, canShare, copied, copyShareLink, setShareOpen,
     canExport, canBackup, canImport, canDuplicate, canDelete, canFacilitate, canAskAgents, canUseApps,
-    setSettingsOpen, setExportOpen, onRestore, onDuplicate, onTrash, voteRunning, voteHint,
+    setSettingsOpen, setExportOpen, onRestore, onDuplicate, onTrash, onReplace, voteRunning, voteHint,
     timerRunning, timerHint, setVoteOpen, setTimerOpen, setFollowOpen, setAgentOpen,
     setAppsOpen, onReact, follow, toggleFollow, myFollowers, otherPeers, followOpen,
     roomAgent, canAssignAgent, hasRoomAgentHistory, onOpenRoomAgent,
@@ -208,6 +211,10 @@ export function BoardTopbar(props: BoardTopbarProps) {
             onTrash: () => {
               setMenu(null);
               onTrash();
+            },
+            onReplace: () => {
+              setMenu(null);
+              setConfirmReplace(true);
             },
           })}
         />
@@ -366,17 +373,34 @@ export function BoardTopbar(props: BoardTopbarProps) {
           />
         </Tooltip>
 
-        <Button
-          variant="primary"
-          className="share-button"
-          onClick={() => (canShare ? setShareOpen(true) : void copyShareLink())}
-          title={canShare ? t("share.title") : t("board.copyLinkTitle")}
+        {/* The room's one primary, as an icon named in its tooltip (ADR-232). */}
+        <Tooltip
+          label={copied ? t("board.copied") : canShare ? t("share.title") : t("board.copyLinkTitle")}
+          align="end"
         >
-          {copied ? t("board.copied") : t("board.share")}
-        </Button>
+          <IconButton
+            icon={copied ? "check" : "share"}
+            label={copied ? t("board.copied") : t("board.share")}
+            variant="primary"
+            onClick={() => (canShare ? setShareOpen(true) : void copyShareLink())}
+          />
+        </Tooltip>
         <InterfaceToggles theme={theme} onTheme={setTheme} />
       </div>
     </header>
+    {confirmReplace && (
+      <ConfirmDialog
+        title={t("board.replaceHeading")}
+        confirmLabel={t("board.replaceAction")}
+        onCancel={() => setConfirmReplace(false)}
+        onConfirm={() => {
+          setConfirmReplace(false);
+          onReplace();
+        }}
+      >
+        {t("board.replaceConfirm")}
+      </ConfirmDialog>
+    )}
     <SessionsDialog
       open={sessionsOpen}
       onClose={() => setSessionsOpen(false)}

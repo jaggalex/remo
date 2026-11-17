@@ -11,7 +11,7 @@ import {
 import type { BoardConnection, Presence } from "@remo/doc";
 import { cellRect, layoutTable, type Camera } from "@remo/canvas";
 import type { Widget } from "@remo/model";
-import { Button, Input } from "@remo/ui";
+import { Button, Dialog, IconButton, Input } from "@remo/ui";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { usePresentation } from "./usePresentation";
@@ -162,9 +162,9 @@ export function PresentationLayer({
           <button type="button" onClick={presentation.next} aria-label={t("presentation.next")}>
             ›
           </button>
-          <button type="button" onClick={presentation.stop}>
+          <Button size="compact" onClick={presentation.stop}>
             {t("presentation.stop")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -175,9 +175,9 @@ export function PresentationLayer({
               name: presentation.presenterName ?? t("presentation.someone"),
             })}
           </span>
-          <button type="button" onClick={presentation.join}>
+          <Button variant="primary" size="compact" onClick={presentation.join}>
             {t("presentation.watch")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -189,43 +189,26 @@ export function PresentationLayer({
             })}
             {cellLabel && <span className="present-cell-label">{cellLabel}</span>}
           </span>
-          <button type="button" onClick={presentation.returnToPresenter}>
+          <Button variant="primary" size="compact" onClick={presentation.returnToPresenter}>
             {t("presentation.return")}
-          </button>
-          <button type="button" onClick={presentation.leave}>
+          </Button>
+          <Button size="compact" onClick={presentation.leave}>
             {t("presentation.leave")}
-          </button>
+          </Button>
         </div>
       )}
 
       {presentation.notice && <div className="canvas-notice">{presentation.notice}</div>}
 
       {presentation.panelOpen && (
-        <div
-          className="dialog-backdrop"
-          role="presentation"
-          onPointerDown={() => presentation.setPanelOpen(false)}
+        <Dialog
+          title={t("presentation.title")}
+          description={t("presentation.hint")}
+          help={<HelpLink topicId="presentation.mode" />}
+          size="md"
+          onClose={() => presentation.setPanelOpen(false)}
         >
-          <div
-            className="presentation-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("presentation.title")}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <header>
-              <b>
-                {t("presentation.title")} <HelpLink topicId="presentation.mode" />
-              </b>
-              <button
-                type="button"
-                onClick={() => presentation.setPanelOpen(false)}
-                aria-label={t("presentation.close")}
-              >
-                ✕
-              </button>
-            </header>
-            <p className="muted">{t("presentation.hint")}</p>
+          <div className="presentation-panel">
             {slides.length === 0 && <p className="muted">{t("presentation.noSlides")}</p>}
             <ol className="presentation-list">
               {slides.map((id, index) => (
@@ -250,13 +233,7 @@ export function PresentationLayer({
                   >
                     ↓
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => removePresentationSlide(board, id)}
-                    aria-label={t("presentation.remove")}
-                  >
-                    ✕
-                  </button>
+                  <IconButton icon="close" size="compact" label={t("presentation.remove")} onClick={() => removePresentationSlide(board, id)} />
                 </li>
               ))}
             </ol>
@@ -313,7 +290,7 @@ export function PresentationLayer({
             </div>
             {!canFacilitate && <p className="muted">{t("presentation.forbidden")}</p>}
           </div>
-        </div>
+        </Dialog>
       )}
     </>
   );

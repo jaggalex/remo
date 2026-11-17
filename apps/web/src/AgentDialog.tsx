@@ -14,6 +14,7 @@ import { skillDescriptionKey } from "./skillText";
 import { formatMoment } from "./format";
 import { newIdempotencyKey } from "./idempotency";
 import { HelpLink } from "./help/HelpLink";
+import { Button, Dialog, Input, Select, Switch, Textarea } from "@remo/ui";
 import { useI18n } from "./i18n";
 
 /**
@@ -323,36 +324,25 @@ export function AgentDialog({
   const tasks = data?.tasks ?? [];
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="agent-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("agents.dialogTitle")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="org-head">
-          <div>
-            <h2>
-              {t("agents.dialogTitle")} <HelpLink topicId="agents.task" />
-            </h2>
-            <p className="muted">{boardTitle}</p>
-          </div>
-          <button type="button" className="dialog-close" onClick={onClose} aria-label={t("agents.close")}>
-            ×
-          </button>
-        </header>
+    <Dialog
+      title={t("agents.dialogTitle")}
+      description={boardTitle}
+      help={<HelpLink topicId="agents.task" />}
+      size="md"
+      onClose={onClose}
+    >
+      <section className="agent-dialog">
 
         {error && (
           <div className="agent-error">
             <p className="auth-error">{error}</p>
             <div className="agent-error-actions">
-              <button type="button" onClick={() => void load()} disabled={loading}>
+              <Button size="compact" onClick={() => void load()} disabled={loading}>
                 {t("agents.retry")}
-              </button>
-              <button type="button" onClick={onOpenOrg}>
+              </Button>
+              <Button variant="ghost" size="compact" onClick={onOpenOrg}>
                 {t("agents.configure")}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -360,24 +350,21 @@ export function AgentDialog({
         {data && (
           <>
             <div className="agent-enable">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={data.enabled}
-                  disabled={!canManage || busy}
-                  onChange={(event) => {
-                    const next = event.target.checked;
-                    void run(() => api.setBoardAgents(boardId, next));
-                  }}
-                />
-                {t("agents.boardSwitch")}
-              </label>
+              <Switch
+                label={t("agents.boardSwitch")}
+                checked={data.enabled}
+                disabled={!canManage || busy}
+                onChange={(event) => {
+                  const next = event.target.checked;
+                  void run(() => api.setBoardAgents(boardId, next));
+                }}
+              />
               {!data.orgEnabled && (
                 <p className="muted">
                   {t("agents.orgOff")}{" "}
-                  <button type="button" className="link-button" onClick={onOpenOrg}>
+                  <Button variant="ghost" size="compact" onClick={onOpenOrg}>
                     {t("agents.openOrg")}
-                  </button>
+                  </Button>
                 </p>
               )}
             </div>
@@ -387,9 +374,9 @@ export function AgentDialog({
                 {data.agents.length === 0 ? (
                   <p className="muted">
                     {t("agents.noneYet")}{" "}
-                    <button type="button" className="link-button" onClick={onOpenOrg}>
+                    <Button variant="ghost" size="compact" onClick={onOpenOrg}>
                       {t("agents.openOrg")}
-                    </button>
+                    </Button>
                   </p>
                 ) : (
                   <form
@@ -399,20 +386,15 @@ export function AgentDialog({
                       submit();
                     }}
                   >
-                    <label className="agent-field">
-                      <span>{t("agents.choose")}</span>
-                      <select
-                        value={agentId}
-                        onChange={(event) => setAgentId(event.target.value)}
-                        disabled={!canEdit}
-                      >
-                        {data.agents.map((agent) => (
-                          <option key={agent.id} value={agent.id}>
-                            {agent.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <Select
+                      label={t("agents.choose")}
+                      options={[
+                        ...data.agents.map((agent) => ({ value: agent.id, label: agent.name })),
+                      ]}
+                      value={agentId}
+                      onChange={(event) => setAgentId(event.target.value)}
+                      disabled={!canEdit}
+                    />
                     <AgentSelectionSource
                       preview={preview}
                       hasSelection={hasSelection}
@@ -430,80 +412,68 @@ export function AgentDialog({
                     />
 
                     <div className="agent-budget">
-                      <div className="agent-field">
-                        <span>{t("agents.skill")}</span>
-                        <select
-                          aria-label={t("agents.skill")}
-                          value={skillSlug}
-                          onChange={(event) => {
-                            setSkillSlug(event.target.value);
-                            if (event.target.value === "cards" && sourceIds.length > maxActions) {
-                              setMaxActions(Math.min(500, Math.max(20, sourceIds.length)));
-                            }
-                          }}
-                          disabled={!canEdit}
-                        >
-                          <option value={AUTO_SKILL}>{t("agents.skill.auto")}</option>
-                          {skills.map((skill) => (
-                            <option key={skill.id} value={skill.slug}>
-                              {skill.name}
-                            </option>
-                          ))}
-                        </select>
-                        {selectedSkill && (
-                          <span className="muted agent-field-hint">
-                            {selectedDescriptionKey
-                              ? t(selectedDescriptionKey)
-                              : selectedSkill.description}
-                          </span>
-                        )}
-                        {skillSlug === AUTO_SKILL && (
-                          <span className="muted agent-field-hint">{t("agents.skill.autoHint")}</span>
-                        )}
-                      </div>
-                      {isCards && (
-                        <>
-                          <label className="agent-field">
-                            <span>{t("agents.cardTarget")}</span>
-                            <select
-                              value={targetKind}
-                              onChange={(event) =>
-                                setTargetKind(event.target.value as typeof targetKind)
-                              }
-                              disabled={!canEdit}
-                            >
-                              <option value="standalone">{t("agents.standalone")}</option>
-                              <option value="kanban">{t("agents.kanban")}</option>
-                            </select>
-                          </label>
-                          <label className="agent-field">
-                            <span>{t("agents.mode")}</span>
-                            <select
-                              value={mode}
-                              onChange={(event) => setMode(event.target.value as typeof mode)}
-                              disabled={!canEdit}
-                            >
-                              <option value="copy">{t("agents.keep")}</option>
-                              <option value="move">{t("agents.move")}</option>
-                            </select>
-                          </label>
-                        </>
-                      )}
-                    </div>
-                    <label className="agent-field agent-intent">
-                      <span>{t("agents.intent")}</span>
-                      <textarea
-                        value={intent}
-                        rows={3}
-                        maxLength={2000}
-                        placeholder={t("agents.intentPlaceholder")}
+                      <Select
+                        label={t("agents.skill")}
+                        hint={
+                          skillSlug === AUTO_SKILL
+                            ? t("agents.skill.autoHint")
+                            : selectedSkill
+                              ? selectedDescriptionKey
+                                ? t(selectedDescriptionKey)
+                                : selectedSkill.description
+                              : undefined
+                        }
+                        options={[
+                          { value: AUTO_SKILL, label: t("agents.skill.auto") },
+                          ...skills.map((skill) => ({ value: skill.slug, label: skill.name })),
+                        ]}
+                        value={skillSlug}
                         onChange={(event) => {
-                          setSelectionOnly(false);
-                          setIntent(event.target.value);
+                          setSkillSlug(event.target.value);
+                          if (event.target.value === "cards" && sourceIds.length > maxActions) {
+                            setMaxActions(Math.min(500, Math.max(20, sourceIds.length)));
+                          }
                         }}
                         disabled={!canEdit}
                       />
-                    </label>
+                      {isCards && (
+                        <>
+                          <Select
+                            label={t("agents.cardTarget")}
+                            options={[
+                              { value: "standalone", label: t("agents.standalone") },
+                              { value: "kanban", label: t("agents.kanban") },
+                            ]}
+                            value={targetKind}
+                            onChange={(event) => setTargetKind(event.target.value as typeof targetKind)}
+                            disabled={!canEdit}
+                          />
+                          <Select
+                            label={t("agents.mode")}
+                            options={[
+                              { value: "copy", label: t("agents.keep") },
+                              { value: "move", label: t("agents.move") },
+                            ]}
+                            value={mode}
+                            onChange={(event) => setMode(event.target.value as typeof mode)}
+                            disabled={!canEdit}
+                          />
+                        </>
+                      )}
+                    </div>
+                    <Textarea
+                      className="agent-intent"
+                      label={t("agents.intent")}
+                      value={intent}
+                      rows={3}
+                      maxLength={2000}
+                      placeholder={t("agents.intentPlaceholder")}
+                      onChange={(event) => {
+                        setSelectionOnly(false);
+                        setIntent(event.target.value);
+                      }}
+                      disabled={!canEdit}
+                    />
 
                     {isBrief && (
                       <section className="agent-file-section" aria-label={t("agents.file.attach")}>
@@ -586,51 +556,45 @@ export function AgentDialog({
                     </section>
 
                     <div className="agent-budget">
-                      <label className="agent-field">
-                        <span>{t("agents.maxActions")}</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={500}
-                          value={maxActions}
-                          onChange={(event) => setMaxActions(Number(event.target.value) || 1)}
-                          disabled={!canEdit}
-                        />
-                      </label>
-                      <label className="agent-field">
-                        <span>{t("agents.maxCost")}</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={5}
-                          step={0.01}
-                          value={maxCostUsd}
-                          onChange={(event) => setMaxCostUsd(Number(event.target.value) || 0)}
-                          disabled={!canEdit}
-                        />
-                      </label>
-                      <label className="agent-field">
-                        <span>{t("agents.repeat")}</span>
-                        <select
-                          value={repeat}
-                          onChange={(event) => setRepeat(event.target.value as typeof repeat)}
-                          disabled={!canEdit}
-                        >
-                          <option value="once">{t("agents.once")}</option>
-                          <option value="hourly">{t("agents.hourly")}</option>
-                          <option value="daily">{t("agents.daily")}</option>
-                          <option value="weekly">{t("agents.weekly")}</option>
-                        </select>
-                      </label>
+                      <Input
+                        type="number"
+                        label={t("agents.maxActions")}
+                        min={1}
+                        max={500}
+                        value={maxActions}
+                        onChange={(event) => setMaxActions(Number(event.target.value) || 1)}
+                        disabled={!canEdit}
+                      />
+                      <Input
+                        type="number"
+                        label={t("agents.maxCost")}
+                        min={0}
+                        max={5}
+                        step={0.01}
+                        value={maxCostUsd}
+                        onChange={(event) => setMaxCostUsd(Number(event.target.value) || 0)}
+                        disabled={!canEdit}
+                      />
+                      <Select
+                        label={t("agents.repeat")}
+                        options={[
+                          { value: "once", label: t("agents.once") },
+                          { value: "hourly", label: t("agents.hourly") },
+                          { value: "daily", label: t("agents.daily") },
+                          { value: "weekly", label: t("agents.weekly") },
+                        ]}
+                        value={repeat}
+                        onChange={(event) => setRepeat(event.target.value as typeof repeat)}
+                        disabled={!canEdit}
+                      />
                     </div>
                     {cardsBlocked && <p className="muted">{t("agents.selectForCards")}</p>}
                     {!canEdit && <p className="muted">{t("agents.readOnly")}</p>}
                     {!budgetReady && <p className="auth-error">{t("agents.budgetRequired")}</p>}
                     <div className="agent-actions">
                       <span className="muted">{t("agents.placeHint")}</span>
-                      <button
+                      <Button variant="primary"
                         type="submit"
-                        className="primary-button"
                         disabled={
                           !canEdit ||
                           busy ||
@@ -639,8 +603,7 @@ export function AgentDialog({
                           cardsBlocked ||
                           !budgetReady ||
                           Boolean(fileError)
-                        }
-                      >
+                        }>
                         {repeat !== "once"
                           ? t("agents.schedule")
                           : isCards
@@ -648,7 +611,7 @@ export function AgentDialog({
                               ? t("agents.runJob")
                               : t("agents.preview")
                             : t("agents.run")}
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 )}
@@ -681,23 +644,17 @@ export function AgentDialog({
                           {(task.skill_slug === "brief-to-board" ||
                             task.skill_slug === "tidy-selection") &&
                             (task.status === "awaiting_approval" || task.status === "applied") && (
-                              <button
-                                type="button"
-                                className="link-button"
-                                onClick={() => setPlanTaskId(task.id)}
-                              >
+                              <Button variant="ghost" size="compact"
+                                onClick={() => setPlanTaskId(task.id)}>
                                 {t("agents.plan.open")}
-                              </button>
+                              </Button>
                             )}
                           {(task.status === "queued" || task.status === "running") && (
-                            <button
-                              type="button"
-                              className="link-button danger"
+                            <Button variant="ghost" size="compact"
                               disabled={busy}
-                              onClick={() => void run(() => api.cancelAgentTask(task.id))}
-                            >
+                              onClick={() => void run(() => api.cancelAgentTask(task.id))}>
                               {t("agents.cancel")}
-                            </button>
+                            </Button>
                           )}
                         </li>
                       ))}
@@ -733,24 +690,18 @@ export function AgentDialog({
                             {set.error ? ` · ${set.error}` : ""}
                           </div>
                           {(set.status === "queued" || set.status === "running") && (
-                            <button
-                              type="button"
-                              className="link-button danger"
+                            <Button variant="ghost" size="compact"
                               disabled={busy}
-                              onClick={() => void run(() => api.cancelChangeSet(set.id))}
-                            >
+                              onClick={() => void run(() => api.cancelChangeSet(set.id))}>
                               {t("agents.stopJob")}
-                            </button>
+                            </Button>
                           )}
                           {(set.status === "failed" || set.status === "cancelled") && (
-                            <button
-                              type="button"
-                              className="link-button"
+                            <Button variant="ghost" size="compact"
                               disabled={busy}
-                              onClick={() => void run(() => api.resumeChangeSet(set.id))}
-                            >
+                              onClick={() => void run(() => api.resumeChangeSet(set.id))}>
                               {t("agents.resume")}
-                            </button>
+                            </Button>
                           )}
                         </li>
                       ))}
@@ -774,14 +725,11 @@ export function AgentDialog({
                               every: t("agents.interval", { n: Math.round(schedule.interval_seconds / 3600) }),
                             })}
                           </div>
-                          <button
-                            type="button"
-                            className="link-button danger"
+                          <Button variant="ghost" size="compact"
                             disabled={busy}
-                            onClick={() => void run(() => api.deleteAgentSchedule(schedule.id))}
-                          >
+                            onClick={() => void run(() => api.deleteAgentSchedule(schedule.id))}>
                             {t("agents.stopSchedule")}
-                          </button>
+                          </Button>
                         </li>
                       ))}
                     </ul>
@@ -794,6 +742,6 @@ export function AgentDialog({
           </>
         )}
       </section>
-    </div>
+    </Dialog>
   );
 }

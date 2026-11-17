@@ -102,6 +102,14 @@ describe("components render with the strings contract", () => {
     expect(html.match(/rm-connector-end/g)).toHaveLength(3);
   });
 
+  it("names an empty number by its placeholder and hides the unit only then", () => {
+    const field = (value: number | null) =>
+      render(h(UI.NumberField, { label: "Height", value, suffix: "px", allowEmpty: true, placeholder: "Auto", onCommit: () => {}, increaseLabel: "+", decreaseLabel: "-" }));
+    expect(field(null)).toContain('placeholder="Auto"');
+    expect(field(null)).not.toContain("rm-input-affix");
+    expect(field(120)).toContain(">px</span>");
+  });
+
   it("refuses to render without the strings provider", () => {
     expect(() => renderToStaticMarkup(h(UI.Button, {}, h(UI.SyncStatus, { state: "saved" })))).toThrow(/UiStringsProvider/);
   });

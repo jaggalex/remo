@@ -644,6 +644,7 @@ export function BoardApp() {
         }}
         onDuplicate={() => void duplicateBoard()}
         onTrash={() => setTrashOpen(true)}
+        onReplace={replaceBoard}
         voteRunning={vote.running}
         timerRunning={currentTimerPhase === "running"}
         setVoteOpen={setVoteOpen}
@@ -748,7 +749,7 @@ export function BoardApp() {
           editingId={editingId}
           onEdit={editWidget}
           synced={synced} fitKey={`${active}#${cameraEpoch}`}
-          grid={settings.grid.style ?? "lines"}
+          grid={settings.grid.style}
           hintAllowed={hintAllowed}
           settings={settings}
           readOnly={writeBlocked}
@@ -789,7 +790,6 @@ export function BoardApp() {
         selectionLocked={selectionLocked}
         counts={counts}
         kanbanStates={kanbanStates}
-        replaceBoard={replaceBoard}
         status={status}
         visiblePresence={visiblePresence}
         onOpenObject={openBoard}

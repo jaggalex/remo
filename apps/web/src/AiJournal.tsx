@@ -1,3 +1,4 @@
+import { Button, Select } from "@remo/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type AiChainCheck, type AiRun } from "./api";
 import { formatMoment } from "./format";
@@ -76,9 +77,9 @@ export function AiJournal({ orgId }: { orgId: string }) {
           </strong>
           <p className="muted">{t("aiLog.body")}</p>
         </div>
-        <button type="button" className="ghost-button" disabled={busy} onClick={() => void verify()}>
+        <Button disabled={busy} onClick={() => void verify()}>
           {t("aiLog.verify")}
-        </button>
+        </Button>
       </div>
 
       {error && <p className="auth-error">{error}</p>}
@@ -101,28 +102,27 @@ export function AiJournal({ orgId }: { orgId: string }) {
       )}
 
       <div className="ai-log-filters">
-        <label>
-          {t("aiLog.filterSkill")}
-          <select value={skill} onChange={(event) => setSkill(event.target.value)}>
-            <option value="all">{t("aiLog.allSkills")}</option>
-            {skills.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("aiLog.filterOutcome")}
-          <select
-            value={outcome}
-            onChange={(event) => setOutcome(event.target.value as typeof outcome)}
-          >
-            <option value="all">{t("aiLog.allOutcomes")}</option>
-            <option value="ok">{t("aiLog.onlyOk")}</option>
-            <option value="error">{t("aiLog.onlyErrors")}</option>
-          </select>
-        </label>
+        <Select
+          size="compact"
+          label={t("aiLog.filterSkill")}
+          options={[
+            { value: "all", label: t("aiLog.allSkills") },
+            ...skills.map((value) => ({ value, label: value })),
+          ]}
+          value={skill}
+          onChange={(event) => setSkill(event.target.value)}
+        />
+        <Select
+          size="compact"
+          label={t("aiLog.filterOutcome")}
+          options={[
+            { value: "all", label: t("aiLog.allOutcomes") },
+            { value: "ok", label: t("aiLog.onlyOk") },
+            { value: "error", label: t("aiLog.onlyErrors") },
+          ]}
+          value={outcome}
+          onChange={(event) => setOutcome(event.target.value as typeof outcome)}
+        />
         <span className="muted">{t("aiLog.shown", { n: visible.length, total: runs.length })}</span>
       </div>
 

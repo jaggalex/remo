@@ -23,10 +23,8 @@ import {
   widgetsWithTag,
 } from "@remo/doc";
 import { currentRoom } from "./identity";
-import { Button, ConfirmDialog as UiConfirmDialog, Input } from "@remo/ui";
-import { writeClipboard } from "./clipboard";
+import { Button, Checkbox, ConfirmDialog as UiConfirmDialog, Input, Select } from "@remo/ui";
 import { useI18n, type TranslationKey } from "./i18n";
-import { HelpLink } from "./help/HelpLink";
 
 const TAG_COLOR_KEY: Record<TagColor, TranslationKey> = {
   blue: "tag.color.blue",
@@ -37,11 +35,11 @@ const TAG_COLOR_KEY: Record<TagColor, TranslationKey> = {
 };
 
 /**
- * The interface name of one object, plus its stable id (ADR-165).
+ * The interface name of one object (ADR-165).
  *
- * The name is committed on blur or Enter, so typing is one undo step. The id is shown
- * read-only because it is what a link, a command or a bug report needs; renaming it is
- * not a product operation.
+ * The name is committed on blur or Enter, so typing is one undo step. The stable id is in
+ * «⋯ → Инфо» with its copy button (ADR-236): a link, a command or a bug report needs it,
+ * but it is not something a person edits.
  */
 export function ObjectNameField({
   board,
@@ -54,11 +52,9 @@ export function ObjectNameField({
 }) {
   const { t } = useI18n();
   const [value, setValue] = useState(widget.name ?? "");
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setValue(widget.name ?? "");
-    setCopied(false);
   }, [widget.id, widget.name]);
 
   const commit = () => {
@@ -86,19 +82,6 @@ export function ObjectNameField({
           }
         }}
       />
-      <div className="object-id-row">
-        <span className="muted">{t("inspector.objectId")}</span>
-        <code className="object-id">{widget.id}</code>
-        <Button
-          size="compact"
-          variant="secondary"
-          onClick={() => {
-            void writeClipboard(widget.id).then((ok) => setCopied(ok));
-          }}
-        >
-          {copied ? t("inspector.idCopied") : t("inspector.copyId")}
-        </Button>
-      </div>
     </div>
   );
 }
@@ -131,9 +114,9 @@ export function GroupNameField({
   };
 
   return (
-    <label className="group-name-field">
-      <span>{t("inspector.groupName")}</span>
-      <input
+    <Input
+      label={t("inspector.groupName")}
+      size="compact"
         value={value}
         disabled={disabled}
         maxLength={64}
@@ -148,8 +131,7 @@ export function GroupNameField({
             event.currentTarget.blur();
           }
         }}
-      />
-    </label>
+    />
   );
 }
 
@@ -180,63 +162,57 @@ export function CardFieldsPanel({
   return (
     <div className="card-fields">
       <div className="card-fields-head">
-        {t("inspector.card")} <HelpLink topicId="cards.fields" />
+        {t("inspector.card")}
       </div>
-      <label className="card-field">
-        <span>{t("card.status")}</span>
-        <select
-          value={card.status ?? ""}
-          disabled={disabled}
-          onChange={(event) =>
-            set({ status: (event.target.value || undefined) as CardStatus | undefined })
-          }
-        >
-          <option value="">—</option>
-          <option value="todo">{t("card.status.todo")}</option>
-          <option value="in_progress">{t("card.status.in_progress")}</option>
-          <option value="done">{t("card.status.done")}</option>
-        </select>
-      </label>
-      <label className="card-field">
-        <span>{t("card.assignee")}</span>
-        <select
-          value={card.assigneeId ?? ""}
-          disabled={disabled}
-          onChange={(event) => {
-            const person = assignees.find((entry) => entry.id === event.target.value);
-            set({
-              assigneeId: event.target.value || undefined,
-              assigneeName: person?.name,
-            });
-          }}
-        >
-          <option value="">{t("card.unassigned")}</option>
-          {assignees.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        label={t("card.status")}
+        size="compact"
+        options={[
+          { value: "", label: "—" },
+          { value: "todo", label: t("card.status.todo") },
+          { value: "in_progress", label: t("card.status.in_progress") },
+          { value: "done", label: t("card.status.done") },
+        ]}
+        value={card.status ?? ""}
+        disabled={disabled}
+        onChange={(event) =>
+          set({ status: (event.target.value || undefined) as CardStatus | undefined })
+        }
+      />
+      <Select
+        label={t("card.assignee")}
+        size="compact"
+        options={[
+          { value: "", label: t("card.unassigned") },
+          ...assignees.map((person) => ({ value: person.id, label: person.name })),
+        ]}
+        value={card.assigneeId ?? ""}
+        disabled={disabled}
+        onChange={(event) => {
+          const person = assignees.find((entry) => entry.id === event.target.value);
+          set({
+            assigneeId: event.target.value || undefined,
+            assigneeName: person?.name,
+          });
+        }}
+      />
       <div className="card-dates">
-        <label className="card-field">
-          <span>{t("card.start")}</span>
-          <input
+        <Input
+          label={t("card.start")}
+          size="compact"
             type="date"
             value={card.startAt ?? ""}
             disabled={disabled}
             onChange={(event) => set({ startAt: event.target.value || undefined })}
-          />
-        </label>
-        <label className="card-field">
-          <span>{t("card.due")}</span>
-          <input
+        />
+        <Input
+          label={t("card.due")}
+          size="compact"
             type="date"
             value={card.dueAt ?? ""}
             disabled={disabled}
             onChange={(event) => set({ dueAt: event.target.value || undefined })}
-          />
-        </label>
+        />
       </div>
     </div>
   );
@@ -287,76 +263,65 @@ export function ObjectLinkPanel({
 
   return (
     <div className="link-panel">
-      <div className="card-fields-head">
-        {t("link.title")} <HelpLink topicId="tags.links" />
+      <div className="link-row">
+        <Input
+          type="url"
+          size="compact"
+          label={t("link.external")}
+          value={url}
+          placeholder="https://…"
+          disabled={locked}
+          onChange={(event) => setUrl(event.target.value)}
+        />
+        <Button size="compact" disabled={locked || !url.trim()} onClick={applyUrl}>
+          {t("link.apply")}
+        </Button>
       </div>
-      <label className="card-field">
-        <span>{t("link.external")}</span>
-        <div className="link-row">
-          <input
-            type="url"
-            value={url}
-            placeholder="https://…"
-            disabled={locked}
-            onChange={(event) => setUrl(event.target.value)}
-          />
-          <button type="button" disabled={locked || !url.trim()} onClick={applyUrl}>
-            {t("link.apply")}
-          </button>
-        </div>
-      </label>
-      <label className="card-field">
-        <span>{t("link.internal")}</span>
-        <div className="link-row">
-          <select
-            value={target}
-            disabled={locked}
-            onChange={(event) => setTarget(event.target.value)}
-          >
-            <option value="">—</option>
-            {widgets
+      <div className="link-row">
+        <Select
+          size="compact"
+          label={t("link.internal")}
+          options={[
+            { value: "", label: "—" },
+            ...widgets
               .filter((candidate) => candidate.id !== widget.id)
               .slice(0, 200)
-              .map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.title || candidate.content || candidate.id}
-                </option>
-              ))}
-          </select>
-          <button type="button" disabled={locked || !target} onClick={applyTarget}>
-            {t("link.apply")}
-          </button>
-        </div>
-      </label>
+              .map((candidate) => ({
+                value: candidate.id,
+                label: candidate.title || candidate.content || candidate.id,
+              })),
+          ]}
+          value={target}
+          disabled={locked}
+          onChange={(event) => setTarget(event.target.value)}
+        />
+        <Button size="compact" disabled={locked || !target} onClick={applyTarget}>
+          {t("link.apply")}
+        </Button>
+      </div>
       {error && <p className="auth-error">{error}</p>}
       {link && (
         <div className="link-current">
           {link.kind === "url" ? (
-            <button
-              type="button"
-              onClick={() => window.open(link.url, "_blank", "noopener,noreferrer")}
-            >
+            <Button variant="ghost" size="compact" onClick={() => window.open(link.url, "_blank", "noopener,noreferrer")}>
               {t("link.open")}: {link.url}
-            </button>
+            </Button>
           ) : widgets.some((candidate) => candidate.id === link.widgetId) ? (
-            <button type="button" onClick={() => onOpenObject(currentRoom(), link.widgetId)}>
+            <Button variant="ghost" size="compact" onClick={() => onOpenObject(currentRoom(), link.widgetId)}>
               {t("link.open")}: {t("link.internal")}
-            </button>
+            </Button>
           ) : (
             <span className="muted">{t("link.broken")}</span>
           )}
-          <button
-            type="button"
-            className="danger-link"
+          <Button variant="ghost" size="compact"
             disabled={locked}
             onClick={() => {
               setWidgetLink(board, widget.id, null);
               setUrl("");
               setTarget("");
-            }}
-          >
+            }}>
             {t("link.clear")}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -396,11 +361,10 @@ export function TagsPanel({
 
   return (
     <div className="tags-panel">
-      <div className="card-fields-head">
-        {t("tags.title")} <HelpLink topicId="tags.links" />
-      </div>
       <div className="tag-add">
-        <input
+        <Input
+          size="compact"
+          aria-label={t("tags.namePlaceholder")}
           value={name}
           maxLength={32}
           placeholder={t("tags.namePlaceholder")}
@@ -412,19 +376,18 @@ export function TagsPanel({
             setName("");
           }}
         />
-        <select
+        <Select
+          size="compact"
+          aria-label={t("tags.color")}
+          options={[
+            ...TAG_COLORS.map((entry) => ({ value: entry, label: t(TAG_COLOR_KEY[entry]) })),
+          ]}
           value={color}
           disabled={disabled}
           onChange={(event) => setColor(event.target.value as TagColor)}
-        >
-          {TAG_COLORS.map((entry) => (
-            <option key={entry} value={entry}>
-              {t(TAG_COLOR_KEY[entry])}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
+        />
+        <Button
+          size="compact"
           disabled={disabled || !name.trim()}
           onClick={() => {
             createTag(board, name, color);
@@ -432,7 +395,7 @@ export function TagsPanel({
           }}
         >
           {t("tags.add")}
-        </button>
+        </Button>
       </div>
       {tags.length === 0 && <p className="muted">{t("tags.empty")}</p>}
       <ul className="tag-list">
@@ -451,28 +414,24 @@ export function TagsPanel({
         <div className="tag-assign">
           <div className="muted">{t("tags.onObject")}</div>
           {tags.map((tag) => (
-            <label key={tag.id} className="tag-check">
-              <input
-                type="checkbox"
-                checked={Boolean(selected.tagIds?.includes(tag.id))}
-                disabled={disabled || Boolean(selected.locked)}
-                onChange={() => toggleWidgetTag(board, selected.id, tag.id)}
-              />
-              <span className={`tag-chip tag-${tag.color}`}>{tag.name}</span>
-            </label>
+            <Checkbox
+              key={tag.id}
+              className="tag-check"
+              label={<span className={`tag-chip tag-${tag.color}`}>{tag.name}</span>}
+              checked={Boolean(selected.tagIds?.includes(tag.id))}
+              disabled={disabled || Boolean(selected.locked)}
+              onChange={() => toggleWidgetTag(board, selected.id, tag.id)}
+            />
           ))}
           {tags.length === 0 && <p className="muted">{t("tags.empty")}</p>}
         </div>
       )}
       {selected && tags.length > 0 && (
-        <button
-          type="button"
-          className="danger-link"
+        <Button variant="ghost" size="compact"
           disabled={disabled || Boolean(selected.locked)}
-          onClick={() => setWidgetTags(board, selected.id, [])}
-        >
+          onClick={() => setWidgetTags(board, selected.id, [])}>
           {t("tags.clearObject")}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -500,7 +459,8 @@ function TagRow({
   return (
     <li className="tag-row">
       <span className={`tag-chip tag-${tag.color}`}>{tag.name}</span>
-      <input
+      <Input
+        size="compact"
         className="tag-name-input"
         value={name}
         maxLength={32}
@@ -519,29 +479,24 @@ function TagRow({
           }
         }}
       />
-      <select
+      <Select
+        size="compact"
+        options={[
+          ...TAG_COLORS.map((entry) => ({ value: entry, label: t(TAG_COLOR_KEY[entry]) })),
+        ]}
         value={tag.color}
         disabled={disabled}
         aria-label={t("tags.color")}
         onChange={(event) => setTagColor(board, tag.id, event.target.value as TagColor)}
-      >
-        {TAG_COLORS.map((entry) => (
-          <option key={entry} value={entry}>
-            {t(TAG_COLOR_KEY[entry])}
-          </option>
-        ))}
-      </select>
-      <button type="button" className="link-button" disabled={disabled} onClick={onFocus}>
+      />
+      <Button variant="ghost" size="compact" disabled={disabled} onClick={onFocus}>
         {t("tags.select", { count })}
-      </button>
-      <button
-        type="button"
-        className="link-button danger"
+      </Button>
+      <Button variant="ghost" size="compact"
         disabled={disabled}
-        onClick={() => setConfirming(true)}
-      >
+        onClick={() => setConfirming(true)}>
         {t("tags.delete")}
-      </button>
+      </Button>
       {confirming && (
         <UiConfirmDialog
           title={t("tags.deleteTitle", { name: tag.name })}

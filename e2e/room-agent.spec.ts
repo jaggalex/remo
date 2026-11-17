@@ -52,8 +52,8 @@ test("a selected editor publishes a shared editable draft and loses launch acces
     });
     expect(publicLink.status()).toBe(409);
 
-    const delegate = ownerPanel.getByRole("checkbox", { name: "Olga Editor" });
-    await delegate.click();
+    const delegate = ownerPanel.getByRole("switch", { name: "Olga Editor" });
+    await ownerPanel.locator(".agent-delegates label", { hasText: "Olga Editor" }).click();
     await expect(delegate).toBeChecked();
     const create = editorPanel.getByRole("button", { name: "Create draft" });
     await expect(create).toBeVisible();
@@ -105,7 +105,7 @@ test("a selected editor publishes a shared editable draft and loses launch acces
     expect(await remoteX()).toBe(editedX);
 
     await page.getByRole("button", { name: "Assigned: Planner" }).click();
-    await delegate.click();
+    await ownerPanel.locator(".agent-delegates label", { hasText: "Olga Editor" }).click();
     await expect(delegate).not.toBeChecked();
     await expect(editorPanel.getByRole("textbox")).toHaveCount(0);
     expect((await editor.request.post(endpoint, { data: { intent } })).status()).toBe(403);
@@ -227,10 +227,14 @@ test("requirements and MVP drafts use their own layouts", async ({ page }) => {
     ["user-flow-design", "Собери user flow"],
     ["architecture-mapping", "Опиши архитектуру"],
   ] as const) {
+    const before = (await frames(page)).length;
     const created = await page.request.post(`/api/boards/${boardId}/agent-threads`, {
       data: { intent, kind, sourceIds: [] },
     });
     expect(created.ok(), await created.text()).toBeTruthy();
+    // The room has a queued-task limit. Waiting for each skill's frame keeps the next
+    // request below it, instead of racing the fake agent worker on a slow CI machine.
+    await expect.poll(async () => (await frames(page)).length).toBeGreaterThan(before);
   }
   await expect.poll(() => frames(page)).toHaveLength(12);
   const texts = await page.evaluate(() =>

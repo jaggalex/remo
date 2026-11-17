@@ -5,6 +5,7 @@ import {
   type BoardDocument,
 } from "@remo/doc";
 import type { Board, KanbanState, TextDeltaOp, Widget } from "@remo/model";
+import { Button, Checkbox, Dialog } from "@remo/ui";
 import { api, ApiError } from "./api";
 import { backupToBoard, BackupError, verifyBoardBackup } from "./backupFormat";
 import { commentsApi, type BackupCommentThread, type CommentThread } from "./commentsApi";
@@ -341,30 +342,14 @@ export function ExportDialog({
         : t("export.failed");
 
   return (
-    <div className="dialog-backdrop" role="presentation" onPointerDown={onClose}>
-      <section
-        className="share-dialog export-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("export.title")}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="share-head">
-          <div>
-            <h2>
-              {t("export.title")} <HelpLink topicId="export.formats" />
-            </h2>
-            <p className="muted">{boardTitle || t("board.untitled")}</p>
-          </div>
-          <button
-            type="button"
-            className="dialog-close"
-            onClick={onClose}
-            aria-label={t("export.close")}
-          >
-            ×
-          </button>
-        </header>
+    <Dialog
+      title={t("export.title")}
+      description={boardTitle || t("board.untitled")}
+      help={<HelpLink topicId="export.formats" />}
+      size="md"
+      onClose={onClose}
+    >
+      <section className="dialog-stack export-dialog">
 
         <section className="export-section">
           <h3>
@@ -419,14 +404,10 @@ export function ExportDialog({
         </section>
 
         {format !== "backup" && (
-          <label className="export-comments">
-            <input
-              type="checkbox"
+          <Checkbox className="export-comments" label={t("export.includeComments")}
               checked={includeComments}
               onChange={(event) => setIncludeComments(event.target.checked)}
             />
-            {t("export.includeComments")}
-          </label>
         )}
 
         {status !== "idle" && (
@@ -444,12 +425,11 @@ export function ExportDialog({
         )}
 
         <footer className="export-actions">
-          <button type="button" className="ghost-button" onClick={onClose}>
+          <Button onClick={onClose}>
             {t("export.close")}
-          </button>
-          <button
-            type="button"
-            className="share-button"
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => void run()}
             disabled={!canRun}
           >
@@ -458,7 +438,7 @@ export function ExportDialog({
               : status === "running"
                 ? t("export.running")
                 : t("export.start")}
-          </button>
+          </Button>
         </footer>
 
         {canImport && (
@@ -479,14 +459,12 @@ export function ExportDialog({
               }}
             />
             {!pendingImport ? (
-              <button
-                type="button"
-                className="ghost-button"
+              <Button
                 onClick={() => fileInput.current?.click()}
                 disabled={importBusy || status === "running"}
               >
                 {t("export.importChoose")}
-              </button>
+              </Button>
             ) : (
               <div className="export-import-confirm">
                 <p className="auth-error" role="alert">
@@ -496,22 +474,18 @@ export function ExportDialog({
                   })}
                 </p>
                 <div className="export-actions">
-                  <button
-                    type="button"
-                    className="ghost-button"
+                  <Button
                     onClick={() => setPendingImport(null)}
                     disabled={importBusy}
                   >
                     {t("export.cancel")}
-                  </button>
-                  <button
-                    type="button"
-                    className="share-button"
+                  </Button>
+                  <Button
+                    variant="danger"
                     onClick={confirmImport}
-                    disabled={importBusy}
-                  >
+                    disabled={importBusy}>
                     {t("export.importReplace")}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -523,7 +497,7 @@ export function ExportDialog({
           </section>
         )}
       </section>
-    </div>
+    </Dialog>
   );
 }
 

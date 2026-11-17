@@ -49,6 +49,9 @@ function statusColour(status: CardStatus, palette: CanvasPalette): string {
  * A card without meta keeps its title centred. With meta, the title moves up and the
  * badges sit on the lower line. This is shared by the standalone card and the kanban
  * matrix, so the two cannot drift.
+ *
+ * Sizes are world units, like the title (ADR-235): the small print belongs to the card and
+ * scales with it. The numbers are the ones it had at 100 %.
  */
 export function drawCardMeta(
   ctx: CanvasRenderingContext2D,
@@ -58,55 +61,54 @@ export function drawCardMeta(
   height: number,
   card: Widget,
   theme: CardMetaTheme,
-  zoom: number,
 ): number {
   const hasMeta = Boolean(card.status || card.assigneeName || card.startAt || card.dueAt);
   if (!hasMeta) return top + height / 2;
 
-  const y = top + height - 13 / zoom;
+  const y = top + height - 13;
   const leftEdge = left + 12;
   const rightEdge = left + width - 12;
   let x = leftEdge;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.font = `${9.5 / zoom}px ${theme.fontFamily}`;
+  ctx.font = `${9.5}px ${theme.fontFamily}`;
 
   if (card.status) {
     const label = theme.statusLabel[card.status] ?? card.status;
     const labelWidth = ctx.measureText(label).width;
-    const room = rightEdge - x - 62 / zoom;
-    if (room > 20 / zoom) {
+    const room = rightEdge - x - 62;
+    if (room > 20) {
       ctx.fillStyle = statusColour(card.status, theme.palette);
       ctx.beginPath();
-      ctx.arc(x + 3 / zoom, y, 3 / zoom, 0, Math.PI * 2);
+      ctx.arc(x + 3, y, 3, 0, Math.PI * 2);
       ctx.fill();
-      x += 11 / zoom;
+      x += 11;
       ctx.fillText(label, x, y);
-      x += labelWidth + 10 / zoom;
+      x += labelWidth + 10;
     }
   }
 
   if (card.assigneeName) {
-    const available = rightEdge - x - 70 / zoom;
-    if (available > 16 / zoom) {
+    const available = rightEdge - x - 70;
+    if (available > 16) {
       const initials = card.assigneeName
         .split(/\s+/)
         .filter(Boolean)
         .map((part) => part[0]!.toUpperCase())
         .join("")
         .slice(0, 2);
-      const radius = 7 / zoom;
+      const radius = 7;
       ctx.fillStyle = theme.palette.selectionFill;
       ctx.beginPath();
       ctx.arc(x + radius, y, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = theme.palette.textSecondary;
-      ctx.font = `600 ${8 / zoom}px ${theme.fontFamily}`;
+      ctx.font = `600 ${8}px ${theme.fontFamily}`;
       ctx.textAlign = "center";
       ctx.fillText(initials || "?", x + radius, y);
       ctx.textAlign = "left";
-      ctx.font = `${9.5 / zoom}px ${theme.fontFamily}`;
-      x += radius * 2 + 6 / zoom;
+      ctx.font = `${9.5}px ${theme.fontFamily}`;
+      x += radius * 2 + 6;
     }
   }
 
@@ -118,5 +120,5 @@ export function drawCardMeta(
     ctx.fillText(overdue ? `! ${dates}` : dates, rightEdge, y);
     ctx.textAlign = "left";
   }
-  return top + height / 2 - 8 / zoom;
+  return top + height / 2 - 8;
 }

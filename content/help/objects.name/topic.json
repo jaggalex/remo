@@ -14,13 +14,13 @@
     "rooms.home",
     "tags.links"
   ],
-  "verifiedAgainst": "2026-11-04",
+  "verifiedAgainst": "2026-11-17",
   "audience": "public",
   "sourceLocale": "ru",
   "translations": {
     "en": {
-      "sourceHash": "sha256:58fbd13c7c58230ce3a09e5998dd51ac5f021f2fc21755eec4b0241dc99cf055",
-      "targetHash": "sha256:abc65e2900edb06427c2f2dc9783a9923661714044b91828fd1040212f976a76"
+      "sourceHash": "sha256:acb5f56d92559f7dbba6024bc3d27362278e1f46e2b7d0acada89799f26629f6",
+      "targetHash": "sha256:a9d1900419f9d7548430386d5826d8623e4cd499a6f0fb439d280a4f90c43d6c"
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "remo",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "packageManager": "pnpm@11.2.2",
   "engines": {
     "node": ">=22",
@@ -59,8 +59,8 @@
     "verify:fast": "node scripts/verify.mjs --fast",
     "e2e": "node scripts/e2e-run.mjs",
     "e2e:headed": "node scripts/e2e-run.mjs --headed",
-    "baselines": "REMO_UPDATE_BASELINES=1 node scripts/e2e-run.mjs e2e/visual.spec.ts",
-    "e2e:visual": "node scripts/e2e-run.mjs e2e/visual.spec.ts",
+    "baselines": "REMO_UPDATE_BASELINES=1 node scripts/e2e-run.mjs --linux-browser e2e/visual.spec.ts",
+    "e2e:visual": "node scripts/e2e-run.mjs --linux-browser e2e/visual.spec.ts",
     "e2e:a11y": "node scripts/e2e-run.mjs e2e/a11y.spec.ts",
     "e2e:perf": "node scripts/e2e-run.mjs e2e/perf.spec.ts",
     "size:check": "node scripts/file-size-check.mjs",

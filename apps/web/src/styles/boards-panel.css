@@ -8,21 +8,20 @@
   z-index: var(--z-bar);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   max-width: 440px;
-  padding: 18px 20px;
+  padding: var(--space-4) var(--space-5);
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-pop);
-  font-size: 12.5px;
-  line-height: 1.55;
+  font: var(--type-body);
   color: var(--text-secondary);
 }
 
 .empty-board b {
-  font-size: 15px;
-  color: var(--ink);
+  font: var(--type-subtitle);
+  color: var(--text-primary);
 }
 
 .empty-actions {
@@ -39,7 +38,7 @@
   z-index: var(--z-bar);
   margin: 0;
   border: 2px solid var(--accent);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   /* The fill and the text colour come from the object being edited (ADR-038); these
      are only the fallback for a card, which has no fill of its own. */
   background: var(--bg-panel);
@@ -64,75 +63,7 @@
 .inline-editor strong {
   font-weight: 700;
 }
-
 /* ------------------------------------------------------------- boards panel */
-
-.boards-panel {
-  position: fixed;
-  top: calc(var(--topbar-height) + var(--space-6));
-  right: 12px;
-  bottom: 12px;
-  width: 328px;
-  z-index: var(--z-bar);
-  background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-bar);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.boards-panel header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.boards-panel header b {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.boards-panel header button {
-  border: 0;
-  background: transparent;
-  border-radius: var(--radius-pill);
-  width: 26px;
-  height: 26px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.boards-panel header button:hover {
-  background: var(--bg-hover);
-}
-
-.boards-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.boards-panel header .boards-new {
-  width: auto;
-  padding: 0 8px;
-  color: var(--accent);
-  font-size: 12px;
-}
-
-.new-board-dialog h2 {
-  /* The help mark sits on the title's line, not under it. */
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin: 0 0 2px;
-  font-size: 16px;
-  font-weight: 600;
-}
 
 .new-board-start {
   display: flex;
@@ -150,206 +81,55 @@
   font: var(--type-caption);
 }
 
-.new-board-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
-}
-
-.new-board-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-panel);
-  cursor: pointer;
-}
-
 /* The radio covers the whole card: one hit area, and the native control keeps focus. */
-.new-board-card input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.new-board-card b {
-  color: var(--text-primary);
-  font: var(--type-label);
-  font-weight: 600;
-}
-
-.new-board-card span {
-  color: var(--text-secondary);
-  font: var(--type-caption);
-}
-
 /* Selected is a border and weight, not colour alone. */
-.new-board-card.is-checked {
-  border: 2px solid var(--border-focus);
-  padding: calc(var(--space-3) - 1px);
-}
-
-.new-board-card:has(input:focus-visible) {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
-}
-
-.new-board-dialog select {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 13px;
-  color: var(--ink);
-  background: var(--bg-panel);
-}
-
-.group-name-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.group-name-field input {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 6px 8px;
-  font: inherit;
-  font-size: 13px;
-  color: var(--ink);
-  background: var(--bg-app);
-}
-
-.group-name-field input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 1px var(--border-focus);
-}
-
 .card-fields {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
 }
 
+/* One kind of group heading in the panel (DS-TYPE-03, ADR-236): the caption overline. */
 .card-fields-head {
-  font-size: 12px;
+  font: var(--type-caption);
   font-weight: 600;
-  color: var(--ink);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-.card-field {
+/* One under the other (E-16): side by side in a 230 px panel, each native date field was
+   narrower than its own date and the year went under the calendar button. */
+.card-dates {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.card-field select,
-.card-field input {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 5px 7px;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--ink);
-  background: var(--bg-app);
-}
-
-.card-field select:focus,
-.card-field input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 1px var(--border-focus);
-}
-
-.card-dates {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .wip-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.wip-field {
-  display: grid;
-  grid-template-columns: 1fr 72px;
-  align-items: center;
-  gap: 8px;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.wip-field input {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 4px 6px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--ink);
-  background: var(--bg-app);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .tags-panel,
 .link-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .tag-add {
   display: grid;
   grid-template-columns: 1fr 86px auto;
-  gap: 6px;
-}
-
-.tag-add input,
-.tag-add select,
-.tag-name-input,
-.tag-row select,
-.link-row input,
-.link-row select {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 5px 7px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--ink);
-  background: var(--bg-app);
-}
-
-.tag-add button,
-.link-row button {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  padding: 5px 8px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--ink);
-  background: var(--bg-hover);
-  cursor: pointer;
+  gap: var(--space-2);
 }
 
 .tag-list {
@@ -358,14 +138,14 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .tag-row {
   display: grid;
   grid-template-columns: auto 1fr 76px auto auto;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .tag-chip {
@@ -377,8 +157,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   border-radius: var(--radius-pill);
-  padding: 2px 6px;
-  font-size: 11px;
+  padding: 2px var(--space-2);
+  font: var(--type-caption);
   font-weight: 600;
 }
 
@@ -389,12 +169,12 @@
 
 .tag-green {
   background: var(--success-soft);
-  color: var(--success);
+  color: var(--state-success);
 }
 
 .tag-yellow {
   background: var(--warning-soft);
-  color: var(--warning);
+  color: var(--state-warning);
 }
 
 .tag-red {
@@ -410,50 +190,37 @@
 .tag-assign {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .tag-check {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: var(--space-2);
+  font: var(--type-caption);
   color: var(--text-secondary);
 }
 
 .link-row {
   display: flex;
-  gap: 6px;
+  align-items: flex-end;
+  gap: var(--space-2);
 }
 
-.link-row input,
-.link-row select {
+.link-row .rm-field {
   flex: 1;
   min-width: 0;
+}
+
+.link-current .rm-btn {
+  max-width: 100%;
 }
 
 .link-current {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   align-items: center;
-}
-
-.link-current button {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font: inherit;
-  font-size: 11.5px;
-  color: var(--text-accent);
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.link-current .danger-link {
-  color: var(--text-danger);
 }
 
 .present-bar,
@@ -465,13 +232,13 @@
   z-index: var(--z-bar);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 999px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-pill);
   background: var(--bg-panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-bar);
-  font-size: 12px;
+  font: var(--type-caption);
   color: var(--text-primary);
 }
 
@@ -484,65 +251,44 @@
   top: calc(var(--topbar-height) + var(--space-6));
 }
 
-.present-bar button,
-.present-follow button,
-.present-join button,
-.presentation-list button,
-.presentation-panel header button {
-  border: 1px solid var(--line);
+/* Only the arrow glyphs are still raw buttons: they wait for chevron/arrow icons (M4). */
+.present-bar button:not(.rm-btn),
+.presentation-list button:not(.rm-btn) {
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   background: var(--bg-hover);
   color: var(--text-primary);
-  font: inherit;
-  font-size: 12px;
+  font: var(--type-caption);
   cursor: pointer;
-}
-
-.presentation-panel {
-  width: min(560px, 100%);
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
-  padding: 18px 20px 20px;
-  border: var(--panel-border-width) solid var(--border-panel);
-  border-radius: var(--radius-2xl);
-  background: var(--bg-panel);
-  box-shadow: var(--shadow-pop);
-}
-
-.presentation-panel header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
 }
 
 .presentation-list {
   list-style: none;
-  margin: 10px 0;
+  margin: var(--space-2) 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .presentation-list li {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  font-size: 12.5px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font: var(--type-label);
 }
 
 .presentation-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .presentation-picker {
@@ -551,7 +297,7 @@
   gap: var(--space-2);
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .presentation-available {
@@ -571,9 +317,9 @@
   justify-content: space-between;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  font-size: 12.5px;
+  font: var(--type-label);
 }
 
 .presentation-available li > span {
@@ -585,8 +331,8 @@
 
 .presentation-id {
   color: var(--text-muted);
+  font: var(--type-caption);
   font-family: var(--font-mono);
-  font-size: 11px;
 }
 
 .object-name-field {
@@ -595,7 +341,7 @@
   gap: var(--space-2);
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .object-id-row {
@@ -603,7 +349,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  font-size: 11.5px;
+  font: var(--type-caption);
 }
 
 .object-id {
@@ -612,83 +358,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 2px 6px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-sm);
   background: var(--bg-hover);
   color: var(--text-secondary);
   font-family: var(--font-mono);
-}
-
-.boards-org {
-  margin-top: var(--space-1);
-}
-
-.boards-search {
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill);
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 13px;
-  background: var(--bg-app);
-}
-
-.boards-search:focus {
-  border-color: var(--accent);
-  background: var(--bg-panel);
-  outline: none;
-}
-
-.boards-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.boards-label {
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--faint);
-}
-
-.boards-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.boards-list button {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: left;
-  border: 1px solid transparent;
-  background: var(--bg-app);
-  border-radius: var(--radius-pill);
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.boards-list button:hover {
-  background: var(--bg-hover);
-}
-
-.boards-list button.active {
-  background: var(--accent-soft);
-  border-color: var(--accent-soft);
-}
-
-.boards-list b {
-  font-weight: 600;
-  word-break: break-word;
 }
 
 /* The cell a table presentation is focused on (ADR-200). */
@@ -704,6 +378,6 @@
 
 .present-cell-label {
   margin-left: var(--space-2);
-  color: var(--muted);
+  color: var(--text-secondary);
   font: var(--type-caption);
 }

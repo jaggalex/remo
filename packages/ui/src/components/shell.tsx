@@ -19,15 +19,22 @@ const SYNC: Record<SyncState, { icon: IconName; text: UiKey; short?: UiKey; tone
  *
  * `label` and `hint` let the product speak with its own words when the state carries a
  * number ("offline (3)") or a consequence ("input paused") that @remo/ui cannot know.
+ *
+ * `quiet` (ADR-232): a calm state — saved, saving — is its icon, and its word moves to the
+ * tooltip while staying in the live region. A state that asks for attention — offline, or
+ * `alert` for input stopped — keeps its word on screen, because an icon alone is missed.
  */
-export function SyncStatus({ state, short, label, hint, className }: { state: SyncState; short?: boolean; label?: string; hint?: string; className?: string }) {
+export function SyncStatus({ state, short, label, hint, className, quiet, alert }: { state: SyncState; short?: boolean; label?: string; hint?: string; className?: string; quiet?: boolean; alert?: boolean }) {
   const { t } = useUiStrings();
   const s = SYNC[state];
-  return (
-    <span className={cx("rm-sync", `rm-sync-${s.tone}`, className)} role="status" aria-live="polite" title={hint ?? t(s.text)}>
-      <Icon name={s.icon} /><span>{label ?? t(short && s.short ? s.short : s.text)}</span>
+  const word = label ?? t(short && s.short ? s.short : s.text);
+  const hideWord = quiet && !alert && s.tone !== "warning";
+  const status = (
+    <span className={cx("rm-sync", `rm-sync-${s.tone}`, className)} role="status" aria-live="polite" title={hideWord ? undefined : hint ?? t(s.text)}>
+      <Icon name={s.icon} /><span className={cx(hideWord && "rm-visually-hidden")}>{word}</span>
     </span>
   );
+  return hideWord ? <Tooltip label={hint ?? word}>{status}</Tooltip> : status;
 }
 
 export function ReadOnlyBadge({ children }: { children?: ReactNode }) {
@@ -102,15 +109,30 @@ export function FloatingBar({ count: n, actions, onMore, label }: { count?: numb
   );
 }
 
-export function ZoomControls({ zoom = 100, onIn, onOut, onReset, onFit }: { zoom?: number; onIn?: () => void; onOut?: () => void; onReset?: () => void; onFit?: () => void }) {
+/**
+ * The zoom panel: −, percentage, +, fit (DESIGN.md §3). Every button names itself in a
+ * tooltip (ADR-232). The percentage is a reset button only when a reset is given; without
+ * one it is a readout, not a control that does nothing.
+ */
+export function ZoomControls({ zoom = 100, onIn, onOut, onReset, onFit, fitHint }: { zoom?: number; onIn?: () => void; onOut?: () => void; onReset?: () => void; onFit?: () => void; fitHint?: string }) {
   const { t } = useUiStrings();
   return (
     <div className="rm-zoom" role="group" aria-label={t("zoom")}>
-      <IconButton icon="minus" label={t("zoomOut")} size="compact" onClick={onOut} />
-      <button type="button" className="rm-zoom-value rm-num" aria-label={t("zoomValue", { zoom })} onClick={onReset}>{zoom} %</button>
-      <IconButton icon="plus" label={t("zoomIn")} size="compact" onClick={onIn} />
+      <Tooltip label={t("zoomOut")} side="top">
+        <IconButton icon="minus" label={t("zoomOut")} size="compact" onClick={onOut} />
+      </Tooltip>
+      {onReset ? (
+        <button type="button" className="rm-zoom-value rm-num" aria-label={t("zoomValue", { zoom })} onClick={onReset}>{zoom} %</button>
+      ) : (
+        <span className="rm-zoom-value rm-num">{zoom} %</span>
+      )}
+      <Tooltip label={t("zoomIn")} side="top">
+        <IconButton icon="plus" label={t("zoomIn")} size="compact" onClick={onIn} />
+      </Tooltip>
       <span className="rm-floatbar-sep" />
-      <IconButton icon="fit" label={t("zoomFit")} size="compact" onClick={onFit} />
+      <Tooltip label={fitHint ?? t("zoomFit")} side="top">
+        <IconButton icon="fit" label={t("zoomFit")} size="compact" onClick={onFit} />
+      </Tooltip>
     </div>
   );
 }

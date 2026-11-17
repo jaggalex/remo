@@ -18,16 +18,42 @@ import {
 /**
  * Visual evidence and screen contracts (roadmap Q2.1).
  *
- * PNGs in `spec/baselines/` are the artefact a person reviews; regenerate them with
- * `pnpm baselines`. The automated gate is a set of invariants that do not depend on the
- * platform's font rasterizer: connector pixels are sampled where the routing must differ,
- * and every dialog must fit the viewport without horizontal overflow.
+ * PNGs in `spec/baselines/` are compared in the Linux browser (`pnpm e2e:visual`,
+ * ADR-222) and regenerated on purpose with `pnpm baselines`. On any other browser the
+ * comparison is skipped, because a diff there means "another platform" (ADR-091); the
+ * invariants below run everywhere: connector pixels are sampled where the routing must
+ * differ, and every dialog must fit the viewport without horizontal overflow.
  */
-const update = Boolean(process.env.REMO_UPDATE_BASELINES);
+const linuxBrowser = Boolean(process.env.REMO_BROWSER_WS);
+/**
+ * Same binary, software rendering: repeated runs are pixel-identical. A ratio was too
+ * loose — 0.2 % of the timer dialog is ~400 px, more than its digits moving by 4 px.
+ * Twenty pixels leave room for a stray antialiased edge and nothing larger.
+ */
+const MAX_DIFF_PIXELS = 20;
+/**
+ * Per-pixel colour threshold (ADR-238). Playwright ignores a difference up to about
+ * 264 × threshold grey levels: 0.03 ≈ 8 levels, four times the measured run-to-run noise
+ * (2 levels) and well under a faint real change such as the M12 grid (31 levels). The
+ * default 0.2 (≈ 52 levels) let that grid pass unseen.
+ */
+const PIXEL_THRESHOLD = 0.03;
 
-async function capture(page: Page, target: ReturnType<Page["locator"]>, name: string) {
-  if (!update) return;
-  await target.screenshot({ path: `spec/baselines/${name}.png` });
+async function capture(page: Page, target: ReturnType<Page["locator"]>, name: string, mask: ReturnType<Page["locator"]>[] = []) {
+  if (!linuxBrowser) return;
+  // Every scenario registers a fresh account, and the avatar's colour follows the account.
+  const avatar = page.locator(".account-button");
+  await expect(target).toHaveScreenshot(`${name}.png`, {
+    maxDiffPixels: MAX_DIFF_PIXELS,
+    threshold: PIXEL_THRESHOLD,
+    mask: [avatar, ...mask],
+  });
+}
+
+/** A region of the page rather than an element: a row of the canvas, the bottom edge. */
+async function captureClip(page: Page, name: string, clip: { x: number; y: number; width: number; height: number }) {
+  if (!linuxBrowser) return;
+  await expect(page).toHaveScreenshot(`${name}.png`, { maxDiffPixels: MAX_DIFF_PIXELS, threshold: PIXEL_THRESHOLD, clip });
 }
 
 function canvasPixels(page: Page) {
@@ -79,21 +105,16 @@ test("three connector routings paint differently", async ({ page }) => {
 
   const pixels = await canvasPixels(page);
   await capture(page, page.locator("[data-testid=connector-states]"), "connectors");
-  if (update) {
-    // The stage-1 debt named three baselines; each row is also its own file so a review
-    // can look at one routing without hunting inside the overview.
-    const box = await page.locator("[data-testid=connector-states] canvas").boundingBox();
-    if (box) {
-      for (const [name, top, height] of [
-        ["straight", 30, 120],
-        ["elbow", 160, 160],
-        ["curved", 300, 155],
-      ] as const) {
-        await page.screenshot({
-          path: `spec/baselines/connector-${name}.png`,
-          clip: { x: box.x, y: box.y + top, width: box.width, height },
-        });
-      }
+  // The stage-1 debt named three baselines; each row is also its own file so a review
+  // can look at one routing without hunting inside the overview.
+  const box = await page.locator("[data-testid=connector-states] canvas").boundingBox();
+  if (box) {
+    for (const [name, top, height] of [
+      ["straight", 30, 120],
+      ["elbow", 160, 160],
+      ["curved", 300, 155],
+    ] as const) {
+      await captureClip(page, `connector-${name}`, { x: box.x, y: box.y + top, width: box.width, height });
     }
   }
   console.log("connector pixels", pixels);
@@ -112,8 +133,10 @@ test("a locked object carries the canvas lock badge", async ({ page }) => {
   await page.keyboard.press("Meta+Shift+l");
   await expect(page.locator(".badge-lock")).toHaveCount(1);
   // The selection badge is a DOM plate over the note's corner; clear it so the
-  // canvas mark, not the plate, is what the baseline records (ADR-193).
+  // canvas mark, not the plate, is what the baseline records (ADR-193). Wait for the
+  // plate to leave the DOM: a slow runner otherwise captured it mid-removal.
   await page.keyboard.press("Escape");
+  await expect(page.locator(".selection-badge")).toHaveCount(0);
   // A single note makes the camera fit it at >400 %; step back to a normal zoom so
   // the 16 px mark is read against the object, not against a magnified canvas.
   for (let step = 0; step < 8; step += 1) {
@@ -154,8 +177,10 @@ test("the board, export, timer and vote screens fit the viewport", async ({ page
   await expect(page.locator(".export-dialog")).toBeVisible();
   expect(await page.locator(".export-dialog .export-choice").count()).toBeGreaterThanOrEqual(5);
   expect(await fits()).toBe(true);
-  await capture(page, page.locator(".export-dialog"), "export");
-  await page.locator(".export-dialog .dialog-close").click();
+  const exportDialog = page.getByRole("dialog", { name: "Export" });
+  await capture(page, exportDialog, "export");
+  // The header close of Dialog comes first; the footer has its own "Close".
+  await exportDialog.getByRole("button", { name: "Close", exact: true }).first().click();
 
   await openFacilitation(page);
   await page.getByRole("menuitem", { name: /Timer/ }).click();
@@ -165,8 +190,8 @@ test("the board, export, timer and vote screens fit the viewport", async ({ page
   await expect(page.getByRole("menuitem", { name: /Timer/ })).toContainText("05:00");
   await page.getByRole("menuitem", { name: /Timer/ }).click();
   await expect(page.locator(".timer-face")).toBeVisible();
-  await capture(page, page.locator(".timer-dialog"), "timer");
-  await page.locator(".timer-dialog .dialog-close").click();
+  await capture(page, page.getByRole("dialog", { name: "Shared timer" }), "timer");
+  await page.getByRole("dialog", { name: "Shared timer" }).getByRole("button", { name: "Close", exact: true }).click();
 
   const created = await page.request.post(`/api/boards/${account.boardId}/vote-sessions`, {
     data: { objectIds: ["obj-a", "obj-b"], votesPerSubject: 2, minutes: 10, anonymous: true },
@@ -193,7 +218,66 @@ test("a card with fields is readable", async ({ page }) => {
   await fields.locator('input[type="date"]').nth(1).fill("2026-10-31");
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
 
+  // The date fields fit the panel and show their whole date (E-16): a field neither
+  // crosses the panel's content edge nor clips its own text under the calendar button.
+  const dates = await page.locator("aside.inspector").evaluate((panel) => {
+    const style = getComputedStyle(panel);
+    const box = panel.getBoundingClientRect();
+    const right = box.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
+    // A date input's text lives in its shadow parts, out of reach of scrollWidth: measure the
+    // date as the browser shows it, in the input's own font, plus the 16 px picker button.
+    const context = document.createElement("canvas").getContext("2d")!;
+    return [...panel.querySelectorAll<HTMLInputElement>(".card-dates input")].map((input) => {
+      context.font = getComputedStyle(input).font;
+      const shown = new Date(`${input.value}T00:00`).toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      });
+      return {
+        past: Math.round(input.closest(".rm-input")!.getBoundingClientRect().right - right),
+        clipped: Math.ceil(context.measureText(shown).width + 16 - input.clientWidth),
+      };
+    });
+  });
+  expect(dates.length).toBe(2);
+  for (const date of dates) {
+    expect(date.past, "a date field ends inside the panel").toBeLessThanOrEqual(0);
+    expect(date.clipped, "a date field shows its whole date").toBeLessThanOrEqual(0);
+  }
+
   await capture(page, page.locator(".layer.board"), "card-fields");
+  await fields.locator('input[type="date"]').nth(1).blur();
+  await capture(page, fields, "card-fields-panel");
+});
+
+test("the properties panel describes one subject (ADR-236)", async ({ page }) => {
+  await freshBoard(page, "visual-panel");
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  const panel = page.locator("aside.inspector");
+
+  // Nothing selected: the room, its counts and the card filter, and nothing else.
+  await expect(panel.locator(".inspector-kicker")).toHaveText("Room");
+  await expect(panel.locator(".counts li").first()).toBeVisible();
+  await expect(panel.locator(".card-filter")).toBeVisible();
+  await expect(panel.locator(".kanban-state, .inspector-tech, .scope")).toHaveCount(0);
+  await capture(page, panel, "panel-room");
+
+  // A selected kanban: its state, without the room's counts or filter.
+  const url = new URL(page.url());
+  const kanbanId = await page.evaluate(
+    () =>
+      (window as unknown as { __remo: { widgets: Array<{ id: string; type: string }> } }).__remo.widgets.find(
+        (widget) => widget.type === "kanban",
+      )!.id,
+  );
+  url.searchParams.set("select", kanbanId);
+  await page.goto(url.toString());
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  if (!(await panel.isVisible())) await page.getByRole("button", { name: "Properties", exact: true }).click();
+  await expect(panel.locator(".kanban-state")).toBeVisible();
+  await expect(panel.locator(".counts, .card-filter")).toHaveCount(0);
+  await capture(page, panel, "panel-kanban");
 });
 
 /**
@@ -298,12 +382,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
   ).toBeEnabled();
 
   await capture(page, page.locator(".tool-rail"), "rail");
-  if (update) {
-    await page.screenshot({
-      path: "spec/baselines/canvas-bottom.png",
-      clip: { x: 0, y: 900 - 120, width: 1440, height: 120 },
-    });
-  }
+  await captureClip(page, "canvas-bottom", { x: 0, y: 900 - 120, width: 1440, height: 120 });
 
   // The voting line uses the same slot and the hint steps aside (§10.4, Н1). The note
   // the test just made is in scope, next to its nearest neighbour, so the artefact shows
@@ -356,16 +435,25 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
     expect(withVote.scrollWidth).toBeLessThanOrEqual(withVote.innerWidth);
   }
 
+  // Fitted, a note is smaller on screen than the full counter: the number and one "+" at
+  // the 24 px minimum target, without the words, so nothing covers the object (ADR-235).
+  // The session clock counts down while the run goes: masked, or a slow run fails on 09:58.
+  const voteClock = page.locator(".vote-board-clock");
+  const chips = page.locator(".vote-chip");
+  await expect(chips.first()).toHaveClass(/compact/);
+  await expect(chips.first().getByRole("button")).toHaveCount(1);
+  await expect(chips.first().getByRole("button", { name: /Vote for/ })).toBeVisible();
+  await capture(page, page.locator(".canvas-wrap"), "vote-chips-overview", [voteClock]);
+
   // The counter on the object (§10.3): the same corner on every object, and two of the
   // shapes a running session shows — «0 +» on a neighbour and my own vote in words.
-  // Zoom in first: the artefact is reviewed by a person, and at the fitted 37 % the
-  // note is smaller than its counter.
+  // Zoom in for the full form: at the fitted zoom the note has no room for it.
   for (let step = 0; step < 3; step += 1) {
     await page.getByRole("button", { name: "Zoom in" }).click();
   }
   await page.locator(".vote-chip").first().getByRole("button", { name: /Vote for/ }).click();
   await expect(page.locator(".vote-chip").first()).toHaveClass(/mine/);
-  await capture(page, page.locator(".canvas-wrap"), "vote-chips");
+  await capture(page, page.locator(".canvas-wrap"), "vote-chips", [voteClock]);
 
   // Both themes: the rail is a panel, not a strip of icons on the canvas edge.
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -374,7 +462,7 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
   await page.keyboard.press("Escape");
   // The same counters in the dark theme: the plate, the accent of my vote and the
   // muted "+" must all be readable there too (§6, both themes).
-  await capture(page, page.locator(".canvas-wrap"), "vote-chips-dark");
+  await capture(page, page.locator(".canvas-wrap"), "vote-chips-dark", [voteClock]);
   await capture(page, page.locator(".tool-rail"), "rail-dark");
 });
 
@@ -387,6 +475,13 @@ test("the rail is one panel and the bottom edge stays clear", async ({ page }) =
  */
 test("the header stays on one row and its menus fit the viewport", async ({ page }) => {
   await freshBoard(page, "visual-header");
+  // The first-use hint hides itself after six seconds, so whether it is in a capture
+  // depended on how fast the run got there. This test is about the header: open the
+  // room as a returning visitor, who has already seen the hint.
+  await page.evaluate(() => window.localStorage.setItem("remo.canvas.hint", "seen"));
+  await page.reload();
+  await expect(page.locator(".topbar")).toBeVisible();
+  await expect(page.locator(".canvas-hint")).toHaveCount(0);
 
   for (const width of [1024, 1280, 1920]) {
     await page.setViewportSize({ width, height: 900 });
@@ -619,8 +714,16 @@ test("the section panel shows the table and its axes", async ({ page }) => {
   await expect(layoutDialog).toBeVisible();
   await layoutDialog.getByRole("button", { name: "Apply", exact: true }).click();
   await expect(panel.locator(".section-axis-row")).toHaveCount(3);
+  // A selected section fits one screen at 900 px, without scrolling (ADR-236, sketch D4).
+  const inspectorBox = page.locator("aside.inspector");
+  const overflow = await inspectorBox.evaluate((el) => el.scrollHeight - el.clientHeight);
+  expect(overflow, "the section panel needs no scrolling").toBeLessThanOrEqual(0);
   await page.getByRole("button", { name: "Columns: Column 1" }).click();
   await expect(panel.getByLabel("Axis name")).toHaveValue("Column 1");
+  // An empty header size is Auto, named by the field itself rather than a bare unit.
+  const headerHeight = panel.getByRole("spinbutton", { name: "Header height" });
+  await expect(headerHeight).toHaveAttribute("placeholder", "Auto");
+  await expect(panel.locator(".table-header-size .rm-input-affix")).toHaveCount(0);
   await page.getByRole("button", { name: "Fit", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
@@ -628,6 +731,11 @@ test("the section panel shows the table and its axes", async ({ page }) => {
 
   await page.waitForTimeout(300);
   await capture(page, page.locator(".app"), "section-panel");
+
+  // The header group sits below the fold of the panel: its spacing and Auto need their own picture.
+  const headerGroup = panel.locator(".table-header-group");
+  await headerGroup.scrollIntoViewIfNeeded();
+  await capture(page, headerGroup, "section-panel-header");
 });
 
 /** World point → client point for the canvas, the same inverse the handlers use. */
@@ -910,4 +1018,17 @@ test("a clipped label is marked and named", async ({ page }) => {
   await page.mouse.move(framedView.rect.left + framedView.rect.width - 40, framedView.rect.top + 100);
   await expect(page.getByRole("tooltip")).toHaveCount(0);
   await capture(page, page.locator(".canvas-wrap"), "text-overflow");
+});
+
+/**
+ * Room access after the M3 pilot (sketch D1): labelled fields, one primary action, the
+ * public link on, a group heading per block. The link holds the room id, so it is masked.
+ */
+test("room access reads as one form", async ({ page }) => {
+  await freshBoard(page, "visual-share");
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Room access" });
+  await dialog.getByRole("button", { name: "Turn on", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Turn off", exact: true })).toBeVisible();
+  await capture(page, dialog, "share", [dialog.getByRole("textbox", { name: "Public link" })]);
 });
