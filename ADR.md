@@ -9431,3 +9431,40 @@ sketch D3 on 16.11 (decision R11).
 **Consequences.** The panel has one frame, its own, and separates by space, fill and one
 hairline. «Сдвинуть», «Инфо» and «Снять выделение» take two clicks instead of one. The
 same commands are still reachable from the context menu and their keys.
+
+## ADR-234: A card on the canvas is paper without an outline; a kanban has no frame of its own (DESIGN.md §8)
+
+**Context.** Inside a section, a kanban drew three frames: the section, the kanban's own
+rounded box, and an outline around every card (audit E-10, E-15). Cards were pills (radius
+`height / 2.6`) with a 1.8 px grey outline, or a 2.5 px accent outline when selected. A free
+card, such as a card in a table section, was painted by a different path in `render.ts`,
+outlined in its `cardTheme` colour (yellow by default). Neither matched DESIGN.md §8:
+«Карточка — белая, `radius-md`». The kanban box also drew three dividers at fixed thirds of
+its width, under the real column separators that `drawKanban` paints. Those thirds lines
+were in the wrong place for any kanban without exactly three columns. On 16.11 the owner
+accepted R6 (a kanban has no outer frame) and R10 (a card is paper; the frame appears only
+when it is selected).
+
+**Decision.**
+- **One card painter.** `drawCardSheet` in `packages/canvas` paints every card face, used by
+  both the kanban matrix and the `card` widget:
+  - fill `raised`: a card lies *on* the kanban's `panel` ground. In light both are white
+    and the shadow separates them. In dark the warm shadow barely shows on a dark ground,
+    so the sheet is one step lighter (`neutral-800` on `neutral-850`);
+  - `radius-md` 10;
+  - a sheet shadow under the bottom edge, in the sticky note's warm `sticker-cast` colour
+    but shorter: offset 3, blur 8, scaled with zoom like the sticky shadow;
+  - no outline.
+- **Selection** is `selectionStroke`, 2 screen px, drawn *outside* the sheet. The only frame
+  on a card is the selection.
+- **The kanban widget** paints only its fill. Columns and swimlanes are separated by
+  `drawKanban`'s hairlines, and the fixed-thirds dividers are gone.
+- The drag origin of a card uses the same radius.
+- **`cardTheme`** stays in the model and the API, but is no longer painted. No UI sets it,
+  and an outline colour would be the frame this decision removes. Showing a card's theme
+  again needs its own decision, for example a stripe.
+
+**Consequences.** A section shows one frame. Cards read as sheets by fill and shadow. In
+the dark theme the sheet is separated by tone, which was checked on `vote-chips-dark.png`;
+with `panel` it was the same colour as the ground. Baselines with cards are regenerated,
+and a painter test pins that an unselected card has no stroke.
