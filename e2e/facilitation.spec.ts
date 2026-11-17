@@ -5,6 +5,7 @@ import {
   openBoard,
   openFacilitation,
   zoomInTo,
+  objectCount,
 } from "./helpers";
 
 test("the shared timer counts down, pauses and resumes", async ({ page }) => {
@@ -74,8 +75,7 @@ test("the server caps votes and publishes the tally", async ({ page }) => {
   await page.locator(".vote-chip").first().getByRole("button", { name: /Vote for/ }).click();
   await expect(page.locator(".vote-board-bar")).toContainText("you have 1 of 2");
 
-  const textCount = async () =>
-    Number(await page.locator(".counts li", { hasText: "Text" }).locator("b").innerText());
+  const textCount = () => objectCount(page, "text");
   const textBefore = await textCount();
 
   // The line above the board opens the panel; «Завершить сейчас…» is one act with a

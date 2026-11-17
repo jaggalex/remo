@@ -7,7 +7,8 @@ import type { CommandContext } from "./commands";
 import { addColumn, addSwimlane, groupNameOf, setColumnWip } from "@remo/doc";
 import { currentRoom } from "./identity";
 import { CardFilterPanel } from "./CardFilterPanel";
-import { Button, ConfirmDialog as UiConfirmDialog, IconButton, Input } from "@remo/ui";
+import { Button, IconButton, Input } from "@remo/ui";
+import { HelpLink } from "./help/HelpLink";
 import { useI18n } from "./i18n";
 import {
   CardFieldsPanel,
@@ -20,6 +21,13 @@ import { Contained } from "./ErrorBoundary";
 import { SectionPanel } from "./SectionPanel";
 import { SelectionActions } from "./SelectionActions";
 import { TableCellPanel } from "./TableCellPanel";
+
+/**
+ * Sync details are for a developer: a development build opened with `?debug`, the same
+ * switch as the canvas cursor readout (ADR-236).
+ */
+const SYNC_DETAILS =
+  import.meta.env.DEV && new URLSearchParams(window.location.search).has("debug");
 
 /**
  * The board overview panel.
@@ -46,7 +54,6 @@ export interface BoardInspectorProps {
   selectionLocked: boolean;
   counts: Array<[string, number]>;
   kanbanStates: Record<string, KanbanState>;
-  replaceBoard: () => void;
   status: ConnectionStatus;
   visiblePresence: Presence[];
   /** Open a board deep link, e.g. an internal link target. */
@@ -66,12 +73,12 @@ export function BoardInspector(props: BoardInspectorProps) {
 }
 
 function InspectorBody(props: BoardInspectorProps) {
-  const { t, count, typeName, statusName } = useI18n();
+  const { t, typeName, statusName } = useI18n();
   const {
     toggleInspector, selectedIds, setSelectedIds, writeBlocked,
     commandContext, widgets, board, setWidgetPositions, canJoinSelection,
     connectSelection, setEditingId, selectionLocked, counts, kanbanStates,
-    replaceBoard, status, visiblePresence, onOpenObject,
+    status, visiblePresence, onOpenObject,
   } = props;
   const groupId = soleSelectedGroup(widgets, selectedIds);
   const card =
@@ -83,7 +90,6 @@ function InspectorBody(props: BoardInspectorProps) {
   const section =
     selectedWidget?.type === "frame" ? selectedWidget : undefined;
   const [people, setPeople] = useState<Array<{ id: string; name: string }>>([]);
-  const [confirmReplace, setConfirmReplace] = useState(false);
 
   useEffect(() => {
     if (!card) return;
@@ -101,17 +107,50 @@ function InspectorBody(props: BoardInspectorProps) {
     };
   }, [card?.id]);
 
+  // One subject at a time (ADR-236): the room when nothing is selected, a kanban when one
+  // is, otherwise the selection. Room-wide content never shows beside another subject.
+  const kanban =
+    selectedWidget?.type === "kanban" && kanbanStates[selectedWidget.id]
+      ? { id: selectedWidget.id, state: kanbanStates[selectedWidget.id]! }
+      : null;
+  const subject = selectedIds.length === 0 ? "room" : kanban ? "kanban" : "selection";
+  const kicker =
+    subject === "room" ? t("inspector.kindRoom") : subject === "kanban" ? typeName("kanban") : null;
+  const heading =
+    subject === "room"
+      ? board.title || t("board.untitled")
+      : subject === "kanban"
+        ? selectedWidget?.title || typeName("kanban")
+        : t("inspector.selection", { count: selectedIds.length });
+
   return (
-        <aside className="inspector">
+        <aside className="inspector" aria-label={t("inspector.overview")}>
           <div className="inspector-head">
-            <h2>{t("inspector.overview")}</h2>
+            <div className="inspector-subject">
+              {kicker && <span className="inspector-kicker">{kicker}</span>}
+              <h2 className="inspector-title">{heading}</h2>
+            </div>
+            <HelpLink topicId="room.panel" label={t("inspector.help")} className="help-link icon-link" />
             <IconButton icon="close" size="compact" label={t("inspector.hide")} onClick={toggleInspector} />
           </div>
-          <p className="muted inspector-intro">{t("inspector.intro")}</p>
+
+          {subject === "room" && (
+            <>
+              <h3 className="inspector-group">{t("inspector.contents")}</h3>
+              <ul className="counts">
+                {counts.map(([type, total]) => (
+                  <li key={type}>
+                    <span>{typeName(type)}</span>
+                    <b>{total}</b>
+                  </li>
+                ))}
+              </ul>
+              <CardFilterPanel widgets={widgets} setSelectedIds={setSelectedIds} />
+            </>
+          )}
 
           {selectedIds.length > 0 && (
             <>
-              <h2>{t("inspector.selection", { count: selectedIds.length })}</h2>
               <SelectionActions
                 commandContext={commandContext}
                 widgets={widgets}
@@ -125,6 +164,9 @@ function InspectorBody(props: BoardInspectorProps) {
                 selectionLocked={selectionLocked}
                 writeBlocked={writeBlocked}
               />
+              {kanban && (
+                <KanbanStatePanel board={board} id={kanban.id} state={kanban.state} writeBlocked={writeBlocked} />
+              )}
               {groupId && (
                 <GroupNameField
                   board={board}
@@ -180,146 +222,101 @@ function InspectorBody(props: BoardInspectorProps) {
             </>
           )}
 
-          <CardFilterPanel widgets={widgets} setSelectedIds={setSelectedIds} />
-
-          <details className="inspector-tech">
-            <summary>{t("inspector.tech")}</summary>
-            <p className="muted">{t("inspector.documentNote")}</p>
-            <div className="history-row">
-              <span>
-                {t("inspector.undoStack")} <b>{board.undo.undoStack.length}</b>
-              </span>
-              <span>
-                {t("inspector.redoStack")} <b>{board.undo.redoStack.length}</b>
-              </span>
-            </div>
-            <div className="history-row">
-              <span>
-                {t("inspector.room")} <b>{currentRoom()}</b>
-              </span>
-              <span>
-                {t("inspector.sync")} <b>{statusName(status)}</b>
-              </span>
-            </div>
-            <div className="history-row">
-              <span>
-                {t("inspector.inRoom")} <b>{visiblePresence.length}</b>
-              </span>
-              <span className="muted">
-                {visiblePresence
-                  .map((p) => (p.self ? t("board.peerYou", { name: p.label }) : p.label))
-                  .join(", ")}
-              </span>
-            </div>
-          </details>
-
-          <h2>{t("inspector.contents")}</h2>
-          <ul className="counts">
-            {counts.map(([type, total]) => (
-              <li key={type}>
-                <span>{typeName(type)}</span>
-                <b>{total}</b>
-              </li>
-            ))}
-          </ul>
-          <p className="muted inspector-danger-note">{t("inspector.replaceNote")}</p>
-          <Button variant="danger" size="compact"
-            disabled={writeBlocked}
-            onClick={() => setConfirmReplace(true)}
-            title={t("board.replaceTitle")}
-          >
-            {t("board.replace")}
-          </Button>
-          {confirmReplace && (
-            <UiConfirmDialog
-              title={t("board.replaceHeading")}
-              confirmLabel={t("board.replaceAction")}
-              onCancel={() => setConfirmReplace(false)}
-              onConfirm={() => {
-                setConfirmReplace(false);
-                replaceBoard();
-              }}
-            >
-              {t("board.replaceConfirm")}
-            </UiConfirmDialog>
+          {/* A developer's instrument, not a product readout (ADR-236): the person has the
+              save icon in the header. */}
+          {SYNC_DETAILS && (
+            <details className="inspector-tech">
+              <summary>{t("inspector.tech")}</summary>
+              <p className="muted">{t("inspector.documentNote")}</p>
+              <div className="history-row">
+                <span>
+                  {t("inspector.undoStack")} <b>{board.undo.undoStack.length}</b>
+                </span>
+                <span>
+                  {t("inspector.redoStack")} <b>{board.undo.redoStack.length}</b>
+                </span>
+              </div>
+              <div className="history-row">
+                <span>
+                  {t("inspector.room")} <b>{currentRoom()}</b>
+                </span>
+                <span>
+                  {t("inspector.sync")} <b>{statusName(status)}</b>
+                </span>
+              </div>
+              <div className="history-row">
+                <span>
+                  {t("inspector.inRoom")} <b>{visiblePresence.length}</b>
+                </span>
+                <span className="muted">
+                  {visiblePresence
+                    .map((p) => (p.self ? t("board.peerYou", { name: p.label }) : p.label))
+                    .join(", ")}
+                </span>
+              </div>
+            </details>
           )}
-
-          <h2>{t("inspector.kanban")}</h2>
-          <p className="muted">{t("inspector.kanbanNote")}</p>
-          {Object.entries(kanbanStates).map(([id, state]) => (
-            <div key={id} className="kanban-state">
-              <div className="kanban-state-head">
-                {count("columns", state.columns.length)} ×{" "}
-                {count("swimlanes", state.swimlanes.length)}
-              </div>
-              <div className="muted">
-                {count("cards", Object.keys(state.cards).length)} ·{" "}
-                {t("inspector.newColumnWidth", { width: Math.round(state.newColumnWidth) })}
-              </div>
-              <div className="chips">
-                {state.columns.map((column) => (
-                  <span key={column.id} className="chip">
-                    {column.title}{" "}
-                    <b>
-                      {Object.values(state.cards).filter((p) => p.columnId === column.id).length}
-                    </b>
-                  </span>
-                ))}
-              </div>
-              <div className="kanban-actions">
-                <Button variant="ghost" size="compact" disabled={writeBlocked} onClick={() => addColumn(board, id)}>
-                  {t("inspector.addColumn")}
-                </Button>
-                <Button variant="ghost" size="compact" disabled={writeBlocked} onClick={() => addSwimlane(board, id)}>
-                  {t("inspector.addSwimlane")}
-                </Button>
-              </div>
-              <div className="wip-grid">
-                {state.columns.map((column) => (
-                  <Input
-                    key={column.id}
-                    type="number"
-                    size="compact"
-                    label={column.title}
-                    min={1}
-                    max={999}
-                    value={column.wipLimit ?? ""}
-                    disabled={writeBlocked}
-                    onChange={(event) =>
-                      setColumnWip(
-                        board,
-                        id,
-                        column.id,
-                        event.target.value ? Number(event.target.value) : null,
-                      )
-                    }
-                  />
-                ))}
-              </div>
-              <p className="muted">{t("inspector.wipHint")}</p>
-              <p className="muted">{t("inspector.kanbanHelp")}</p>
-            </div>
-          ))}
-
-          <details className="scope">
-            <summary>{t("inspector.scope")}</summary>
-            <ul className="checklist">
-              <li className="done">{t("scope.canvas")}</li>
-              <li className="done">{t("scope.painters")}</li>
-              <li className="done">{t("scope.matrix")}</li>
-              <li className="done">{t("scope.cards")}</li>
-              <li className="done">{t("scope.undo")}</li>
-              <li className="done">{t("scope.marquee")}</li>
-              <li className="done">{t("scope.sync")}</li>
-              <li className="done">{t("scope.postgres")}</li>
-              <li className="done">{t("scope.text")}</li>
-              <li className="done">{t("scope.share")}</li>
-              <li className="done">{t("scope.grow")}</li>
-              <li className="done">{t("scope.templates")}</li>
-              <li className="done">{t("scope.authoring")}</li>
-              <li className="done">{t("scope.richText")}</li>
-            </ul>
-          </details>
         </aside>
+  );
+}
+
+/** A selected kanban's state (ADR-236): its columns, swimlanes and WIP limits. */
+function KanbanStatePanel({
+  board,
+  id,
+  state,
+  writeBlocked,
+}: {
+  board: BoardDocument;
+  id: string;
+  state: KanbanState;
+  writeBlocked: boolean;
+}) {
+  const { t, count } = useI18n();
+  return (
+    <div className="kanban-state">
+      <h3 className="inspector-group">{t("inspector.kanban")}</h3>
+      <div className="kanban-state-head">
+        {count("columns", state.columns.length)} × {count("swimlanes", state.swimlanes.length)}
+      </div>
+      <div className="muted">
+        {count("cards", Object.keys(state.cards).length)} ·{" "}
+        {t("inspector.newColumnWidth", { width: Math.round(state.newColumnWidth) })}
+      </div>
+      <div className="chips">
+        {state.columns.map((column) => (
+          <span key={column.id} className="chip">
+            {column.title}{" "}
+            <b>{Object.values(state.cards).filter((p) => p.columnId === column.id).length}</b>
+          </span>
+        ))}
+      </div>
+      <div className="kanban-actions">
+        <Button variant="ghost" size="compact" disabled={writeBlocked} onClick={() => addColumn(board, id)}>
+          {t("inspector.addColumn")}
+        </Button>
+        <Button variant="ghost" size="compact" disabled={writeBlocked} onClick={() => addSwimlane(board, id)}>
+          {t("inspector.addSwimlane")}
+        </Button>
+      </div>
+      <div className="wip-grid">
+        {state.columns.map((column) => (
+          <Input
+            key={column.id}
+            type="number"
+            size="compact"
+            label={column.title}
+            min={1}
+            max={999}
+            value={column.wipLimit ?? ""}
+            disabled={writeBlocked}
+            onChange={(event) =>
+              setColumnWip(board, id, column.id, event.target.value ? Number(event.target.value) : null)
+            }
+          />
+        ))}
+      </div>
+      <p className="muted">{t("inspector.wipHint")}</p>
+    </div>
   );
 }

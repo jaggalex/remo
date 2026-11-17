@@ -109,6 +109,7 @@ export function boardMenuItems({
   onRestore,
   onDuplicate,
   onTrash,
+  onReplace,
 }: {
   canDuplicate: boolean;
   canDelete: boolean;
@@ -123,6 +124,8 @@ export function boardMenuItems({
   onRestore: () => void;
   onDuplicate: () => void;
   onTrash: () => void;
+  /** Opens the confirmation for replacing the room with its template (ADR-236). */
+  onReplace: () => void;
 }): MenuItem[] {
   const items: MenuItem[] = [
     {
@@ -137,8 +140,12 @@ export function boardMenuItems({
   if (canExport || canBackup) items.push({ label: t("board.exportAction"), onSelect: onExport });
   if (canImport) items.push({ label: t("board.restoreAction"), onSelect: onRestore });
   if (canDuplicate) items.push({ label: t("board.duplicateAction"), onSelect: onDuplicate });
-  if (canDelete) {
-    items.push({ separator: true }, { label: t("board.trashAction"), danger: true, onSelect: onTrash });
-  }
+  // Destructive actions last, behind one separator: replacing wipes the room for everyone,
+  // so it lives here rather than one click from the room's counts (ADR-236).
+  items.push(
+    { separator: true },
+    { label: t("board.replaceMenu"), danger: true, disabled: writeBlocked, onSelect: onReplace },
+  );
+  if (canDelete) items.push({ label: t("board.trashAction"), danger: true, onSelect: onTrash });
   return items;
 }

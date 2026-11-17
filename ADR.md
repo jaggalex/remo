@@ -9510,3 +9510,49 @@ controls. This decision does not change them.
 Zoomed out, a person can still vote and withdraw, without the counter covering the
 object. A new baseline, `vote-chips-overview.png`, shows the compact form at the
 fitted zoom.
+
+## ADR-236: The properties panel describes one subject; room-wide and developer content leaves it (amends ADR-093, ADR-197)
+
+**Context.** «Обзор комнаты» is one ribbon for everything (audit E-18, `inspector.probe.ts`).
+With a card selected, it is 2,157 px tall (2.6 screens), with 26 buttons, 14 fields and
+17 headings of three kinds. Whatever is selected, it also shows:
+- the room's counts;
+- the card filter, whose Assignee and Due repeat the selected card's own fields;
+- «Состояние канбана», with its ADR-006 note, even in a room without a kanban;
+- «Заменить комнату», a red button that wipes the room for everyone;
+- «Детали синхронизации» (the undo stack, the room id, peers);
+- «Объём фазы 1», a development checklist.
+
+The owner accepted sketch D4 on 16.11: the panel describes one subject, frequent things
+on top, rare things folded, and developer things out of the product.
+
+**Decision.**
+- **One subject at a time.** The subject is chosen in this order:
+  - nothing selected → **the room**: its counts («В комнате») and the card filter;
+  - a selected kanban → **the kanban**, including its state (columns, swimlanes, WIP);
+  - otherwise **the selection**: actions (ADR-233), then the section, card or object
+    fields as today.
+
+  Room counts, the card filter and kanban state are never shown with another subject.
+- **Moves between surfaces:**
+  - «Заменить комнату…» moves to the room menu, next to «Корзина», with the same
+    confirmation;
+  - «Детали синхронизации» render only in a development build opened with `?debug`, the
+    same switch as the canvas cursor readout. The person has the save icon in the header
+    (ADR-232);
+  - «Объём фазы 1» is deleted, with its `scope.*` strings;
+  - the intro paragraph becomes the panel's help topic, `room.panel`, opened from a «?» in
+    the panel header.
+- **Later steps of the same decision**, one subject per change (plan M18):
+  - the section and the card get a header naming their kind and title;
+  - «Имя и ссылка» and «Теги» fold to one row each, behind a chevron;
+  - an object's ID moves to «⋯ → Инфо»;
+  - «Удалить раздел» becomes a quiet button (`ghost-danger`). Deleting a section keeps its
+    objects and undo restores it, so it gets no confirmation; the danger fill is kept for
+    confirmations.
+
+**Consequences.** With nothing selected, the panel is short and about the room. With
+something selected, it is about that thing only. Replacing the room is no longer one
+click away from the counts. Browser tests that used the room counts as a probe of the
+document read the document instead (`objectCount` in `e2e/helpers.ts`), because the
+counts are now on screen only when nothing is selected.

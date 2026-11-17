@@ -53,7 +53,12 @@
   background: var(--text-muted);
 }
 
+/* A fixed slot: tabular figures alone did not hold the width in every font, and a
+   countdown that changes width shakes the whole bar once a second. */
 .vote-board-clock {
+  display: inline-block;
+  min-width: 5ch;
+  text-align: center;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--text-primary);

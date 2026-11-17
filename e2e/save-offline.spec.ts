@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { freshBoard } from "./helpers";
+import {
+  freshBoard,
+  objectCount,
+} from "./helpers";
 import { PROXY_PORT } from "./ports";
 
 /**
@@ -25,5 +28,5 @@ test("an offline edit is queued and replayed after reconnect", async ({ page }) 
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 30_000 });
 
   await page.reload();
-  await expect(page.locator(".counts li", { hasText: "Sticky note" })).toContainText("1");
+  await expect.poll(() => objectCount(page, "sticky_note")).toBeGreaterThanOrEqual(1);
 });

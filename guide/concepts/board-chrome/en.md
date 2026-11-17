@@ -4,7 +4,7 @@ The screen has three zones and menus: the header describes the room and the sess
 
 ## Header
 
-On the left: the logo, **All rooms** (⌘K), the organisation path and the room name. **All rooms** and the organisation name lead to the organisation home. The name is a button with a menu: rename, room settings, export, restore from a backup, create a copy, move to trash.
+On the left: the logo, **All rooms** (⌘K), the organisation path and the room name. **All rooms** and the organisation name lead to the organisation home. The name is a button with a menu: rename, room settings, export, restore from a backup, create a copy, replace the room with a template, move to trash.
 
 On the right, in order from left to right:
 
@@ -26,7 +26,7 @@ The centre of the header stays empty: nothing appears there and nothing needs to
 
 | Menu | What it contains |
 |---|---|
-| Room name | rename, settings, export, restore, copy, trash |
+| Room name | rename, settings, export, restore, copy, replace with a template, trash |
 | **Facilitation** | timer, voting, shared viewing, reactions |
 | **More** | templates, an AI task, apps |
 | Avatar | cursor name, theme (system, light, dark), language (Russian, English), active sessions, organisation, sign in and out. Theme and language belong to the account and follow it to another device; before sign-in the browser choice applies |

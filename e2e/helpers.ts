@@ -200,7 +200,7 @@ export async function addSticky(page: Page): Promise<string> {
   await editor.fill("Note");
   await page.keyboard.press("Escape");
   await expect(page.locator(".inline-editor")).toHaveCount(0);
-  await expect(page.locator(".counts li", { hasText: "Sticky note" })).toContainText(/\d+/);
+  await expect.poll(() => objectCount(page, "sticky_note")).toBeGreaterThan(0);
   await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
   return id;
 }
@@ -349,4 +349,19 @@ export async function zoomInTo(page: Page, min: number): Promise<void> {
   while ((await zoom()) < min) {
     await page.getByRole("button", { name: "Zoom in", exact: true }).click();
   }
+}
+
+/**
+ * How many objects of a type the document holds (all types when omitted). Read from the
+ * document, not from the panel: the room's counts are on screen only when nothing is
+ * selected (ADR-236).
+ */
+export async function objectCount(page: Page, type?: string): Promise<number> {
+  return page.evaluate(
+    (wanted) =>
+      ((window as unknown as { __remo?: { widgets?: Array<{ type: string }> } }).__remo?.widgets ?? []).filter(
+        (widget) => !wanted || widget.type === wanted,
+      ).length,
+    type ?? null,
+  );
 }

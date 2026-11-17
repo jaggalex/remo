@@ -238,6 +238,35 @@ test("a card with fields is readable", async ({ page }) => {
   await capture(page, fields, "card-fields-panel");
 });
 
+test("the properties panel describes one subject (ADR-236)", async ({ page }) => {
+  await freshBoard(page, "visual-panel");
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  const panel = page.locator("aside.inspector");
+
+  // Nothing selected: the room, its counts and the card filter, and nothing else.
+  await expect(panel.locator(".inspector-kicker")).toHaveText("Room");
+  await expect(panel.locator(".counts li").first()).toBeVisible();
+  await expect(panel.locator(".card-filter")).toBeVisible();
+  await expect(panel.locator(".kanban-state, .inspector-tech, .scope")).toHaveCount(0);
+  await capture(page, panel, "panel-room");
+
+  // A selected kanban: its state, without the room's counts or filter.
+  const url = new URL(page.url());
+  const kanbanId = await page.evaluate(
+    () =>
+      (window as unknown as { __remo: { widgets: Array<{ id: string; type: string }> } }).__remo.widgets.find(
+        (widget) => widget.type === "kanban",
+      )!.id,
+  );
+  url.searchParams.set("select", kanbanId);
+  await page.goto(url.toString());
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  if (!(await panel.isVisible())) await page.getByRole("button", { name: "Properties", exact: true }).click();
+  await expect(panel.locator(".kanban-state")).toBeVisible();
+  await expect(panel.locator(".counts, .card-filter")).toHaveCount(0);
+  await capture(page, panel, "panel-kanban");
+});
+
 /**
  * The rail and the bottom edge (ADR-119, §10.4).
  *

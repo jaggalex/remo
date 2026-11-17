@@ -13,15 +13,43 @@
   display: none;
 }
 
+/* The subject the panel describes (ADR-236): its kind, then its name; help and close. */
 .inspector-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
 }
 
-.inspector-intro {
-  margin: 0 0 var(--space-1);
+.inspector-subject {
+  flex: 1;
+  min-width: 0;
+}
+
+.inspector-kicker {
+  display: block;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.inspector .inspector-title {
+  margin: 0;
+  font: var(--type-subtitle);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* One kind of group heading in the panel (DS-TYPE-03): the caption overline. */
+.inspector-group {
+  margin: var(--space-4) 0 var(--space-2);
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .inspector-tech {
@@ -44,10 +72,6 @@
   color: var(--text-primary);
 }
 
-
-.inspector-danger-note {
-  margin: var(--space-4) 0 var(--space-1);
-}
 
 .inspector {
   width: 264px;
@@ -118,59 +142,6 @@
 .counts b {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-}
-
-.scope {
-  margin-top: var(--space-6);
-}
-
-.scope summary {
-  font: var(--type-caption);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--text-muted);
-  cursor: pointer;
-  list-style: none;
-}
-
-.scope summary::-webkit-details-marker {
-  display: none;
-}
-
-.scope summary::before {
-  content: "▸ ";
-}
-
-.scope[open] summary::before {
-  content: "▾ ";
-}
-
-.checklist {
-  list-style: none;
-  margin: var(--space-2) 0 0;
-  padding: 0;
-  font: var(--type-caption);
-}
-
-.checklist li {
-  position: relative;
-  padding-left: var(--space-4);
-  margin-bottom: var(--space-2);
-  color: var(--text-secondary);
-}
-
-.checklist li::before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: var(--state-success);
-  font-weight: 600;
-}
-
-.checklist li.done {
-  color: var(--text-secondary);
 }
 
 /* A group, not a box inside the panel (ADR-233). */

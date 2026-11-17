@@ -1,5 +1,14 @@
 import { test, expect } from "@playwright/test";
-import { PASSWORD, addSticky, enableLink, freshBoard, openAccount, openBoard, register } from "./helpers";
+import {
+  PASSWORD,
+  addSticky,
+  enableLink,
+  freshBoard,
+  openAccount,
+  openBoard,
+  register,
+  objectCount,
+} from "./helpers";
 
 test("a new account opens its board, adds a note and the server confirms the save", async ({
   page,
@@ -247,10 +256,9 @@ test("a public-link visitor who signs in gets a writable socket", async ({ page,
     // stays pending forever and disappears on reload.
     await addSticky(visitor);
     await visitor.reload();
-    await expect(visitor.locator(".counts li", { hasText: "Sticky note" })).toContainText(
-      "1",
-      { timeout: 20_000 },
-    );
+    await expect
+      .poll(() => objectCount(visitor, "sticky_note"), { timeout: 20_000 })
+      .toBeGreaterThanOrEqual(1);
   } finally {
     await context.close();
   }
