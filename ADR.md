@@ -9586,3 +9586,33 @@ scrolling (ADR-236). With the three parts it was 161 px too tall.
 **Consequences.** The panel gains about 100 px. Editing text and connecting take two
 clicks from the panel; double-click on the object and the connector tool still do it in
 one.
+
+## ADR-238: The baseline comparison sees faint changes: a per-pixel threshold from measured noise (amends ADR-222)
+
+**Context.** ADR-222 compares every screen with its baseline, but kept Playwright's default
+per-pixel colour threshold of 0.2. Playwright's threshold t ignores a pixel that differs
+by up to about 264·t grey levels, so 0.2 ignores up to about 52 of 255. Removing the
+background grid in M12 changed 14,000–153,000 pixels per screen by up to 31 levels. That
+passed the comparison, and `pnpm baselines`, which runs in `"changed"` mode, rewrote
+nothing. The same blind spot hid drift: several committed baselines differed from
+today's renders by 21–31 levels and no check noticed.
+
+Run-to-run noise was measured on 17.11 by rendering all 34 product screens twice on the
+pinned Linux browser: at most 2 levels, on at most 32 pixels of a screen.
+
+**Decision.**
+- `capture()` and `captureClip()` compare with **threshold 0.03**, which ignores up to about
+  8 levels: four times the measured noise, and a quarter of the grid's 31. `maxDiffPixels`
+  stays 20.
+- `pnpm baselines` stays in `"changed"` mode. With this threshold a faint change counts as
+  changed, so a screen that did not change keeps its file byte for byte, and the diff of a
+  pull request shows only real changes. ADR-222's sentence saying `"all"` described the
+  configuration wrongly.
+- The baselines that had drifted are regenerated in this change, after each was checked
+  to differ only by the drift (no shift of layout, no lost element).
+
+**Consequences.** A faint deliberate change, such as a tone, a hairline or a shadow, fails
+`pnpm e2e:visual` until its baselines are regenerated. A new source of noise above 8 levels
+fails too: it is masked in the scenario, as ADR-222 already requires, not tolerated by
+raising the threshold. If the browser image is updated and renders differently, the
+baselines are regenerated in the same change.

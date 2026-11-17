@@ -31,18 +31,29 @@ const linuxBrowser = Boolean(process.env.REMO_BROWSER_WS);
  * Twenty pixels leave room for a stray antialiased edge and nothing larger.
  */
 const MAX_DIFF_PIXELS = 20;
+/**
+ * Per-pixel colour threshold (ADR-238). Playwright ignores a difference up to about
+ * 264 × threshold grey levels: 0.03 ≈ 8 levels, four times the measured run-to-run noise
+ * (2 levels) and well under a faint real change such as the M12 grid (31 levels). The
+ * default 0.2 (≈ 52 levels) let that grid pass unseen.
+ */
+const PIXEL_THRESHOLD = 0.03;
 
 async function capture(page: Page, target: ReturnType<Page["locator"]>, name: string, mask: ReturnType<Page["locator"]>[] = []) {
   if (!linuxBrowser) return;
   // Every scenario registers a fresh account, and the avatar's colour follows the account.
   const avatar = page.locator(".account-button");
-  await expect(target).toHaveScreenshot(`${name}.png`, { maxDiffPixels: MAX_DIFF_PIXELS, mask: [avatar, ...mask] });
+  await expect(target).toHaveScreenshot(`${name}.png`, {
+    maxDiffPixels: MAX_DIFF_PIXELS,
+    threshold: PIXEL_THRESHOLD,
+    mask: [avatar, ...mask],
+  });
 }
 
 /** A region of the page rather than an element: a row of the canvas, the bottom edge. */
 async function captureClip(page: Page, name: string, clip: { x: number; y: number; width: number; height: number }) {
   if (!linuxBrowser) return;
-  await expect(page).toHaveScreenshot(`${name}.png`, { maxDiffPixels: MAX_DIFF_PIXELS, clip });
+  await expect(page).toHaveScreenshot(`${name}.png`, { maxDiffPixels: MAX_DIFF_PIXELS, threshold: PIXEL_THRESHOLD, clip });
 }
 
 function canvasPixels(page: Page) {

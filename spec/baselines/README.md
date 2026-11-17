@@ -38,8 +38,11 @@ pnpm baselines
 | `section-panel.png` | A section in table view with its panel: view, axes and the top of the Header group |
 | `section-panel-header.png` | The Header group scrolled into view: empty sizes read «Auto», with no unit |
 
-The automatic gate is **not** a byte comparison (ADR-091): macOS and Linux rasterize
-text differently. `e2e/visual.spec.ts` samples pixels where the three routings must
-differ, checks that every screen fits 1440×900, and `e2e/a11y.spec.ts` runs axe. The
-PNGs are reviewed by a person; a pixel diff can be added when a Linux baseline job
-exists.
+The automatic gate **compares** every screen with its PNG in one Linux browser (ADR-222).
+A pixel counts as different when it differs by more than about 8 grey levels (threshold
+0.03), and a screen fails when more than 20 pixels differ (ADR-238). Run-to-run noise
+measured 2 levels; the background grid removed in M12 was 31. Times and generated names
+are masked in the scenario. `e2e/visual.spec.ts` also samples pixels where the three
+routings must differ and checks that every screen fits 1440×900; `e2e/a11y.spec.ts` runs
+axe. A deliberate change regenerates the PNGs with `pnpm baselines`, which rewrites only
+the screens that differ.

@@ -106,7 +106,7 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 
 | Fact | Value |
 |---|---|
-| ADR | 237, latest ADR-237 |
+| ADR | 238, latest ADR-238 |
 | Schema version | 20 |
 | Browser scenarios | 181 in 36 files |
 | Help topics | 35 (RU + EN) |
@@ -170,8 +170,9 @@ Vite on `:5175` — those are the defaults; every port shifts with `E2E_PORT_BAS
 
 Visual evidence lives in `spec/baselines/` (the count is in the block above). The PNGs are
 Linux renders and are **compared**: `pnpm e2e:visual` (also a step of `pnpm verify --e2e`)
-runs the visual scenarios in Chromium from the Playwright image and fails when a screen
-differs by more than 20 pixels (ADR-222). Docker and the image are required:
+runs the visual scenarios in Chromium from the Playwright image and fails when more than
+20 pixels of a screen differ by more than about 8 grey levels (ADR-222, ADR-238). Faint
+changes count: a hairline, a tone or a shadow fails until `pnpm baselines` is run. Docker and the image are required:
 
 ```bash
 docker pull --platform linux/amd64 mcr.microsoft.com/playwright:v1.64.1-noble
