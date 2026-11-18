@@ -131,6 +131,12 @@ Playwright cleanup cannot delete another run's traces. The database is created o
 server with an ownership marker and dropped by `pnpm e2e` only when the marker still names
 that environment instance and run.
 
+Each run keeps the newest ten report directories and removes anything older than seven
+days after the database teardown. Override with `REMO_E2E_KEEP` and `REMO_E2E_KEEP_DAYS`;
+`pnpm e2e:clean` runs the same retention on demand, and `pnpm e2e:clean --all` removes
+every report. Only run directories directly under `e2e-report/` and `test-results/`
+are touched; a plain `playwright-report/` is left alone.
+
 `E2E_SYNC_PORT`, `E2E_PROXY_PORT`, `E2E_WEB_PORT` override one port at a time.
 `REMO_TEST_POSTGRES_URL` selects the test server for both unit and browser tests; there is no
 browser-specific database URL that could bypass identity. `E2E_OUTPUT_DIR` and

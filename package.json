@@ -63,6 +63,7 @@
     "e2e:visual": "node scripts/e2e-run.mjs --linux-browser e2e/visual.spec.ts",
     "e2e:a11y": "node scripts/e2e-run.mjs e2e/a11y.spec.ts",
     "e2e:perf": "node scripts/e2e-run.mjs e2e/perf.spec.ts",
+    "e2e:clean": "node scripts/e2e-clean.mjs",
     "size:check": "node scripts/file-size-check.mjs",
     "ui:check": "node scripts/ui-rules-check.mjs",
     "state:check": "node scripts/state-report.mjs",

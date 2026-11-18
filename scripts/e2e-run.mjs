@@ -19,6 +19,7 @@ import { randomBytes } from "node:crypto";
 import { e2eDatabaseName, normalizeRunSuffix } from "./db-identifiers.mjs";
 import { testPostgresUrl } from "./test-environment.mjs";
 import { startLinuxBrowser } from "./linux-browser.mjs";
+import { cleanupReports } from "./e2e-clean.mjs";
 
 const env = { ...process.env };
 if (!env.E2E_RUN_ID) env.E2E_RUN_ID = `${process.pid}_${randomBytes(4).toString("hex")}`;
@@ -51,6 +52,23 @@ const cleanup = spawnSync(process.execPath, ["scripts/e2e-db.mjs", "--teardown"]
   env,
 });
 if (cleanup.error) throw cleanup.error;
+
+// Reports are disposable after the run. Keep the newest few for debugging; remove the
+// rest so a month of traces does not grow into gigabytes. A cleanup failure must never
+// change the test result.
+try {
+  const reports = await cleanupReports({
+    keep: Number(env.REMO_E2E_KEEP ?? 10),
+    days: Number(env.REMO_E2E_KEEP_DAYS ?? 7),
+  });
+  for (const report of reports) {
+    if (report.removed) {
+      console.log(`[e2e] ${report.root}: removed ${report.removed} old run(s), kept ${report.kept}`);
+    }
+  }
+} catch (error) {
+  console.warn(`[e2e] report cleanup skipped: ${error.message}`);
+}
 
 const status = tests.status ?? 1;
 if (status !== 0) process.exit(status);
