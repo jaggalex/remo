@@ -1,0 +1,27 @@
+{
+  "id": "capabilities/events",
+  "type": "explanation",
+  "status": "available",
+  "order": 50,
+  "title": {
+    "ru": "События и вебхук",
+    "en": "Events and webhook"
+  },
+  "summary": {
+    "ru": "Сервер сообщает интеграции об изменениях комнаты: подписанный запрос, повторы, очередь недоставленного.",
+    "en": "The server tells an integration about room changes: a signed request, retries, a queue for what failed."
+  },
+  "related": [
+    "concepts/extensions",
+    "reference/events",
+    "how-to/connect-integration",
+    "capabilities/tokens"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:b54579bfb20c1f5286ae8d283bb72e795119b27c5da7d41a6c1cd7eafa9c0cda",
+      "targetHash": "sha256:8f5cfa66d5f9968f89694e1b1596762eb7a201f3dffb4db5729d70df53c74387"
+    }
+  }
+}

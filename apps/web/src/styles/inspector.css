@@ -1,0 +1,300 @@
+/* ------------------------------------------------------------------ inspector */
+
+/*
+ * The panel is a board overview, not part of the canvas: it can be folded away,
+ * and the canvas takes the space back. `--inspector-width` is what centres the
+ * empty-board hint and the floating bars, so it goes to zero with the panel.
+ */
+.app.no-inspector {
+  --inspector-width: 0px;
+}
+
+.app.no-inspector .inspector {
+  display: none;
+}
+
+/* The subject the panel describes (ADR-236): its kind, then its name; help and close. */
+.inspector-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.inspector-subject {
+  flex: 1;
+  min-width: 0;
+}
+
+.inspector-kicker {
+  display: block;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.inspector .inspector-title {
+  margin: 0;
+  font: var(--type-subtitle);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* One kind of group heading in the panel (DS-TYPE-03): the caption overline. */
+.inspector-group {
+  margin: var(--space-4) 0 var(--space-2);
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.inspector-tech {
+  margin-top: var(--space-6);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.inspector-tech summary {
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: var(--space-2);
+}
+
+.inspector-tech summary:hover {
+  color: var(--text-primary);
+}
+
+
+.inspector {
+  /* The token, not a literal: 264 px had drifted from `inspector-width` (300), which
+     also centres the hints, and the one-row actions need its width (ADR-237). */
+  width: var(--inspector-width);
+  margin: var(--space-3) var(--space-3) var(--space-3) 0;
+  padding: var(--space-4) var(--space-4) var(--space-9);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-bar);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.inspector h2 {
+  font: var(--type-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.inspector h2 + p {
+  margin-top: 0;
+}
+
+.inspector h2:not(:first-child) {
+  margin-top: var(--space-6);
+}
+
+.muted {
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+.history-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.history-row b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: var(--type-caption);
+}
+
+.counts li {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.counts li:last-child {
+  border-bottom: 0;
+}
+
+.counts b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A group, not a box inside the panel (ADR-233). */
+.kanban-state {
+  margin-bottom: var(--space-4);
+  font: var(--type-caption);
+}
+
+.kanban-state-head {
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.chip {
+  background: var(--bg-hover);
+  border-radius: var(--radius-pill);
+  padding: 2px var(--space-2);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.kanban-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Selection actions: one row of icons, «⋯» last (ADR-237, sketch D4). */
+.selection-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Icons touch, as in a toolbar: nine 28 px targets and the separator fit the panel's
+   266 px content only without gaps (ADR-237). */
+.selection-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.selection-sep {
+  width: 1px;
+  height: var(--space-5);
+  margin: 0 var(--space-1);
+  background: var(--border-subtle);
+}
+
+.selection-push {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.selection-more {
+  position: relative;
+  display: inline-flex;
+}
+
+.selection-more > .rm-menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: var(--z-popover);
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--dur-1) var(--ease);
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+  outline: 2px solid var(--accent-soft);
+}
+
+/* A rare group folded to one row (ADR-236): name, current value, chevron. One hairline
+   above, no frame of its own; the chevron turns when open. */
+.inspector-fold {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.inspector-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-default);
+  list-style: none;
+  cursor: pointer;
+  font: var(--type-label);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.inspector-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.inspector-fold > summary:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.inspector-fold-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.inspector-fold-value {
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.inspector-fold > summary .rm-icon,
+.inspector-fold > summary svg {
+  flex: none;
+  color: var(--text-secondary);
+  transition: transform var(--dur-1) var(--ease);
+}
+
+.inspector-fold[open] > summary svg {
+  transform: rotate(90deg);
+}
+
+.inspector-fold-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+}

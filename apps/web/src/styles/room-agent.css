@@ -1,0 +1,184 @@
+/* ------------------------------------------------------- room agent (ADR-189) --- */
+
+.agent-avatar {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: var(--panel-border-width) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font: var(--type-label);
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.agent-avatar.empty {
+  border-style: dashed;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.agent-avatar-letter {
+  line-height: 1;
+}
+
+.agent-avatar-ai {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-panel);
+  background: var(--text-primary);
+  color: var(--bg-panel);
+  /* One mark, not a line of text: the pill hugs the letters. */
+  font: var(--type-caption);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.agent-avatar-dot {
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--text-secondary);
+}
+
+.agent-avatar-dot.running,
+.agent-avatar-dot.queued {
+  background: var(--state-warning);
+}
+
+.agent-avatar-dot.ready {
+  background: var(--state-success);
+}
+
+.agent-avatar-dot.error {
+  background: var(--danger);
+}
+
+.room-agent-assigned {
+  margin: 0;
+}
+
+.room-agent-badge {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--agent-soft);
+  color: var(--text-agent);
+  font: var(--type-caption);
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.room-agent-assignment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font: var(--type-body);
+}
+
+.room-agent-threads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.room-agent-thread {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  font: var(--type-label);
+  text-align: left;
+  cursor: pointer;
+}
+
+.room-agent-thread:hover,
+.room-agent-thread.active {
+  border-color: var(--border-strong);
+  background: var(--bg-panel);
+}
+
+.room-agent-thread-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-agent-thread .muted {
+  grid-column: 1 / -1;
+  font: var(--type-caption);
+}
+
+.room-agent-thread-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.room-agent-message {
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+}
+
+.room-agent-message.user {
+  border-left: 3px solid var(--border-strong);
+}
+
+.room-agent-message.agent {
+  border-left: 3px solid var(--agent);
+}
+
+.room-agent-message p {
+  margin: var(--space-1) 0 0;
+  font: var(--type-body);
+  white-space: pre-wrap;
+}
+
+.room-agent-message-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font: var(--type-caption);
+}
+
+.room-agent-assignment-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.room-agent-threads-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}

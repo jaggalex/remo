@@ -1,0 +1,31 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+.claude
+/.config/remo/deploy.env
+
+# sync service room data
+apps/sync/.data
+
+# database dumps
+backups
+
+# built documentation portal (pnpm guide:build)
+docs-site/
+
+# Playwright (ADR-090)
+e2e-report/
+test-results/
+playwright-report/
+
+# Generated design preview and Python bytecode cache
+/docs/design/assets/preview.html
+__pycache__/
+
+# Design workspace stays local; only product docs and baselines are tracked.
+/docs/design/sketches/
+/docs/design/visual/

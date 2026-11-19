@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/presentation",
+  "type": "explanation",
+  "status": "available",
+  "order": 33,
+  "title": {
+    "ru": "Презентация",
+    "en": "Presentation"
+  },
+  "summary": {
+    "ru": "Показ объектов по порядку: слайды, ведущий, ведомые и поздний зритель.",
+    "en": "Show objects in order: slides, presenter, followers and a late viewer."
+  },
+  "related": [
+    "capabilities/frames-kanban",
+    "how-to/present",
+    "capabilities/collaboration"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:53cf2b97dda7a813e29b37e3923bd5ae23766fc6785b6bc4dd78c269a99042f1",
+      "targetHash": "sha256:f23625f1b225b0f3263a18809f8a4753c916f810ba4bebc260a74e61f2a94281"
+    }
+  }
+}

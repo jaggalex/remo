@@ -1,0 +1,24 @@
+{
+  "id": "apps.hello",
+  "type": "how-to",
+  "title": {
+    "ru": "Приложения в комнате",
+    "en": "Apps in a room"
+  },
+  "summary": {
+    "ru": "Что такое приложения, как открыть панель, что делает «Приветствие» и почему чужой код здесь не выполняется.",
+    "en": "What apps are, how to open the panel, what “Hello” does, and why foreign code never runs here."
+  },
+  "related": [
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e4cad3728e196790c67b84074e73ef342f212662c02b5b8b7312e9a7988ec79d",
+      "targetHash": "sha256:720e604cd9f5f2e5fb4ff0496d34522572300c13a6a6b1e1dbccbcd44c1df4a9"
+    }
+  }
+}

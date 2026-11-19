@@ -1,0 +1,27 @@
+{
+  "id": "concepts/access",
+  "type": "explanation",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Доступ: организация, команда, комната, роль",
+    "en": "Access: organisation, team, room, role"
+  },
+  "summary": {
+    "ru": "Почему права выдаются на комнату, откуда берётся роль и что происходит при отзыве доступа.",
+    "en": "Why permissions are granted on a room, where a role comes from, and what happens when access is revoked."
+  },
+  "related": [
+    "capabilities/access",
+    "reference/roles",
+    "how-to/share",
+    "concepts/board"
+  ],
+  "updated": "2026-11-06",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:43de6cdefe46dbf4ffd3c6c6e92ed13bc51224b17f6fc28d1cac3387e9e186ba",
+      "targetHash": "sha256:93eac012d887a17d5ae815ff573bc780441fc92d515c96c334fbe74661cf640e"
+    }
+  }
+}

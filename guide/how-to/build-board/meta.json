@@ -1,0 +1,27 @@
+{
+  "id": "how-to/build-board",
+  "type": "how-to",
+  "status": "available",
+  "order": 5,
+  "title": {
+    "ru": "Собрать комнату: шаблон, структура, связи",
+    "en": "Build a room: template, structure, connectors"
+  },
+  "summary": {
+    "ru": "От пустой комнаты до структуры, которую видно с первого взгляда: шаблон, фреймы, стикеры, связи.",
+    "en": "From an empty room to a structure you can read at a glance: a template, frames, sticky notes, connectors."
+  },
+  "related": [
+    "capabilities/canvas",
+    "capabilities/frames-kanban",
+    "capabilities/connectors",
+    "start/first-scenario"
+  ],
+  "updated": "2026-11-16",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:71bb8118c45e9de1dbbc54c9d31abc8bbb85905eb56c27c355d3c9f76b8d65a6",
+      "targetHash": "sha256:f35bc0622a962e15227e58aafd6661879c6e8ccc49527935d73ae095e632c470"
+    }
+  }
+}

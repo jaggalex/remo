@@ -1,0 +1,425 @@
+/* ------------------------------------------------------------- empty board */
+
+.empty-board {
+  position: absolute;
+  left: calc((100% - var(--inspector-width)) / 2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-bar);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 440px;
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-pop);
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+.empty-board b {
+  font: var(--type-subtitle);
+  color: var(--text-primary);
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Inline text editor: a DOM textarea placed over the object being edited. */
+.inline-editor {
+  position: absolute;
+  z-index: var(--z-bar);
+  margin: 0;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-xs);
+  /* The fill and the text colour come from the object being edited (ADR-038); these
+     are only the fallback for a card, which has no fill of its own. */
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  resize: none;
+  overflow: hidden;
+  outline: none;
+  box-sizing: border-box;
+  display: block;
+  min-height: 24px;
+  /* Real HTML text, so a note can carry bold, italic, underline and strikethrough. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  cursor: text;
+  /* A column so the note's text can be vertically placed like the painter does it. */
+  display: flex;
+  flex-direction: column;
+}
+
+.inline-editor b,
+.inline-editor strong {
+  font-weight: 700;
+}
+/* ------------------------------------------------------------- boards panel */
+
+.new-board-start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.new-board-start legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+/* The radio covers the whole card: one hit area, and the native control keeps focus. */
+/* Selected is a border and weight, not colour alone. */
+.card-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* One kind of group heading in the panel (DS-TYPE-03, ADR-236): the caption overline. */
+.card-fields-head {
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* One under the other (E-16): side by side in a 230 px panel, each native date field was
+   narrower than its own date and the year went under the calendar button. */
+.card-dates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.wip-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.tags-panel,
+.link-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* The panel is 266 px wide: the name takes its own line, colour and Add the next. */
+.tag-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+}
+
+.tag-add > :first-child {
+  grid-column: 1 / -1;
+}
+
+.tag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* One tag, two lines: its name and colour, then its chip and what can be done with it.
+   Five controls in one 266 px line overflowed the panel. */
+.tag-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px;
+  grid-template-areas:
+    "name colour"
+    "chip actions";
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tag-row > .tag-chip {
+  grid-area: chip;
+}
+
+.tag-row > .rm-field:has(.tag-name-input),
+.tag-row > .tag-name-input {
+  grid-area: name;
+  min-width: 0;
+}
+
+.tag-row > .rm-field:has(select),
+.tag-row > .rm-select {
+  grid-area: colour;
+  min-width: 0;
+}
+
+.tag-row-actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Inside a fold the fold's hairline is the separator (ADR-236): no second one. */
+.inspector-fold .tags-panel,
+.inspector-fold .link-panel {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: var(--radius-pill);
+  padding: 2px var(--space-2);
+  font: var(--type-caption);
+  font-weight: 600;
+}
+
+.tag-blue {
+  background: var(--accent-soft);
+  color: var(--text-accent);
+}
+
+.tag-green {
+  background: var(--success-soft);
+  color: var(--state-success);
+}
+
+.tag-yellow {
+  background: var(--warning-soft);
+  color: var(--state-warning);
+}
+
+.tag-red {
+  background: var(--danger-soft);
+  color: var(--text-danger);
+}
+
+.tag-gray {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.tag-assign {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.tag-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.link-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.link-row .rm-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.link-current .rm-btn {
+  max-width: 100%;
+}
+
+.link-current {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.present-bar,
+.present-follow,
+.present-join {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-bar);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-bar);
+  font: var(--type-caption);
+  color: var(--text-primary);
+}
+
+.present-bar {
+  bottom: 18px;
+}
+
+.present-follow,
+.present-join {
+  top: calc(var(--topbar-height) + var(--space-6));
+}
+
+/* Only the arrow glyphs are still raw buttons: they wait for chevron/arrow icons (M4). */
+.present-bar button:not(.rm-btn),
+.presentation-list button:not(.rm-btn) {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font: var(--type-caption);
+  cursor: pointer;
+}
+
+.presentation-list {
+  list-style: none;
+  margin: var(--space-2) 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.presentation-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font: var(--type-label);
+}
+
+.presentation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.presentation-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.presentation-available {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.presentation-available li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font: var(--type-label);
+}
+
+.presentation-available li > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presentation-id {
+  color: var(--text-muted);
+  font: var(--type-caption);
+  font-family: var(--font-mono);
+}
+
+.object-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.object-id-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font: var(--type-caption);
+}
+
+.object-id {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* The cell a table presentation is focused on (ADR-200). */
+.present-cell-focus {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: var(--z-canvas-overlay);
+  border: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+  pointer-events: none;
+}
+
+.present-cell-label {
+  margin-left: var(--space-2);
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}

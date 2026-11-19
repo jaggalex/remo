@@ -1,0 +1,25 @@
+{
+  "id": "access.lifecycle",
+  "type": "how-to",
+  "title": {
+    "ru": "Убрать комнату в корзину, восстановить и скопировать",
+    "en": "Move a room to the trash, restore and copy it"
+  },
+  "summary": {
+    "ru": "Корзина закрывает комнату для всех; восстановление не включает ссылку; копия начинает с выключенной ссылкой.",
+    "en": "The trash closes a room for everyone; restore does not turn the link on; a copy starts with the link off."
+  },
+  "related": [
+    "access.link",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:9243eedb396b12438e5d5844a63564934c2e98c8f248bdcd68364b1951cb57c0",
+      "targetHash": "sha256:b9068dd75966121dedcc27f6fc4172a877db1959902882888e2d3506eadd1bcc"
+    }
+  }
+}

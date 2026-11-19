@@ -1,0 +1,26 @@
+{
+  "id": "access.roles",
+  "type": "reference",
+  "title": {
+    "ru": "Роли и права в комнате",
+    "en": "Room roles and permissions"
+  },
+  "summary": {
+    "ru": "Владелец, со-владелец, редактор, комментатор и читатель: что каждый может делать и откуда берётся роль.",
+    "en": "Owner, co-owner, editor, commenter and viewer: what each can do and where the role comes from."
+  },
+  "related": [
+    "access.share",
+    "access.link",
+    "access.lifecycle"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:869094333e3190e3ac986ac37f4d90495cf723d13e5849132e52af1e839fda86",
+      "targetHash": "sha256:20f5efb46ddf61525ee2b21fef869d3915990d4e5310064cf698cc64827439f2"
+    }
+  }
+}

@@ -1,0 +1,180 @@
+/* ----------------------------------------------------------------- workspace */
+
+.workspace {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.canvas-wrap canvas.layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  touch-action: none;
+}
+
+/* The expensive board layer is painted only when it changes; the overlay with
+   cursors and the marquee sits on top and repaints on its own. */
+.canvas-wrap canvas.overlay {
+  z-index: var(--z-canvas);
+}
+
+/*
+ * Bottom-left: the design system's zoom panel (ADR-232). The panel draws itself; this
+ * only places it above the overlay canvas, whose `--z-canvas` would swallow the clicks.
+ */
+.canvas-hud {
+  position: absolute;
+  z-index: var(--z-bar);
+  left: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.canvas-hud .hud-cursor {
+  padding-left: var(--space-2);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * System messages (a connector limit, a refused lock, the presentation note): one
+ * plate under the header, never inside the canvas gesture area.
+ */
+.canvas-notice {
+  position: fixed;
+  z-index: var(--z-bar);
+  left: 50%;
+  top: calc(var(--topbar-height) + var(--space-6));
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100% - 2 * var(--space-4)));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warning-soft);
+  border-radius: var(--radius-xl);
+  background: var(--warning-soft);
+  color: var(--state-warning);
+  box-shadow: var(--shadow-bar);
+  font: var(--type-caption);
+}
+
+/*
+ * The hint above the board: one plate, bottom centre, in the slot the voting line uses.
+ *
+ * It is never shown while a vote runs (the line is then the only thing there), it wraps
+ * instead of being cut with an ellipsis, and its width leaves the zoom controls clear.
+ */
+.canvas-hint {
+  position: absolute;
+  z-index: var(--z-canvas-overlay);
+  /* Centred in the space the zoom controls leave: `left`/`right`/auto margins centre
+     inside a box that already starts after the HUD, which also caps the width so a long
+     sentence wraps instead of reaching the controls. */
+  left: var(--hud-reserve);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  width: fit-content;
+  max-width: 520px;
+  margin-inline: auto;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: center;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-bar);
+  pointer-events: none;
+}
+
+/* Beside the rail, not under it: the rail is a panel over the canvas now (§10.2, Р3). */
+/*
+ * The size limit beside the pointer (ADR-211).
+ *
+ * It is a second surface for the sentence the badge already says, so it is decorative:
+ * `aria-hidden`, no interaction, and it never covers the cursor — it steps away from it
+ * and flips to the other side near the right edge.
+ */
+.canvas-limit {
+  position: fixed;
+  z-index: var(--z-bar);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xl);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  font: var(--type-caption);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-bar);
+  /* Step away from the cursor; the flip keeps it inside the viewport. */
+  margin: var(--space-3) 0 0 var(--space-4);
+}
+
+.canvas-limit--flip {
+  transform: translateX(-100%);
+  margin-left: calc(-1 * var(--space-5));
+}
+
+.selection-badge {
+  position: absolute;
+  z-index: var(--z-bar);
+  /* A status card, not a control: it must never eat a click meant for the canvas or a
+     title strip under it (the strip's view badge at a frame's top-left sits here). */
+  pointer-events: none;
+  left: calc(var(--space-3) + var(--toolbar-width) + var(--space-2));
+  top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-bar);
+  font: var(--type-caption);
+  min-width: 150px;
+}
+
+.selection-badge .badge-lock {
+  font: var(--type-caption);
+  line-height: 1;
+}
+
+.selection-badge strong {
+  font: var(--type-label);
+  font-weight: 600;
+}
+
+.selection-badge .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanban-bar {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-bar);
+  font: var(--type-caption);
+}
+

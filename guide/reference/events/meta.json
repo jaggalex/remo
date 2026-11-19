@@ -1,0 +1,27 @@
+{
+  "id": "reference/events",
+  "type": "reference",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "События: типы, конверт, доставка",
+    "en": "Events: types, envelope, delivery"
+  },
+  "summary": {
+    "ru": "Точный формат события, список типов, заголовки, подпись, повторы и очередь недоставленного.",
+    "en": "The exact event format, the list of types, headers, signature, retries and the dead-letter queue."
+  },
+  "related": [
+    "concepts/extensions",
+    "capabilities/events",
+    "how-to/connect-integration",
+    "reference/api"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:470ed027148fa4634fcf95af06be0b46ecdb8021e02c139dec555da75794045e",
+      "targetHash": "sha256:449f145056a91a7425e828b2caef8b80c6f592fbf8e089a3f909e58839c57465"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "agents.tidy",
+  "type": "how-to",
+  "title": {
+    "ru": "Упорядочить выделение",
+    "en": "Tidy up a selection"
+  },
+  "summary": {
+    "ru": "Разложить выделенные объекты ровными колонками: раскладки, превью «до и после», один ⌘Z и пределы.",
+    "en": "Lay selected objects out in even columns: layouts, a before-and-after preview, one ⌘Z and the limits."
+  },
+  "related": [
+    "agents.task",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-08",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:fa345aa52a19e9f72ae9c70cb0198330917729c2cc1fec62960ed6c2d25fe560",
+      "targetHash": "sha256:04a83c8bbc0c2ebfff9defde378e00108e2519bd1c34136d4449a5f8015634cc"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "concepts/presence",
+  "type": "explanation",
+  "status": "available",
+  "order": 35,
+  "title": {
+    "ru": "Присутствие и follow",
+    "en": "Presence and follow"
+  },
+  "summary": {
+    "ru": "Кто находится в комнате, что видят другие и как устроено следование за участником.",
+    "en": "Who is on the room, what others see, and how following a participant works."
+  },
+  "related": [
+    "capabilities/collaboration",
+    "concepts/sync",
+    "capabilities/access",
+    "capabilities/facilitation"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:148c2c499cfec5001d608073fcead41836a83ca59426443aaa27f32a51587267",
+      "targetHash": "sha256:e057eb621f9f6238c9fab6a99cb8fa6fb032b45768531676d980bb8aea511574"
+    }
+  }
+}

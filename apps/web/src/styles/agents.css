@@ -1,0 +1,690 @@
+/* --------------------------------------------------------------- agents --- */
+
+.agent-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.agent-enable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font: var(--type-label);
+}
+
+.agent-enable p {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.agent-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.agent-budget {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: var(--space-2);
+}
+
+.agent-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agent-actions .muted {
+  font: var(--type-caption);
+}
+
+.agent-notice {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.agent-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.agent-history > strong {
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.agent-history ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-history li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font: var(--type-label);
+}
+
+.agent-history li:last-child {
+  border-bottom: 0;
+}
+
+.agent-history li > div:first-child {
+  grid-column: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.agent-history li > div:nth-child(2) {
+  grid-column: 1;
+  font: var(--type-caption);
+}
+
+.agent-history li > button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.agent-status {
+  flex: none;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font: var(--type-caption);
+  white-space: nowrap;
+}
+
+.agent-status.applied {
+  background: var(--success-soft);
+  color: var(--state-success);
+}
+
+.agent-status.failed {
+  background: var(--danger-soft);
+  color: var(--text-danger);
+}
+
+.agent-status.running,
+.agent-status.awaiting_approval {
+  background: var(--accent-soft);
+  color: var(--text-accent);
+}
+
+.agent-status.cancelled {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.agent-task-intent {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------- brief file and plan --- */
+
+.agent-file-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.agent-file-section > strong {
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------- selection --- */
+
+.agent-source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-hover);
+}
+
+.agent-source > strong {
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.agent-source p {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.agent-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.agent-delegates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* ------------------------------------------------------------- tidy --- */
+
+.tidy-strategy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.agent-file {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.agent-file-input {
+  display: none;
+}
+
+.agent-file-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font: var(--type-caption);
+}
+
+.agent-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px var(--space-1) 2px var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font: var(--type-caption);
+}
+
+.agent-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.agent-file-limits {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.agent-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.agent-plan-file {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.agent-plan-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.agent-plan-section > strong {
+  font: var(--type-caption);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------- plan objects --- */
+
+.agent-plan-confirm {
+  margin: 0;
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+.agent-plan-objects-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agent-plan-objects-head > strong {
+  font: var(--type-caption);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.agent-plan-object-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.agent-plan-object-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.agent-plan-object-group-head {
+  margin: 0;
+  color: var(--text-secondary);
+  font: var(--type-caption);
+  font-weight: 600;
+}
+
+.agent-plan-objects {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: var(--type-caption);
+}
+
+.agent-plan-objects li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.agent-plan-objects li:last-child {
+  border-bottom: 0;
+}
+
+.agent-plan-object-at {
+  flex: none;
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+
+.agent-plan-object-kind {
+  flex: none;
+  color: var(--text-muted);
+  font: var(--type-caption);
+}
+
+.agent-plan-object-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-plan-object-more {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+/* ---------------------------------------------------- plan warnings --- */
+
+.agent-plan-warning-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  font: var(--type-caption);
+}
+
+.agent-plan-warning-list li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.agent-plan-warning-list li.is-critical {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.agent-plan-warning-code {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font: var(--type-kbd);
+  white-space: nowrap;
+}
+
+.agent-plan-warning-text {
+  min-width: 0;
+  color: var(--text-primary);
+}
+
+.agent-plan-blocked {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--text-danger);
+  font: var(--type-caption);
+}
+
+.agent-plan-phase,
+.agent-plan-undo-hint {
+  align-self: center;
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+.agent-plan-ok {
+  margin: 0;
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+.org-agents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.org-agents-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.org-agents-head p {
+  max-width: 430px;
+  margin: 2px 0 0;
+  font: var(--type-caption);
+}
+
+.org-agent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.org-agent {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.org-agent-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+}
+
+.org-agent-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: var(--type-label);
+}
+
+.org-agent-name .muted {
+  font: var(--type-caption);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-badge.agent {
+  margin-left: var(--space-2);
+  background: var(--agent-soft);
+  color: var(--text-agent);
+}
+
+.org-agent-tokens {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.org-agent-tokens-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: var(--type-label);
+}
+
+.org-token-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font: var(--type-caption);
+}
+
+.org-token-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.org-token-list li > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-label);
+}
+
+.org-skills p {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.org-skills ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.org-skills li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.org-skill-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.org-skill-main .muted {
+  line-height: 1.35;
+}
+
+@media (max-width: 560px) {
+  .agent-budget {
+    grid-template-columns: 1fr;
+  }
+
+  .org-agents-head {
+    flex-direction: column;
+  }
+}
+
+/* ------------------------------------------------- agent task panel --- */
+
+/* The plan under review (ADR-188): a non-modal sheet at the bottom of the room. The room
+   behind stays bright and interactive; the proposal is drawn on the canvas itself. Ink
+   outline and the large radius are the task panel of DESIGN.md §2a. */
+.agent-task-panel {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-6);
+  /* Above the selection bar, which follows the selection and may land on the panel. */
+  z-index: var(--z-popover);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  width: min(720px, calc(100vw - var(--space-6) * 2));
+  min-height: var(--panel-tasks-height);
+  max-height: calc(100vh - var(--topbar-height) - var(--space-6) * 3);
+  padding: var(--space-4) var(--space-5);
+  border: var(--panel-border-width) solid var(--border-panel);
+  border-radius: var(--radius-2xl);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+
+.agent-task-panel:focus {
+  outline: none;
+}
+
+.agent-task-panel:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.agent-task-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.agent-task-panel-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-task-panel-title {
+  margin: 0;
+  font: var(--type-subtitle);
+}
+
+.agent-task-panel-intent {
+  margin: var(--space-1) 0 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-task-panel-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.agent-task-panel-summary p {
+  margin: 0;
+}
+
+.agent-task-panel-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.agent-task-panel-actions {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.agent-task-panel-actions .rm-foot-start {
+  margin-right: auto;
+}
+
+.agent-task-panel-details {
+  overflow-y: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* On a phone the panel is a bottom sheet with the same buttons (DESIGN.md). */
+@media (max-width: 640px) {
+  .agent-task-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    transform: none;
+    border-bottom: 0;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "reference/formats",
+  "type": "reference",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Форматы данных",
+    "en": "Data formats"
+  },
+  "summary": {
+    "ru": "Бэкап комнаты, манифест приложения и конверт события: точные поля и проверки.",
+    "en": "The room backup, the app manifest and the event envelope: exact fields and checks."
+  },
+  "related": [
+    "capabilities/export",
+    "reference/events",
+    "capabilities/apps",
+    "reference/limits"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:289e7c5562e42578f76d57938a55b82f53a744a439b3a571d193148462411779",
+      "targetHash": "sha256:87c59641e0ab6b7807cd61ac730e48965b35414314a9a7ac40ca9fc6ef63fcbe"
+    }
+  }
+}

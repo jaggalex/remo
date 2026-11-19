@@ -1,0 +1,25 @@
+{
+  "id": "presentation.mode",
+  "type": "how-to",
+  "title": {
+    "ru": "Провести презентацию",
+    "en": "Present the room"
+  },
+  "summary": {
+    "ru": "Порядок слайдов из любых объектов, ведущий и ведомые, возврат к ведущему и завершение.",
+    "en": "Slide order from any objects, presenter and followers, return to the presenter and stop."
+  },
+  "related": [
+    "facilitation.follow",
+    "rooms.create"
+  ],
+  "verifiedAgainst": "2026-11-17",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:17f7ca29def28dfec3d783d20453297e0a157f9439aabf7ed32b15ba93775d7d",
+      "targetHash": "sha256:8626c58dc04910b8d3d43ecce10a65d1006239ee7333979926b53bf58955fabe"
+    }
+  }
+}

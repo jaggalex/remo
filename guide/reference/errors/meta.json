@@ -1,0 +1,27 @@
+{
+  "id": "reference/errors",
+  "type": "reference",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Коды ошибок и что с ними делать",
+    "en": "Error codes and what to do"
+  },
+  "summary": {
+    "ru": "Что означает код, кто его возвращает и какое действие пользователя или интеграции снимает проблему.",
+    "en": "What a code means, who returns it, and which action by the user or integration resolves it."
+  },
+  "related": [
+    "concepts/sync",
+    "capabilities/export",
+    "how-to/export-backup",
+    "concepts/access"
+  ],
+  "updated": "2026-11-06",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:53c9bd91706dcf9de6b7cb7d6845813f90dd6aa43bbe4477cd8494e2f070626c",
+      "targetHash": "sha256:70f2bd9336c140361e2e35bc4cc11e3489477b7f5dade8944cb7d62dbe0341a7"
+    }
+  }
+}

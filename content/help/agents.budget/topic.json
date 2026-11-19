@@ -1,0 +1,25 @@
+{
+  "id": "agents.budget",
+  "type": "reference",
+  "title": {
+    "ru": "Бюджет и пределы задачи",
+    "en": "Task budget and limits"
+  },
+  "summary": {
+    "ru": "Два предела задаются в диалоге — изменения и деньги; токены и время сервер берёт по умолчанию. Без бюджета задача не создаётся.",
+    "en": "Two limits are set in the dialog — changes and money; tokens and time are server defaults. A task without a budget is not created."
+  },
+  "related": [
+    "agents.task",
+    "agents.journal"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:6546120a51fbd2145e7be6ed18a744ac60ea9109b0b788b279552ede3a9a4859",
+      "targetHash": "sha256:33e3c2bf694a91582cb38bbfb1f4b5371a3ffa0bb5d60d54b209e957f4cef255"
+    }
+  }
+}

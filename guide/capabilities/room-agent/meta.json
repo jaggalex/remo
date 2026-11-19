@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/room-agent",
+  "type": "explanation",
+  "status": "available",
+  "order": 56,
+  "title": {
+    "ru": "Агент комнаты",
+    "en": "Room agent"
+  },
+  "summary": {
+    "ru": "Пятнадцать сценариев: процесс, спринт, требования, MVP, ретроспектива, согласование, итоги, приоритизация, конкуренты, архитектура, идеи, зависимости, user flow, архитектура системы и карта проблем.",
+    "en": "Fifteen scenarios: process, sprint, requirements, MVP, retrospective, decision, meeting actions, prioritisation, competitors, architecture, ideas, dependencies, user flow, system architecture and problem map."
+  },
+  "related": [
+    "capabilities/agents",
+    "how-to/delegate-agent",
+    "concepts/access"
+  ],
+  "updated": "2026-11-09",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:406279a9a62361ec14cbbf1e3f4c1da67cbe65f3728377e231c38b7c2df8fb51",
+      "targetHash": "sha256:36d80a2a55dc96c126d05b06b58cf40a00a11c321f32ab3f41b665f437e2db62"
+    }
+  }
+}

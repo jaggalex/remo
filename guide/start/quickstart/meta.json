@@ -1,0 +1,28 @@
+{
+  "id": "start/quickstart",
+  "type": "tutorial",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Быстрый старт",
+    "en": "Quick start"
+  },
+  "summary": {
+    "ru": "Создайте комнату, соедините две заметки и поделитесь результатом.",
+    "en": "Create a room, connect two notes and share your work."
+  },
+  "related": [
+    "start/first-scenario",
+    "concepts/board",
+    "concepts/sync",
+    "capabilities/canvas",
+    "how-to/share"
+  ],
+  "updated": "2026-11-16",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:b73ceb3914369647ead02dc96600a3714143b786778783ec80c251e7664938be",
+      "targetHash": "sha256:d3e17389b25b81910d6a64005e01bed4d433636b4ef9e9a3e12d865b0ae66d88"
+    }
+  }
+}

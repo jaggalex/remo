@@ -1,0 +1,27 @@
+{
+  "id": "capabilities/export",
+  "type": "explanation",
+  "status": "available",
+  "order": 40,
+  "title": {
+    "ru": "Экспорт и бэкап",
+    "en": "Export and backup"
+  },
+  "summary": {
+    "ru": "Вынести видимый результат файлом или сохранить комнату целиком, чтобы восстановить её позже.",
+    "en": "Take a visible result as a file, or save the whole room so it can be restored later."
+  },
+  "related": [
+    "how-to/export-backup",
+    "reference/errors",
+    "concepts/sync",
+    "capabilities/canvas"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:ce9894a4cd8d8bbf6f88af72eb8c5ef64f7c11bd30134baec90c940cf4fee2aa",
+      "targetHash": "sha256:832f04d7cc26f03114a3ef874017f4146aa9af868b2c5d9af7bafe499a479626"
+    }
+  }
+}

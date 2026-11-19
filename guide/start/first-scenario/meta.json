@@ -1,0 +1,28 @@
+{
+  "id": "start/first-scenario",
+  "type": "tutorial",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Первый законченный сценарий: план спринта",
+    "en": "First complete scenario: a sprint plan"
+  },
+  "summary": {
+    "ru": "Соберите комнату планирования: фреймы, канбан, связи, доступ команде и бэкап — за один проход.",
+    "en": "Build a planning room: frames, kanban, connectors, team access and a backup in one pass."
+  },
+  "related": [
+    "start/quickstart",
+    "capabilities/canvas",
+    "how-to/share",
+    "how-to/export-backup",
+    "concepts/access"
+  ],
+  "updated": "2026-11-16",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e9d40679b387f021c550f27e66701cbe26842c144486dc9374b800d4fa435f2f",
+      "targetHash": "sha256:d3be43c1be5659f42852fe24ec5bc9ddd65d0c7469116acee0a456985e3d1e16"
+    }
+  }
+}

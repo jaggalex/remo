@@ -1,0 +1,26 @@
+{
+  "id": "reference/roles",
+  "type": "reference",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Роли и capabilities",
+    "en": "Roles and capabilities"
+  },
+  "summary": {
+    "ru": "Точная таблица: какая роль что может, откуда берётся роль и чем публичная ссылка отличается от гранта.",
+    "en": "The exact table: what each role may do, where a role comes from, and how a public link differs from a grant."
+  },
+  "related": [
+    "concepts/access",
+    "capabilities/access",
+    "how-to/share"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:af35c1e43859dc308a684777a7f9fca8c08173b643fc03d66f89700e30ce1cb0",
+      "targetHash": "sha256:b20fc0cc8742e93d1c27cc7cd30ebc20d81d01b41ee2bed7adb0ed73bb542821"
+    }
+  }
+}

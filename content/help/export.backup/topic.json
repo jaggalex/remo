@@ -1,0 +1,25 @@
+{
+  "id": "export.backup",
+  "type": "how-to",
+  "title": {
+    "ru": "Бэкап и восстановление",
+    "en": "Backup and restore"
+  },
+  "summary": {
+    "ru": "Открытый JSON-бэкап комнаты с контрольной суммой и восстановление только из бэкапа remo.",
+    "en": "An open JSON room backup with a checksum, and restore from a remo backup only."
+  },
+  "related": [
+    "export.scope",
+    "export.formats"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:4c5dfe3bb934ef6b3ba8c026a5537c41daaabaaea2c95d2498b1391e0baafde1",
+      "targetHash": "sha256:2889eb5f412bdf4c5ee34f92f0c777cfa206a4656e73d01ac421cfe150bef49f"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+# Dedicated PostgreSQL for tests (ADR-136).
+#
+# This file is deliberately separate from docker-compose.yml: it has its own project
+# name, container, volume, credentials and loopback port, so no test command can resolve
+# to the development database by accident.
+#
+# Start:  pnpm test:db:up       (compose + bootstrap the test-environment identity)
+# Check:  pnpm test:db:check
+# Stop:   pnpm test:db:down     (keeps the volume)
+# Logs:   pnpm test:db:logs
+#
+# There is intentionally no volume-deletion command here. Removing
+# remo-test_postgres-data is a manual maintenance action, documented in TESTING.md.
+name: remo-test
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: remo-test-postgres
+    # Explicit lifecycle: no restart policy, so Docker does not start the test server
+    # behind the developer's back or recreate it during another project's `up`.
+    restart: "no"
+    environment:
+      POSTGRES_USER: remo_test
+      POSTGRES_PASSWORD: remo_test
+      POSTGRES_DB: remo_test_control
+      # Deterministic collation, so ordering does not depend on the host locale.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # Loopback only: the test server is never reachable from another machine.
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - remo-test-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U remo_test -d remo_test_control"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+volumes:
+  # Project-scoped name is `remo-test_remo-test-postgres-data`; the development volume
+  # (`remo-db`) is never referenced.
+  remo-test-postgres-data:

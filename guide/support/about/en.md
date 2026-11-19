@@ -1,0 +1,21 @@
+## What it is
+
+remo is a shared visual canvas for teamwork. Use rooms to make plans, track tasks and discuss ideas. The version and build number are in the account menu and at `/api/health`.
+
+## Author and licence
+
+The author and copyright holder is **Alexander Kostylev**. The licence is **AGPL-3.0-only**: the code is open, you may use and change it; if a modified version runs as a network service, its source must be available to its users.
+
+The remo name and logo are a separate brand; the code licence does not grant the right to speak for the project.
+
+## Source code
+
+Public repository: [github.com/jaggalex/remo](https://github.com/jaggalex/remo).
+
+## Where to see the version
+
+The version is in the footer of this page, in the application help and in the account menu.
+
+## Responsibility
+
+remo is an open project without warranties: a version may contain bugs, and you keep your own backups. The full text is in the [Disclaimer](/guide/support/disclaimer).

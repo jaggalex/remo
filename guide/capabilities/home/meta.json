@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/home",
+  "type": "explanation",
+  "status": "available",
+  "order": 34,
+  "title": {
+    "ru": "Домашняя страница организации",
+    "en": "Organisation home"
+  },
+  "summary": {
+    "ru": "Плитки комнат, поиск, сортировка, страницы, эмодзи и смена организации.",
+    "en": "Room tiles, search, sorting, pages, emoji and switching organisation."
+  },
+  "related": [
+    "capabilities/access",
+    "how-to/create-board",
+    "capabilities/presentation"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:59de860393d1eaaa5ede549e60e4300cfcb3955dcf9f63af2778bce2acd23d1a",
+      "targetHash": "sha256:e4c42ff37c798f86038a1db8239627d84b031d9897309feaca596e399d97f6a6"
+    }
+  }
+}

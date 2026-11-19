@@ -1,0 +1,28 @@
+{
+  "id": "how-to/delegate-agent",
+  "type": "how-to",
+  "status": "available",
+  "order": 25,
+  "title": {
+    "ru": "Поставить задачу агенту",
+    "en": "Set a task for an agent"
+  },
+  "summary": {
+    "ru": "Выбрать агента, источник и скилл, задать бюджет и понять, что произойдёт с комнатой: четыре сценария и где искать результат.",
+    "en": "Choose an agent, a source and a skill, set a budget and know what will happen to the room: four scenarios and where to find the result."
+  },
+  "related": [
+    "how-to/agent-plan",
+    "how-to/tidy-selection",
+    "capabilities/agents",
+    "concepts/agents",
+    "reference/limits"
+  ],
+  "updated": "2026-11-16",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:ac14ea9e22ddefc564a47fe0d1014a58ef87e7d635023ae29bc60f7f4ce8fb56",
+      "targetHash": "sha256:37e23e75ef6f759432a006c9903d6ff13c376e5c4ccaf2f2106770225ef16053"
+    }
+  }
+}

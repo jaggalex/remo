@@ -1,0 +1,27 @@
+{
+  "id": "overview/index",
+  "type": "overview",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Что такое remo",
+    "en": "What remo is"
+  },
+  "summary": {
+    "ru": "Визуальный холст для совместной работы команды.",
+    "en": "A shared visual canvas for teamwork."
+  },
+  "related": [
+    "overview/map",
+    "start/quickstart",
+    "concepts/board",
+    "concepts/access"
+  ],
+  "updated": "2026-11-16",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:18e822a6588fed9b3d483432cdc76a095f019c9d9923a28caaa4bb67a6e383e7",
+      "targetHash": "sha256:7067c09c5f140f71baffeb5942aecd83fd37c9490c9b03c5aa494381c1582a05"
+    }
+  }
+}

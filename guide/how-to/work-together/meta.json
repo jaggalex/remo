@@ -1,0 +1,27 @@
+{
+  "id": "how-to/work-together",
+  "type": "how-to",
+  "status": "available",
+  "order": 15,
+  "title": {
+    "ru": "Работать вместе на одной комнате",
+    "en": "Work together on one room"
+  },
+  "summary": {
+    "ru": "Позвать коллегу, включить follow, проверить, что изменения видны, и понять поведение без связи.",
+    "en": "Invite a colleague, start following, check that changes are visible, and understand offline behaviour."
+  },
+  "related": [
+    "capabilities/collaboration",
+    "concepts/presence",
+    "how-to/share",
+    "concepts/sync"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:aaf44ad7cff9ffbcee53c9a56e982ed7d50adb997a15ecfc054132542642fea2",
+      "targetHash": "sha256:20cf09e95045e22fa1ac911b6c4ea675d990312290d11da6ae266fdb956aeda4"
+    }
+  }
+}

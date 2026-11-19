@@ -1,0 +1,26 @@
+{
+  "id": "how-to/lock",
+  "type": "how-to",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Заблокировать объект от правок",
+    "en": "Lock an object from edits"
+  },
+  "summary": {
+    "ru": "Авторский замок: кто может снять и что происходит с копиями.",
+    "en": "An author lock: who may release it and what copies do."
+  },
+  "related": [
+    "how-to/comment",
+    "how-to/create-board",
+    "capabilities/collaboration"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:0a5ff7065ed2b3a9dfc8e014e09a1f1c3cacaa349f4330a4912a9f4ef61db0a5",
+      "targetHash": "sha256:39c720dae4169cb2783ddb2ddc87153dbea04185b032ee24720a4eaca13be7e8"
+    }
+  }
+}

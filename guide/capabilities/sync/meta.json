@@ -1,0 +1,27 @@
+{
+  "id": "capabilities/sync",
+  "type": "explanation",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "Сохранение и офлайн",
+    "en": "Saving and offline"
+  },
+  "summary": {
+    "ru": "Понять, когда работа считается сохранённой, что происходит без связи и почему редактирование может остановиться.",
+    "en": "Know when work counts as saved, what happens without a connection, and why editing may stop."
+  },
+  "related": [
+    "concepts/sync",
+    "reference/errors",
+    "start/quickstart",
+    "capabilities/access"
+  ],
+  "updated": "2026-11-06",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:794ebb1b5d7deae7f10737212fb295423a30ecbbd3c18e89ad8987d58eddc51d",
+      "targetHash": "sha256:3a28570317ffa064d26458475311a5d1ed6dd98c27e42431dff473e4d6d9f56f"
+    }
+  }
+}

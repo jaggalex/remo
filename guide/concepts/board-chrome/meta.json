@@ -1,0 +1,26 @@
+{
+  "id": "concepts/board-chrome",
+  "type": "explanation",
+  "status": "available",
+  "order": 11,
+  "title": {
+    "ru": "Экран комнаты: шапка, меню, рельс, низ",
+    "en": "The room screen: header, menus, rail, bottom"
+  },
+  "summary": {
+    "ru": "Где создать объект, где свойства и презентация, где тема и язык, где голосование — карта экрана комнаты.",
+    "en": "Where to create an object, where properties and presentation live, where the theme and language are, where voting is: a map of the room screen."
+  },
+  "related": [
+    "concepts/colors",
+    "start/quickstart",
+    "capabilities/canvas"
+  ],
+  "updated": "2026-11-16",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:2fb6ae0fd520b1879bb163e918e8fff3e7c179dcbd242668c965bc55593c8968",
+      "targetHash": "sha256:12a45a9fbb25bf9771ba35ef6998e23a430fd203e4f9a0935c470e4ab849a96a"
+    }
+  }
+}

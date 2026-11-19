@@ -1,0 +1,32 @@
+{
+  "id": "overview/map",
+  "type": "overview",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Карта возможностей",
+    "en": "Capability map"
+  },
+  "summary": {
+    "ru": "Все возможности продукта в одной таблице: задача, результат, с чем сочетается и где подробности.",
+    "en": "Every capability in one table: the task, the result, what it combines with and where the details are."
+  },
+  "related": [
+    "overview/index",
+    "overview/routes",
+    "concepts/board",
+    "concepts/access",
+    "concepts/sync",
+    "capabilities/canvas",
+    "capabilities/access",
+    "capabilities/sync",
+    "capabilities/export"
+  ],
+  "updated": "2026-11-02",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:7db2b716d3e5e3ed0432181945b75dec16f1e1171e3cbba59f8166989800b2a6",
+      "targetHash": "sha256:5230585096a711153b6a5d501efa9df6cb2eee8ed0fdc453d6ca74e4d4f82043"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "how-to/export-backup",
+  "type": "how-to",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Вынести результат и восстановить комнату из бэкапа",
+    "en": "Export a result and restore a room from a backup"
+  },
+  "summary": {
+    "ru": "PNG или PDF по скоупу, полный JSON-бэкап, импорт с заменой комнаты — с проверкой результата.",
+    "en": "PNG or PDF by scope, a full JSON backup, import with room replacement — with a result check."
+  },
+  "related": [
+    "capabilities/export",
+    "reference/errors",
+    "concepts/sync",
+    "how-to/share"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:8d189a4d71781b1e935d53f830d8a81ac0867f9240bd83a947db950fa121d6fa",
+      "targetHash": "sha256:fa4b20edd449e8eb0c77c1b47ec4906cb7a7e3b4f20363992dc0662ed222f117"
+    }
+  }
+}

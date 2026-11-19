@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/dist
+docs-site
+**/.data
+.env
+.env.*
+.config/remo/deploy.env
+**/*.local
+backups
+test-results
+playwright-report
+e2e-report
+*.pdf

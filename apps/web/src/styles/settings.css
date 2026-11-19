@@ -1,0 +1,33 @@
+/* ---------------------------------------------------------- settings --- */
+
+.settings-panel h3 {
+  margin: var(--space-4) 0 var(--space-2);
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.settings-json {
+  font-family: var(--font-mono);
+  resize: vertical;
+}
+
+.settings-error {
+  color: var(--text-danger);
+  font: var(--type-caption);
+}
+
+.settings-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+

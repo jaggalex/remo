@@ -1,0 +1,26 @@
+{
+  "id": "objects.name",
+  "type": "how-to",
+  "title": {
+    "ru": "Имя и ID объекта",
+    "en": "Object name and ID"
+  },
+  "summary": {
+    "ru": "Подпись объекта для поиска и презентации; стабильный ID и копирование.",
+    "en": "An object label for search and presentation; a stable ID and copying."
+  },
+  "related": [
+    "presentation.mode",
+    "rooms.home",
+    "tags.links"
+  ],
+  "verifiedAgainst": "2026-11-17",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:acb5f56d92559f7dbba6024bc3d27362278e1f46e2b7d0acada89799f26629f6",
+      "targetHash": "sha256:a9d1900419f9d7548430386d5826d8623e4cd499a6f0fb439d280a4f90c43d6c"
+    }
+  }
+}

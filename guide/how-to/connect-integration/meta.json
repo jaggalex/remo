@@ -1,0 +1,27 @@
+{
+  "id": "how-to/connect-integration",
+  "type": "how-to",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "Подключить интеграцию: токен, команда, вебхук",
+    "en": "Connect an integration: token, command, webhook"
+  },
+  "summary": {
+    "ru": "Выпустить токен, выполнить первую команду, настроить вебхук и проверить подпись — по шагам.",
+    "en": "Issue a token, run the first command, configure the webhook and verify the signature — step by step."
+  },
+  "related": [
+    "capabilities/tokens",
+    "capabilities/events",
+    "reference/api",
+    "reference/events"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e184854915914a253e53ebeec218128a9138e74331f1888daa9b81f3bef7ff96",
+      "targetHash": "sha256:00e066f01bf67f6f7dbd2589d3480b013fb41640aed1ac202c6851d4cc412a32"
+    }
+  }
+}

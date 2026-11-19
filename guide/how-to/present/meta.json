@@ -1,0 +1,26 @@
+{
+  "id": "how-to/present",
+  "type": "how-to",
+  "status": "available",
+  "order": 8,
+  "title": {
+    "ru": "Провести презентацию",
+    "en": "Present the room"
+  },
+  "summary": {
+    "ru": "Порядок слайдов из любых объектов, ведущий и ведомые, возврат к ведущему и завершение.",
+    "en": "Slide order from any objects, presenter and followers, return to the presenter and stop."
+  },
+  "related": [
+    "how-to/run-meeting",
+    "how-to/build-board",
+    "capabilities/facilitation"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:1e3505be3b7557e752062eb5dac85d1a2819464e4b9a37d2587d90ad4a06702d",
+      "targetHash": "sha256:aad455e1328d0de20dae3a2b4bcde23b855a722da616badc8b661cf173044e07"
+    }
+  }
+}

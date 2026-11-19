@@ -1,0 +1,27 @@
+{
+  "id": "capabilities/frames-kanban",
+  "type": "explanation",
+  "status": "available",
+  "order": 25,
+  "title": {
+    "ru": "Фреймы и канбан",
+    "en": "Frames and kanban"
+  },
+  "summary": {
+    "ru": "Структурировать комнату: фрейм как контейнер и канбан как сетка колонок и дорожек.",
+    "en": "Structure a room: a frame as a container and a kanban as a grid of columns and swimlanes."
+  },
+  "related": [
+    "concepts/board",
+    "capabilities/canvas",
+    "capabilities/collaboration",
+    "start/first-scenario"
+  ],
+  "updated": "2026-11-19",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:c3170c95146ed7836df3a8b20029f45af177c997670eba145f23fd7b428c0799",
+      "targetHash": "sha256:f81c9c63d4dc0f4acc7e58a43e148808a1e6fa05eadede692e6ca3abc8f0f28c"
+    }
+  }
+}

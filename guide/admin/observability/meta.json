@@ -1,0 +1,27 @@
+{
+  "id": "admin/observability",
+  "type": "how-to",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "Наблюдаемость и диагностика",
+    "en": "Observability and diagnostics"
+  },
+  "summary": {
+    "ru": "Здоровье сервиса, метрики, журналы и продуктовые события — что смотреть и где.",
+    "en": "Service health, metrics, logs and product events — what to look at and where."
+  },
+  "related": [
+    "admin/deploy",
+    "admin/backup-restore",
+    "support/troubleshooting",
+    "capabilities/events"
+  ],
+  "updated": "2026-11-06",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:3b6e326e03023c25c73af189d9feedd285d9cf55048ebd7544744ecfe6fc9d63",
+      "targetHash": "sha256:95c5e52aa98bc69359a06e3d58352aa07b10f6c12ddf3cb72a5ae840e95746e4"
+    }
+  }
+}

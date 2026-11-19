@@ -1,0 +1,25 @@
+{
+  "id": "rooms.create",
+  "type": "how-to",
+  "title": {
+    "ru": "Создать комнату",
+    "en": "Create a room"
+  },
+  "summary": {
+    "ru": "Новая комната в организации (и в команде, если выбрана).",
+    "en": "A new room in an organisation (and a team when one is chosen)."
+  },
+  "related": [
+    "access.share",
+    "access.roles"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:d0bf449e8f05a95159d2dcbe428ebdcead865ab195b03ce597a7c84d43d54011",
+      "targetHash": "sha256:afca18d8f8d74320eb1e6130b2c44a01592f4a999d82fc759a186ad909afe3f9"
+    }
+  }
+}

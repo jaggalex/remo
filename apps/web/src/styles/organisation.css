@@ -1,0 +1,261 @@
+/* ------------------------------------------------------- organisation --- */
+
+.org-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.org-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.org-head h2 {
+  margin: 0;
+  font: var(--type-title);
+}
+
+.org-head p {
+  margin: 2px 0 0;
+  font: var(--type-caption);
+}
+
+.org-invite {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.org-invite .rm-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.org-pending h3 {
+  margin: 0 0 var(--space-1);
+  font: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.org-pending ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.org-pending li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font: var(--type-label);
+}
+
+.org-pending-email {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.org-person {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.org-person-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+}
+
+.org-avatar {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font: var(--type-caption);
+  font-weight: 600;
+}
+
+.org-person-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: var(--type-label);
+}
+
+.org-person-name .muted {
+  font: var(--type-caption);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: 2px;
+}
+
+.org-badge {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font: var(--type-caption);
+}
+
+.org-badge.admin {
+  background: var(--accent-soft);
+  color: var(--text-accent);
+}
+
+.org-badge.personal {
+  margin-left: var(--space-2);
+  background: var(--accent-soft);
+  color: var(--text-accent);
+  font: var(--type-caption);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.org-badge.guest {
+  background: var(--warning-soft);
+  color: var(--state-warning);
+}
+
+.org-badge.suspended {
+  background: var(--danger-soft);
+  color: var(--text-danger);
+}
+
+.org-badge.you {
+  margin-left: var(--space-2);
+  background: var(--success-soft);
+  color: var(--state-success);
+}
+
+.org-person-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.org-role-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-label);
+}
+
+.org-confirm,
+.org-blocked {
+  padding: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-body);
+}
+
+.org-blocked {
+  background: var(--warning-soft);
+}
+
+.org-confirm p,
+.org-blocked p {
+  margin: 0 0 var(--space-2);
+}
+
+.org-confirm > div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.org-blocked ul {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+}
+
+.org-note {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.org-audit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.org-audit li {
+  padding: var(--space-2) 2px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.org-audit li:last-child {
+  border-bottom: 0;
+}
+
+.org-audit-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font: var(--type-label);
+}
+
+.org-audit-meta {
+  margin-top: 1px;
+  font: var(--type-caption);
+}
+
+.org-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-caption);
+}
+
+@media (max-width: 560px) {
+  .org-person-main {
+    flex-wrap: wrap;
+  }
+
+  .org-person-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

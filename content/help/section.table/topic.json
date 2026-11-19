@@ -1,0 +1,25 @@
+{
+  "id": "section.table",
+  "type": "how-to",
+  "title": {
+    "ru": "Показать раздел таблицей",
+    "en": "Show a section as a table"
+  },
+  "summary": {
+    "ru": "Название и вид раздела, ячейки, merge, размеры, оформление и безопасные удаления.",
+    "en": "A section's title and view, cells, merge, sizes, appearance and safe deletions."
+  },
+  "related": [
+    "rooms.create",
+    "objects.lock"
+  ],
+  "verifiedAgainst": "2026-11-12",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:ee147dc39412c80a7cc1e1957d0b5a92685a0cecf330729a9451f770ca1e137a",
+      "targetHash": "sha256:08ad6de770492a747a94db2215d54d36410221cca977cdde93d0fa9cfdff5341"
+    }
+  }
+}

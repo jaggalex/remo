@@ -1,0 +1,27 @@
+{
+  "id": "concepts/history",
+  "type": "explanation",
+  "status": "available",
+  "order": 45,
+  "title": {
+    "ru": "История, корзина и возврат",
+    "en": "History, trash and recovery"
+  },
+  "summary": {
+    "ru": "Четыре разных способа вернуть состояние: undo, корзина, копия и импорт бэкапа.",
+    "en": "Four different ways to get a state back: undo, trash, a copy and a backup import."
+  },
+  "related": [
+    "capabilities/history",
+    "capabilities/export",
+    "concepts/board",
+    "how-to/export-backup"
+  ],
+  "updated": "2026-10-28",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:4790f51f79e1db29b3f43e15fd3ab9078f9e6d6ccef2f1f8a6ab40b3714a9bcc",
+      "targetHash": "sha256:f4527efe4ecf97570f380b7715870b2cb3b3b9764fda75cce43f957b42bbfb5d"
+    }
+  }
+}

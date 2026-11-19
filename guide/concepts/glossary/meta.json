@@ -1,0 +1,27 @@
+{
+  "id": "concepts/glossary",
+  "type": "reference",
+  "status": "available",
+  "order": 50,
+  "title": {
+    "ru": "Глоссарий",
+    "en": "Glossary"
+  },
+  "summary": {
+    "ru": "Один термин — одно понятие: словарь продукта и документации, совпадающий с интерфейсом.",
+    "en": "One term, one concept: the product's vocabulary, matching the interface."
+  },
+  "related": [
+    "concepts/board",
+    "concepts/access",
+    "concepts/extensions",
+    "reference/roles"
+  ],
+  "updated": "2026-11-17",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:8330ffbe2ceac5f53ad73845ab127d54f7f348cbd26fba5e9e2f6dbb41c512a7",
+      "targetHash": "sha256:de66d917d539717a5c35010bd4f3ad8054501e77493d093ae9b188f66ade81ce"
+    }
+  }
+}

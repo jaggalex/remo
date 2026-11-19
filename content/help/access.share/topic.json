@@ -1,0 +1,26 @@
+{
+  "id": "access.share",
+  "type": "how-to",
+  "title": {
+    "ru": "Пригласить участника и выдать доступ",
+    "en": "Invite a member and grant access"
+  },
+  "summary": {
+    "ru": "Добавьте человека на комнату и выберите роль: читатель, комментатор, редактор или со-владелец.",
+    "en": "Add a person to a room and choose a role: viewer, commenter, editor or co-owner."
+  },
+  "related": [
+    "access.roles",
+    "access.link",
+    "access.lifecycle"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:f82553e78c022653b1128c96e3f4eedbdd24d79e75017e7cf40d14d3b75c9c5a",
+      "targetHash": "sha256:f227d7f876791fdf0b0654b856b44bce056f7c4a36cc7e7fe8d9ad68f467e8d4"
+    }
+  }
+}

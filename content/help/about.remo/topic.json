@@ -1,0 +1,25 @@
+{
+  "id": "about.remo",
+  "type": "reference",
+  "title": {
+    "ru": "О remo: версия и лицензия",
+    "en": "About remo: version and licence"
+  },
+  "summary": {
+    "ru": "Версия 0.1.0, автор, лицензия AGPL-3.0-only и ссылка на исходный код.",
+    "en": "Version 0.1.0, author, AGPL-3.0-only licence and the source link."
+  },
+  "related": [
+    "rooms.create",
+    "export.backup"
+  ],
+  "verifiedAgainst": "2026-11-04",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:37c9255d11214d210de16e0b41fbf056f759876179c309eeef8c5f1d6a62269e",
+      "targetHash": "sha256:cb3cada465710b83ea524b054d1dec784b114e4e0fd58150dd885b5e6debf381"
+    }
+  }
+}

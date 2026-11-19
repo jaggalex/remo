@@ -1,0 +1,27 @@
+{
+  "id": "support/changelog",
+  "type": "reference",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "История изменений",
+    "en": "Changelog"
+  },
+  "summary": {
+    "ru": "Версии схемы и что появилось в каждой: от событий до планов агента, дизайн-системы и панелей.",
+    "en": "Schema versions and what each introduced: from events to agent plans, the design system and the panels."
+  },
+  "related": [
+    "support/migrations",
+    "reference/events",
+    "capabilities/apps",
+    "admin/deploy"
+  ],
+  "updated": "2026-11-19",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:32d32cac7d2bbc650eb9162b206f79f1e954bd5f5c4645aa2aa71a71acc903a5",
+      "targetHash": "sha256:f3e6c47e657e0e3fcb93e4e030646fbe98aac27b055b9d879650c0aeeb8f3d8a"
+    }
+  }
+}

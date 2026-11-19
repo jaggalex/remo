@@ -1,0 +1,133 @@
+/* Table sizing chrome: the header band and strip corner, their guides and the
+   read-only summary (ADR-219). Split from section-panel.css by reason. */
+
+/* ------------------------------------------------ table band corner --- */
+
+/* Header is a group of its own, not a third axis list: 24 above it, as between groups. */
+.table-header-group {
+  margin-top: var(--space-6);
+}
+
+.table-header-size {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.table-band-segment {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: var(--z-canvas-overlay);
+}
+
+.table-band-segment.is-height { cursor: row-resize; }
+.table-band-segment.is-width { cursor: col-resize; }
+
+.table-band-segment:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.table-band-guide {
+  position: absolute;
+  border: 0 dashed var(--border-focus);
+  pointer-events: none;
+}
+
+.table-band-guide.is-height {
+  border-top-width: 1px;
+  height: 0;
+}
+
+.table-band-guide.is-width {
+  border-left-width: 1px;
+  width: 0;
+}
+
+.table-band-grip {
+  position: absolute;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  z-index: var(--z-canvas-overlay);
+  cursor: default;
+}
+
+.table-band-grip-mark {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--text-secondary);
+  border-bottom: 1.5px solid var(--text-secondary);
+}
+
+.table-band-chip {
+  position: absolute;
+  transform: translateX(-50%);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  font: var(--type-caption);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: var(--z-canvas-overlay);
+}
+
+.section-axis-lines {
+  flex: none;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.section-axis-name .rm-textarea textarea {
+  resize: none;
+  min-height: 58px;
+}
+
+.section-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* Header typography (ADR-220): one table-level setting in the appearance group. */
+.section-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.section-header-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-header-choice .rm-segmented {
+  flex: 1;
+}
+
+.section-header-label {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.section-header-color {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

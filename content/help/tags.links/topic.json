@@ -1,0 +1,25 @@
+{
+  "id": "tags.links",
+  "type": "how-to",
+  "title": {
+    "ru": "Пометить объекты тегами и связать ссылкой",
+    "en": "Tag objects and link them"
+  },
+  "summary": {
+    "ru": "Теги-словарь комнаты и ссылка на объект: внешний адрес или другой объект.",
+    "en": "A room tag vocabulary and a link on an object: an external address or another object."
+  },
+  "related": [
+    "cards.fields",
+    "rooms.create"
+  ],
+  "verifiedAgainst": "2026-11-17",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e6e590cf442e68987e41ee2841ad95dad433106d288edfa02ea12466bd14cc6f",
+      "targetHash": "sha256:ac5e99789e8113cfeb3903926f11795405ecdd92f6c390fd230a61ce66539f5f"
+    }
+  }
+}

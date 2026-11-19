@@ -1,0 +1,27 @@
+{
+  "id": "how-to/agent-plan",
+  "type": "how-to",
+  "status": "available",
+  "order": 27,
+  "title": {
+    "ru": "Получить от агента план и применить его",
+    "en": "Get a plan from an agent and apply it"
+  },
+  "summary": {
+    "ru": "Текст, файл или выделение → план → превью → «Применить» → один ⌘Z: что появится в комнате, что уйдёт в модель и где предел.",
+    "en": "Text, file or selection → a plan → a preview → Apply → one ⌘Z: what will appear on the room, what goes to the model and where the limit is."
+  },
+  "related": [
+    "how-to/delegate-agent",
+    "how-to/tidy-selection",
+    "capabilities/agents",
+    "concepts/agents"
+  ],
+  "updated": "2026-11-16",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:24b4977e5e1f727d93963eebcf5f9830ea6797494cc849363c8811c145cbda85",
+      "targetHash": "sha256:ac35e93fb285b268d289443d36bf08a5b17c2a5cbf7a279aadeb1ee58a2b57be"
+    }
+  }
+}

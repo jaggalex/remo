@@ -1,0 +1,27 @@
+{
+  "id": "concepts/board",
+  "type": "explanation",
+  "status": "available",
+  "order": 10,
+  "title": {
+    "ru": "Комната и объекты: слои, координаты, выделение",
+    "en": "Room and objects: layers, coordinates, selection"
+  },
+  "summary": {
+    "ru": "Из чего состоит комната, как объекты располагаются и почему одни перемещаются свободно, а другие живут в ячейке.",
+    "en": "What a room is made of, how objects are placed, and why some move freely while others live in a cell."
+  },
+  "related": [
+    "capabilities/canvas",
+    "concepts/sync",
+    "start/quickstart",
+    "concepts/access"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:9c59b70ebae0e3fe14a6af4127402a18b9b8f32a7e1e3791432159d8fd949b6a",
+      "targetHash": "sha256:f8158db637abe4ac98cfdf8e1f1b1d5bfeb8400301a0b8e4b80f32dbe6237809"
+    }
+  }
+}

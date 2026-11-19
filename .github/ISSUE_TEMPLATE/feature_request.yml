@@ -1,0 +1,29 @@
+name: Feature request
+description: A problem worth solving, or a capability the product should have.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What is hard or impossible today, and for whom.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: The result you want
+      description: Describe the observable outcome, not only the UI.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried or considered
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        A behaviour change needs an ADR before code. If the request changes access,
+        data structure or a core mechanism, expect that discussion first.

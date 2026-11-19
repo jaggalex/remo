@@ -1,0 +1,26 @@
+{
+  "id": "room.panel",
+  "type": "reference",
+  "title": {
+    "ru": "Панель свойств",
+    "en": "Properties panel"
+  },
+  "summary": {
+    "ru": "Что показывает панель справа: комнату без выделения, канбан или выделенный объект.",
+    "en": "What the right-hand panel shows: the room with nothing selected, a kanban, or the selected object."
+  },
+  "related": [
+    "rooms.create",
+    "cards.fields",
+    "section.table"
+  ],
+  "verifiedAgainst": "2026-11-19",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:d00b05dee885ebcc523220848a59b61323fe432ae9b85b5ee9d05871daeadfe3",
+      "targetHash": "sha256:af008f5bd69841d36cf07013bf8eb09b36a660f1b1b1d28cbf0595700a258779"
+    }
+  }
+}

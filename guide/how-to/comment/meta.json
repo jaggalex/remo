@@ -1,0 +1,26 @@
+{
+  "id": "how-to/comment",
+  "type": "how-to",
+  "status": "available",
+  "order": 9,
+  "title": {
+    "ru": "Обсудить объект в комментариях",
+    "en": "Discuss an object in comments"
+  },
+  "summary": {
+    "ru": "Тред у объекта или точки: ответы, решение и повторное открытие.",
+    "en": "A thread on an object or point: replies, resolve and reopen."
+  },
+  "related": [
+    "how-to/tags-links",
+    "how-to/present",
+    "capabilities/collaboration"
+  ],
+  "updated": "2026-11-04",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:04bcfd520c4f7a47365670b2acacd1d75aebf238567c81bec079d40215bf50e1",
+      "targetHash": "sha256:150c42f6ae447cda1f49eb92c2fda52b99ee6fa5cf199e8973d61b84dd062b10"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "reference/env",
+  "type": "reference",
+  "status": "available",
+  "order": 30,
+  "title": {
+    "ru": "Настройки и переменные окружения",
+    "en": "Settings and environment variables"
+  },
+  "summary": {
+    "ru": "Переменные сервера: база, ключи, метрики, агенты, вебхук и что будет, если их не задать.",
+    "en": "Server variables: database, keys, metrics, agents, webhook, and what happens when they are unset."
+  },
+  "related": [
+    "reference/limits",
+    "capabilities/agents",
+    "capabilities/events",
+    "concepts/sync"
+  ],
+  "updated": "2026-11-06",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:42e9a2f58035056cad54987ba685ed4a98abda41b1749db8c13f1a3e5cb09223",
+      "targetHash": "sha256:e397229b9429485608810ba83ec14ae53b0205aca3d02a1eda676a3f126195e2"
+    }
+  }
+}

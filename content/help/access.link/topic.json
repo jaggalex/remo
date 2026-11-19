@@ -1,0 +1,26 @@
+{
+  "id": "access.link",
+  "type": "how-to",
+  "title": {
+    "ru": "Включить и выключить ссылку для всех",
+    "en": "Turn the public link on and off"
+  },
+  "summary": {
+    "ru": "Одна ссылка на комнату: у комнаты с владельцем кто угодно с ней может читать; у комнаты без владельца она приводит к закреплению. Выключение закрывает доступ для всех.",
+    "en": "One link per room: for a room with an owner anyone with it can read; for a room without an owner it leads to the claim screen. Turning it off closes access for everyone."
+  },
+  "related": [
+    "access.share",
+    "access.roles",
+    "access.lifecycle"
+  ],
+  "verifiedAgainst": "2026-10-27",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:0e87f2b6553e616010a23ed067f798cfffa9edc91b2424f0a96494e35a4ed82b",
+      "targetHash": "sha256:e880137c0a4c9a2b26eba48977cba9b9658dcf4689b09f3f1cd50e48daaece6a"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "facilitation.vote",
+  "type": "how-to",
+  "title": {
+    "ru": "Голосование по объектам",
+    "en": "Voting on objects"
+  },
+  "summary": {
+    "ru": "Сессия с квотой голосов на человека, анонимным подсчётом и результатами в комнате.",
+    "en": "A session with a quota per person, an anonymous tally and results on the room."
+  },
+  "related": [
+    "access.roles",
+    "facilitation.timer"
+  ],
+  "verifiedAgainst": "2026-11-02",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:e8b226f0fe0ad9dd3a8076b73037445d4e0e753422d8d4b42acadd0d0471af23",
+      "targetHash": "sha256:20dc94e0628e1d248bbe45a520b412c03562cd4ec2e9c3225a2da036965b9f7f"
+    }
+  }
+}

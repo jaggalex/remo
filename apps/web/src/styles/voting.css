@@ -1,0 +1,410 @@
+/* Voting panel: start, manage, results, history (ADR-074, ADR-117, ТЗ §4.3). */
+.vote-intro {
+  margin: 0;
+}
+
+.vote-start,
+.vote-session,
+.vote-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vote-heading {
+  margin: 0;
+  font: var(--type-subtitle);
+  color: var(--text-primary);
+}
+
+.vote-subheading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.vote-params {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.vote-note {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.vote-hint {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-muted);
+}
+
+.vote-error {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--text-danger);
+  font: var(--type-caption);
+}
+
+.vote-notice {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.vote-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vote-field-label {
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.vote-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+}
+
+.vote-stepper-value {
+  min-width: var(--space-8);
+  text-align: center;
+  font: var(--type-subtitle);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* Three numbers: time left, people who voted, votes cast. */
+.vote-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.vote-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+}
+
+.vote-stat-value {
+  font: var(--type-title);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.vote-stat-label {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* The scope: no vote controls here — voting happens on the object (ADR-117). */
+.vote-list,
+.vote-results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.vote-list li,
+.vote-results-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  font: var(--type-body);
+}
+
+.vote-list li:last-child,
+.vote-results-list li:last-child {
+  border-bottom: none;
+}
+
+.vote-results-list li.is-top {
+  background: var(--accent-soft);
+}
+
+.vote-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.vote-count {
+  min-width: var(--space-6);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vote-place {
+  min-width: var(--space-6);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* A row that opens to the people behind its number (ADR-126). The row wraps so the
+   voters panel can take a line of its own without a second list. */
+.vote-results-list li {
+  flex-wrap: wrap;
+}
+
+.vote-row-toggle {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+  height: auto;
+  padding: 0;
+  justify-content: flex-start;
+  gap: var(--space-1);
+  font: var(--type-body);
+  text-align: left;
+}
+
+/* The label and the chevron share one line: the label shortens, the chevron stays put. */
+.vote-row-toggle .rm-btn-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-width: 0;
+}
+
+.vote-voters {
+  flex: 0 0 100%;
+  padding: var(--space-1) 0 0 calc(var(--space-6) + var(--space-2));
+}
+
+.vote-voters-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.vote-voters-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  border: none;
+  font: var(--type-caption);
+}
+
+.vote-voters-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.vote-voters-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.vote-voters-guest .vote-voters-name {
+  color: var(--text-muted);
+}
+
+/* One row per person: what they spent and how widely. */
+.vote-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vote-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.vote-summary-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  font: var(--type-body);
+}
+
+.vote-summary-list li:last-child {
+  border-bottom: none;
+}
+
+.vote-summary-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.vote-summary-meta {
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.vote-summary-guest .vote-summary-name {
+  color: var(--text-muted);
+}
+
+.vote-row-bar {
+  flex: 0 0 var(--space-12);
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.vote-row-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.vote-tie {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* The card publishing will write, shown before the write. */
+.vote-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vote-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-bar);
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.vote-preview-line {
+  margin: 0;
+}
+
+.vote-preview-meta {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.vote-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* History: one row per session, collapsed to its leader. */
+.vote-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vote-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.vote-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.vote-history-head {
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  padding: var(--space-2);
+  text-align: left;
+}
+
+.vote-history-head .rm-btn-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.vote-history-title {
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+
+.vote-history-when,
+.vote-history-meta {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.vote-history-leader {
+  margin: 0 0 0 var(--space-3);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.vote-history-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-1) 0 var(--space-2) var(--space-3);
+}

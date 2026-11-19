@@ -1,0 +1,310 @@
+/* ---------------------------------------------------------- provider keys --- */
+
+.ai-keys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ai-key-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ai-key-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font: var(--type-label);
+}
+
+.ai-key-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ai-key {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.ai-key-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: var(--type-label);
+}
+
+.ai-key-main .muted {
+  font: var(--type-caption);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-key-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.ai-key-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-app);
+}
+
+.ai-key-note {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.ai-journal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ai-journal .org-agents-head {
+  align-items: center;
+}
+
+.ai-log-ok {
+  color: var(--state-success);
+}
+
+.ai-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ai-log-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font: var(--type-caption);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ai-log-list li:last-child {
+  border-bottom: 0;
+}
+
+.ai-log-list li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ai-log-list .muted {
+  font: var(--type-caption);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.link-gate .rm-field {
+  min-width: 220px;
+}
+
+.link-gate input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
+}
+
+.link-gate .auth-error {
+  flex-basis: 100%;
+  text-align: center;
+}
+
+/* Save acknowledgement and offline state (ADR-084). */
+.save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.save-state.saved {
+  color: var(--state-success);
+}
+
+.save-state.pending {
+  color: var(--text-secondary);
+}
+
+.save-state.offline {
+  color: var(--state-warning);
+}
+
+.save-state.blocked {
+  color: var(--text-danger);
+}
+
+.offline-blocked {
+  position: fixed;
+  z-index: var(--z-bar);
+  left: 50%;
+  top: calc(var(--topbar-height) + var(--space-6));
+  transform: translateX(-50%);
+  max-width: min(680px, calc(100% - 32px));
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--warning-soft);
+  border-radius: var(--radius-md);
+  background: var(--warning-soft);
+  color: var(--state-warning);
+  font: var(--type-body);
+  text-align: center;
+}
+
+/* Export and backup dialog (ADR-071). */
+.export-dialog {
+  width: min(560px, 100%);
+}
+
+.export-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+}
+
+.export-section h3 {
+  margin: 0;
+  font: var(--type-subtitle);
+  color: var(--text-primary);
+}
+
+.export-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.export-choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.export-choice strong {
+  font: var(--type-label);
+  font-weight: 600;
+}
+
+.export-choice span {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.export-choice:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.export-choice.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.export-choice:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.export-note {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+.export-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.export-status.done {
+  color: var(--state-success);
+}
+
+.export-status.error {
+  color: var(--text-danger);
+}
+
+.export-progress {
+  height: 4px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.export-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--dur-1) var(--ease);
+}
+
+.export-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.export-import {
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.export-import-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

@@ -1,0 +1,27 @@
+{
+  "id": "capabilities/access",
+  "type": "explanation",
+  "status": "available",
+  "order": 20,
+  "title": {
+    "ru": "Доступ и роли",
+    "en": "Access and roles"
+  },
+  "summary": {
+    "ru": "Выдать роль человеку или команде, открыть ссылку, отозвать доступ — и понимать, кто что может.",
+    "en": "Grant a role to a person or a team, enable a link, revoke access — and know who can do what."
+  },
+  "related": [
+    "concepts/access",
+    "how-to/share",
+    "reference/roles",
+    "capabilities/export"
+  ],
+  "updated": "2026-11-06",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:848157bdd235581aa2fe4b5972c795b0a053b132c716087676760f03f75dd878",
+      "targetHash": "sha256:a7664be546723cca9271dcf06450432a3e238d82dba9d1078b28ae2e84a35585"
+    }
+  }
+}

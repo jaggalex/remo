@@ -1,0 +1,160 @@
+/* --------------------------------------------------------------- share --- */
+
+/* Apps: a declarative panel rendered by the host (ADR-098). Only tokens here — a
+   manifest never brings its own styling. */
+
+.app-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-hover);
+}
+
+.app-card h3 {
+  margin: 0;
+  font: var(--type-subtitle);
+}
+
+.app-text {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.app-answer {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--accent-hover);
+}
+
+.share-link-url {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.share-link-url .rm-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.share-invite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-app);
+}
+
+.share-invite p {
+  margin: 0;
+}
+
+/* Room access (audit M3, sketch D1). Tokens only: type from --type-*, spacing from
+   --space-*, controls are @remo/ui. Three type sizes: subtitle for a group, body for a
+   name and a sentence, caption for what explains it. */
+.share-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.share-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.share-group-title {
+  margin: 0;
+  font: var(--type-subtitle);
+  color: var(--text-primary);
+}
+
+.share-text {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.share-caption {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.share-invite-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.share-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.share-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.share-row > .share-subject,
+.share-row > .share-text {
+  flex: 1 1 auto;
+}
+
+.share-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.share-body .share-list {
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.share-body .share-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.share-body .share-list li.share-caption {
+  display: block;
+  border-top: 0;
+}
+
+.share-subject {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.share-name {
+  overflow: hidden;
+  font: var(--type-body);
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-role {
+  font: var(--type-body);
+  color: var(--text-secondary);
+}

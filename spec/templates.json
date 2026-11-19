@@ -1,0 +1,626 @@
+{
+ "generatedBy": "scripts/author-templates.mjs",
+ "locale": "en",
+ "templates": {
+  "user-story-map-basic": {
+   "title": "Story map",
+   "types": {
+    "text": 1,
+    "frame": 5,
+    "sticky_note": 15
+   },
+   "widgets": [
+    {
+     "z": 0,
+     "id": "w0001",
+     "type": "text",
+     "x": 0,
+     "y": -430,
+     "width": 900,
+     "height": 70,
+     "parentId": null,
+     "content": "Story map",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 1,
+     "id": "w0002",
+     "type": "frame",
+     "x": -600,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Persona",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 2,
+     "id": "w0003",
+     "type": "sticky_note",
+     "x": -600,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0002",
+     "content": "Who is this for?",
+     "fillColor": "#f3f1ec"
+    },
+    {
+     "z": 3,
+     "id": "w0004",
+     "type": "sticky_note",
+     "x": -600,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0002",
+     "content": "What do they care about?",
+     "fillColor": "#f3f1ec"
+    },
+    {
+     "z": 4,
+     "id": "w0005",
+     "type": "sticky_note",
+     "x": -600,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0002",
+     "content": "What is their context?",
+     "fillColor": "#f3f1ec"
+    },
+    {
+     "z": 5,
+     "id": "w0006",
+     "type": "frame",
+     "x": -300,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Goal",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 6,
+     "id": "w0007",
+     "type": "sticky_note",
+     "x": -300,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0006",
+     "content": "What outcome?",
+     "fillColor": "#ece2c8"
+    },
+    {
+     "z": 7,
+     "id": "w0008",
+     "type": "sticky_note",
+     "x": -300,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0006",
+     "content": "How do we measure it?",
+     "fillColor": "#ece2c8"
+    },
+    {
+     "z": 8,
+     "id": "w0009",
+     "type": "sticky_note",
+     "x": -300,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0006",
+     "content": "What is out of scope?",
+     "fillColor": "#ece2c8"
+    },
+    {
+     "z": 9,
+     "id": "w0010",
+     "type": "frame",
+     "x": 0,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Journey",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 10,
+     "id": "w0011",
+     "type": "sticky_note",
+     "x": 0,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0010",
+     "content": "First step",
+     "fillColor": "#e2d2c4"
+    },
+    {
+     "z": 11,
+     "id": "w0012",
+     "type": "sticky_note",
+     "x": 0,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0010",
+     "content": "Main step",
+     "fillColor": "#e2d2c4"
+    },
+    {
+     "z": 12,
+     "id": "w0013",
+     "type": "sticky_note",
+     "x": 0,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0010",
+     "content": "Last step",
+     "fillColor": "#e2d2c4"
+    },
+    {
+     "z": 13,
+     "id": "w0014",
+     "type": "frame",
+     "x": 300,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Stories",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 14,
+     "id": "w0015",
+     "type": "sticky_note",
+     "x": 300,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0014",
+     "content": "As a…",
+     "fillColor": "#e8d6d3"
+    },
+    {
+     "z": 15,
+     "id": "w0016",
+     "type": "sticky_note",
+     "x": 300,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0014",
+     "content": "I want…",
+     "fillColor": "#e8d6d3"
+    },
+    {
+     "z": 16,
+     "id": "w0017",
+     "type": "sticky_note",
+     "x": 300,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0014",
+     "content": "So that…",
+     "fillColor": "#e8d6d3"
+    },
+    {
+     "z": 17,
+     "id": "w0018",
+     "type": "frame",
+     "x": 600,
+     "y": 0,
+     "width": 260,
+     "height": 560,
+     "parentId": null,
+     "title": "Release",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 18,
+     "id": "w0019",
+     "type": "sticky_note",
+     "x": 600,
+     "y": -180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0018",
+     "content": "Now",
+     "fillColor": "#dedfd4"
+    },
+    {
+     "z": 19,
+     "id": "w0020",
+     "type": "sticky_note",
+     "x": 600,
+     "y": 0,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0018",
+     "content": "Next",
+     "fillColor": "#dedfd4"
+    },
+    {
+     "z": 20,
+     "id": "w0021",
+     "type": "sticky_note",
+     "x": 600,
+     "y": 180,
+     "width": 210,
+     "height": 150,
+     "parentId": "w0018",
+     "content": "Later",
+     "fillColor": "#dedfd4"
+    }
+   ]
+  },
+  "product-roadmap-basic": {
+   "title": "Roadmap",
+   "types": {
+    "text": 1,
+    "kanban": 1
+   },
+   "widgets": [
+    {
+     "z": 32,
+     "id": "w0033",
+     "type": "text",
+     "x": 0,
+     "y": -400,
+     "width": 900,
+     "height": 60,
+     "parentId": null,
+     "content": "Roadmap",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 33,
+     "id": "w0034",
+     "type": "kanban",
+     "x": 0,
+     "y": 0,
+     "width": 1200,
+     "height": 590,
+     "parentId": null
+    }
+   ]
+  },
+  "product-roadmap-basic-prefilled": {
+   "title": "Roadmap example",
+   "types": {
+    "text": 1,
+    "kanban": 1,
+    "card": 12
+   },
+   "widgets": [
+    {
+     "z": 34,
+     "id": "w0035",
+     "type": "text",
+     "x": 0,
+     "y": -400,
+     "width": 900,
+     "height": 60,
+     "parentId": null,
+     "content": "Roadmap",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 35,
+     "id": "w0036",
+     "type": "kanban",
+     "x": 0,
+     "y": 0,
+     "width": 1200,
+     "height": 590,
+     "parentId": null
+    },
+    {
+     "z": 36,
+     "id": "w0037",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Research the problem",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 37,
+     "id": "w0038",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Prototype the flow",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 38,
+     "id": "w0039",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Beta with one team",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 39,
+     "id": "w0040",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Public launch",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 40,
+     "id": "w0041",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Pricing and billing",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 41,
+     "id": "w0042",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Onboarding guide",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 42,
+     "id": "w0043",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Support playbook",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 43,
+     "id": "w0044",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Usage analytics",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 44,
+     "id": "w0045",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Mobile layout",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 45,
+     "id": "w0046",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Public API",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 46,
+     "id": "w0047",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Partner directory",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 47,
+     "id": "w0048",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0036",
+     "title": "Accessibility review",
+     "fillColor": "#ffffff"
+    }
+   ]
+  },
+  "kanban-framework": {
+   "title": "Kanban room",
+   "types": {
+    "frame": 2,
+    "text": 2,
+    "kanban": 1,
+    "card": 6
+   },
+   "widgets": [
+    {
+     "z": 21,
+     "id": "w0022",
+     "type": "frame",
+     "x": 0,
+     "y": 0,
+     "width": 1400,
+     "height": 700,
+     "parentId": null,
+     "title": "Room",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 22,
+     "id": "w0023",
+     "type": "frame",
+     "x": 1600,
+     "y": 0,
+     "width": 620,
+     "height": 700,
+     "parentId": null,
+     "title": "Notes",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 23,
+     "id": "w0024",
+     "type": "text",
+     "x": 0,
+     "y": -310,
+     "width": 800,
+     "height": 60,
+     "parentId": "w0022",
+     "content": "Kanban room",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 40
+    },
+    {
+     "z": 24,
+     "id": "w0025",
+     "type": "kanban",
+     "x": 0,
+     "y": 0,
+     "width": 1200,
+     "height": 480,
+     "parentId": "w0022"
+    },
+    {
+     "z": 25,
+     "id": "w0026",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Define the scope",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 26,
+     "id": "w0027",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Draft the design",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 27,
+     "id": "w0028",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Build the first slice",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 28,
+     "id": "w0029",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Review with the team",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 29,
+     "id": "w0030",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Ship to production",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 30,
+     "id": "w0031",
+     "type": "card",
+     "x": 0,
+     "y": 0,
+     "width": 250,
+     "height": 70,
+     "parentId": "w0025",
+     "title": "Run the retrospective",
+     "fillColor": "#ffffff"
+    },
+    {
+     "z": 31,
+     "id": "w0032",
+     "type": "text",
+     "x": 1600,
+     "y": 0,
+     "width": 320,
+     "height": 120,
+     "parentId": "w0023",
+     "content": "Add notes here",
+     "fillColor": "transparent",
+     "color": "#1a1a1a",
+     "fontSize": 20
+    }
+   ]
+  }
+ }
+}

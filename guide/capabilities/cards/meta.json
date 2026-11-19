@@ -1,0 +1,26 @@
+{
+  "id": "capabilities/cards",
+  "type": "explanation",
+  "status": "available",
+  "order": 27,
+  "title": {
+    "ru": "Карточка, теги и ссылки",
+    "en": "Cards, tags and links"
+  },
+  "summary": {
+    "ru": "Поля карточки, словарь тегов и ссылка на источник или другой объект.",
+    "en": "Card fields, a tag vocabulary and a link to a source or another object."
+  },
+  "related": [
+    "capabilities/frames-kanban",
+    "how-to/card-fields",
+    "how-to/tags-links"
+  ],
+  "updated": "2026-10-29",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:b31fb43a2be7149f11cede4c8db20c8445186e0849b393dabb96ef2d020bdd3f",
+      "targetHash": "sha256:d66fd270f80cd9f85f91fa968bc70c38da9d5201a39dd872a8397f5f83d8bd4b"
+    }
+  }
+}
