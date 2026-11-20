@@ -108,5 +108,5 @@ _Факты дерева, проверяются `pnpm state:check`; числа 
 | Темы помощи | 36 (RU + EN) |
 | Страницы портала | 69 |
 | Эталоны | 34 продуктовых + 12 DS |
-| Крупнейший файл | `apps/web/src/WorkspaceHome.tsx` — 799 строк |
+| Крупнейший файл | `apps/web/src/OrganisationDialog.tsx` — 799 строк |
 <!-- generated:state:end -->

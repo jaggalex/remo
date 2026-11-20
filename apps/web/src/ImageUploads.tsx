@@ -19,7 +19,8 @@ import {
   type IntakeUpload,
 } from "./imageIntake";
 import { ImageDropFrame } from "./BoardOverlays";
-import { plansUrl } from "./accessSnapshot";
+import { QuotaNotice } from "./QuotaNotice";
+import { requestBillingTab } from "./billingNav";
 
 /**
  * The canvas end of an upload: drop, paste, picker and the placeholders (§9.2, §9.3).
@@ -71,6 +72,8 @@ export function ImageIntake({
   const announced = useRef(new Map<string, number>());
   /** Objects this batch already selected: a drop of five selects all five, not the last. */
   const selectedBatch = useRef<string[]>([]);
+  /** The quota notice the author closed; a new refusal is a new id and speaks again. */
+  const [quotaDismissed, setQuotaDismissed] = useState<string | null>(null);
 
   const worldAt = useCallback(
     (clientX: number, clientY: number) => {
@@ -290,6 +293,12 @@ export function ImageIntake({
     start(list, viewCentre(), true);
   };
 
+  // One notice for the batch, not one per file: the cause is the same for all of them.
+  const quotaUpload = uploads.find(
+    (upload) =>
+      upload.status === "error" && (upload.reason === "quota" || upload.reason === "room_images"),
+  );
+
   return (
     <>
       <input
@@ -308,6 +317,22 @@ export function ImageIntake({
         }}
       />
       {dragging > 0 && !readOnly && <ImageDropFrame label={count("images", dragging)} />}
+      {quotaUpload && quotaDismissed !== quotaUpload.id && (
+        <QuotaNotice
+          title={
+            quotaUpload.reason === "room_images"
+              ? t("image.error.roomImages", { max: quotaUpload.max ?? 500 })
+              : t("image.error.quota")
+          }
+          text={
+            quotaUpload.reason === "room_images"
+              ? t("storage.quota.roomBody")
+              : t("storage.quota.body")
+          }
+          onSeePlans={() => requestBillingTab(null)}
+          onDismiss={() => setQuotaDismissed(quotaUpload.id)}
+        />
+      )}
       <div className="image-intake" aria-hidden={uploads.length === 0 ? true : undefined}>
         {uploads.map((upload) => {
           const style = boxStyle(upload, camera, viewport);
@@ -331,17 +356,6 @@ export function ImageIntake({
                   </p>
                   <p className="image-slot-reason">{reasonText(t, upload)}</p>
                   <div className="image-slot-actions">
-                    {upload.reason === "quota" && (
-                      <Button
-                        size="compact"
-                        variant="primary"
-                        onClick={() => {
-                          window.location.assign(plansUrl());
-                        }}
-                      >
-                        {t("image.seePlans")}
-                      </Button>
-                    )}
                     <Button size="compact" onClick={() => retryImageUpload(upload.id)}>
                       {t("image.upload.retry")}
                     </Button>

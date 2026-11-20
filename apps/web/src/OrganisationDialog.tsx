@@ -12,6 +12,7 @@ import {
 import { formatMoment, initials } from "./format";
 import { AgentsPanel } from "./AgentsPanel";
 import { BillingPanel } from "./BillingPanel";
+import { StoragePanel } from "./StoragePanel";
 import { planLimitFrom } from "./apiBilling";
 import { useOrgBilling } from "./useOrgBilling";
 import { PlanNotice } from "./PlanNotice";
@@ -72,8 +73,8 @@ export function OrganisationDialog({
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [invitations, setInvitations] = useState<OrgInvitation[]>([]);
   const [audit, setAudit] = useState<AuditEvent[]>([]);
-  const [tab, setTab] = useState<"people" | "audit" | "agents" | "billing">(initialTab);
-  const openedTab = useRef<"people" | "audit" | "agents" | "billing">(initialTab);
+  const [tab, setTab] = useState<"people" | "audit" | "agents" | "billing" | "storage">(initialTab);
+  const openedTab = useRef<"people" | "audit" | "agents" | "billing" | "storage">(initialTab);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -207,7 +208,7 @@ export function OrganisationDialog({
 
   // A `404` is the feature switch (`REMO_BILLING=off`); then the tab must not exist (§8).
   useEffect(() => {
-    if (billing.available === false && tab === "billing") setTab("people");
+    if (billing.available === false && (tab === "billing" || tab === "storage")) setTab("people");
   }, [billing.available, tab]);
 
   useEffect(() => {
@@ -487,7 +488,7 @@ export function OrganisationDialog({
               { id: "people", label: t("org.people") },
               { id: "agents", label: t("org.agents") },
               ...(seesAudit ? [{ id: "audit", label: t("org.audit") }] : []),
-              ...(billing.available ? [{ id: "billing", label: t("billing.tab") }] : []),
+              ...(billing.available ? [{ id: "storage", label: t("storage.tab") }, { id: "billing", label: t("billing.tab") }] : []),
             ]}
             value={tab}
             onChange={(id) => setTab(id as typeof tab)}
@@ -760,6 +761,8 @@ export function OrganisationDialog({
             onUnavailable={billing.unavailable}
           />
         )}
+
+        {!isGuest && tab === "storage" && orgId && <StoragePanel orgId={orgId} summary={billing.seed} isOrgAdmin={isOrgAdmin} onSeePlans={() => setTab("billing")} />}
 
         {!isGuest && tab === "audit" && (
           <ul className="org-audit">

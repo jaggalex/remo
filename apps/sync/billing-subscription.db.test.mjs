@@ -365,6 +365,12 @@ suite("billing subscription routes (ADR-247 §3.4, §6)", () => {
     expect(summary.status).toBe(200);
     // §3.2: a member sees the plan and the limits, never the payer's card.
     expect(summary.body.paymentMethod).toBeNull();
+    // The same summary carries storage (§7 of the image spec). The install-wide sum is
+    // restricted to one organisation by the policies `db:rls:enable` installs, which the
+    // test database does not run, so this proves the shape and the plan's ceiling; the
+    // exact number is pinned by the store double in `payment-providers.test.mjs`.
+    expect(summary.body.storage).toMatchObject({ limitBytes: null });
+    expect(Number.isInteger(summary.body.storage.usedBytes)).toBe(true);
     const adminView = await call(`/orgs/${org.id}/billing`, { cookie: adminCookie });
     expect(adminView.body.paymentMethod.last4).toBe("4242");
 

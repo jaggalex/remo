@@ -107,6 +107,9 @@ function orgStore({ member = true, account = { currency: "RUB" } } = {}) {
     async activeRoomCount() {
       return 2;
     },
+    async storedBytesForOrg() {
+      return 1_234;
+    },
     async setFrozenRooms() {},
     async billingAccount() {
       return account;
@@ -374,6 +377,9 @@ describe("GET /orgs/:id/billing", () => {
     expect(response.out.body).toMatchObject({
       plan: "free",
       usage: { seats: 3, rooms: 2 },
+      // Storage is a field of the same summary (§7): the bytes this organisation holds
+      // and its plan's ceiling. Free's `storageBytes` is still `null` in the catalogue.
+      storage: { usedBytes: 1_234, limitBytes: null },
       currency: "RUB",
       subscription: null,
       frozenRooms: [],

@@ -30,6 +30,7 @@ import { enSection } from "./i18n/en-section";
 import { enMail } from "./i18n/en-mail";
 import { enBilling } from "./i18n/en-billing";
 import { enImage } from "./i18n/en-image";
+import { enStorage } from "./i18n/en-storage";
 import { ruCore } from "./i18n/ru-core";
 import { ruCollab } from "./i18n/ru-collab";
 import { ruWork } from "./i18n/ru-work";
@@ -37,6 +38,7 @@ import { ruSection } from "./i18n/ru-section";
 import { ruMail } from "./i18n/ru-mail";
 import { ruBilling } from "./i18n/ru-billing";
 import { ruImage } from "./i18n/ru-image";
+import { ruStorage } from "./i18n/ru-storage";
 
 const en = {
   ...enCore,
@@ -46,6 +48,7 @@ const en = {
   ...enMail,
   ...enBilling,
   ...enImage,
+  ...enStorage,
 };
 
 type Key = keyof typeof en;
@@ -60,6 +63,7 @@ const ru: Record<Key, string> = {
   ...ruMail,
   ...ruBilling,
   ...ruImage,
+  ...ruStorage,
 };
 
 const STRINGS: Record<Lang, Record<Key, string>> = { en, ru };

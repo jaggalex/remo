@@ -280,9 +280,14 @@ export async function handleBilling({
     const entitlements = await entitlementsFor(store, orgId, { env });
     // §3.2: a member sees the plan and the limits; the card is the payer's data.
     const isAdmin = await store.hasOrgRole(orgId, session.user.id, "org_admin");
-    const [seats, rooms, subscription, account, savedMethod] = await Promise.all([
+    const [seats, rooms, storedBytes, subscription, account, savedMethod] = await Promise.all([
       store.seatUsage(orgId),
       store.activeRoomCount(orgId),
+      // §7 of the image spec: usage is the same row sum the upload's quota check reads,
+      // so the screen never needs a second route or a second definition of "stored".
+      // A store from before `files` answers zero, exactly like an organisation with no
+      // pictures, rather than failing the whole page.
+      typeof store.storedBytesForOrg === "function" ? store.storedBytesForOrg() : 0,
       store.liveSubscription(orgId),
       // The money module owns `billing_accounts`. The guard keeps this page readable
       // before that module is registered (an earlier stage or a test double): no account
@@ -310,6 +315,9 @@ export async function handleBilling({
       limits: entitlements.limits,
       features: [...entitlements.features],
       usage: { seats, rooms },
+      // `null` is "no limit", the same spelling the catalogue and the upload use; when
+      // billing is off the family is a 404 and this body never answers (`spec/images.md` §7).
+      storage: { usedBytes: storedBytes, limitBytes: entitlements.limits.storageBytes ?? null },
       subscription: subscriptionDto(subscription),
       currency: account?.currency ?? null,
       paymentMethod: isAdmin ? paymentMethodDto(savedMethod) : null,

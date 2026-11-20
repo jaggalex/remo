@@ -74,7 +74,7 @@ test("the plan tab shows the free plan and an empty price book", async ({ page }
   const panel = page.locator(".billing-panel");
   await expect(panel).toBeVisible();
   await expect(page.locator(".billing-facts")).toContainText("Free");
-  await expect(page.locator(".billing-usage")).toContainText("Rooms 0/5");
+  await expect(page.locator(".billing-usage").first()).toContainText("Rooms 0/5");
 
   // A fresh installation sells nothing yet (§2.1.1: a currency without a complete price
   // list is hidden). The catalogue says so instead of inventing a price.
@@ -160,7 +160,7 @@ test("Free keeps five rooms and names the sixth refusal", async ({ page }) => {
     "aria-selected",
     "true",
   );
-  await expect(page.locator(".billing-usage")).toContainText("Rooms 5/5");
+  await expect(page.locator(".billing-usage").first()).toContainText("Rooms 5/5");
 });
 
 test("a frozen room keeps its content and loses editing", async ({ page }) => {

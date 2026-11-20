@@ -63,6 +63,12 @@ export interface OrgBilling {
   limits: BillingLimits;
   features: string[];
   usage: BillingUsage;
+  /**
+   * The organisation's image storage (§7, `spec/images.md` §9.8): what the files hold and
+   * the plan's ceiling, `null` meaning "no limit". Read from the same summary so the
+   * storage tab and the plan tab never disagree about the same organisation.
+   */
+  storage: { usedBytes: number; limitBytes: number | null };
   subscription: BillingSubscription | null;
   currency: string | null;
   /** Rooms the plan cannot keep active. Empty until the chooser ships (server §6). */

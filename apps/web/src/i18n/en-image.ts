@@ -24,7 +24,6 @@ export const enImage = {
   "image.error.busy": "The server is busy, try again in a minute",
   "image.error.offline": "No connection",
   "image.error.unknown": "The image could not be uploaded",
-  "image.seePlans": "See plans",
 
   "image.replace": "Replace",
   "image.description": "Description",

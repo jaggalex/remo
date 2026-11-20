@@ -23,7 +23,6 @@ export const ruImage = {
   "image.error.busy": "Сервер занят, попробуйте через минуту",
   "image.error.offline": "Нет соединения",
   "image.error.unknown": "Не удалось загрузить изображение",
-  "image.seePlans": "Посмотреть тарифы",
 
   "image.replace": "Заменить",
   "image.description": "Описание",

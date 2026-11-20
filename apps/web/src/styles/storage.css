@@ -1,0 +1,90 @@
+/* Storage: the organisation's quota tab and the notice an upload shows when the quota
+   refuses it (ADR-249 §7, spec/images.md §9.4, §9.8). Colours and sizes are tokens. */
+
+.storage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.storage-summary {
+  margin: 0;
+  font: var(--type-subtitle);
+  color: var(--text-primary);
+}
+
+/* The bar is one track and one fill; the tone is a role, so a theme renames it once. */
+.storage-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+}
+
+.storage-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width var(--dur-2) var(--ease);
+}
+
+.storage-bar-fill.is-accent {
+  background: var(--accent);
+}
+
+.storage-bar-fill.is-warning {
+  background: var(--state-warning);
+}
+
+.storage-bar-fill.is-danger {
+  background: var(--danger);
+}
+
+.storage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ------------------------------------------------------------ quota notice --- */
+
+/* Above the canvas, not over the picture: the author still sees what failed and can
+   retry or remove it. The layer keeps clicks on the buttons only. */
+.quota-notice {
+  position: absolute;
+  z-index: var(--z-popover);
+  top: var(--space-4);
+  left: 50%;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: min(360px, calc(100% - var(--space-8)));
+  padding: var(--space-3);
+  transform: translateX(-50%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-pop);
+}
+
+.quota-notice-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.quota-notice-text strong {
+  font: var(--type-card-title);
+  color: var(--text-primary);
+}
+
+.quota-notice-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+}
