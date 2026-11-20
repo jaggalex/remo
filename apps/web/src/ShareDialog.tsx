@@ -3,6 +3,7 @@ import { Banner, Button, Dialog, Input, Select } from "@remo/ui";
 import { api, type Grant, type OrgMember } from "./api";
 import { formatMoment } from "./format";
 import { useI18n } from "./i18n";
+import { EmailVerificationNeeded, InviteSent } from "./InviteFeedback";
 import { HelpLink } from "./help/HelpLink";
 import { roleSourceLine } from "./roleSource";
 
@@ -69,6 +70,9 @@ export function ShareDialog({
   const [copied, setCopied] = useState(false);
   /** An invitation link, when the person has no account yet. */
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  /** The address a letter was queued for, and the refusal that has a direct fix. */
+  const [inviteSentTo, setInviteSentTo] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
   /** Ownership handover: choose, then confirm. */
   const [transferTo, setTransferTo] = useState("");
   const [confirmTransfer, setConfirmTransfer] = useState(false);
@@ -108,6 +112,8 @@ export function ShareDialog({
     setConfirmTransfer(false);
     setConfirmDraftSharing(false);
     setInviteUrl(null);
+    setInviteSentTo(null);
+    setNeedsVerification(false);
     setLinkError(null);
     setPasswordError(null);
     setExpiryError(null);
@@ -210,18 +216,32 @@ export function ShareDialog({
               event.preventDefault();
               if (!email.trim()) return;
               void run(async () => {
+                setInviteSentTo(null);
+                setNeedsVerification(false);
                 try {
                   await api.addGrant(boardId, { email: email.trim(), role });
                   setEmail("");
                   setInviteUrl(null);
                 } catch (failure) {
-                  // No account yet: an invitation link is the honest answer. The inviter
-                  // sends it themselves until the mail service exists.
+                  // No account yet: an invitation link is the honest answer, and with mail
+                  // on the link is also sent to the person (ADR-246).
                   if ((failure as { code?: string }).code === "USER_NOT_FOUND") {
-                    const invite = await api.inviteGuest(boardId, { email: email.trim(), role });
-                    setInviteUrl(invite.url);
-                    setEmail("");
-                    return;
+                    try {
+                      const invite = (await api.inviteGuest(boardId, { email: email.trim(), role })) as {
+                        url: string;
+                        emailQueued?: boolean;
+                      };
+                      setInviteUrl(invite.url);
+                      if (invite.emailQueued) setInviteSentTo(email.trim());
+                      setEmail("");
+                      return;
+                    } catch (refusal) {
+                      if ((refusal as { code?: string }).code === "EMAIL_NOT_VERIFIED") {
+                        setNeedsVerification(true);
+                        return;
+                      }
+                      throw refusal;
+                    }
                   }
                   throw failure;
                 }
@@ -247,6 +267,9 @@ export function ShareDialog({
           </form>
           <p className="share-caption">{t("share.acceptNote")}</p>
           {roleLine && <p className="share-caption">{roleLine}</p>}
+
+          {needsVerification && <EmailVerificationNeeded />}
+          {inviteSentTo && <InviteSent email={inviteSentTo} />}
 
           {inviteUrl && (
             <div className="share-copy">

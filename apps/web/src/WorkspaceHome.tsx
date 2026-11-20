@@ -10,6 +10,7 @@ import {
 } from "./boardDirectory";
 import { AuthDialog } from "./AuthDialog";
 import { BoardDeleteDialog } from "./BoardDeleteDialog";
+import { HomeMail, resetVerificationBanner } from "./HomeMail";
 import { InviteDialog } from "./InviteDialog";
 import { NewBoardDialog } from "./NewBoardDialog";
 import { TEMPLATE_LABEL_KEY } from "./templateLabels";
@@ -19,6 +20,7 @@ import { AccountMenu } from "./topbar/AccountMenu";
 import { InterfaceToggles } from "./topbar/InterfaceToggles";
 import { formatDate, formatDateTime } from "./format";
 import { loadIdentity, type Identity } from "./identity";
+import { clearMailParams, showForgot, type MailLinks } from "./mailLinks";
 import { useBoardAccess } from "./useBoardAccess";
 import { useAccountPreferences } from "./useAccountPreferences";
 import { useCursorIdentity } from "./useCursorIdentity";
@@ -85,7 +87,13 @@ function pageNumbers(current: number, total: number): Array<number | null> {
  * Every action is a server decision; the screen only offers what the read model says
  * the person may do.
  */
-export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
+export function WorkspaceHome({
+  inviteToken,
+  mail,
+}: {
+  inviteToken: string | null;
+  mail: MailLinks;
+}) {
   const { t, lang, setLang } = useI18n();
   const { theme, setTheme } = useTheme();
   const { me, setMe, orgs, refreshOrgs, sessionReady } = useBoardAccess(null);
@@ -113,6 +121,8 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
   const [orgOpen, setOrgOpen] = useState(false);
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(mail.forgot && !mail.resetToken);
   const [creating, setCreating] = useState(false);
   const [templatePreset, setTemplatePreset] = useState<"empty" | TemplateKey>("empty");
   const startNew = (template: "empty" | TemplateKey = "empty") => {
@@ -290,6 +300,29 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
     setStatus("idle");
   };
 
+  // Password recovery is a home flow: the sign-in dialog hands over to it and the address
+  // follows (`?forgot=1`), so the form survives a reload and can be linked from a letter.
+  const openForgot = () => {
+    setAuthOpen(false);
+    setAuthNotice(null);
+    setForgotOpen(true);
+    showForgot();
+  };
+
+  const closeForgot = () => {
+    setForgotOpen(false);
+    clearMailParams();
+  };
+
+  const openMailLogin = (notice: string) => {
+    setAuthNotice(notice);
+    setAuthOpen(true);
+  };
+
+  const mailVerified = useCallback(() => {
+    setMe((current) => (current ? { ...current, emailVerified: true } : current));
+  }, [setMe]);
+
   const authorOf = (board: BoardTile) => {
     if (!board.createdByName) return t("home.unknownAuthor");
     return board.createdByHandle
@@ -336,6 +369,7 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
             self={undefined}
             color={identity.color}
             signedIn={Boolean(me)}
+            emailVerified={me?.emailVerified}
             roleLine={null}
             identityName={identity.name}
             onRenameSelf={renameSelf}
@@ -358,6 +392,16 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
           <InterfaceToggles theme={theme} onTheme={setTheme} />
         </div>
       </header>
+
+      <HomeMail
+        me={me}
+        links={mail}
+        forgotOpen={forgotOpen}
+        onForgotClose={closeForgot}
+        onNeedLink={openForgot}
+        onVerified={mailVerified}
+        onOpenLogin={openMailLogin}
+      />
 
       {!sessionReady ? (
         <p className="home-state">{t("home.loading")}</p>
@@ -717,9 +761,17 @@ export function WorkspaceHome({ inviteToken }: { inviteToken: string | null }) {
       )}
       <AuthDialog
         open={authOpen}
-        onClose={() => setAuthOpen(false)}
+        onClose={() => {
+          setAuthOpen(false);
+          setAuthNotice(null);
+        }}
+        onForgot={openForgot}
+        notice={authNotice}
         onSignedIn={(user) => {
+          resetVerificationBanner(user.id);
           setMe(user);
+          setAuthNotice(null);
+          closeForgot();
           void refreshOrgs();
         }}
       />

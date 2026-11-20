@@ -1,0 +1,25 @@
+{
+  "id": "account.email",
+  "type": "how-to",
+  "title": {
+    "ru": "Почта и подтверждение адреса",
+    "en": "Email and address confirmation"
+  },
+  "summary": {
+    "ru": "Как подтвердить адрес, запросить новое письмо и задать пароль по ссылке; что делать без почты.",
+    "en": "How to confirm your address, request another letter and set a password from a link; what to do without mail."
+  },
+  "related": [
+    "account.profile",
+    "org.manage"
+  ],
+  "verifiedAgainst": "2026-11-20",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:b9bba65a62db1fea31c55d7da03dba663e837225e72a51387be7b4b044d76d2d",
+      "targetHash": "sha256:1fe9a08fc6e3a39843765607e251750a14f6f6356dde4fe90a5d8dec0db1cba5"
+    }
+  }
+}

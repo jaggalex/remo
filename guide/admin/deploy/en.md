@@ -34,6 +34,22 @@ install -d -o remo -g remo /srv/remo
 7. nginx: copy `deploy/nginx-remo.conf`, replace the domain, enable the site, `nginx -t && systemctl reload nginx`, then `certbot --nginx -d <domain>`.
 8. Documentation portal: `pnpm guide:build` and `rsync -a --delete docs-site/ /srv/remo/docs-site/`; nginx serves it at `/guide/`.
 
+## Mail
+
+`REMO_MAIL_DRIVER=disabled` by default: password reset and address confirmation are not shown, and no letter leaves the server. This is the safe state — turn mail on when the domain is ready.
+
+1. Send from a separate subdomain, such as `mail.example.com`, not the main one: mail reputation stays apart from the application. The address in `REMO_MAIL_FROM` must sit on that subdomain.
+2. Add the domain at the provider (Resend or an SMTP service) and create the DNS records:
+   - SPF — TXT on `mail.example.com`: `v=spf1 include:<provider> -all`;
+   - DKIM — TXT; the provider gives the name and value;
+   - DMARC — TXT on `_dmarc.mail.example.com`: `v=DMARC1; p=none; rua=mailto:<reports mailbox>`. Start with `p=none`: the policy only observes and does not reject mail while you read the reports.
+3. Set `REMO_MAIL_DRIVER`, `REMO_MAIL_FROM` and the key of the chosen driver: `REMO_RESEND_API_KEY` for `resend` or `REMO_SMTP_URL` for `smtp`. SMTP accepts ports 465 and 587 only. `REMO_APP_ORIGIN` must be `https` without a trailing `/`.
+4. Restart the service. It refuses to start on an incomplete configuration: better than silently losing reset links.
+5. Check delivery: `pnpm mail:test --to <your address>`. The letter goes through the real queue; the command prints the id of the sent letter or the reason it failed.
+6. Work through failures: `pnpm mail:dead` lists the latest 50 letters that could not be sent. `pnpm mail:dead --retry <id>` puts a letter back in the queue only when its link is still intact; after an ordinary failure the link is cleared, and the person must request a new letter.
+
+`console` is refused in production: it prints links to the service log.
+
 ## Check
 
 ```sh
@@ -43,6 +59,8 @@ curl -sI https://<domain>/guide/              # 200, documentation
 ```
 
 In the browser: sign-up, a room, a second tab in a private window, dragging a sticky note. In the Network panel the socket must show `101 Switching Protocols`.
+
+If mail is on, send yourself a letter with `pnpm mail:test --to <your address>` and open the link in it. `pnpm mail:dead` lists the letters that could not be sent.
 
 ## Limitations
 

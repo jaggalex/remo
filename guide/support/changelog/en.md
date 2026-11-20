@@ -4,6 +4,17 @@ The schema version is the number in the `schema_meta` table. The service applies
 at start and does not touch the database if the version is already current. Product changes
 ship together with a schema version; there is no separate "documentation release".
 
+## Version 0.5.0
+
+Version 0.5.0 shipped on 20 November 2026. It added account mail: password reset, address confirmation and invitations.
+
+- **Password reset.** The sign-in form has **Forgot password?**; the letter carries a single-use link that works for 60 minutes. After the change every session ends and a notice goes to the address.
+- **Address confirmation.** A letter with a 24-hour link arrives after registration. The address can be confirmed in any browser, and the letter can be requested again.
+- **Invitations by mail.** An invitation to an organisation or a room goes to the address; the link can still be copied. Until the address is confirmed, invitations are refused unless the administrator turned the requirement off.
+- **Without mail.** `disabled` is the safe default: mail forms are not shown, and work and link invitations remain.
+
+There is no billing or image work in this version.
+
 ## Schema versions
 
 | Version | What it added |
@@ -24,6 +35,7 @@ ship together with a schema version; there is no separate "documentation release
 | 17 | `org_id` on the tables tied to a room: existing rows filled from their rooms, and a trigger for new rows |
 | 18 | organisation row-level isolation (RLS): policies on every table that holds tenant data, the `remo_app` application role, functions for the organisation lookup, agent tasks and the event queue |
 | 20 | the room agent: `board_agents`, `agent_threads`, `agent_thread_messages`, `agent_tasks.thread_id` |
+| 21 | the mail queue `mail_outbox`, account tokens `auth_tokens`, address confirmation `users.email_verified_at` |
 
 Version 19 was never released. Versions 1–3 are the early line: rooms, access and the command journal. Databases created
 earlier are upgraded by the same `schema.sql` at start.

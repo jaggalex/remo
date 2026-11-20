@@ -184,3 +184,7 @@ export const WORKERS = run.workers;
 
 export const OUTPUT_DIR = run.outputDir;
 export const REPORT_DIR = run.reportDir;
+/** The console driver appends one JSON line per letter here; scenarios read it back. */
+export const MAIL_FILE = `${run.outputDir}/mail.jsonl`;
+/** A fixed, non-secret KEK: the run seals mail links in its own throwaway database. */
+export const E2E_KEK = "CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=";

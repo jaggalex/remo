@@ -36,6 +36,24 @@ REMO_KEK_ID=v1
 
 Without `REMO_KEK` a provider key cannot be added and a webhook cannot be set up: the server answers `WEBHOOK_LOCKED` or `AI_CREDENTIALS_LOCKED`. Secrets already stored are not decrypted if the key is lost.
 
+## Mail
+
+| Variable | What it sets | Without it |
+|---|---|---|
+| `REMO_MAIL_DRIVER` | what sends letters: `disabled`, `console`, `smtp` or `resend` | `disabled` in production; outside production `console` when `REMO_KEK` is set, otherwise `disabled` |
+| `REMO_MAIL_FROM` | sender address, for example `remo <no-reply@mail.example.com>` | the service does not start with `smtp` or `resend` |
+| `REMO_MAIL_REPLY_TO` | address that receives replies | replies go to the address in `REMO_MAIL_FROM` |
+| `REMO_MAIL_PRODUCT_NAME` | product name in subjects and letter bodies | `remo` |
+| `REMO_RESEND_API_KEY` | Resend key with send permission only | the service does not start with `resend` |
+| `REMO_SMTP_URL` | `smtps://user:password@host:465` or `smtp://user:password@host:587` | the service does not start with `smtp` |
+| `REMO_MAIL_CONSOLE_FILE` | file the `console` driver appends each letter to, one JSON line per letter | letters are printed to stdout only |
+| `REMO_MAIL_BATCH` | letters per sending pass, 1 to 100 | 10 |
+| `REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES` | `0` lets an unverified address invite people | `1`: only a person with a confirmed address can invite |
+
+`console` prints the link to stdout and is refused when `NODE_ENV=production`. `smtp` accepts only ports 465 (immediate TLS) and 587 (STARTTLS): any other port or a query parameter is refused at start. Mail works with Postgres only; with disk storage the driver is always `disabled`.
+
+With `disabled`, the “Forgot password” form and address confirmation are not shown, while an invitation still produces a link you can copy. Links in letters are built only from `REMO_APP_ORIGIN`: in production it is required, must be `https` and must not end with `/`.
+
 ## Metrics
 
 | Variable | What it sets |

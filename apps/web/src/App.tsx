@@ -1,6 +1,7 @@
 import { BoardApp } from "./BoardApp";
 import { WorkspaceHome } from "./WorkspaceHome";
 import { roomFromUrl } from "./identity";
+import { readMailLinks } from "./mailLinks";
 import { Contained } from "./ErrorBoundary";
 
 /**
@@ -8,14 +9,20 @@ import { Contained } from "./ErrorBoundary";
  *
  * `?room=` is a board; no room is the organisation home. Keeping the choice at the root
  * means the board never mounts on the home, and the home never opens a hidden room.
+ * Mail links (`?forgot`, `?reset`, `?verify`) also belong to the home; a room still wins.
  */
 export function App() {
   // The last line of defence (ADR-171): a render failure anywhere below shows a way out
   // instead of a blank page. Panels inside the room have their own, narrower boundary.
   const inviteToken = new URLSearchParams(window.location.search).get("invite");
+  const mail = readMailLinks();
   return (
     <Contained scope="room">
-      {!inviteToken && roomFromUrl() ? <BoardApp /> : <WorkspaceHome inviteToken={inviteToken} />}
+      {!inviteToken && roomFromUrl() ? (
+        <BoardApp />
+      ) : (
+        <WorkspaceHome inviteToken={inviteToken} mail={mail} />
+      )}
     </Contained>
   );
 }

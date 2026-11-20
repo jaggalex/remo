@@ -2,6 +2,7 @@ import { Avatar, Button, Input, Popover } from "@remo/ui";
 import { useEffect, useState } from "react";
 import type { Presence } from "@remo/doc";
 import { api, ApiError, type SessionUser } from "../api";
+import { authCapabilities, resendVerification } from "../apiMail";
 import { useI18n } from "../i18n";
 import { ABOUT_LABEL } from "../about";
 import { useMenuFocus } from "../useMenuFocus";
@@ -23,6 +24,7 @@ export function AccountMenu({
   self,
   color,
   signedIn,
+  emailVerified,
   roleLine,
   identityName,
   onRenameSelf,
@@ -43,6 +45,8 @@ export function AccountMenu({
   /** The cursor colour: the face and the pointer of one person must match. */
   color: string;
   signedIn: boolean;
+  /** `false` shows the "Confirm your email" row when the server can send mail. */
+  emailVerified?: boolean;
   roleLine: string | null;
   identityName: string;
   onRenameSelf: (value: string) => void;
@@ -63,6 +67,41 @@ export function AccountMenu({
 
   useEffect(() => setNameDraft(name), [name]);
   useEffect(() => setHandleDraft(handle), [handle]);
+
+  const [mailEnabled, setMailEnabled] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "busy" | "sent" | "already" | "error" | "rate">("idle");
+
+  // The row exists only when the address is unconfirmed and the installation can write.
+  useEffect(() => {
+    if (!open) return;
+    setResendState("idle");
+    if (!signedIn || emailVerified !== false) {
+      setMailEnabled(false);
+      return;
+    }
+    let alive = true;
+    authCapabilities()
+      .then((result) => {
+        if (alive) setMailEnabled(result.mail);
+      })
+      .catch(() => {
+        if (alive) setMailEnabled(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [open, signedIn, emailVerified]);
+
+  const resendVerificationLetter = async () => {
+    setResendState("busy");
+    try {
+      const result = await resendVerification();
+      setResendState(result.alreadyVerified ? "already" : "sent");
+    } catch (failure) {
+      const code = failure instanceof ApiError ? failure.code : "";
+      setResendState(code === "RATE_LIMITED" ? "rate" : "error");
+    }
+  };
 
   const saveName = async () => {
     const next = nameDraft.trim();
@@ -117,6 +156,26 @@ export function AccountMenu({
             </div>
           ) : (
             <p className="account-role">{t("auth.loginHint")}</p>
+          )}
+
+          {signedIn && emailVerified === false && mailEnabled && (
+            <div className="account-field">
+              <span className="account-role">{t("mail.verifyTitle")}</span>
+              <span className="auth-hint">{t("mail.verifyBody")}</span>
+              <Button
+                size="compact"
+                variant="secondary"
+                loading={resendState === "busy"}
+                disabled={resendState === "sent" || resendState === "already"}
+                onClick={() => void resendVerificationLetter()}
+              >
+                {t("mail.resend")}
+              </Button>
+              {resendState === "sent" && <span className="auth-hint">{t("mail.resendSent")}</span>}
+              {resendState === "already" && <span className="auth-hint">{t("mail.resendAlready")}</span>}
+              {resendState === "rate" && <span className="auth-error">{t("mail.resendRateLimited")}</span>}
+              {resendState === "error" && <span className="auth-error">{t("mail.resendFailed")}</span>}
+            </div>
           )}
 
           {signedIn && (

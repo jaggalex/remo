@@ -65,6 +65,19 @@
 | Signature window | 5 minutes |
 | Subscriptions per organisation | 1 |
 
+## Mail
+
+| What | Value |
+|---|---|
+| Reset requests from one IP | 10 per hour |
+| Reset requests for one address | 3 per hour |
+| Attempts to set a new password from one IP | 20 per 15 minutes |
+| Repeated confirmation letters to one account | 3 per hour |
+| Reset link lifetime | 60 minutes; single use |
+| Address confirmation link lifetime | 24 hours; single use |
+| Invitation link lifetime | 30 days |
+| Sending attempts per letter | 6; pauses 5 s, 15 s, 1 min, 5 min, 15 min, 30 min |
+
 ## Facilitation
 
 | What | Value |
@@ -100,6 +113,11 @@
 | A coordinate outside ±1 000 000 | a critical warning; the Apply button is disabled |
 | Voting quota | the extra vote is refused; votes already cast stay |
 | 8 webhook attempts | the event moves to the DLQ; only a manual replay remains |
+| 10 reset requests from an IP or 3 for an address | the answer is still `202`, but no letter is created |
+| 20 new-password attempts from an IP | `429` with `Retry-After` of 15 minutes |
+| 3 repeated confirmation letters per hour | `429` with `Retry-After` of one hour |
+| An expired or used reset link | `400 TOKEN_EXPIRED` or `400 TOKEN_INVALID`; a new link is needed |
+| A letter not sent after 6 attempts | the row is dead and the link is cleared; a new letter is needed |
 | Token lifetime over 365 days | issuing is refused with `BAD_EXPIRY` |
 
 ## Where to go next

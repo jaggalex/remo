@@ -8,8 +8,8 @@
     "en": "Settings and environment variables"
   },
   "summary": {
-    "ru": "Переменные сервера: база, ключи, метрики, агенты, вебхук и что будет, если их не задать.",
-    "en": "Server variables: database, keys, metrics, agents, webhook, and what happens when they are unset."
+    "ru": "Переменные сервера: база, ключи, почта, метрики, агенты, вебхук и что будет, если их не задать.",
+    "en": "Server variables: database, keys, mail, metrics, agents, webhook, and what happens when they are unset."
   },
   "related": [
     "reference/limits",
@@ -17,11 +17,11 @@
     "capabilities/events",
     "concepts/sync"
   ],
-  "updated": "2026-11-06",
+  "updated": "2026-11-20",
   "translations": {
     "en": {
-      "sourceHash": "sha256:42e9a2f58035056cad54987ba685ed4a98abda41b1749db8c13f1a3e5cb09223",
-      "targetHash": "sha256:e397229b9429485608810ba83ec14ae53b0205aca3d02a1eda676a3f126195e2"
+      "sourceHash": "sha256:68309dc60e37aeeebcf8a3c95b818b0e0386bb6b32ea96e7f654726bb9c6e170",
+      "targetHash": "sha256:a58a9d73b93d6c43ab00bd3de5dddfad05706bcbd4adcc5dc127c68b14d19a26"
     }
   }
 }

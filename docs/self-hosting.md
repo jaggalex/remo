@@ -35,11 +35,14 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_ORG_WS_RATE_BYTES`, `REMO_ORG_WS_BURST_BYTES` | optional write budget shared by an organisation's sockets (defaults: 2 MiB/s, 64 MiB burst) |
 | `REMO_ROOM_MAX_BYTES`, `REMO_ROOM_FULL_FRAME_BYTES` | optional room size ceiling and the largest edit a full room still takes (defaults: 64 MiB, 16 KiB) |
 | `REMO_ROOM_MAX_OBJECTS` | optional object ceiling for one room (default: 20 000; ADR-176) |
-| `REMO_MAIL_DRIVER` | `disabled` (the default), `console` (development only), `smtp` or `resend`; a working driver is what ADR-246 needs, and until the recovery routes ship only `pnpm mail:test` sends |
+| `REMO_MAIL_DRIVER` | `disabled` (the default), `console` (development only), `smtp` or `resend`; the driver sends password reset, address confirmation and invitation letters |
 | `REMO_MAIL_FROM`, `REMO_MAIL_REPLY_TO`, `REMO_MAIL_PRODUCT_NAME` | sender identity; the address must sit on a domain you send from |
 | `REMO_RESEND_API_KEY` | send-only key for the `resend` driver |
 | `REMO_SMTP_URL` | `smtps://…` or `smtp://…:587`, where STARTTLS is required |
 | `REMO_MAIL_BATCH`, `REMO_MAIL_CONSOLE_FILE` | optional drain batch size and the file the console driver appends to (end-to-end tests read it) |
+| `REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES` | set to `0` to let an unverified address invite people; `1` by default |
+
+Mail needs PostgreSQL for the outbox, `REMO_KEK` to seal links and an `https` `REMO_APP_ORIGIN` in production. With disk storage the driver is always `disabled`.
 
 `REMO_KEK` is not stored in PostgreSQL. Losing it makes saved provider keys unreadable.
 Keep a copy outside the server.

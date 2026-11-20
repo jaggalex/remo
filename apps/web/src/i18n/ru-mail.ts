@@ -1,0 +1,40 @@
+/**
+ * RU strings — the mail-backed account flows (ADR-246, `spec/mail.md` §7).
+ *
+ * The source language for these screens; EN mirrors it key for key.
+ */
+export const ruMail = {
+  "auth.forgot": "Забыли пароль?",
+  "auth.adminReset": "Восстановить пароль может администратор сервера.",
+  "mail.forgotTitle": "Сброс пароля",
+  "mail.forgotBody": "Укажите почту аккаунта — мы отправим ссылку для нового пароля.",
+  "mail.sendLink": "Отправить ссылку",
+  "mail.close": "Закрыть",
+  "mail.savePassword": "Сохранить пароль",
+  "mail.sent": "Если аккаунт с этим адресом есть, мы отправили письмо со ссылкой. Проверьте папку «Спам».",
+  "mail.networkError": "Нет связи с сервером. Проверьте подключение и попробуйте ещё раз.",
+  "mail.rateLimited": "Слишком много попыток. Попробуйте позже.",
+  "mail.resetTitle": "Новый пароль",
+  "mail.resetBody": "Придумайте новый пароль для аккаунта.",
+  "mail.newPassword": "Новый пароль",
+  "mail.show": "Показать",
+  "mail.hide": "Скрыть",
+  "mail.resetDone": "Пароль изменён. Войдите с новым паролем",
+  "mail.tokenInvalid": "Ссылка недействительна: её уже использовали или она не существует.",
+  "mail.tokenExpired": "Срок действия ссылки истёк.",
+  "mail.requestNewLink": "Запросить новую ссылку",
+  "mail.verifyOk": "Почта подтверждена",
+  "mail.verifyInvalid": "Ссылка подтверждения недействительна.",
+  "mail.verifyExpired": "Срок действия ссылки подтверждения истёк.",
+  "mail.verifyChanged": "Адрес на этой ссылке уже не ваш.",
+  "mail.verifyFailed": "Не удалось подтвердить почту. Попробуйте ещё раз.",
+  "mail.verifyTitle": "Подтвердите почту",
+  "mail.verifyBody": "Подтверждённый адрес позволит приглашать людей и получать письма об аккаунте.",
+  "mail.resend": "Отправить письмо ещё раз",
+  "mail.resendSent": "Письмо отправлено. Проверьте почту.",
+  "mail.resendAlready": "Почта уже подтверждена.",
+  "mail.resendRateLimited": "Письма отправляются не чаще трёх раз в час. Попробуйте позже.",
+  "mail.resendFailed": "Не удалось отправить письмо. Попробуйте ещё раз.",
+  "mail.inviteSent": "Приглашение отправлено на {email}",
+  "mail.inviteNeedsVerified": "Чтобы приглашать людей, подтвердите почту",
+};

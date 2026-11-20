@@ -589,16 +589,21 @@
       162,
       163,
       164,
-      167
+      167,
+      246
     ],
     "code": [
       "apps/web/src/topbar/AccountMenu.tsx",
       "apps/web/src/OrganisationDialog.tsx",
-      "apps/web/src/OrganisationTeams.tsx"
+      "apps/web/src/OrganisationTeams.tsx",
+      "apps/web/src/ForgotPasswordDialog.tsx",
+      "apps/web/src/ResetPasswordDialog.tsx",
+      "apps/sync/iam-api-recovery.mjs"
     ],
     "tests": [
       "e2e/auth-board.spec.ts",
-      "e2e/organisation.spec.ts"
+      "e2e/organisation.spec.ts",
+      "apps/sync/iam-recovery.db.test.mjs"
     ]
   }
 }

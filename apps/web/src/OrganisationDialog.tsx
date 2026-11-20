@@ -14,6 +14,7 @@ import { AgentsPanel } from "./AgentsPanel";
 import { OrganisationTeams } from "./OrganisationTeams";
 import { Button, Checkbox, Dialog, Input, Tabs } from "@remo/ui";
 import { useI18n } from "./i18n";
+import { EmailVerificationNeeded, InviteSent } from "./InviteFeedback";
 import { HelpLink } from "./help/HelpLink";
 import { ABOUT, ABOUT_LABEL } from "./about";
 
@@ -74,6 +75,8 @@ export function OrganisationDialog({
   const [error, setError] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteSentTo, setInviteSentTo] = useState<string | null>(null);
+  const [inviteNeedsVerification, setInviteNeedsVerification] = useState(false);
   const [copied, setCopied] = useState(false);
   /** Which person's role checkboxes are open. */
   const [editingRoles, setEditingRoles] = useState<string | null>(null);
@@ -103,6 +106,8 @@ export function OrganisationDialog({
           return t("org.alreadyMember");
         case "BAD_EMAIL":
           return t("org.badEmail");
+        case "EMAIL_NOT_VERIFIED":
+          return t("mail.inviteNeedsVerified");
         case "TARGET_NOT_MEMBER":
           return t("org.targetNotMember");
         case "RESOURCE_NOT_AVAILABLE":
@@ -178,6 +183,8 @@ export function OrganisationDialog({
     if (!open || !orgId) return;
     // A different organisation starts clean: a link or a refusal belongs to one of them.
     setInviteUrl(null);
+    setInviteSentTo(null);
+    setInviteNeedsVerification(false);
     setCopied(false);
     setEditingRoles(null);
     setConfirmRemove(null);
@@ -489,10 +496,24 @@ export function OrganisationDialog({
                   event.preventDefault();
                   if (!orgId || !inviteEmail.trim()) return;
                   void run(async () => {
-                    const created = await api.inviteMember(orgId, inviteEmail.trim());
-                    setInviteUrl(created.url);
-                    setInviteEmail("");
-                    setCopied(false);
+                    setInviteSentTo(null);
+                    setInviteNeedsVerification(false);
+                    try {
+                      const created = (await api.inviteMember(orgId, inviteEmail.trim())) as {
+                        url: string;
+                        emailQueued?: boolean;
+                      };
+                      setInviteUrl(created.url);
+                      if (created.emailQueued) setInviteSentTo(inviteEmail.trim());
+                      setInviteEmail("");
+                      setCopied(false);
+                    } catch (failure) {
+                      if ((failure as { code?: string }).code === "EMAIL_NOT_VERIFIED") {
+                        setInviteNeedsVerification(true);
+                        return;
+                      }
+                      throw failure;
+                    }
                   });
                 }}
               >
@@ -510,6 +531,9 @@ export function OrganisationDialog({
                 </Button>
               </form>
             )}
+
+            {inviteNeedsVerification && <EmailVerificationNeeded />}
+            {inviteSentTo && <InviteSent email={inviteSentTo} />}
 
             {inviteUrl && (
               <div className="share-invite">

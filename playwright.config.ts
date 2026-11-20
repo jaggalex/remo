@@ -2,6 +2,8 @@ import { defineConfig } from "@playwright/test";
 import {
   DATABASE_NAME,
   E2E_DATABASE_URL,
+  E2E_KEK,
+  MAIL_FILE,
   OUTPUT_DIR,
   PROXY_PORT,
   REPORT_DIR,
@@ -74,6 +76,15 @@ export default defineConfig({
         // The scenarios register a fresh account per test from one address.
         REMO_LOGIN_IP_LIMIT: "10000",
         REMO_REGISTER_LIMIT: "10000",
+        // Mail runs through the console driver and a file the scenarios read back
+        // (ADR-246). `console` is the only driver that prints the link on purpose.
+        REMO_MAIL_DRIVER: "console",
+        REMO_MAIL_FROM: "remo <no-reply@mail.example.test>",
+        REMO_MAIL_CONSOLE_FILE: MAIL_FILE,
+        REMO_APP_ORIGIN: `http://localhost:${WEB_PORT}`,
+        REMO_KEK: E2E_KEK,
+        // The invitation scenarios predate verification; the guard has its own test.
+        REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES: "0",
       },
     },
     {

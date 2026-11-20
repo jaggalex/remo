@@ -21,7 +21,6 @@ export const enCollab = {
   "auth.create": "Create account",
   "auth.enter": "Sign in",
   "auth.working": "Working…",
-  "auth.noEmail": "Email confirmation and password reset arrive with the mail service; for now the password is all there is.",
   "share.transferTitle": "Hand over ownership",
   "share.transferBody": "The new owner manages this room and its access. You keep an editor seat.",
   "share.transferChoose": "New owner…",
