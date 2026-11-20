@@ -35,6 +35,11 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_ORG_WS_RATE_BYTES`, `REMO_ORG_WS_BURST_BYTES` | optional write budget shared by an organisation's sockets (defaults: 2 MiB/s, 64 MiB burst) |
 | `REMO_ROOM_MAX_BYTES`, `REMO_ROOM_FULL_FRAME_BYTES` | optional room size ceiling and the largest edit a full room still takes (defaults: 64 MiB, 16 KiB) |
 | `REMO_ROOM_MAX_OBJECTS` | optional object ceiling for one room (default: 20 000; ADR-176) |
+| `REMO_MAIL_DRIVER` | `disabled` (the default), `console` (development only), `smtp` or `resend`; a working driver is what ADR-246 needs, and until the recovery routes ship only `pnpm mail:test` sends |
+| `REMO_MAIL_FROM`, `REMO_MAIL_REPLY_TO`, `REMO_MAIL_PRODUCT_NAME` | sender identity; the address must sit on a domain you send from |
+| `REMO_RESEND_API_KEY` | send-only key for the `resend` driver |
+| `REMO_SMTP_URL` | `smtps://…` or `smtp://…:587`, where STARTTLS is required |
+| `REMO_MAIL_BATCH`, `REMO_MAIL_CONSOLE_FILE` | optional drain batch size and the file the console driver appends to (end-to-end tests read it) |
 
 `REMO_KEK` is not stored in PostgreSQL. Losing it makes saved provider keys unreadable.
 Keep a copy outside the server.
@@ -136,13 +141,13 @@ lookups run as that role and return no rows otherwise.
 All tenant tables are protected: the room's content and access tables, organisations and
 seats, teams, invitations, integration tokens, agents, AI logs and anchors, audit, webhooks
 and the event outbox. `pnpm db:rls --check` inventories tenant tables. `pnpm db:rls:enable --check`
-verifies RLS and policies on all 40 protected tables in schema 20. The production release
+verifies RLS and policies on all 40 protected tables in schema 21. The production release
 controller applies and verifies the policies before it starts the updated service.
 
-`users`, `sessions`, `agent_tokens`, `ai_credentials` and `schema_meta` are global
-identity/secrets and stay outside tenant RLS: they are read before an organisation exists,
-and sign-in cannot depend on a tenant policy. They keep their own token hashing, rate limits
-and secret encryption.
+`users`, `sessions`, `agent_tokens`, `ai_credentials`, `auth_tokens`, `mail_outbox` and
+`schema_meta` are global identity/secrets and stay outside tenant RLS: they are read before
+an organisation exists, and sign-in cannot depend on a tenant policy. They keep their own
+token hashing, rate limits and secret encryption.
 
 If `REMO_MIGRATION_DATABASE_URL` is not set, the service uses `DATABASE_URL` for everything.
 That single-role mode cannot enforce RLS; do not apply `rls.sql` in it.

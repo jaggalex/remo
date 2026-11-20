@@ -41,6 +41,8 @@ import { CSRF_COOKIE, csrfCookie, csrfProblem } from "./csrf.mjs";
 import { newToken } from "./iam.mjs";
 import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
+import { assertMailConfig, mailDriver, resolveMailConfig } from "./mail.mjs";
+import { createMailDrain } from "./mail-drain.mjs";
 import { buildInfo } from "./build-info.mjs";
 
 import { websocketUtils } from "./y.mjs";
@@ -104,6 +106,10 @@ metrics.describe("remo_store_writes_total", "Room writes handed to the store");
 metrics.describe("remo_store_write_errors_total", "Room writes that failed");
 metrics.describe("remo_store_compactions_total", "Update logs compacted into a snapshot");
 metrics.describe("remo_store_projection_writes_total", "Queryable projection refreshes");
+metrics.describe("remo_mail_sent_total", "Transactional mail sent, by template");
+metrics.describe("remo_mail_failed_total", "Transactional mail attempts that failed, by template and code");
+metrics.describe("remo_mail_dead_total", "Transactional mail buried, by template and code");
+metrics.describe("remo_mail_queue_depth", "Mail rows waiting to be sent", "gauge");
 
 // Lag only means something while the process is doing work, so it is sampled on a
 // timer that does not itself count as work.
@@ -203,6 +209,17 @@ const events = createEventDrain({
     log: console,
     allowPrivate: process.env.REMO_WEBHOOK_ALLOW_PRIVATE === "1",
   }),
+});
+
+// Transactional mail waits in its own outbox and is sent by one configured driver
+// (ADR-246). A disk store has no outbox, so mail is honestly disabled there.
+const mailConfig = assertMailConfig(resolveMailConfig(), { hasOutbox: Boolean(databaseUrl) });
+const mail = createMailDrain({
+  store,
+  driver: mailDriver(mailConfig),
+  config: mailConfig,
+  log: console,
+  metrics,
 });
 
 // Product metrics live in their own database (ADR-082). Their absence is normal:
@@ -455,6 +472,13 @@ async function routeRequest(request, response, url) {
     metrics.set("remo_ws_connections_active", wss.clients.size);
     metrics.set("remo_rooms_active", store.roomCount ?? storage.rooms ?? docs.size);
     if (typeof storage.boards === "number") metrics.set("remo_boards_total", storage.boards);
+    if (mailConfig.driver !== "disabled" && typeof store.mailQueueDepth === "function") {
+      try {
+        metrics.set("remo_mail_queue_depth", await store.mailQueueDepth());
+      } catch {
+        // A failed gauge must not take the whole scrape down with it.
+      }
+    }
     response.writeHead(200, { "Content-Type": METRICS_CONTENT_TYPE });
     response.end(`${metrics.render()}\n${processMetrics(STARTED_AT)}\n`);
     return;
@@ -558,6 +582,8 @@ server.listen(PORT, () => {
   );
   agents.start();
   events.start();
+  mail.start();
+  if (mailConfig.driver !== "disabled") console.log(`[mail] driver ${mailConfig.driver}`);
 });
 
 let shuttingDown = false;
@@ -567,6 +593,7 @@ const shutdown = async (signal, exitCode = 0) => {
   console.log(`[sync] ${signal} received, flushing rooms`);
   agents.stop();
   events.stop();
+  mail.stop();
   connections.stopSweep();
   try {
     await store.close();

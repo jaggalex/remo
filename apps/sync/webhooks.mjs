@@ -9,6 +9,7 @@
  * organisation, so the organisation id is also the credential id in the AAD.
  */
 import { createHmac } from "node:crypto";
+import { backoffMs } from "./backoff.mjs";
 import { newToken } from "./iam.mjs";
 import { decryptSecret, encryptSecret, fingerprintSecret } from "./secrets.mjs";
 import { safeFetch } from "./outbound.mjs";
@@ -18,9 +19,9 @@ export const WEBHOOK_SECRET_PREFIX = "whsec_";
 export const WEBHOOK_MAX_ATTEMPTS = 8;
 const BACKOFF_MS = [10_000, 30_000, 120_000, 600_000, 1_800_000, 3_600_000, 10_800_000];
 
+/** One ladder for webhooks and mail (ADR-246): the schedules differ, the mechanism does not. */
 export function webhookBackoffMs(attempts) {
-  const index = Math.min(Math.max(Math.trunc(attempts), 1), BACKOFF_MS.length) - 1;
-  return BACKOFF_MS[index];
+  return backoffMs(attempts, BACKOFF_MS);
 }
 
 export function newWebhookSecret() {

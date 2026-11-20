@@ -92,6 +92,18 @@ export default async function setup() {
     await withAdmin(admin, (client) =>
       ensureOwnedDatabase(client, { name, token, identity, reset: true }),
     );
+    // `schema.sql` grants execution to `remo_app` when the role exists, and the RLS
+    // suites create it. Creating it here, before the migration, keeps the grant and the
+    // privilege test independent of which suite runs first.
+    await withAdmin(admin, (client) =>
+      client.query(
+        `do $$ begin
+           if not exists (select 1 from pg_roles where rolname = 'remo_app') then
+             create role remo_app nologin;
+           end if;
+         end $$;`,
+      ),
+    );
   } catch (error) {
     if (error instanceof DatabaseOwnershipError) throw error;
     databaseUnavailable(

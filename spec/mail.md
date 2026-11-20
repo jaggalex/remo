@@ -65,13 +65,18 @@
 
 Тесты лежат рядом: `*.test.mjs` — юнит, `*.db.test.mjs` — с тестовой базой.
 
+`mail:dead --retry` возвращает письмо в очередь только тогда, когда ссылка ещё цела (строка
+из старой версии) или шаблон ссылки не требует (`password_changed`). Обычная смерть стирает
+`sealed_*`, и воскрешать удалённый секрет нельзя.
+
 ### 2.2 Драйверы
 
 Контракт у всех драйверов один:
 
 ```js
 /**
- * @param {{ id: string, to: string, from: string, replyTo?: string,
+ * @param {{ id: string, template: string, link: string | null,
+ *           to: string, from: string, replyTo?: string,
  *           subject: string, text: string, html: string }} message
  * @returns {Promise<{ providerId: string | null }>}
  * @throws {MailError} code, retryable: boolean
@@ -84,9 +89,10 @@ async function send(message) {}
 **`disabled`.** Это значение по умолчанию при `NODE_ENV=production`. `enqueueMail` ничего не
 пишет и возвращает `{ queued: false }`. Вызывающий код это учитывает (§5).
 
-**`console`.** Это значение по умолчанию вне production.
-- Печатает в stdout строку `[mail] <template> <id> → <ссылка из письма>`, чтобы разработчик
-  мог по ней кликнуть. Адрес получателя не печатает.
+**`console`.** Это значение по умолчанию вне production, если задан `REMO_KEK`.
+- Печатает в stdout строку `[mail] <template> <id> → <ссылка>`, чтобы разработчик мог по ней
+  кликнуть. Ссылка приходит в поле `link`, а не угадывается по тексту письма. Адрес
+  получателя не печатает.
 - Если задан `REMO_MAIL_CONSOLE_FILE`, дописывает туда письмо целиком одной JSON-строкой.
   Так e2e-тесты читают письма. Второго тестового механизма не делаем.
 - При `NODE_ENV=production` сервис с этим драйвером не стартует: так случайно не уйдут
@@ -96,6 +102,9 @@ async function send(message) {}
 - Через `nodemailer`. Это новая зависимость `apps/sync`, причина записана в ADR-246.
 - Настраивается одной переменной `REMO_SMTP_URL`: `smtps://user:pass@host:465` или
   `smtp://user:pass@host:587`. Для 587 STARTTLS обязателен (`requireTLS: true`).
+- Принимаются только эти два порта и никакие query-параметры: иначе одна опечатка в env
+  снимает TLS или отправляет пароль открытым текстом. Кривой URL не попадает в лог вместе
+  с паролем.
 - `Message-ID` = `<{id}@{домен из REMO_MAIL_FROM}>`.
 - Ответы SMTP 4xx и сетевые ошибки — `retryable: true`. Ответы 5xx — `retryable: false`.
 - Этот же драйвер обслуживает российский регион: SMTP есть и у Unisender Go, и у Yandex Cloud
@@ -122,7 +131,7 @@ async function send(message) {}
 
 | Переменная | Значение | По умолчанию |
 |---|---|---|
-| `REMO_MAIL_DRIVER` | `disabled`, `console`, `smtp`, `resend` | `disabled` в production, иначе `console` |
+| `REMO_MAIL_DRIVER` | `disabled`, `console`, `smtp`, `resend` | `disabled` в production; вне production — `console`, если задан `REMO_KEK`, иначе `disabled` |
 | `REMO_MAIL_FROM` | `remo <no-reply@mail.example.com>` | обязательна для `smtp` и `resend` |
 | `REMO_MAIL_REPLY_TO` | адрес для ответов | нет |
 | `REMO_MAIL_PRODUCT_NAME` | название продукта в письмах (для self-host) | `remo` |
@@ -130,7 +139,7 @@ async function send(message) {}
 | `REMO_RESEND_API_KEY` | ключ Resend с правом только на отправку | обязательна для `resend` |
 | `REMO_SMTP_URL` | см. §2.2 | обязательна для `smtp` |
 | `REMO_MAIL_CONSOLE_FILE` | путь для драйвера `console` | нет |
-| `REMO_MAIL_BATCH` | писем за проход дренажа | 10 |
+| `REMO_MAIL_BATCH` | писем за проход дренажа, от 1 до 100 | 10 |
 | `REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES` | `0` отключает требование §5.3 | `1` |
 
 Ссылки строятся только из `REMO_APP_ORIGIN` (см. §8); `REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES`
@@ -139,7 +148,9 @@ async function send(message) {}
 
 **Проверки при старте.** Сервис не стартует, если:
 - драйвер `smtp` или `resend` без своих обязательных переменных;
-- `REMO_MAIL_FROM` не разбирается как адрес;
+- `REMO_MAIL_FROM` не разбирается как адрес (обязателен только для `smtp` и `resend`);
+- `REMO_SMTP_URL` не `smtp(s)://` на порту 465 или 587 либо несёт query-параметры;
+- `REMO_APP_ORIGIN` не абсолютный URL, кончается на `/` или не `https` в production;
 - драйвер не `disabled`, а `REMO_KEK` не задан (без него нечем запечатать параметры);
 - `console` при `NODE_ENV=production`.
 
@@ -226,7 +237,9 @@ ADR-246, старый текст не переписывать) и в исклю
 **Хранение.**
 - При `sent_at` или `dead_at` колонки `sealed_*` обнуляются в той же транзакции.
 - Строки старше 30 дней удаляются. Это делает дренаж раз в час (`delete ... limit 1000`).
-- Использованные и просроченные `auth_tokens` старше 7 дней удаляются тем же проходом.
+- Использованные или просроченные `auth_tokens` старше 7 дней удаляются тем же проходом:
+  условие `used_at is not null or expires_at < now()` не даёт удалить живой токен при
+  смене TTL.
 
 `check` на `mail_outbox.template` расширяется в схеме 22 вместе с биллинговыми шаблонами
 (`spec/billing.md` §7); это единственная правка ограничения, отдельного списка шаблонов не
@@ -395,7 +408,8 @@ export const MAIL_MAX_ATTEMPTS = 6;
   убираются переводы строк из однострочных полей.
 - HTML простой: одна колонка, инлайновые стили, системный шрифт, одна кнопка-ссылка, та же
   ссылка текстом под ней. Внешних картинок и шрифтов нет.
-- `{product}` = `REMO_MAIL_PRODUCT_NAME`.
+- `{product}` = `REMO_MAIL_PRODUCT_NAME`. Если имени нет, используется нейтральное
+  обращение без подстановки («Здравствуйте!» / «Hi,»).
 - Тексты ниже нормативны. Менять можно только вместе с этим документом.
 
 **verify_email**

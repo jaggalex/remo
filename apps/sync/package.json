@@ -9,16 +9,16 @@
     "smoke": "node smoke.mjs"
   },
   "dependencies": {
+    "@remo/agent-plan": "workspace:*",
+    "@remo/metrics": "workspace:*",
+    "lib0": "^0.2.102",
+    "nodemailer": "^10.6.0",
     "pg": "^8.13.1",
     "ws": "^8.22.1",
-    "yjs": "^13.6.20",
-    "y-websocket": "1.5.4",
-    "lib0": "^0.2.102",
     "y-protocols": "^1.0.6",
-    "@remo/agent-plan": "workspace:*",
-    "@remo/metrics": "workspace:*"
+    "y-websocket": "1.5.4",
+    "yjs": "^13.6.20"
   },
-  "devDependencies": {},
   "license": "AGPL-3.0-only",
   "author": "Alexander Kostylev"
 }

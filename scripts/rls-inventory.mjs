@@ -69,7 +69,15 @@ try {
   ]);
   // Identity and secrets are looked up before an organisation exists; they are not
   // tenant-scoped by a column and are covered by their own auth boundary.
-  const GLOBAL = new Set(["agent_tokens", "ai_credentials", "sessions", "users", "schema_meta"]);
+  const GLOBAL = new Set([
+    "agent_tokens",
+    "ai_credentials",
+    "auth_tokens",
+    "mail_outbox",
+    "sessions",
+    "users",
+    "schema_meta",
+  ]);
 
   const tenant = rows.filter((row) => row.has_org || row.has_board);
   const related = rows.filter((row) => RELATED.has(row.table_name));

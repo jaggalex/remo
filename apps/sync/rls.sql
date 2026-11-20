@@ -7,8 +7,8 @@
 --
 -- Every tenant table is covered: content, access, organisations, seats, teams,
 -- invitations, integration tokens, agents, AI logs, audit and the outbox. `users`,
--- `sessions`, `agent_tokens`, `ai_credentials` and `schema_meta` are global
--- identity/secrets and stay outside tenant RLS.
+-- `sessions`, `agent_tokens`, `ai_credentials`, `auth_tokens`, `mail_outbox` and
+-- `schema_meta` are global identity/secrets and stay outside tenant RLS.
 --
 -- A missing setting returns zero rows, never all rows: `nullif(..., '')::uuid` is null
 -- and no `org_id` equals null.

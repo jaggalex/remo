@@ -158,6 +158,9 @@ create table if not exists users (
 alter table users add column if not exists theme text;
 alter table users add column if not exists lang text;
 alter table users add column if not exists handle text;
+-- Nobody proved the address until a token was used (ADR-246). Existing accounts stay
+-- null on purpose: nothing ever checked them, so claiming otherwise would be a lie.
+alter table users add column if not exists email_verified_at timestamptz;
 
 -- The author of a board is its creator, not its current owner: ownership can be
 -- transferred, history should not be rewritten (ADR-168).
@@ -202,6 +205,24 @@ create table if not exists sessions (
 );
 
 create index if not exists sessions_user_idx on sessions (user_id);
+
+-- One-off tokens for a password reset or an address confirmation (ADR-246). A row is a
+-- hash, never the token: the link exists in the mail and in the sealed parameters, not
+-- here. A new token of the same purpose marks the old ones used, and a changed address
+-- voids the token because `email` must still be the account's address.
+create table if not exists auth_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users (id) on delete cascade,
+  purpose text not null check (purpose in ('password_reset', 'email_verify')),
+  token_hash bytea not null unique,
+  -- the address the token proves; a later change of address voids it
+  email text not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  used_at timestamptz
+);
+create index if not exists auth_tokens_user_idx on auth_tokens (user_id, purpose)
+  where used_at is null;
 
 create table if not exists orgs (
   id uuid primary key default gen_random_uuid(),
@@ -822,6 +843,39 @@ create table if not exists org_webhooks (
   last_error text
 );
 
+/* ------------------------------------------------------------------ mail -- */
+-- The mail outbox (ADR-246). It is not `event_outbox`: an event belongs to a room and
+-- carries no personal data, while a letter belongs to an account and holds an address
+-- and a sealed link — a global, identity-scoped row like `users` and `sessions`.
+
+create table if not exists mail_outbox (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users (id) on delete cascade,
+  to_email text not null,
+  template text not null
+    check (template in ('verify_email', 'password_reset', 'password_changed', 'invitation')),
+  locale text not null check (locale in ('ru', 'en')),
+  -- params that are safe in clear text (a name, an org title)
+  params jsonb not null default '{}'::jsonb,
+  -- params that hold a secret link, sealed with the KEK envelope; cleared once sent or dead
+  sealed_ciphertext bytea,
+  sealed_nonce bytea,
+  sealed_dek_wrapped bytea,
+  sealed_dek_nonce bytea,
+  sealed_kek_id text,
+  -- after this moment the link in the mail is useless: the row dies instead of sending
+  valid_until timestamptz,
+  created_at timestamptz not null default now(),
+  attempts integer not null default 0,
+  next_attempt_at timestamptz,
+  sent_at timestamptz,
+  dead_at timestamptz,
+  last_error text,
+  provider_id text
+);
+create index if not exists mail_outbox_pending_idx
+  on mail_outbox (created_at) where sent_at is null and dead_at is null;
+
 /* ---------------------------------------------------------- integrations -- */
 -- Tokens an integration uses instead of a browser session (ADR-096). The token carries
 -- its scopes; the permission that matters is the owner's current access on the board
@@ -1177,6 +1231,42 @@ begin
   end if;
 end $$;
 
+-- The mail drain claims in the same way as the event drain (ADR-246): five minutes of
+-- lease, `skip locked`, so a second worker takes other rows and a crashed one retries.
+create or replace function remo_claim_mail_batch(batch integer)
+returns setof mail_outbox
+language sql
+security definer
+set search_path = public
+as $$
+  with claimed as (
+    select id
+      from mail_outbox
+     where sent_at is null
+       and dead_at is null
+       and (next_attempt_at is null or next_attempt_at <= now())
+     order by created_at, id
+     limit least(greatest(batch, 1), 100)
+     for update skip locked
+  )
+  update mail_outbox m
+     set next_attempt_at = now() + interval '5 minutes'
+    from claimed
+   where m.id = claimed.id
+  returning m.*
+$$;
+
+-- `security definer` is executable by PUBLIC by default, and this one returns addresses
+-- and sealed links. Only the application role may claim.
+revoke execute on function remo_claim_mail_batch(integer) from public;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_claim_mail_batch(integer) to remo_app;
+  end if;
+end $$;
+
 /* ------------------------------------------------- room agent (ADR-189) -- */
 
 -- One agent is assigned to a room by its owner. The row is the whole switch: no row
@@ -1256,5 +1346,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 20)
+insert into schema_meta (id, version) values (1, 21)
 on conflict (id) do update set version = excluded.version, updated_at = now();

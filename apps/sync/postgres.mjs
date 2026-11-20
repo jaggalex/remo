@@ -21,6 +21,7 @@ import { aiMethods } from "./pg/ai.mjs";
 import { changeSetMethods } from "./pg/change-sets.mjs";
 import { commandMethods } from "./pg/commands.mjs";
 import { eventMethods } from "./pg/events.mjs";
+import { mailMethods } from "./pg/mail.mjs";
 import { webhookMethods } from "./pg/webhooks.mjs";
 import { integrationMethods } from "./pg/integrations.mjs";
 import { appMethods } from "./pg/apps.mjs";
@@ -392,6 +393,7 @@ Object.assign(
   changeSetMethods,
   commandMethods,
   eventMethods,
+  mailMethods,
   webhookMethods,
   integrationMethods,
   appMethods,
