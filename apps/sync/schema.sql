@@ -1593,6 +1593,37 @@ alter table boards add column if not exists frozen_at timestamptz;
 -- Fourteen days over the seat limit make the whole organisation read-only (§2.5).
 alter table orgs add column if not exists read_only_at timestamptz;
 
+/* --------------------------------------------------------------- files -- */
+-- Uploaded images (schema 24, ADR-249, `spec/images.md` §3.1). Bytes live in the file
+-- store, never in `boards.snapshot`; this row is the metadata a room object refers to and
+-- the unit the storage quota counts. It is a tenant table: the policy in `rls.sql` keys on
+-- `org_id`, and the cascade lets an organisation be removed without orphaning rows.
+--
+-- `files_org_sha_idx` is unique inside one organisation because the same screenshot can
+-- be uploaded twice, but two organisations must not learn that they share a file. Only
+-- `ready` rows take part: a deleted row keeps its audit trail without blocking a fresh
+-- upload of the same bytes.
+create table if not exists files (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete cascade,
+  board_id text references boards (id) on delete set null,  -- the room it was uploaded to
+  uploaded_by uuid references users (id) on delete set null,
+  sha256 text not null,                  -- of the original bytes
+  mime text not null check (mime in ('image/png','image/jpeg','image/webp','image/gif','image/avif')),
+  bytes bigint not null,                 -- original
+  stored_bytes bigint not null,          -- original + all variants: what the quota counts
+  width integer not null, height integer not null,   -- after EXIF orientation
+  dominant_color text,                   -- '#rrggbb', for the instant placeholder
+  variants jsonb not null,               -- { "w256": { w, h, bytes }, ... }
+  original_name text,                    -- shown on download only; never part of a key
+  status text not null default 'ready' check (status in ('ready', 'deleted')),
+  created_at timestamptz not null default now(),
+  unreferenced_since timestamptz,        -- set by GC; cleared when referenced again
+  deleted_at timestamptz
+);
+create index if not exists files_org_idx on files (org_id) where status = 'ready';
+create unique index if not exists files_org_sha_idx on files (org_id, sha256) where status = 'ready';
+
 /* ---------------------------------------------------------- schema meta -- */-- The service reads this before applying the file, so a running suite or a second
 -- instance does not run DDL on every start (and cannot deadlock with live queries).
 
@@ -1607,5 +1638,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 23)
+insert into schema_meta (id, version) values (1, 24)
 on conflict (id) do update set version = excluded.version, updated_at = now();

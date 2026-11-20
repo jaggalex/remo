@@ -31,6 +31,7 @@ const SIMPLE = [
   "board_updates",
   "comment_threads",
   "comments",
+  "files",
   "vote_sessions",
 ];
 

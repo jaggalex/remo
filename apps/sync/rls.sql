@@ -6,7 +6,8 @@
 -- bypass it. The lookup and claim functions live in `schema.sql`.
 --
 -- Every tenant table is covered: content, access, organisations, seats, teams,
--- invitations, integration tokens, agents, AI logs, audit, the outbox and billing.
+-- invitations, integration tokens, agents, AI logs, audit, the outbox, billing and
+-- uploaded files.
 -- `users`, `sessions`, `agent_tokens`, `ai_credentials`, `auth_tokens`, `mail_outbox`
 -- and `schema_meta` are global identity/secrets and stay outside tenant RLS, as do the
 -- installation-level billing tables: `prices`, `price_events`, `promo_codes`,
@@ -44,7 +45,10 @@ begin
     'ai_runs', 'ai_log_anchors',
     'event_outbox', 'org_webhooks',
     'billing_accounts', 'payment_methods', 'subscriptions', 'invoices',
-    'payments', 'refunds', 'org_credit_ledger', 'billing_events'
+    'payments', 'refunds', 'org_credit_ledger', 'billing_events',
+    -- Uploaded images are tenant rows like any other content (ADR-249); without this
+    -- entry the table silently stays outside `--check`.
+    'files'
   ] loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);

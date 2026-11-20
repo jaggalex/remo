@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-const TABLES = [
+export const RLS_TABLES = [
   "boards",
   "widgets",
   "board_grants",
@@ -52,12 +52,15 @@ const TABLES = [
   "refunds",
   "org_credit_ledger",
   "billing_events",
+  // Uploaded images are a tenant table: every row belongs to exactly one organisation and
+  // is read under the same `app.org_id` setting (ADR-249).
+  "files",
 ];
 
 export async function applyRls(client) {
   const sql = await readFile(new URL("./rls.sql", import.meta.url), "utf8");
   await client.query(sql);
-  return TABLES.length;
+  return RLS_TABLES.length;
 }
 
 export async function inspectRls(client, appRole = null) {
@@ -74,9 +77,9 @@ export async function inspectRls(client, appRole = null) {
        join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relname = any($1::text[])
       order by c.relname`,
-    [TABLES, appRole],
+    [RLS_TABLES, appRole],
   );
-  const missing = TABLES.filter((table) => !rows.some((row) => row.relname === table));
+  const missing = RLS_TABLES.filter((table) => !rows.some((row) => row.relname === table));
   const unprotected = rows.filter((row) => !row.rls || !row.forced || !row.policy);
   const appAccessProblems = rows.filter((row) => !row.app_access);
   return { rows, missing, unprotected, appAccessProblems };

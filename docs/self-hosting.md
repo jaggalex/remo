@@ -44,6 +44,13 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_YOOKASSA_WEBHOOK_IPS` | comma-separated source addresses for YooKassa webhooks; an empty list refuses every webhook (ADR-248) |
 | `REMO_BILLING_CURRENCIES` | currencies the installation sells, first one is the default (for example `RUB` or `USD,EUR`); a currency without a complete price list is not offered |
 | `REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES` | set to `0` to let an unverified address invite people; `1` by default |
+| `REMO_FILES_DRIVER` | `disk` (the default) or `s3`; uploads are read only through the app, never from the bucket (ADR-249) |
+| `REMO_FILES_DIR` | directory for the `disk` driver; defaults to `${REMO_DATA_DIR}/files` |
+| `REMO_S3_ENDPOINT`, `REMO_S3_REGION`, `REMO_S3_BUCKET` | S3-compatible storage; the bucket must be private. Region defaults to `us-east-1`, which MinIO accepts |
+| `REMO_S3_ACCESS_KEY_ID`, `REMO_S3_SECRET_ACCESS_KEY` | keys limited to that one bucket |
+| `REMO_S3_FORCE_PATH_STYLE` | set to `1` for MinIO; virtual-hosted addressing is the default |
+| `REMO_FILES_MAX_BYTES`, `REMO_FILES_MAX_PIXELS` | per-file size and source pixel limits (defaults: 20 MiB, 50 million) |
+| `REMO_FILES_PER_ROOM`, `REMO_FILES_CONCURRENCY`, `REMO_FILES_QUEUE` | optional room image ceiling, parallel `sharp` jobs and waiting-room size (defaults: 500, 2, 16) |
 
 Mail needs PostgreSQL for the outbox, `REMO_KEK` to seal links and an `https` `REMO_APP_ORIGIN` in production. With disk storage the driver is always `disabled`.
 
