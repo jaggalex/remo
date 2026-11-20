@@ -10218,3 +10218,58 @@ and control, not reaching providers that do not serve a region.
 - A gateway outage stops agents but not rooms.
 - The gateway does not change the legal nature of sending user text to a provider abroad:
   the registry's regions and the privacy policy must agree.
+
+## ADR-252: Rich text gains line formats on the line-ending newline, two inline marks, and one Markdown and HTML boundary (extends ADR-024)
+
+**Status:** proposed (2026-11-20). Implementation spec: `spec/rich-text.md`.
+
+**Context.** ADR-024 gave notes, text and shapes four inline marks on a shared `Y.XmlText`.
+People also need headings, lists, checklists and links, and above all they paste: from the
+web, Google Docs, Notion, Word and Markdown from AI chats.
+
+The editor has no paste handler. The browser inserts foreign HTML into the
+`contentEditable`, the editor shows headings, bullets and fonts, and `deltaFromDom` keeps
+only the four marks. Lines from `li` and `h*` can merge, so what the board paints differs
+from what the editor showed. A full editor (ProseMirror, Lexical) would mean a new storage
+type, a migration and painting a document tree on the canvas anyway.
+
+**Decision.**
+
+- **Storage stays `Y.Text` / `Y.XmlText`.**
+  - **Two more inline marks:** `code`, and `href` (http, https, mailto only). It is not
+    named `link`, which is the object's own link from ADR-103.
+  - **A line format sits on the `\n` that ends the line:** `block` (`h1`, `h2`, `bullet`,
+    `ordered`, `check`), `indent` 1–2 and `checked`.
+  - **The last formatted line gets a terminating `\n`,** which is not an empty line. Inline
+    marks never sit on `\n`, and line formats never sit elsewhere.
+- **One reader of lines.** `linesOf(delta)` in `@remo/doc` feeds everything that reads
+  lines: the painter, height and fit, the editor, Markdown and export. Ordered numbering is
+  computed there, never stored.
+- **Text with no line format keeps today's paths byte for byte.** The widget materializes
+  `lines` only when at least one line has a block format.
+- **Changing a line format is a cheap operation:** `setLineFormat`, which formats one
+  newline. It is one undo step and merges with concurrent typing, as character edits do.
+- **One boundary for foreign content,** both in `@remo/doc`:
+  - `deltaFromHtml` / `htmlFromDelta`, a whitelist parsed in an inert document;
+  - `parseMarkdown` / `toMarkdown`, the subset that matches the model exactly.
+
+  Paste, copy, the editor, the command API, MCP, the projection (`props.markdown`) and agents
+  all use them.
+- **The editor owns paste.** Nothing reaches the editor's DOM that the model cannot store.
+  ⌘⇧V pastes plain text.
+- **Markdown input rules, shortcuts and an extended object bar.** Tab indents inside a list
+  item and keeps ADR-028's chain behaviour elsewhere.
+- **On the board,** a checkbox toggles on click with `board.edit`, and a link opens with
+  ⌘/Ctrl-click.
+- **Where it applies:** text, sticky notes and shapes take everything; connector labels
+  take inline marks only; cards stay plain. This is recorded in the kind table.
+
+**Consequences.**
+
+- No migration, and the backup format is unchanged (new attributes are optional).
+- A client that is not yet reloaded during a rollout may drop new attributes on the
+  characters it retypes. This is accepted, given the short window.
+- The painter gains a block layout (indent, markers, numbers, heading sizes, checkbox,
+  inline code), and the fit and growth rules of ADR-027 and ADR-214–216 measure it.
+- Out of scope: colour and size of words, alignment per line, quotes, code blocks, tables,
+  nesting beyond three levels, mentions.
