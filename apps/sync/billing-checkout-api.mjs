@@ -151,19 +151,32 @@ async function checkout({ request, response, store, orgId }) {
 
   const periodStart = new Date();
   const periodEnd = endOfPeriod(periodStart, price.interval);
+  // A reusable token needs the provider's capability and the payer's autopay consent.
+  // The consent version is copied into the invoice line: the webhook that receives the
+  // token has no session, and the invoice is the durable record of what was agreed.
+  const savePaymentMethod = consent.autopay === true && adapter.capabilities?.saveMethod === true;
+  const lines = [
+    {
+      kind: "subscription",
+      plan: price.plan,
+      interval: price.interval,
+      priceId: price.id,
+      amount,
+      promoCode: promo?.code ?? null,
+      ...(savePaymentMethod
+        ? {
+            autopayConsent: {
+              version: String(consent.termsVersion),
+              at: periodStart.toISOString(),
+            },
+          }
+        : {}),
+    },
+  ];
   const invoice = await store.createInvoice({
     orgId,
     currency,
-    lines: [
-      {
-        kind: "subscription",
-        plan: price.plan,
-        interval: price.interval,
-        priceId: price.id,
-        amount,
-        promoCode: promo?.code ?? null,
-      },
-    ],
+    lines,
     subtotal: totals.subtotal,
     discount: totals.discount,
     creditApplied: totals.creditApplied,
@@ -190,7 +203,7 @@ async function checkout({ request, response, store, orgId }) {
     amount: totals.total,
     currency,
     description: `${price.plan} plan`,
-    savePaymentMethod: false,
+    savePaymentMethod,
     customerEmail: account?.billing_email ?? session.user.email,
     returnUrl: body.returnUrl ?? null,
     locale: body.locale === "en" ? "en" : "ru",

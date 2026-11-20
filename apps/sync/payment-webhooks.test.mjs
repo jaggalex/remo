@@ -312,3 +312,110 @@ describe("inbox (§5)", () => {
     expect(fetchImpl.calls).toHaveLength(0);
   });
 });
+
+/** The same inbox, plus the chain a saved method needs and the calls it makes. */
+function billingStore({ connections, chain = null }) {
+  const store = fakeStore(connections);
+  store.saved = [];
+  store.chainRequests = [];
+  store.paymentChainFor = async (paymentId) => {
+    store.chainRequests.push(paymentId);
+    return chain ? { ...chain, payment_id: paymentId } : null;
+  };
+  store.savePaymentMethod = async (request) => {
+    store.saved.push(request);
+    return { id: "pm-saved-1" };
+  };
+  return store;
+}
+
+/** A succeeded payment that also carries a reusable method and our payment id. */
+function savedFetch({ metadata = { paymentId: "our-payment-1" } } = {}) {
+  return async () => ({
+    ok: true,
+    status: 200,
+    text: async () =>
+      JSON.stringify({
+        id: "pay_1",
+        status: "succeeded",
+        amount: { value: "290.00", currency: "RUB" },
+        metadata,
+        payment_method: {
+          id: "pm_provider_1",
+          type: "bank_card",
+          saved: true,
+          card: {
+            card_type: "Visa",
+            last4: "4242",
+            expiry_month: "12",
+            expiry_year: "2030",
+          },
+        },
+      }),
+  });
+}
+
+const CHAIN = {
+  org_id: "org-1",
+  invoice_id: "inv-1",
+  subscription_id: "sub-1",
+  lines: [{ kind: "subscription", autopayConsent: { version: "terms-2026-11" } }],
+};
+
+describe("saved method after the first payment (§4)", () => {
+  it("stores the sealed reference and the consent version", async () => {
+    const store = billingStore({ connections: { "conn-1": connectionFor() }, chain: CHAIN });
+    const { out } = await deliver({ store, fetchImpl: savedFetch() });
+
+    expect(out.status).toBe(200);
+    expect(store.chainRequests).toEqual(["our-payment-1"]);
+    expect(store.saved).toEqual([
+      {
+        orgId: "org-1",
+        connectionId: "conn-1",
+        ref: "pm_provider_1",
+        display: { kind: "card", brand: "Visa", last4: "4242", expMonth: 12, expYear: 2030 },
+        consentVersion: "terms-2026-11",
+        createdBy: null,
+      },
+    ]);
+  });
+
+  it("applies a delivery once, so a repeat cannot save a second method", async () => {
+    const store = billingStore({ connections: { "conn-1": connectionFor() }, chain: CHAIN });
+    await deliver({ store, fetchImpl: savedFetch() });
+    await deliver({ store, fetchImpl: savedFetch() });
+
+    expect(store.events).toHaveLength(1);
+    expect(store.saved).toHaveLength(1);
+  });
+
+  it("skips a provider token when no autopay consent was recorded", async () => {
+    const store = billingStore({
+      connections: { "conn-1": connectionFor() },
+      chain: { ...CHAIN, lines: [{ kind: "subscription" }] },
+    });
+    const { out } = await deliver({ store, fetchImpl: savedFetch() });
+
+    expect(out.status).toBe(200);
+    expect(store.saved).toHaveLength(0);
+  });
+
+  it("skips a saved method that does not name our payment", async () => {
+    const store = billingStore({ connections: { "conn-1": connectionFor() }, chain: CHAIN });
+    const { out } = await deliver({ store, fetchImpl: savedFetch({ metadata: {} }) });
+
+    expect(out.status).toBe(200);
+    expect(store.chainRequests).toHaveLength(0);
+    expect(store.saved).toHaveLength(0);
+  });
+
+  it("skips a payment whose chain cannot be found", async () => {
+    const store = billingStore({ connections: { "conn-1": connectionFor() }, chain: null });
+    const { out } = await deliver({ store, fetchImpl: savedFetch() });
+
+    expect(out.status).toBe(200);
+    expect(store.chainRequests).toEqual(["our-payment-1"]);
+    expect(store.saved).toHaveLength(0);
+  });
+});

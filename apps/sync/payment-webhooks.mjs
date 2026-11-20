@@ -9,6 +9,10 @@
  * The body is read as raw bytes and never re-serialized before verification: a signature
  * over `JSON.stringify(JSON.parse(body))` is a signature over different bytes.
  *
+ * One consequence is applied inline: a succeeded payment that carries a reusable method
+ * stores it for autopay (`applyProviderEvent`), because that is what the first payment of
+ * a subscription is for. Everything else waits for the drain.
+ *
  * Store contract: `connectionById(id)` returns the connection including the sealed
  * envelope and `webhookToken`; `recordProviderEvent({ connectionId, providerEventKey,
  * type, payload })` inserts one row with `on conflict (connection_id, provider_event_key)
@@ -80,6 +84,79 @@ function allowedIpsFor(provider, env) {
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+/**
+ * Apply one verified provider event after it reached the inbox.
+ *
+ * The only consequence implemented here is the saved method of §4: a provider that can
+ * store a card returns a reusable reference on the first successful payment, and autopay
+ * needs it. The reference is sealed by `savePaymentMethod`; this function never logs it.
+ *
+ * The consent version comes from the invoice lines, because the callback has no session
+ * and no checkout body: the invoice is the durable record of what the payer agreed to.
+ * A missing chain or a missing consent is a logged skip, never a failure — the event is
+ * already in the inbox and a throw would make the provider repeat a delivery that can
+ * never succeed.
+ */
+export async function applyProviderEvent({ store, connection, event, log = console }) {
+  // `savedMethod` belongs to the normalized payment, not to the event envelope.
+  const saved = event?.payment?.savedMethod;
+  if (event?.type !== "payment.updated") return false;
+  if (event?.payment?.status !== "succeeded" || !saved?.methodRef) return false;
+  if (
+    typeof store.paymentChainFor !== "function" ||
+    typeof store.savePaymentMethod !== "function"
+  ) {
+    return false;
+  }
+
+  const paymentId = typeof event.paymentId === "string" ? event.paymentId : "";
+  if (!paymentId) {
+    log.warn?.(`[billing] webhook ${connection.id}: a saved method without our payment id`);
+    return false;
+  }
+  const chain = await store.paymentChainFor(paymentId);
+  if (!chain) {
+    log.warn?.(`[billing] webhook ${connection.id}: payment ${paymentId} has no chain`);
+    return false;
+  }
+
+  const consentVersion = consentVersionOf(chain.lines);
+  if (!consentVersion) {
+    // No autopay consent means no reusable token, whatever the provider returned.
+    log.warn?.(`[billing] webhook ${connection.id}: no autopay consent for payment ${paymentId}`);
+    return false;
+  }
+
+  try {
+    await store.savePaymentMethod({
+      orgId: chain.org_id,
+      connectionId: connection.id,
+      ref: saved.methodRef,
+      display: saved.display,
+      consentVersion,
+      createdBy: null,
+    });
+  } catch (error) {
+    // Names the failure, never the reference: the envelope may be unreadable or the row
+    // may have lost its consent column, and either way the inbox row stays for a retry.
+    log.error?.(
+      `[billing] webhook ${connection.id}: the method was not saved (${error?.code ?? "ERROR"})`,
+    );
+    return false;
+  }
+  return true;
+}
+
+/** `lines` is JSON; the checkout wrote the consent into the subscription line. */
+function consentVersionOf(lines) {
+  const list = Array.isArray(lines) ? lines : [];
+  for (const line of list) {
+    const version = line?.autopayConsent?.version;
+    if (typeof version === "string" && version.trim() !== "") return version;
+  }
+  return null;
 }
 
 /**
@@ -171,12 +248,23 @@ export async function handlePaymentWebhook({
   }
 
   for (const event of result.events ?? []) {
-    await store.recordProviderEvent({
+    const recorded = await store.recordProviderEvent({
       connectionId: connection.id,
       providerEventKey: event.key,
       type: event.type,
       payload: event,
     });
+    // A duplicate delivery is acknowledged again but must not apply its consequence
+    // twice. The drain owns everything beyond the saved method for now.
+    if (recorded === true) {
+      try {
+        await applyProviderEvent({ store, connection, event, log });
+      } catch (error) {
+        log.error?.(
+          `[billing] webhook ${connection.id}: the event was not applied (${error?.code ?? "ERROR"})`,
+        );
+      }
+    }
   }
 
   const answer = result.respond ?? { status: 200, body: "OK" };
