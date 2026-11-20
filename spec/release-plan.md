@@ -64,9 +64,10 @@ ADR-249/250/251 сдвинуты на 24/25/26 **до принятия** и ос
 1. ~~Цикл продления не запущен~~ — проводка в `server.mjs` есть (`REMO_BILLING=on`),
    `charge` через адаптер и `notify` письмами. Осталось проверить загрузку сервиса с
    `REMO_BILLING=on` в e2e.
-2. **UI «Тариф и оплата» сделан** (`BillingPanel`, `apiBilling`, 68 ключей, плашки `402`).
-   Server gaps: нет `cancel`/`resume` и `payment-method`; `GET /orgs/:id/billing` не отдаёт
-   `paymentMethod`/`credit`; выбор `frozen-rooms` без UI. Каталог теперь отдаёт `id` цены.
+2. **Биллинг-UI и e2e закрыты**: вкладка, плашки `402`, баннер заморозки, `pnpm e2e --billing`
+   (лимит комнат, заморозка). Серверные `cancel`/`resume`, `DELETE payment-method`, сводка с
+   `paymentMethod`/`credit` добавлены. Осталось: UI выбора `frozen-rooms` и замена карты
+   (сервер честно отвечает 501 до виджета провайдера).
 3. **e2e при `REMO_BILLING=on`**: каталог → счёт → `billing:mark-paid` → Pro → лимит комнат →
    заморозка → экспорт работает.
 4. **R5.2 сделан** (`http-multipart`, `files-api`, `pg/files`, `board.image.create`,
