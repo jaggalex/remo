@@ -179,8 +179,8 @@ async setBoardIcon(boardId, icon) {
 async getIamBoard(boardId) {
   const { rows } = await this.pool.query(
     `select id, title, icon, org_id, team_id, owner_id, visibility, acl_version,
-            archived_at, agents_enabled, claim_token_hash is not null as has_claim_token,
-            updated_at
+            archived_at, frozen_at, agents_enabled,
+            claim_token_hash is not null as has_claim_token, updated_at
        from boards where id = $1`,
     [boardId],
   );
@@ -219,7 +219,7 @@ async accessFacts(boardId, userId) {
   const board = await this.getIamBoard(boardId);
   if (!board) return null;
 
-  const [{ rows: grants }, { rows: policies }] = await Promise.all([
+  const [{ rows: grants }, { rows: policies }, orgReadOnly] = await Promise.all([
     this.pool.query(
       `select subject_type, subject_id, role
          from board_grants
@@ -231,6 +231,11 @@ async accessFacts(boardId, userId) {
           `select can_share, public_links from org_policies where org_id = $1`,
           [board.org_id],
         )
+      : Promise.resolve({ rows: [] }),
+    // A plan over its seat limit makes the whole organisation read-only after the grace
+    // period (§2.5). It is one more input to `effective`, not a second access path.
+    board.org_id
+      ? this.pool.query("select read_only_at from orgs where id = $1", [board.org_id])
       : Promise.resolve({ rows: [] }),
   ]);
 
@@ -263,6 +268,8 @@ async accessFacts(boardId, userId) {
       teamId: board.team_id,
       visibility: board.visibility,
       archivedAt: board.archived_at,
+      frozenAt: board.frozen_at,
+      orgReadOnlyAt: orgReadOnly.rows[0]?.read_only_at ?? null,
       aclVersion: Number(board.acl_version),
     },
     viewer,
@@ -328,7 +335,7 @@ async listGrants(boardId) {
   // Names travel with the grants: the sharing dialog is read by people, and a uuid
   // would only send them looking for the directory in another window.
   const { rows } = await this.pool.query(
-    `select g.subject_type, g.subject_id, g.role, g.granted_by, g.created_at,
+    `select g.subject_type, g.subject_id, g.role, g.granted_by, g.created_at, g.expires_at,
             case g.subject_type when 'user' then 'direct' when 'team' then 'team' else 'org' end as source,
             case g.subject_type
               when 'user' then u.name

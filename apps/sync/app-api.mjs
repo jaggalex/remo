@@ -10,6 +10,7 @@
  * declared capabilities, audits `app.invoked` and emits the same event to the outbox.
  */
 import { accessForBoard, fail, json, readBody } from "./iam-http.mjs";
+import { featureLimit, planFeatureResponse } from "./billing-guard.mjs";
 import { callerFromRequest, hasScope } from "./integrations.mjs";
 import { getFirstPartyApp } from "./first-party-apps.mjs";
 
@@ -58,6 +59,9 @@ export async function handleAppRoutes(ctx) {
   }
 
   if (parts.length === 3 && method === "POST") {
+    // Installing a panel is the integration feature (§2.2); removing one stays allowed.
+    const featureProblem = await featureLimit(orgId, "integrations");
+    if (featureProblem) return planFeatureResponse(response, featureProblem), true;
     const body = await readBody(request);
     const app = getFirstPartyApp(String(body?.appId ?? ""));
     if (!app) {
@@ -88,6 +92,11 @@ export async function handleAppRoutes(ctx) {
 
   if (parts.length === 4 && method === "PATCH") {
     const body = await readBody(request);
+    // Disabling is always allowed; turning a panel back on is using the feature again.
+    if (body?.enabled !== false) {
+      const featureProblem = await featureLimit(orgId, "integrations");
+      if (featureProblem) return planFeatureResponse(response, featureProblem), true;
+    }
     const row = await store.setOrgAppState({ orgId, appId, enabled: body?.enabled !== false });
     if (!row) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "this app is not installed"), true;
     await audit({

@@ -219,6 +219,36 @@ describe("effective access", () => {
     expect(access.capabilities).toEqual(["board.read"]);
   });
 
+  it("keeps a frozen room read-only but lets its data leave", () => {
+    const access = effective({
+      board: board({ frozenAt: "2026-10-25T00:00:00Z" }),
+      viewer: member({ userId: "editor-1" }),
+      grants: [{ subjectType: "user", subjectId: "editor-1", role: "editor" }],
+    });
+    expect(access.allowed).toBe(true);
+    expect(access.capabilities.sort()).toEqual(["board.backup", "board.export", "board.read"]);
+  });
+
+  it("makes every room read-only while the organisation is past its seat grace", () => {
+    const access = effective({
+      board: board({ orgReadOnlyAt: "2026-10-25T00:00:00Z" }),
+      viewer: member({ userId: "owner-1" }),
+      grants: [],
+    });
+    expect(access.capabilities.sort()).toEqual(["board.backup", "board.export", "board.read"]);
+  });
+
+  it("does not hand a public link the export right through a frozen room", () => {
+    const access = effective({
+      board: board({ visibility: "link", frozenAt: "2026-10-25T00:00:00Z" }),
+      viewer: null,
+      link: { role: "viewer" },
+      policy: { publicLinks: true },
+    });
+    expect(access.allowed).toBe(true);
+    expect(access.capabilities).toEqual(["board.read"]);
+  });
+
   it("lets a public link in read-only, and only when the policy allows it", () => {
     const shared = board({ visibility: "link" });
     expect(

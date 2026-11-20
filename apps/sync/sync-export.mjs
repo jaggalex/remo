@@ -6,6 +6,7 @@
  * request/completion records, kept in memory and pruned on the next request.
  */
 import { randomUUID } from "node:crypto";
+import { featureLimit, planFeatureResponse } from "./billing-guard.mjs";
 import { readJsonBody } from "./http-body.mjs";
 import { buildBoardBackup } from "./backup.mjs";
 import { Y } from "./y.mjs";
@@ -152,6 +153,15 @@ export function createExportRoutes({
         response.writeHead(403, { "Content-Type": "application/json" });
         response.end(JSON.stringify({ error: "FORBIDDEN" }));
         return true;
+      }
+      // PDF is a paid export (§2.2). PNG stays available on every plan; the watermark is
+      // the client's other, softer reminder.
+      if (format === "pdf") {
+        const problem = await featureLimit(store, orgId, "export.pdf");
+        if (problem) {
+          planFeatureResponse(response, problem);
+          return true;
+        }
       }
       pruneExportJobs();
       const jobId = randomUUID();

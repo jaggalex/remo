@@ -7,6 +7,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer } from "node:http";
+import { resetEntitlementCache } from "./billing.mjs";
 import { handleIam } from "./iam-api.mjs";
 import { testDatabaseStore } from "./test-db.mjs";
 import { discoverableBoards } from "./discovery.mjs";
@@ -1571,5 +1572,86 @@ suite("board discovery", () => {
     } finally {
       await store.pool.query("delete from boards where id = $1", [room]);
     }
+  });
+});
+
+suite("plan limits", () => {
+  it("refuses an invitation acceptance when the Free seats are full", async () => {
+    const owner = client();
+    const ownerReg = await owner("POST", "/auth/register", {
+      email: email("seats-owner"),
+      password,
+      name: "Seats Owner",
+    });
+    const created = await owner("POST", "/orgs", { name: `Seats ${stamp}` });
+    const orgId = created.body.org.id;
+
+    // Four accepted invitations put the shared organisation on its Free ceiling of five.
+    for (const tag of ["a", "b", "c", "d"]) {
+      const person = client();
+      const registered = await person("POST", "/auth/register", {
+        email: email(`seats-${tag}`),
+        password,
+        name: `Seats ${tag}`,
+      });
+      const invite = await owner("POST", `/orgs/${orgId}/invitations`, {
+        email: registered.body.user.email,
+      });
+      expect(invite.status).toBe(201);
+      const accepted = await person("POST", "/invitations/accept", {
+        token: new URL(invite.body.url).searchParams.get("invite"),
+      });
+      expect(accepted.status).toBe(200);
+    }
+
+    // The sixth person is invited while billing is off; switching it on makes the
+    // acceptance, not the invitation, the moment the seat is taken (§2.4).
+    const sixth = client();
+    const sixthReg = await sixth("POST", "/auth/register", {
+      email: email("seats-sixth"),
+      password,
+      name: "Seats Sixth",
+    });
+    const last = await owner("POST", `/orgs/${orgId}/invitations`, {
+      email: sixthReg.body.user.email,
+    });
+    expect(last.status).toBe(201);
+    const token = new URL(last.body.url).searchParams.get("invite");
+
+    process.env.REMO_BILLING = "on";
+    resetEntitlementCache();
+    let refused;
+    try {
+      refused = await sixth("POST", "/invitations/accept", { token });
+    } finally {
+      delete process.env.REMO_BILLING;
+      resetEntitlementCache();
+    }
+    expect(refused.status).toBe(402);
+    expect(refused.body).toEqual({
+      error: "PLAN_LIMIT",
+      limit: "seats",
+      current: 5,
+      max: 5,
+      plan: "free",
+      message: "the free plan allows 5 seats",
+    });
+
+    // The transaction rolled back: no membership, and the invitation is still pending.
+    const members = await owner("GET", `/orgs/${orgId}/members`);
+    expect(members.body.members.map((member) => member.email)).not.toContain(
+      sixthReg.body.user.email,
+    );
+    const pending = await owner("GET", `/orgs/${orgId}/invitations`);
+    expect(pending.body.invitations.map((invite) => invite.email)).toContain(
+      sixthReg.body.user.email,
+    );
+
+    // With billing off the same invitation still works, so the refusal was the plan.
+    expect((await sixth("POST", "/invitations/accept", { token })).status).toBe(200);
+    const after = await owner("GET", `/orgs/${orgId}/members`);
+    expect(after.body.members.map((member) => member.email)).toContain(
+      sixthReg.body.user.email,
+    );
   });
 });

@@ -1,6 +1,7 @@
 /**
  * Invitations: creating one for a board or an organisation, and accepting it.
  */
+import { featureLimit, planFeatureResponse, planLimitResponse, seatLimit } from "./billing-guard.mjs";
 import { hashToken, isEmail, newToken, normalizeEmail } from "./iam.mjs";
 import { accessForBoard, fail, json, readBody } from "./iam-http.mjs";
 import { enqueueMail, pickLocale } from "./mail.mjs";
@@ -74,6 +75,9 @@ export async function handleInvitations(ctx) {
       if (existing && (await store.hasActiveMembership(orgId, existing.id))) {
         return fail(response, 409, "ALREADY_MEMBER", "this person is already in the organisation"), true;
       }
+      // Membership is a seat (§2.3); the invitation is refused before it is written.
+      const seatProblem = await seatLimit(store, orgId);
+      if (seatProblem) return planLimitResponse(response, seatProblem), true;
       const token = newToken(24);
       const invitation = await store.createInvitation({
         orgId,
@@ -133,6 +137,11 @@ export async function handleInvitations(ctx) {
     if (result.suspended) {
       return fail(response, 403, "ORG_SUSPENDED", "your access to this organisation is suspended"), true;
     }
+    // The store refused inside the transaction, so the membership, the grant and the
+    // invitation are untouched; the invitation stays pending for the day a seat frees.
+    if (result.planLimit) {
+      return planLimitResponse(response, result.planLimit), true;
+    }
     await audit({
       actorId: me.id,
       orgId: result.invitation.org_id,
@@ -174,6 +183,15 @@ export async function handleInvitations(ctx) {
     if (existing && (await store.hasActiveMembership(board.org_id, existing.id))) {
       // The person has an account here: a grant is the right instrument, not an invite.
       return fail(response, 409, "USER_EXISTS", "add them by grant instead"), true;
+    }
+    // An editor guest occupies a seat (§2.3); a commenter role is a paid role (§2.2).
+    if (role === "editor") {
+      const seatProblem = await seatLimit(store, board.org_id);
+      if (seatProblem) return planLimitResponse(response, seatProblem), true;
+    }
+    if (role === "commenter") {
+      const featureProblem = await featureLimit(store, board.org_id, "roles.advanced");
+      if (featureProblem) return planFeatureResponse(response, featureProblem), true;
     }
     const token = newToken(24);
     const invitation = await store.createInvitation({

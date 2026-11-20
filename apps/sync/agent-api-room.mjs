@@ -6,6 +6,7 @@
  * later, from an integration without a second permission path.
  */
 import { fail, json, readBody } from "./iam-api.mjs";
+import { planLimitResponse } from "./billing-guard.mjs";
 import { roomAgentCanRequest, roomAgentHistoryAllowed, roomAgentMemberCanEdit, withRoomAgentLock } from "./agent-context.mjs";
 import { fakeModelEnabled } from "./ai-fake.mjs";
 
@@ -218,6 +219,10 @@ export async function handleRoomAgentRoutes(ctx) {
     if (method === "POST") {
       const body = await readBody(request);
       const result = await createRoomTask({ boardId, body });
+      if (result.problem) {
+        planLimitResponse(response, result.problem);
+        return true;
+      }
       if (result.status >= 400) {
         fail(response, result.status, result.code, result.message);
         return true;
@@ -282,6 +287,10 @@ export async function handleRoomAgentRoutes(ctx) {
         boardId: thread.board_id,
         body: { ...body, threadId },
       });
+      if (result.problem) {
+        planLimitResponse(response, result.problem);
+        return true;
+      }
       if (result.status >= 400) {
         fail(response, result.status, result.code, result.message);
         return true;

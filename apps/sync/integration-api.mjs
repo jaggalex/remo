@@ -5,6 +5,7 @@
  * exactly once; the list carries labels, scopes and dates, never the secret or its hash.
  */
 import { fail, json, readBody } from "./iam-http.mjs";
+import { featureLimit, planFeatureResponse } from "./billing-guard.mjs";
 import {
   INTEGRATION_SCOPES,
   expiryFromDays,
@@ -44,6 +45,9 @@ export async function handleIntegrationRoutes(ctx) {
   }
 
   if (parts.length === 3 && method === "POST") {
+    // Issuing a token is the integration feature (§2.2); revoking one stays allowed.
+    const featureProblem = await featureLimit(orgId, "integrations");
+    if (featureProblem) return planFeatureResponse(response, featureProblem), true;
     const body = await readBody(request);
     const scopes = normalizeScopes(body?.scopes);
     if (!scopes) {

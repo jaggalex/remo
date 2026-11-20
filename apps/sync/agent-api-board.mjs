@@ -3,6 +3,7 @@
  */
 import { fail, json, readBody } from "./iam-api.mjs";
 import { hashToken, newToken } from "./iam.mjs";
+import { planLimitResponse } from "./billing-guard.mjs";
 import { aiEntryRefusal } from "./agents.mjs";
 import { MAX_TOKENS_PER_AGENT, integer, operatorView } from "./agent-api-shared.mjs";
 import { relayoutTidyTask } from "./agent-tidy-runner.mjs";
@@ -80,6 +81,10 @@ export async function handleBoardRoutes(ctx) {
     if (method === "POST") {
       const body = await readBody(request);
       const result = await createTask({ boardId, body });
+      if (result.problem) {
+        planLimitResponse(response, result.problem);
+        return true;
+      }
       if (result.status >= 400) {
         fail(response, result.status, result.code, result.message);
         return true;

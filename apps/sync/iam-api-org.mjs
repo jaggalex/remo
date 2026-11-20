@@ -1,6 +1,7 @@
 /**
  * Organisation routes: creating an org, its boards, teams and member list.
  */
+import { featureLimit, planFeatureResponse, planLimitResponse, roomLimit } from "./billing-guard.mjs";
 import { emitMetric } from "./metrics-events.mjs";
 import { orgCapabilitiesFor } from "./iam.mjs";
 import { boardIdFor, fail, json, orgSlugFor, readBody } from "./iam-http.mjs";
@@ -90,6 +91,8 @@ export async function handleOrgRoutes(ctx) {
         "guests cannot create boards; ask an administrator",
       ), true;
     }
+    const roomProblem = await roomLimit(store, orgId);
+    if (roomProblem) return planLimitResponse(response, roomProblem), true;
     const body = await readBody(request);
     const teams = await store.listTeams(orgId);
     const team = body?.teamId
@@ -137,6 +140,8 @@ export async function handleOrgRoutes(ctx) {
     if (!(await isOrgAdmin(orgId, me.id))) {
       return fail(response, 403, "FORBIDDEN", "only an organisation admin can add teams"), true;
     }
+    const teamProblem = await featureLimit(store, orgId, "roles.advanced");
+    if (teamProblem) return planFeatureResponse(response, teamProblem), true;
     const body = await readBody(request);
     if (!body?.name) return fail(response, 422, "TEAM_NAME_REQUIRED", "a name is required"), true;
     const team = await store.createTeam({ orgId, name: String(body.name) });

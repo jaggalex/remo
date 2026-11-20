@@ -8,6 +8,7 @@
  */
 import { agentLimitsFromEnv, roomAgentCanRequest, withRoomAgentLock } from "./agent-context.mjs";
 import { agentEffective, aiEntryRefusal, budgetMissing, normalizeBudget, resolveSkill } from "./agents.mjs";
+import { agentTaskLimit } from "./billing-guard.mjs";
 import { accessForBoard } from "./iam-api.mjs";
 import { effective } from "./iam.mjs";
 import { MAX_QUEUED, SKILL_HANDLERS, originOf, selectionIds } from "./agent-api-shared.mjs";
@@ -158,6 +159,12 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
         return { status: 200, task: await store.getAgentTask(existing.id), replayed: true };
       }
     }
+
+    // The monthly ceiling is a plan limit, not a board rule: it is checked once the
+    // request is known to be real and before any row is written (§2.4). A replay above
+    // already answered, so a retry never turns into a refusal.
+    const planProblem = await agentTaskLimit(store, ready.board.org_id);
+    if (planProblem) return { status: 402, code: "PLAN_LIMIT", problem: planProblem };
 
     // The brief and the attached file are data for the model (ADR-142 "Untrusted
     // content"). Validate both here, so a task is never created around a file the
@@ -436,6 +443,10 @@ export function humanContext({ request, store, log, onTaskQueued, me, sessionId 
     if ((await store.countQueuedAgentTasks(boardId)) >= MAX_QUEUED) {
       return { status: 429, code: "TOO_MANY_TASKS", message: "too many tasks in this room" };
     }
+
+    // A room task is an agent task: the same monthly ceiling applies (§2.4).
+    const planProblem = await agentTaskLimit(store, board.org_id);
+    if (planProblem) return { status: 402, code: "PLAN_LIMIT", problem: planProblem };
 
     const result = await store.enqueueRoomAgentTask({
       thread,

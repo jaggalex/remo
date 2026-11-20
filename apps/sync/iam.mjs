@@ -199,6 +199,15 @@ export function effective({ board, viewer, grants = [], policy = {}, link = null
     capabilities = capabilities.filter((capability) => capability === "board.read");
   }
 
+  // A frozen room (over the plan's room limit) and an organisation past its seat grace
+  // are read-only, but unlike the trash they never take export or backup away: data
+  // leaves with its owner (§2.5, ADR-247). Applied after the archive rule so a room in
+  // the trash stays a trash row.
+  if (board.frozenAt || board.orgReadOnlyAt) {
+    const readOnly = new Set(["board.read", "board.export", "board.backup"]);
+    capabilities = capabilities.filter((capability) => readOnly.has(capability));
+  }
+
   return {
     allowed: capabilities.includes("board.read"),
     role,

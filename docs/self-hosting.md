@@ -40,6 +40,8 @@ Copy `deploy/production.env.example` to a private file (mode 600) and replace ev
 | `REMO_RESEND_API_KEY` | send-only key for the `resend` driver |
 | `REMO_SMTP_URL` | `smtps://…` or `smtp://…:587`, where STARTTLS is required |
 | `REMO_MAIL_BATCH`, `REMO_MAIL_CONSOLE_FILE` | optional drain batch size and the file the console driver appends to (end-to-end tests read it) |
+| `REMO_BILLING` | `off` (the default) means no plan limits and no billing routes; `on` enforces the catalogue (ADR-247) |
+| `REMO_BILLING_CURRENCIES` | currencies the installation sells, first one is the default (for example `RUB` or `USD,EUR`); a currency without a complete price list is not offered |
 | `REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES` | set to `0` to let an unverified address invite people; `1` by default |
 
 Mail needs PostgreSQL for the outbox, `REMO_KEK` to seal links and an `https` `REMO_APP_ORIGIN` in production. With disk storage the driver is always `disabled`.

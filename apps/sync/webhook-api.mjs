@@ -6,6 +6,7 @@
  * the secret, the same rule provider keys follow.
  */
 import { assertPublicDns, assertSafeBaseUrl, kekFromEnv } from "./secrets.mjs";
+import { featureLimit, planFeatureResponse } from "./billing-guard.mjs";
 import { fail, json, readBody } from "./iam-http.mjs";
 import { newWebhookSecret, sealWebhookSecret } from "./webhooks.mjs";
 
@@ -55,6 +56,10 @@ export async function handleWebhookRoutes(ctx) {
   }
 
   if (parts.length === 3 && method === "PUT") {
+    // A webhook is an integration (§2.2). Turning it off stays allowed, so a downgraded
+    // organisation can stop deliveries (§2.5).
+    const featureProblem = await featureLimit(orgId, "integrations");
+    if (featureProblem) return planFeatureResponse(response, featureProblem), true;
     const body = await readBody(request);
     if (!body?.url) return fail(response, 422, "WEBHOOK_URL_REQUIRED", "a URL is required"), true;
     let endpoint;
@@ -96,6 +101,9 @@ export async function handleWebhookRoutes(ctx) {
   if (parts[3] === "rotate" && method === "POST") {
     const current = await store.getOrgWebhook(orgId);
     if (!current) return fail(response, 404, "RESOURCE_NOT_AVAILABLE", "no webhook"), true;
+    // A rotation issues a new secret: a new integration, so the plan must still include it.
+    const featureProblem = await featureLimit(orgId, "integrations");
+    if (featureProblem) return planFeatureResponse(response, featureProblem), true;
     const kek = kekFromEnv();
     if (!kek) {
       return fail(response, 409, "WEBHOOK_LOCKED", "the key-encryption key is not configured"), true;

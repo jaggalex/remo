@@ -3,6 +3,13 @@
  */
 import { hashPassword, hashToken, newToken, normalizeEmail, verifyPassword } from "./iam.mjs";
 import { clearFailures, reserveAttempt } from "./attempts.mjs";
+import {
+  featureLimit,
+  planFeatureResponse,
+  planLimitResponse,
+  roomLimit,
+  seatLimit,
+} from "./billing-guard.mjs";
 import { hashQueue } from "./hash-queue.mjs";
 import { emitMetric } from "./metrics-events.mjs";
 import {
@@ -237,6 +244,24 @@ export async function handleBoardRoutes(ctx) {
             return fail(response, 422, "BAD_ROLE", "guests cannot be co-owners"), true;
           }
         }
+        // The commenter and co-owner roles are part of the paid plan (§2.2); the rights
+        // check above comes first, so a stranger learns nothing about the plan.
+        if (role === "commenter" || role === "coowner") {
+          const featureProblem = await featureLimit(store, board.org_id, "roles.advanced");
+          if (featureProblem) return planFeatureResponse(response, featureProblem), true;
+        }
+        // An editor grant is a seat for a guest (§2.3), so promoting one is the same
+        // limit as inviting them; a grant that is already editor+ is already counted.
+        if (role === "editor" && subjectType === "user") {
+          const seat = await store.getOrgMembership(board.org_id, subjectId);
+          const wasSeat =
+            (existing?.role === "editor" || existing?.role === "coowner") &&
+            (!existing?.expires_at || new Date(existing.expires_at).getTime() > Date.now());
+          if (seat?.relation === "guest" && !wasSeat) {
+            const seatProblem = await seatLimit(store, board.org_id);
+            if (seatProblem) return planLimitResponse(response, seatProblem), true;
+          }
+        }
         const result = await store.putGrant({
           boardId,
           subjectType,
@@ -383,13 +408,11 @@ export async function handleBoardRoutes(ctx) {
         const body = await readBody(request);
         if (body === null) return fail(response, 400, "BAD_REQUEST", "invalid JSON"), true;
 
-        let passwordHash;
         if ("password" in body) {
           const value = body.password;
           if (value !== null && (typeof value !== "string" || value.length < 8)) {
             return fail(response, 422, "WEAK_PASSWORD", "the link password needs at least 8 characters"), true;
           }
-          passwordHash = value === null ? null : await hashPassword(value);
         }
         let expiresAt;
         if ("expiresAt" in body) {
@@ -402,6 +425,21 @@ export async function handleBoardRoutes(ctx) {
           }
         }
 
+        // Protection is a paid feature (§2.2), but only new protection is: a link that
+        // already carries a password or an expiry keeps it after a downgrade (§2.5),
+        // and removing one is always allowed.
+        const currentLink = await store.getBoardLink(boardId);
+        const addsPassword = typeof body.password === "string" && !currentLink?.has_password;
+        const addsExpiry = expiresAt && !currentLink?.expires_at;
+        if (addsPassword || addsExpiry) {
+          const featureProblem = await featureLimit(store, board.org_id, "link.protect");
+          if (featureProblem) return planFeatureResponse(response, featureProblem), true;
+        }
+
+        let passwordHash;
+        if ("password" in body) {
+          passwordHash = body.password === null ? null : await hashPassword(body.password);
+        }
         if (body.enabled === false) {
           await store.disableBoardLink(boardId);
           await audit({ actorId: me2.id, orgId: board.org_id, boardId, action: "link.disable" });
@@ -505,6 +543,9 @@ export async function handleBoardRoutes(ctx) {
       if (board.owner_id !== me2.id) {
         return fail(response, 403, "FORBIDDEN", "only the owner can restore this board"), true;
       }
+      // A restored room is active again, so it counts against the same ceiling (§2.4).
+      const roomProblem = await roomLimit(store, board.org_id);
+      if (roomProblem) return planLimitResponse(response, roomProblem), true;
       const restored = await store.restoreBoard(boardId);
       if (!restored) return fail(response, 409, "NOT_ARCHIVED", "this board is not in the trash"), true;
       await audit({ actorId: me2.id, orgId: board.org_id, boardId, action: "board.restore" });
@@ -520,6 +561,9 @@ export async function handleBoardRoutes(ctx) {
       if (!access.allowed || !access.capabilities.includes("board.manage")) {
         return fail(response, 403, "FORBIDDEN", "only the owner or a co-owner can copy this board"), true;
       }
+      // A copy is a new active room in the same organisation (§2.4).
+      const roomProblem = await roomLimit(store, board.org_id);
+      if (roomProblem) return planLimitResponse(response, roomProblem), true;
       const title = `${board.title || "Untitled"} (copy)`;
       const newId = boardIdFor(title);
       const copy = await store.duplicateBoard({

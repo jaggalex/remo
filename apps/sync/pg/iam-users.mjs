@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { seatLimitInTransaction } from "../billing-guard.mjs";
 import { normalizeEmail } from "../iam.mjs";
 
 /**
@@ -453,12 +454,31 @@ async acceptInvitation({ tokenHash, userId, email }) {
     // Both branches below set the seat to active, so an invitation would otherwise undo
     // a suspension that only an administrator may lift (ADR-161).
     const seat = await client.query(
-      `select state from org_memberships where org_id = $1 and user_id = $2 for update`,
+      `select relation, state from org_memberships where org_id = $1 and user_id = $2 for update`,
       [invitation.org_id, userId],
     );
     if (seat.rows[0]?.state === "suspended") {
       await client.query("rollback");
       return { suspended: true };
+    }
+
+    // A seat is an active member or a guest with editor+ rights (§2.3). The organisation
+    // row is locked first so two acceptances count one after the other; without the lock
+    // both would see the last free seat and the plan would be exceeded (§2.4).
+    const takesSeat =
+      invitation.subject_kind === "member" ||
+      (invitation.subject_kind === "guest" &&
+        ["editor", "coowner"].includes(invitation.role));
+    if (takesSeat) {
+      await client.query("select 1 from orgs where id = $1 for update", [invitation.org_id]);
+      const planProblem = await seatLimitInTransaction(this, client, invitation.org_id, {
+        userId,
+      });
+      if (planProblem) {
+        // Roll back before answering: no membership, no grant, invitation still pending.
+        await client.query("rollback");
+        return { planLimit: planProblem };
+      }
     }
 
     if (invitation.subject_kind === "member") {

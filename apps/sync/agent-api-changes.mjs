@@ -3,6 +3,7 @@
  */
 import { agentLimitsFromEnv } from "./agent-context.mjs";
 import { budgetMissing, normalizeBudget } from "./agents.mjs";
+import { agentTaskLimit, planLimitResponse } from "./billing-guard.mjs";
 import { estimateChangeSet } from "./change-set.mjs";
 import { fail, json, readBody } from "./iam-api.mjs";
 import { operatorView, originOf } from "./agent-api-shared.mjs";
@@ -110,6 +111,12 @@ export async function handleChangeSets(ctx) {
         return true;
       }
       const preview = body?.preview === true;
+      // A preview writes only a draft; the monthly ceiling applies to the task it would
+      // queue, so it is checked before the change set is written, not after (§2.4).
+      if (!preview) {
+        const planProblem = await agentTaskLimit(store, board.org_id);
+        if (planProblem) return planLimitResponse(response, planProblem), true;
+      }
       let changeSet;
       try {
         changeSet = await store.createChangeSet({
@@ -230,6 +237,9 @@ export async function handleChangeSets(ctx) {
         fail(response, prepared.status, prepared.code, prepared.message);
         return true;
       }
+      // Checked before the change set leaves `draft`, so a refusal leaves it resumable.
+      const planProblem = await agentTaskLimit(store, changeSet.org_id);
+      if (planProblem) return planLimitResponse(response, planProblem), true;
       const queued = await store.queueChangeSet(changeSet.id);
       if (!queued) {
         fail(response, 409, "NOT_DRAFT", "this change set is already queued");
@@ -276,6 +286,9 @@ export async function handleChangeSets(ctx) {
         fail(response, prepared.status, prepared.code, prepared.message);
         return true;
       }
+      // Same ceiling as a fresh task: a resume queues a new one (§2.4).
+      const planProblem = await agentTaskLimit(store, changeSet.org_id);
+      if (planProblem) return planLimitResponse(response, planProblem), true;
       const queued = await store.queueChangeSet(changeSet.id);
       if (!queued) {
         fail(response, 409, "NOT_RESUMABLE", "this change set cannot resume");

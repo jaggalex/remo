@@ -26,6 +26,8 @@
     "db:restore": "node scripts/db-backup.mjs --restore",
     "mail:test": "node scripts/mail-test.mjs",
     "mail:dead": "node scripts/mail-dead.mjs",
+    "billing:grant": "node scripts/billing-grant.mjs",
+    "billing:prices": "node scripts/billing-prices.mjs",
     "test:db:up": "docker compose -p remo-test -f docker-compose.test.yml up -d --wait && pnpm test:db:init",
     "test:db:init": "node scripts/test-db-init.mjs",
     "test:db:check": "node scripts/test-db-check.mjs",

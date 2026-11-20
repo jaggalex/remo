@@ -4,6 +4,7 @@
  */
 import { agentLimitsFromEnv } from "./agent-context.mjs";
 import { agentEffective, normalizeBudget } from "./agents.mjs";
+import { agentTaskLimit, planLimitResponse } from "./billing-guard.mjs";
 import { estimateChangeSet } from "./change-set.mjs";
 import { fail, json, readBody } from "./iam-api.mjs";
 import { effective, hashToken } from "./iam.mjs";
@@ -177,6 +178,15 @@ export async function handleBearer(ctx) {
         }
       }
       const preview = body?.preview === true;
+      // The task's monthly ceiling is checked before the change set exists, so a refusal
+      // leaves no queued change set behind (§2.4).
+      if (!preview) {
+        const planProblem = await agentTaskLimit(store, token.org_id);
+        if (planProblem) {
+          planLimitResponse(response, planProblem);
+          return true;
+        }
+      }
       const changeSet = await store.createChangeSet({
         orgId: token.org_id,
         boardId,
@@ -314,6 +324,11 @@ export async function handleBearer(ctx) {
           });
         } catch (error) {
           fail(response, 422, error?.code ?? "CHANGE_SET_INVALID", error?.message ?? String(error));
+          return true;
+        }
+        const planProblem = await agentTaskLimit(store, token.org_id);
+        if (planProblem) {
+          planLimitResponse(response, planProblem);
           return true;
         }
         const queued = await store.queueChangeSet(changeSet.id);
