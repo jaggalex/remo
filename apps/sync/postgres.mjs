@@ -28,6 +28,7 @@ import { appMethods } from "./pg/apps.mjs";
 import { voteMethods } from "./pg/votes.mjs";
 import { commentMethods } from "./pg/comments.mjs";
 import { roomMergeMethods } from "./pg/room-merge.mjs";
+import { fileMethods } from "./pg/files.mjs";
 import { billingMethods } from "./pg/billing.mjs";
 import { billingRenewalMethods } from "./pg/billing-renewals.mjs";
 import { paymentProviderMethods } from "./pg/payment-providers.mjs";
@@ -403,6 +404,7 @@ Object.assign(
   voteMethods,
   commentMethods,
   roomMergeMethods,
+  fileMethods,
   billingMethods,
   billingRenewalMethods,
   paymentProviderMethods,

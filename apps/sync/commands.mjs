@@ -25,6 +25,10 @@ const CONNECTABLE = new Set(["sticky_note", "text", "shape", "image", "stamp", "
 const CONTAINERS = new Set(["frame", "kanban", "group"]);
 /** The object name is a short label, not a field of text (ADR-165). */
 const MAX_NAME = 120;
+/** `alt` is the image's accessible name, not a paragraph (`spec/images.md` §3.2). */
+const MAX_ALT = 500;
+/** The longest side of a freshly created image object, in board units (§3.2). */
+const MAX_IMAGE_SIDE = 480;
 
 /** Stable document version: any Yjs update changes the state vector. */
 export function docVersion(ydoc) {
@@ -138,6 +142,92 @@ function waypointList(value) {
 }
 
 export const COMMANDS = {
+  /**
+   * An image object (ADR-249, `spec/images.md` §3.2, §5.1).
+   *
+   * It is a command of its own rather than a variant of `board.item.create` because the
+   * one rule that matters is not a shape: the referenced file must already belong to this
+   * room. `authorizeCommand` below enforces that before the document is touched, so a
+   * guessed `fileId` cannot be "legalised" by creating a widget around it.
+   */
+  "board.image.create": {
+    capabilities: ["board.edit"],
+    validate(input) {
+      const data = object(input, "input");
+      if (data.id !== undefined) {
+        throw new CommandError("BAD_INPUT", "the server assigns the object id");
+      }
+      text(data.fileId, "fileId", 200);
+      number(data.x, "x");
+      number(data.y, "y");
+      number(data.width, "width", { min: 1, max: MAX_IMAGE_SIDE });
+      number(data.height, "height", { min: 1, max: MAX_IMAGE_SIDE });
+      number(data.naturalWidth, "naturalWidth", { min: 1, max: 1_000_000 });
+      number(data.naturalHeight, "naturalHeight", { min: 1, max: 1_000_000 });
+      // A new object never starts larger than the file itself.
+      if (data.width > data.naturalWidth || data.height > data.naturalHeight) {
+        throw new CommandError("BAD_INPUT", "the object is larger than the image");
+      }
+      if (data.dominantColor !== undefined && data.dominantColor !== null) {
+        if (
+          typeof data.dominantColor !== "string" ||
+          !/^#[0-9a-f]{6}$/i.test(data.dominantColor)
+        ) {
+          throw new CommandError("BAD_INPUT", "dominantColor must be #rrggbb");
+        }
+      }
+      if (data.alt !== undefined && data.alt !== null) text(data.alt, "alt", MAX_ALT);
+      if (data.parentId !== undefined) text(data.parentId, "parentId", 200);
+      return data;
+    },
+    apply({ ydoc, input, actor, objectId }) {
+      if (widgets(ydoc).has(objectId)) {
+        throw new CommandError("OBJECT_EXISTS", `object ${objectId} already exists`, 409);
+      }
+      let parentId = null;
+      if (input.parentId) {
+        const parent = widgets(ydoc).get(input.parentId);
+        if (!parent || parent.type !== "frame" || parent.locked) {
+          throw new CommandError(
+            "BAD_INPUT",
+            "parentId must name an unlocked frame on this board",
+          );
+        }
+        parentId = input.parentId;
+      }
+      const alt = typeof input.alt === "string" ? input.alt.trim() : "";
+      const widget = {
+        id: objectId,
+        type: "image",
+        parentId,
+        x: input.x,
+        y: input.y,
+        width: input.width,
+        height: input.height,
+        fileId: input.fileId,
+        naturalWidth: input.naturalWidth,
+        naturalHeight: input.naturalHeight,
+        ...(input.dominantColor ? { dominantColor: input.dominantColor } : {}),
+        ...(alt ? { alt } : {}),
+        createdBy: actor.name ?? actor.id,
+        createdAt: Date.now(),
+      };
+      ydoc.transact(() => {
+        widgets(ydoc).set(widget.id, widget);
+      });
+      return { id: widget.id, type: widget.type, fileId: widget.fileId };
+    },
+    events({ result }) {
+      return [
+        {
+          type: "board.item.created",
+          subject: result.id,
+          payload: { objectType: result.type },
+        },
+      ];
+    },
+  },
+
   "board.item.create": {
     capabilities: ["board.edit"],
     validate(input) {
@@ -463,6 +553,31 @@ export const COMMANDS = {
 
 export function commandNames() {
   return Object.keys(COMMANDS);
+}
+
+/**
+ * Rules that need the database, checked before a command touches the document.
+ *
+ * `runCommand` stays pure so the registry can be tested without a store. An image is the
+ * one command whose input points at a row outside the document, so its invariant — the
+ * file belongs to this organisation and is already part of this room — lives here and is
+ * called by the one shared runner (`applyBoardCommand` in `commands-api.mjs`).
+ */
+export async function authorizeCommand({ name, input, store, boardId }) {
+  if (name !== "board.image.create") return;
+  const fileId = typeof input?.fileId === "string" ? input.fileId : "";
+  // A malformed id is the same answer as an unknown one, and never reaches the database
+  // as a value the uuid column would reject.
+  const file = fileId ? await store.fileById?.(fileId) : null;
+  const allowed =
+    file &&
+    file.status === "ready" &&
+    (file.board_id === boardId || (await store.fileUsedInBoard?.(fileId, boardId)) === true);
+  if (!allowed) {
+    // A missing file, a file in another organisation and a file from another room answer
+    // the same: confirming that a guessed id exists would be the leak §4.3 avoids.
+    throw new CommandError("FILE_NOT_FOUND", "the image file does not exist", 404);
+  }
 }
 
 /**

@@ -6,7 +6,7 @@
  * the command in one Yjs transaction, waits until the update is durable, records the
  * idempotency key and writes an audit row.
  */
-import { COMMANDS, CommandError, runCommand } from "./commands.mjs";
+import { COMMANDS, CommandError, authorizeCommand, runCommand } from "./commands.mjs";
 import { callerFromRequest, callerReachesOrg, hasScope } from "./integrations.mjs";
 import { readJsonBody } from "./http-body.mjs";
 
@@ -31,6 +31,80 @@ function json(response, status, body) {
 
 function fail(response, status, error, message) {
   json(response, status, { error, message });
+}
+
+/**
+ * Run one command with the shared guarantees: idempotency, database preconditions, one
+ * Yjs transaction, durability and the command log.
+ *
+ * Two entry points exist — this HTTP route and an upload finishing in `files-api.mjs` —
+ * and both must see the same rules. A second copy of this sequence is exactly how an
+ * image gets created without the file check or a command gets replayed twice.
+ */
+export async function applyBoardCommand({
+  store,
+  boardId,
+  orgId,
+  actor,
+  command,
+  input,
+  idempotencyKey,
+  capabilities = [],
+  getDocument,
+  ifVersion = undefined,
+  lock = true,
+}) {
+  const run = async () => {
+    // Re-checked inside the lock: two identical requests may have arrived together.
+    const existing = await store.findCommandRun(boardId, actor.id, idempotencyKey);
+    if (existing) {
+      return { result: existing.result, version: existing.version, replayed: true };
+    }
+
+    await authorizeCommand({ name: command, input, store, boardId });
+
+    const ydoc = await getDocument(boardId);
+    const ran = runCommand({
+      ydoc,
+      name: command,
+      input,
+      actor,
+      capabilities,
+      ifVersion,
+      idempotencyKey,
+      boardId,
+    });
+
+    // A response is a promise that the change survives a restart.
+    const persisted = await store.flushRoom(boardId);
+    if (!persisted) {
+      throw new CommandError(
+        "NOT_PERSISTED",
+        "the change is in memory but not durable; retry with the same key",
+        503,
+      );
+    }
+
+    const recorded = await store.recordCommandRun({
+      boardId,
+      orgId,
+      actorId: actor.id,
+      actorType: actor.type,
+      command,
+      idempotencyKey,
+      result: ran.result,
+      version: ran.version,
+      // The outbox rows are written in the same transaction as the idempotency row:
+      // an event exists if and only if the command was recorded (ADR-094).
+      events: ran.events,
+    });
+    return {
+      result: recorded.result,
+      version: recorded.version,
+      replayed: recorded.replayed === true,
+    };
+  };
+  return lock ? withBoardLock(boardId, run) : run();
 }
 
 /**
@@ -158,61 +232,18 @@ export async function handleCommands({
     return true;
   }
 
-  const actorId = actor.id;
-  const existing = await store.findCommandRun(boardId, actorId, key);
-  if (existing) {
-    json(response, 200, {
-      result: existing.result,
-      version: existing.version,
-      replayed: true,
-    });
-    return true;
-  }
-
   try {
-    const outcome = await withBoardLock(boardId, async () => {
-      // Re-check inside the lock: two identical requests may have arrived together.
-      const raced = await store.findCommandRun(boardId, actor.id, key);
-      if (raced) {
-        return { result: raced.result, version: raced.version, replayed: true };
-      }
-
-      const ydoc = await getDocument(boardId);
-      const ran = runCommand({
-        ydoc,
-        name: command,
-        input,
-        actor,
-        capabilities: access.capabilities,
-        ifVersion: body.ifVersion ? String(body.ifVersion) : undefined,
-        idempotencyKey: key,
-        boardId,
-      });
-
-      // A response is a promise that the change survives a restart.
-      const persisted = await store.flushRoom(boardId);
-      if (!persisted) {
-        throw new CommandError(
-          "NOT_PERSISTED",
-          "the change is in memory but not durable; retry with the same key",
-          503,
-        );
-      }
-
-      const recorded = await store.recordCommandRun({
-        boardId,
-        orgId,
-        actorId: actor.id,
-        actorType: actor.type,
-        command,
-        idempotencyKey: key,
-        result: ran.result,
-        version: ran.version,
-        // The outbox rows are written in the same transaction as the idempotency row:
-        // an event exists if and only if the command was recorded (ADR-094).
-        events: ran.events,
-      });
-      return { result: recorded.result, version: recorded.version, replayed: recorded.replayed };
+    const outcome = await applyBoardCommand({
+      store,
+      boardId,
+      orgId,
+      actor,
+      command,
+      input,
+      idempotencyKey: key,
+      capabilities: access.capabilities,
+      getDocument,
+      ifVersion: body.ifVersion ? String(body.ifVersion) : undefined,
     });
 
     await audit({

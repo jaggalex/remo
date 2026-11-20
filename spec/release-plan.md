@@ -68,9 +68,10 @@ ADR-249/250/251 сдвинуты на 24/25/26 **до принятия** и ос
    и заморозки, i18n в новых файлах (`apiBilling.ts`, `en-billing.ts`).
 3. **e2e при `REMO_BILLING=on`**: каталог → счёт → `billing:mark-paid` → Pro → лимит комнат →
    заморозка → экспорт работает.
-4. **R5.2, HTTP файлов**: `readMultipart`, `POST /boards/:id/files`,
-   `GET /files/:id/:variant` (проверка комнаты + `security definer`-lookup), `/original`,
-   `/copy`, `pg/files.mjs`, `fileId` в `project.mjs`, GC.
+4. **R5.2 сделан** (`http-multipart`, `files-api`, `pg/files`, `board.image.create`,
+   `fileId` в проекции). Осталось: `security definer`-функция `org_by_file` в схеме —
+   без неё межорганизационное чтение/копирование под FORCE RLS ограничено; GC и метрики
+   `remo_files_*`.
 5. **R5.3–R5.6**: холст (`imagePaint`, `imageCache`, LOD/LRU), объект целиком, квоты/хранилище,
    экспорт/бэкап, эталоны и доки.
 6. UI неподтверждённой почты на доске: `BoardApp.tsx` ровно 800 строк, нужен «шов» —

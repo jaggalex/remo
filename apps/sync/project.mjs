@@ -53,6 +53,19 @@ export function projectProps(widget) {
     const columnId = str(widget.cell.columnId);
     if (rowId && columnId) props.cell = { rowId, columnId };
   }
+  // Image objects (ADR-249): the projection is what the read API, the GC and the
+  // "is this file used in this room" check see. Without `fileId` here a file would look
+  // unused and the read route would answer 404 for a picture that is on the board.
+  if (widget.type === "image") {
+    const fileId = str(widget.fileId);
+    if (fileId) props.fileId = fileId;
+    if (typeof widget.naturalWidth === "number") props.naturalWidth = widget.naturalWidth;
+    if (typeof widget.naturalHeight === "number") props.naturalHeight = widget.naturalHeight;
+    if (typeof widget.dominantColor === "string" && widget.dominantColor) {
+      props.dominantColor = widget.dominantColor;
+    }
+    if (typeof widget.alt === "string" && widget.alt) props.alt = widget.alt;
+  }
   if (widget.layout?.kind === "table") {
     const spans = Array.isArray(widget.layout.spans)
       ? widget.layout.spans

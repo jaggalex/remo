@@ -31,6 +31,8 @@ import { createDiskStore } from "./sync-disk-store.mjs";
 import { createConnections } from "./sync-connections.mjs";
 import { createSaveAcks } from "./sync-save-ack.mjs";
 import { createExportRoutes } from "./sync-export.mjs";
+import { createFilesApi } from "./files-api.mjs";
+import { createFileStore } from "./files-store.mjs";
 import { attachWebSocket } from "./sync-websocket.mjs";
 import { FATAL_FLUSH_MS, guardPersistence, installProcessGuards } from "./failure-boundary.mjs";
 import { encodeCommentsChanged } from "./comment-signal.mjs";
@@ -195,6 +197,19 @@ const exports = createExportRoutes({
   accessForBoard,
   linkUnlockToken,
   emitMetric,
+});
+
+// Uploaded images live outside the database (§2): one store for the configured driver,
+// and one route module that owns the ceiling, the quota and the access checks.
+const files = createFilesApi({
+  store,
+  files: await createFileStore(),
+  getDocument: async (boardId) =>
+    typeof store.roomDocument === "function" ? store.roomDocument(boardId) : docs.get(boardId),
+  sessionFromRequest,
+  accessForBoard,
+  linkUnlockToken,
+  log: console,
 });
 
 const agents = createAgentLoops({ store, ai, log: console });
@@ -376,6 +391,14 @@ async function routeRequest(request, response, url) {
     );
     return;
   }
+
+  /**
+   * Uploaded images (ADR-249). The route family is `/files/...` as well as
+   * `/boards/:id/files...`; upload and copy already run inside the board's tenant, while
+   * the read route resolves the file's organisation itself because `/files` never passes
+   * `tenantOrgForRequest`.
+   */
+  if (await files.handleFilesRoutes({ request, response, url })) return;
 
   /**
    * Billing comes before IAM: `/billing/catalog` is global, and `/orgs/:id/billing`
