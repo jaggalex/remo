@@ -9852,3 +9852,353 @@ because nothing is raised until someone chooses it. The painter gains one helper
 - the command, including locked objects and a type that cannot be raised;
 - the painter's choice of colour and geometry;
 - a browser scenario that sets and clears the shadow from «⋯».
+
+## ADR-246: Transactional mail goes through one outbox and pluggable drivers; password reset and address verification use it
+
+**Status:** proposed (2026-11-20). Implementation spec: `spec/mail.md`.
+
+**Context.** remo sends no mail. IAM v1 accepted this as a known limit (`spec/IAM-v1.md`
+§6, §13):
+
+- a forgotten password loses the account;
+- an address is never verified, so anyone can register any address;
+- invitation links are copied by hand (`iam-api-invitations.mjs`).
+
+Paid plans will also need a real address. remo runs in three ways, and each has a different
+mail provider:
+
+- as a hosted service in the EU, which wants a provider API (Resend);
+- as a hosted service in Russia, which needs a provider that keeps data in Russia;
+- as a self-hosted AGPL product, where the operator has an SMTP server or no mail at all.
+
+**Decision.**
+
+- **One mechanism.** `enqueueMail` writes a row to `mail_outbox`; a drain sends it through
+  the one configured driver. No route calls a driver directly.
+- **Four drivers, one per installation** (`REMO_MAIL_DRIVER`):
+  - `disabled` is the production default;
+  - `console` is the development default and is refused in production;
+  - `smtp` uses `nodemailer`;
+  - `resend` is one HTTPS call through `outbound.mjs`, with no SDK.
+
+  A region is an installation: the EU cell uses `resend` and the Russian cell uses `smtp`
+  against a Russian provider. There is no per-user routing.
+- **`mail_outbox` is its own table, not `event_outbox`.** `event_outbox` is board-scoped,
+  tenant-protected and by rule carries no personal data (`spec/webhooks.md`); a mail row
+  carries an address and a secret. The claim, retry and dead-letter semantics copy the event
+  drain (ADR-094).
+- **Global, outside tenant RLS.** `mail_outbox` and the new `auth_tokens` are global identity
+  tables like `users` and `sessions`. This extends the ADR-178 list.
+- **No usable link at rest.** Parameters holding a secret link are sealed with the KEK
+  envelope (`encryptSecret`) and cleared when the row is sent or dead. Account tokens are 32
+  random bytes, stored as SHA-256, single use:
+  - `password_reset` lives 60 minutes;
+  - `email_verify` lives 24 hours.
+
+  A new token of the same purpose voids the older ones.
+- **At-least-once delivery.** The outbox id is the provider idempotency key:
+  `Idempotency-Key` for Resend, `Message-ID` for SMTP. The retry schedule is shorter than the
+  webhook schedule, because a person is waiting; the backoff function is shared
+  (`backoff.mjs`). A row whose link has already expired dies instead of sending.
+- **Flows.**
+  - Forgot password: the same answer and timing for every address. After a reset every
+    session is revoked, there is no automatic sign-in, and a notice mail is sent.
+  - Verification mail on registration, with a resend route.
+  - Invitation mail; copying the link keeps working.
+  - A "password changed" notice after a change and after a reset.
+- **Without mail, features switch off and nothing breaks.** `GET /auth/capabilities` tells
+  the client what is available. With mail disabled, verification is not enforced and the
+  reset form is not offered.
+- **What an unverified account can do.** It can sign in and work. While mail is enabled it
+  cannot create invitations (`EMAIL_NOT_VERIFIED`). Billing states its own requirement
+  separately.
+- **Templates live in code,** in RU and EN, as plain text plus simple escaped HTML. No
+  tracking pixels and no link rewriting.
+
+**Consequences.**
+
+- Schema 21 adds `mail_outbox`, `auth_tokens` and `users.email_verified_at`. There are new
+  environment variables and one new dependency, `nodemailer`: STARTTLS, AUTH and pooling are
+  not worth re-implementing.
+- A self-hoster without mail loses nothing they had.
+- The hosted service depends on a provider. An outage delays mail by the retry schedule and
+  leaves dead rows visible (`pnpm mail:dead`, `remo_mail_dead_total`).
+- Resend keeps account data in the US even when it sends from `eu-west-1`. The privacy policy
+  must name it as a processor, and the Russian cell must not use it.
+- Existing accounts stay unverified until their owners confirm. Nobody checked those
+  addresses, so they are not marked verified in bulk.
+
+**Out of scope, each for its own record.** Sign-in by an emailed code, change of address,
+new-device notices, OAuth (Yandex ID, VK ID, Google, GitHub), TOTP and passkeys, marketing
+mail, inbound mail, and the mail of the support and billing modules.
+
+Once accepted, this supersedes the "no mail" limit in `spec/IAM-v1.md` §6 and the mail item
+in §13.
+
+## ADR-247: Plans are enforced through one entitlements function; billing owns subscriptions and a ledger independent of any payment provider
+
+**Status:** proposed (2026-11-20). Implementation spec: `spec/billing.md`. Providers:
+ADR-248.
+
+**Context.** remo is sold as a hosted service with a free plan and three paid team plans
+(Pro up to 5 seats, Team up to 20, Business up to 50). It is also distributed under the AGPL,
+where nothing may be limited. The product has no notion of a plan. Limits would otherwise
+appear as scattered checks, and payment providers will change over time (ADR-248).
+
+**Decision.**
+
+- **One function decides what an organisation may do.** `entitlementsFor(orgId)` reads the
+  subscription and the catalogue in `billing-catalog.mjs`. Every route that a plan limits
+  calls it and answers `402` with `PLAN_LIMIT` or `PLAN_FEATURE`. No other code compares
+  plan names. With `REMO_BILLING=off`, the default and the self-host case, it returns
+  `unlimited`.
+- **The plan belongs to a shared organisation.** A personal organisation is always free.
+- **A seat** is an active member, or a guest who holds editor or a higher role on any room of
+  the organisation. Viewers, commenters and public-link visitors are free.
+- **What a plan gives** (seats, limits, features) is product behaviour and lives in code
+  (`billing-catalog.mjs`). **What it costs** is a commercial decision and lives in an
+  installation-level price book (`prices`), managed by the operator without a release.
+  - Each price is (plan, interval, currency, version). Currencies are independent price
+    lists, never conversions: billing uses no exchange rate.
+  - A published amount is never edited; a new version replaces it for new buyers.
+  - Existing subscriptions keep their price unless the operator migrates them with advance
+    notice, and founder overrides are skipped.
+- **Currency.** The installation lists the currencies it sells
+  (`REMO_BILLING_CURRENCIES`). An organisation gets one currency at its first purchase,
+  fixed while a subscription lives.
+  - Only currencies with a complete price list and at least one active payment connection
+    are offered, so the currency narrows the payment providers (ADR-248).
+  - Promo codes: a percentage applies in any currency; a fixed amount carries its own
+    currency; a price override points at one price. The discount is copied into the
+    subscription at checkout.
+- **Card data never reaches remo.** Cards are entered on the provider's page or widget; the
+  provider stores them. remo keeps only the provider's reference to the saved method
+  (sealed) and display fields (brand, last four digits, expiry).
+- **The tariff never deletes data.** Over a limit, the rooms beyond it become read-only
+  (`boards.frozen_at`), and `effective()` drops a frozen room to viewer capabilities plus
+  export and backup. Seats over the limit block growth; after 14 days the organisation
+  becomes read-only until it fits.
+- **Billing owns the subscription state.** The states are trialing, active, past_due (a
+  seven-day grace with retries), suspended and canceled. Renewal is billing's job for
+  providers that charge a saved token; a provider-managed subscription (Paddle) is mirrored.
+- **Money lives in our own ledger:** invoices, payments, refunds, organisation credit and
+  billing events. Amounts are integer minor units. The ledger is append-only.
+- **Every step is idempotent.** Delivery of the same provider fact twice, or running the
+  renewal job twice, changes nothing.
+- **Autopay needs explicit consent,** stored with the version of the consent text. It can be
+  turned off in one action.
+- **Russian receipts (54-FZ)** are issued by the provider's cloud register. Billing supplies
+  the receipt data.
+
+**Consequences.**
+
+- Schema 22 adds the billing tables and `boards.frozen_at`. Money tables use `on delete
+  restrict`, so an organisation with payment history is archived, not deleted; this changes
+  the rule for deleting an organisation.
+- Mail gains billing templates (ADR-246).
+- A self-hoster sees no billing at all.
+- The first stage, entitlements with plans granted by an operator, can ship before any
+  provider is connected.
+
+## ADR-248: Payment providers are adapters behind one interface, managed as installation-level connections with a lifecycle
+
+**Status:** proposed (2026-11-20). Implementation spec: `spec/payment-providers.md`.
+
+**Context.** The Russian installation starts with YooKassa (Russian cards, SBP, receipts).
+Foreign cards on a Russian sole proprietorship need another provider (Robokassa or
+Prodamus). Companies pay by bank invoice. The EU installation will later use Paddle as
+merchant of record. Providers will be added, paused and replaced, and a saved card cannot
+move between providers.
+
+**Decision.**
+
+- **One adapter file per provider** (`pay-<provider>.mjs`) implements one interface:
+  - checkout, charge of a saved token, payment status, refund;
+  - verification and parsing of webhooks;
+  - optional listing for reconciliation.
+
+  It returns normalised payments, refunds, events and failure codes. Billing never branches
+  on a provider name.
+- **A connection is installation-level, not per organisation.** Its secrets are sealed with
+  the KEK and only a fingerprint is shown.
+- **Lifecycle:** draft → ready (config valid, API reachable, webhook verified, and for live
+  a smoke payment and refund) → active → paused or retiring → disabled.
+  - Paused and retiring connections keep renewing existing subscriptions.
+  - Retiring asks payers to re-enter a card through another connection.
+  - A connection with payment history is never deleted.
+- **Test and live are separate connections.** Test organisations route only to test
+  connections.
+- **Routing** picks the active connection with the lowest priority for the payer's method
+  group (`ru_card`, `foreign_card`, `invoice`, `global_card`) and the installation currency.
+  A renewal stays on the connection that holds the saved method.
+- **Webhooks:** each delivery is verified the way the provider prescribes (YooKassa: source
+  IP plus a re-read of the object through the API; CloudPayments and Paddle: HMAC; Robokassa:
+  signature with password 2). Then it is written to an inbox (`billing_provider_events`,
+  unique per provider event key) and acknowledged; a drain applies it. Status moves only
+  forward. An hourly reconciliation polls pending payments and catches missed webhooks,
+  which matters for Robokassa: it sends no failure callbacks.
+- **A new global role, instance operator,** is granted only from the server CLI. It manages
+  connections, refunds and manual plans through `pnpm billing:providers` first and an
+  `/operator` console later. The role does not grant access to room content.
+
+**Consequences.**
+
+- Adding a provider is one adapter plus its contract tests.
+- Switching providers is an operational procedure, not a code change.
+- Payers on a retired connection must enter a card once more.
+- The `fake` adapter makes billing testable end to end without a provider; it is refused in
+  production.
+
+## ADR-249: Images are files in an S3-compatible or disk store, served only through the app with room access; the room document holds references
+
+**Status:** proposed (2026-11-20). Implementation spec: `spec/images.md`.
+
+**Context.** The model has declared `image` since early on, but nothing paints, uploads or
+stores it ("images come later" in `schema.sql`). Teams expect to drop screenshots and
+pictures onto a board. Four constraints shape the design:
+
+- A room document is limited in size and is replayed to every client, so bytes cannot live
+  in Yjs.
+- The hosted service needs object storage in each region: Russia for 152-FZ, the EU for
+  the EU installation. A self-hoster may have no S3 at all.
+- Plans limit storage (ADR-247).
+- Export renders on a canvas, which a cross-origin image would taint.
+
+**Decision.**
+
+- **Files live in a store behind one interface**, with two drivers: `disk` (the default)
+  and `s3` (any S3-compatible service, MinIO with path-style). The bucket is private. Keys
+  are `orgs/{org}/files/{file}/{variant}` and never contain a user's file name.
+- **A `files` row per upload,** tenant-protected by RLS. It is deduplicated by SHA-256
+  inside an organisation, never across organisations.
+- **The room document stores only `fileId`,** natural size, dominant colour and alt text.
+  The `image` kind becomes resizable with a locked aspect ratio.
+- **Uploads go through sync.** Sync checks the type by signature, the size, pixel count,
+  quota and per-room count, then processes with `sharp`:
+  - EXIF orientation applied, all metadata stripped;
+  - WebP variants at 256, 1024 and 2048 px, with no upscaling;
+  - first frame for GIF; no SVG or HEIC in v1.
+
+  The original is kept, but is only ever downloaded as an attachment by someone allowed to
+  export.
+- **Reads go through the app origin only:** `/files/{id}/{variant}?board=`. Sync checks view
+  access to that room and that the room actually uses the file; otherwise it answers `404`.
+  Responses are immutable, private, `nosniff` and sandboxed. This keeps CSP at
+  `img-src 'self'` and export canvases clean.
+- **An object appears only after its upload completes,** through one command. Other
+  participants never see half-uploaded objects.
+- **Deleting an object does not delete its file.** A daily collector marks files no
+  `image` widget references (rooms in the trash included) and deletes them after 30 days.
+- **Backup embeds the files** (base64, up to 200 MiB per room, otherwise an explicit
+  backup without images). Import re-processes them into the target organisation with new
+  ids.
+- **The painter picks a variant by on-screen size and device pixel ratio.** It caches
+  decoded bitmaps under a 256 MiB LRU budget, loads only visible images (nearest first) and
+  shows a dominant-colour placeholder meanwhile.
+
+**Consequences.**
+
+- Two new dependencies: `sharp` and `@aws-sdk/client-s3`.
+- A new table, and the backup format version goes up.
+- MinIO joins the test compose file and an optional production profile.
+- Operators must back up the file store separately from PostgreSQL.
+- Reading through sync costs bandwidth on the app server. A signed-redirect mode with a
+  CORS-configured bucket is a later, separate decision if measurements require it.
+- Design and layout (toolbar, drop overlay, upload states, object bar, lightbox, storage
+  page) follow `spec/images.md` §9–§10, with visual baselines before acceptance.
+
+## ADR-250: Support is an optional thin layer in the core; the help desk and the AI first line are separate services
+
+**Status:** proposed (2026-11-20). Implementation spec: `spec/support.md`.
+
+**Context.** Users need one place to ask for help, report a bug or suggest an idea. Nobody
+is available for live replies, so an AI agent must take the first line. A ticket system
+should not be written from scratch, and an expensive SaaS help desk should not be a
+dependency. Messengers can be blocked for part of the audience. The core is AGPL and
+self-hosted installations must not depend on the operator's support stack.
+
+**Decision.**
+
+- **The core ships only a thin layer,** off by default (`REMO_SUPPORT_PROVIDER=none`):
+  - a "Help and support" entry;
+  - a `link` mode for self-hosters;
+  - a `chatwoot` mode that shows the operator's widget page in a sandboxed iframe from one
+    configured origin. CSP gains `frame-src` for that origin only, and identity and context
+    pass by `postMessage` pinned to that origin.
+
+  No third-party script runs on the app origin.
+- **Identity is signed.** The HMAC uses Chatwoot Identity Validation over a separate,
+  rotatable support identifier (`users.support_id`), because the hash has no expiry.
+  Attributes carry plan, organisation and version, never room content.
+- **Technical context is opt-in per message:** version, browser, room id and role, the last
+  client errors. There is no room content.
+- **The help desk is Chatwoot Community Edition** (MIT), self-hosted on a separate machine
+  with its own database, in the region of the users it serves.
+- **The first line is an operator-owned service** (`remo-support-agent`) connected through
+  Chatwoot's Agent Bot webhook.
+  - It answers from the product guide and approved replies, with a source for every answer.
+  - It hands off to a human with a private summary for money, account security, data loss,
+    complaints, explicit requests and low confidence.
+  - It can only read a read-only, aggregate context endpoint (`GET /support/context`),
+    keyed by the verified support identifier and a bearer token. It cannot change anything
+    in remo.
+- **Chatwoot is the record of every request.** The agent keeps its own decision log for
+  quality review.
+
+**Consequences.**
+
+- A self-hoster sees nothing new unless they opt in.
+- The operator runs and backs up one more service.
+- Conversation text is personal data. Where the model provider is abroad, this is a
+  cross-border transfer that the privacy policy must cover, or the Russian installation uses
+  a model served in Russia.
+- Email becomes a second channel inside Chatwoot without core changes.
+
+## ADR-251: Model calls go through an optional, self-owned AI gateway on a separate host; inbound agent traffic gets its own address
+
+**Status:** proposed (2026-11-20). Implementation spec: `spec/ai-gateway.md`.
+
+**Context.** Agents run inside sync: a queued task calls a model through `ai.mjs` and
+`outbound.mjs` and then applies changes to the in-memory room. Every model call leaves from
+the server that holds the rooms, with no central switch, no per-organisation limits and no
+list of permitted providers beyond what each user's key points at. The goal is isolation
+and control, not reaching providers that do not serve a region.
+
+**Decision.**
+
+- **An optional service, `apps/ai-gateway`,** in the monorepo under the AGPL: Node 22 with
+  no dependencies. It runs on a separate host and is reached from sync over a WireGuard
+  tunnel only, authenticated by a shared token.
+- **It speaks the one call remo makes:** non-streaming
+  `POST /v1/chat/completions`. Upstream, user and task come in `X-Remo-*` headers, and only
+  the gateway connects to providers.
+- **A registry file lists every provider:** base URL, the user base URLs it accepts (BYOK),
+  model patterns, regions, timeout, rate and an optional installation key. Anything not
+  listed is refused. Changes are reloaded without restarting remo.
+- **Kill switches** (global, provider, organisation, user, optionally timed) and rate and
+  daily token limits live in the gateway's state file. They are operated with `remo-gw`
+  through an admin API bound to localhost.
+- **The gateway logs metadata only,** never bodies or keys, and exposes Prometheus metrics
+  without organisation labels.
+- **sync uses the gateway when `REMO_AI_GATEWAY_URL` is set, and fails closed.**
+  - When the gateway is down, agents report that AI is unavailable; there is no silent
+    direct call.
+  - A BYOK key for an unregistered provider is refused at save time.
+  - The per-task budget and the evidential `ai_runs` journal stay in sync.
+- **The outbound client moves to `packages/outbound`,** shared by sync and the gateway, and
+  keeps DNS pinning, the private-address ban and no redirects.
+- **Inbound agent and integration API traffic gets its own hostname** (`agents.<domain>`)
+  with its own nginx rate and connection limits and a `source=agent` metric label. It
+  still runs in the same sync process.
+- **LiteLLM was considered and not chosen.** remo needs one endpoint. A credential
+  aggregation point should be small and owned, and in 2026 LiteLLM had two publishing
+  compromises and several authorisation CVEs. Some features we need there are Enterprise.
+
+**Consequences.**
+
+- One more host and service for the hosted installation; nothing changes for self-hosters
+  who do not set the variable.
+- Provider changes become an operational edit.
+- A gateway outage stops agents but not rooms.
+- The gateway does not change the legal nature of sending user text to a provider abroad:
+  the registry's regions and the privacy policy must agree.
