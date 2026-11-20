@@ -247,3 +247,96 @@ export function EmptyState({ icon, title, action, example, children }: { icon?: 
     </div>
   );
 }
+
+// ---------- Lightbox ----------
+
+/**
+ * A full-window viewer of one picture (`spec/images.md` §9.7).
+ *
+ * A modal layer of its own rather than a `Dialog`: a dialog is a form with a title bar
+ * and a footer, while a lightbox is a surface for the picture. The shell owns the three
+ * things every viewer needs and the caller cannot be trusted to repeat — the scrim, the
+ * focus trap, and giving focus back to the object that opened it. What is inside (zoom,
+ * pan, caption) belongs to the screen that knows the picture. The close button and
+ * Escape act the same, and the header row carries the name, the size and any actions.
+ */
+export function Lightbox({
+  title,
+  subtitle,
+  actions,
+  caption,
+  onClose,
+  children,
+}: {
+  title: string;
+  /** One quiet line beside the name: dimensions, file type. */
+  subtitle?: string;
+  /** Buttons at the end of the header, before Close: download, open, anything. */
+  actions?: ReactNode;
+  /** Shown under the picture; the picture's description, when it has one. */
+  caption?: string;
+  onClose?: () => void;
+  children?: ReactNode;
+}) {
+  const { t } = useUiStrings();
+  const ref = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  // Focus goes back to the object that opened the viewer, exactly like a dialog: the
+  // canvas is not a form, so a lost focus means a lost selection for a keyboard reader.
+  const [atRender] = useState(() => (typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null)));
+  useEffect(() => {
+    const active = document.activeElement as HTMLElement | null;
+    const tookFocus = Boolean(ref.current?.contains(active));
+    const opener = tookFocus ? atRender : active;
+    if (!tookFocus) ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    return () => opener?.focus?.();
+  }, [atRender]);
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key === "Escape" && onClose) {
+      event.stopPropagation();
+      onClose();
+    }
+    if (event.key === "Tab" && ref.current) {
+      const list = ref.current.querySelectorAll<HTMLElement>(FOCUSABLE);
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    }
+  };
+  return (
+    <div
+      className="rm-lightbox-scrim"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose?.();
+      }}
+    >
+      <div
+        ref={ref}
+        className="rm-lightbox"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onKeyDown={onKey}
+      >
+        <div className="rm-lightbox-head">
+          <div className="rm-lightbox-heading">
+            <h2 id={titleId} className="rm-lightbox-title">{title}</h2>
+            {subtitle && <span className="rm-lightbox-subtitle">{subtitle}</span>}
+          </div>
+          <div className="rm-lightbox-actions">
+            {actions}
+            {onClose && <IconButton icon="close" label={t("close")} size="compact" onClick={onClose} />}
+          </div>
+        </div>
+        <div className="rm-lightbox-body">{children}</div>
+        {caption && <p className="rm-lightbox-caption">{caption}</p>}
+      </div>
+    </div>
+  );
+}

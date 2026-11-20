@@ -6,6 +6,7 @@ import type { ConnectorBarTarget } from "./ConnectorBar";
 import * as floating from "./floatingTargets";
 import type { BoardSettings } from "./settings";
 import type { StickyBarTarget } from "./StickyBar";
+import type { ImageBarTarget } from "./object-panel/ImagePanel";
 
 /**
  * Where the floating bars go, and whether they exist at all.
@@ -34,6 +35,7 @@ export function useFloatingBars({
   stickyBar: StickyBarTarget | null;
   arrangeBar: ArrangeBarTarget | null;
   connectorBar: ConnectorBarTarget | null;
+  imageBar: ImageBarTarget | null;
 } {
   /** Screen frame the floating bars are placed in. */
   const frame = useMemo<floating.Frame>(() => ({ camera, viewport }), [camera, viewport]);
@@ -62,5 +64,14 @@ export function useFloatingBars({
     return floating.connectorBarTarget({ widget, frame, settings, resolve });
   }, [frame, readOnly, selectedIds, settings, resolve]);
 
-  return { stickyBar, arrangeBar, connectorBar };
+  /** The picture bar: one image, and not for a reader (every action is a write). */
+  const imageBar = useMemo<ImageBarTarget | null>(() => {
+    if (readOnly) return null;
+    if (selectedIds.length !== 1) return null;
+    const widget = resolve(selectedIds[0]!);
+    if (!widget) return null;
+    return floating.imageBarTarget({ widget, frame });
+  }, [frame, readOnly, selectedIds, resolve]);
+
+  return { stickyBar, arrangeBar, connectorBar, imageBar };
 }

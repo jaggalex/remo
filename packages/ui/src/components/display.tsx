@@ -80,6 +80,58 @@ export function Badge({ tone = "neutral", icon, count, onRemove, children }: Bad
   );
 }
 
+/**
+ * A progress ring, with the number in the middle (`spec/images.md` §9.3).
+ *
+ * A ring rather than a bar because it sits on a thumbnail of the picture being uploaded;
+ * the percentage is text as well, so the state is readable without seeing the arc.
+ * Values outside 0…1 are clamped instead of drawn wrong: a stalled upload may report 0,
+ * a server that sends more than it announced may report 1.01.
+ */
+export function ProgressRing({
+  value,
+  label,
+  size = 40,
+}: {
+  /** 0…1. */
+  value: number;
+  /** The accessible name; the ring is a `progressbar` only when it has one. */
+  label?: string;
+  size?: number;
+}) {
+  const fraction = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+  const percent = Math.round(fraction * 100);
+  const radius = (size - 4) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const centre = size / 2;
+  return (
+    <span
+      className="rm-ring"
+      style={{ width: size, height: size }}
+      role={label ? "progressbar" : undefined}
+      aria-label={label}
+      aria-valuemin={label ? 0 : undefined}
+      aria-valuemax={label ? 100 : undefined}
+      aria-valuenow={label ? percent : undefined}
+      aria-hidden={label ? undefined : true}
+    >
+      <svg viewBox={`0 0 ${size} ${size}`} aria-hidden="true" focusable="false">
+        <circle className="rm-ring-track" cx={centre} cy={centre} r={radius} />
+        <circle
+          className="rm-ring-value"
+          cx={centre}
+          cy={centre}
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - fraction)}
+          transform={`rotate(-90 ${centre} ${centre})`}
+        />
+      </svg>
+      <span className="rm-ring-label">{percent}%</span>
+    </span>
+  );
+}
+
 export interface TooltipProps {
   label: string;
   shortcut?: string[];

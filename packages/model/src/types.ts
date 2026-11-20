@@ -185,6 +185,22 @@ export interface Widget extends Rect {
   shapeKind?: ShapeKind;
 
   /**
+   * The stored picture of an `image` object (ADR-249, §3.2).
+   *
+   * Flat in the widget like every other field: there is no `props` container, and the
+   * bytes themselves are never here — only the file id and what a placeholder needs
+   * before the first request finishes.
+   */
+  fileId?: string;
+  /** The picture's own pixels, for the proportion and the "original size" action. */
+  naturalWidth?: number;
+  naturalHeight?: number;
+  /** `#rrggbb` copied from the file row, so the loading plate needs no request. */
+  dominantColor?: string;
+  /** The accessible description, up to 500 characters; never painted. */
+  alt?: string;
+
+  /**
    * Connector endpoints: the two objects it joins.
    *
    * Only the references are stored; the line itself is derived from their boxes at

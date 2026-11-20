@@ -8,10 +8,16 @@
   --bg-active: var(--neutral-200);
   --bg-overlay: var(--alpha-ink-32);
   --bg-inverse: var(--neutral-900);
+  --bg-image-placeholder: var(--neutral-100);
+  --bg-image-drop: var(--alpha-ink-32);
+  --border-image-drop: var(--accent-500);
+  --text-image-icon: var(--neutral-500);
+  --bg-lightbox-scrim: var(--alpha-ink-84);
   --text-primary: var(--neutral-900);
   --text-secondary: var(--neutral-600);
   --text-muted: var(--neutral-500);
   --text-inverse: var(--neutral-0);
+  --text-on-scrim: var(--neutral-0);
   --text-accent: var(--accent-700);
   --text-danger: var(--danger-700);
   --text-agent: var(--neutral-900);

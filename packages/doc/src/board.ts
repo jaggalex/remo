@@ -44,6 +44,7 @@ export * from "./links";
 export * from "./presentation";
 export * from "./styles";
 export * from "./agentPlan";
+export * from "./images";
 
 export { IMPORT_ORIGIN, LOCAL_ORIGIN } from "./origins";
 import { IMPORT_ORIGIN, LOCAL_ORIGIN } from "./origins";

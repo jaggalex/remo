@@ -29,14 +29,24 @@ import { enWork } from "./i18n/en-work";
 import { enSection } from "./i18n/en-section";
 import { enMail } from "./i18n/en-mail";
 import { enBilling } from "./i18n/en-billing";
+import { enImage } from "./i18n/en-image";
 import { ruCore } from "./i18n/ru-core";
 import { ruCollab } from "./i18n/ru-collab";
 import { ruWork } from "./i18n/ru-work";
 import { ruSection } from "./i18n/ru-section";
 import { ruMail } from "./i18n/ru-mail";
 import { ruBilling } from "./i18n/ru-billing";
+import { ruImage } from "./i18n/ru-image";
 
-const en = { ...enCore, ...enCollab, ...enWork, ...enSection, ...enMail, ...enBilling };
+const en = {
+  ...enCore,
+  ...enCollab,
+  ...enWork,
+  ...enSection,
+  ...enMail,
+  ...enBilling,
+  ...enImage,
+};
 
 type Key = keyof typeof en;
 /** Every translation key, for code that builds labels dynamically (commands, menus). */
@@ -49,6 +59,7 @@ const ru: Record<Key, string> = {
   ...ruSection,
   ...ruMail,
   ...ruBilling,
+  ...ruImage,
 };
 
 const STRINGS: Record<Lang, Record<Key, string>> = { en, ru };
@@ -77,7 +88,9 @@ type CountKey =
   | "dsMembers"
   | "dsVotes"
   | "dsReplies"
-  | "followers";
+  | "followers"
+  /** Uploads on the canvas: "3 изображения" (§9.2). */
+  | "images";
 
 const COUNTS: Record<Lang, Record<CountKey, [string, string, string]>> = {
   en: {
@@ -97,6 +110,7 @@ const COUNTS: Record<Lang, Record<CountKey, [string, string, string]>> = {
     dsVotes: ["{n} vote", "{n} votes", "{n} votes"],
     dsReplies: ["{n} reply", "{n} replies", "{n} replies"],
     followers: ["{n} follower", "{n} followers", "{n} followers"],
+    images: ["{n} image", "{n} images", "{n} images"],
   },
   ru: {
     objects: ["{n} объект", "{n} объекта", "{n} объектов"],
@@ -115,6 +129,7 @@ const COUNTS: Record<Lang, Record<CountKey, [string, string, string]>> = {
     dsVotes: ["{n} голос", "{n} голоса", "{n} голосов"],
     dsReplies: ["{n} ответ", "{n} ответа", "{n} ответов"],
     followers: ["{n} подписчик", "{n} подписчика", "{n} подписчиков"],
+    images: ["{n} изображение", "{n} изображения", "{n} изображений"],
   },
 };
 

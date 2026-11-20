@@ -1,0 +1,215 @@
+/* Pictures on the canvas: the drop frame, the author's placeholders, the viewer
+   (ADR-249, spec/images.md §9.2, §9.3, §9.7). Colours and sizes come from tokens. */
+
+/* The picker's `<input>` is opened by a button and never seen; it stays in the tree so
+   the browser still treats the click as a user gesture. */
+.image-intake-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------- drop frame --- */
+
+.image-drop {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-bar);
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: var(--bg-image-drop);
+  pointer-events: none;
+}
+
+.image-drop-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--space-6);
+  border: 2px dashed var(--border-image-drop);
+  border-radius: var(--radius-xl);
+  justify-content: center;
+  text-align: center;
+}
+
+.image-drop-title {
+  margin: 0;
+  font: var(--type-subtitle);
+  color: var(--text-primary);
+}
+
+.image-drop-count {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------ placeholders --- */
+
+/* Only the author sees these, and they are not objects: the document gains the picture
+   after the server has it (§5.1). The layer keeps the canvas' geometry, so a placeholder
+   pans and zooms with the board it is about to join. */
+.image-intake {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-canvas-overlay);
+  pointer-events: none;
+}
+
+.image-slot {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-image-placeholder);
+  pointer-events: auto;
+}
+
+.image-slot.is-error {
+  border-color: var(--danger);
+  background: var(--bg-panel);
+}
+
+.image-slot-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+  filter: saturate(0.6);
+}
+
+.image-slot-mask {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg-overlay);
+}
+
+.image-slot-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
+  background: var(--bg-panel);
+  box-sizing: border-box;
+}
+
+.image-slot-name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.image-slot-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  width: 100%;
+  background: var(--bg-panel);
+  box-sizing: border-box;
+}
+
+.image-slot-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-primary);
+}
+
+.image-slot-title .rm-icon {
+  color: var(--danger);
+}
+
+.image-slot-reason {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.image-slot-actions {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}
+
+/* --------------------------------------------------------- alt / description --- */
+
+.image-alt-window {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 320px;
+  padding: var(--space-3);
+  box-sizing: border-box;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-pop);
+}
+
+.image-alt-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* ------------------------------------------------------------------ viewer --- */
+
+.image-lightbox-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.image-lightbox-stage:active {
+  cursor: grabbing;
+}
+
+.image-lightbox-picture {
+  max-width: none;
+  user-select: none;
+  transform-origin: center;
+}
+
+.image-lightbox-loading {
+  position: absolute;
+  color: var(--text-on-scrim);
+}
+
+.image-lightbox-missing {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-on-scrim);
+}

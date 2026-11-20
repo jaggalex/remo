@@ -157,6 +157,26 @@ export function CanvasNotice({ message }: { message: string | null }) {
   );
 }
 
+/**
+ * "Drop to add" — the dashed frame that covers the canvas while files are dragged over it
+ * (`spec/images.md` §9.2).
+ *
+ * It is an application overlay, not a document object: nothing about a half-arrived
+ * picture belongs in the room. The count is what the drag carries, which is the only
+ * honest number before the drop — the names of the files arrive with the drop itself.
+ */
+export function ImageDropFrame({ label }: { label: string }) {
+  const { t } = useI18n();
+  return (
+    <div className="image-drop" aria-hidden="true">
+      <div className="image-drop-frame">
+        <p className="image-drop-title">{t("image.drop.title")}</p>
+        <p className="image-drop-count">{label}</p>
+      </div>
+    </div>
+  );
+}
+
 /** The offline queue is full: writes stop until the connection returns (ADR-084). */
 export function OfflineBlocked() {
   const { t } = useI18n();

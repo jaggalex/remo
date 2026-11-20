@@ -4,6 +4,7 @@ import { cellAt, connectorHandles, connectorPath, kanbanContains, layerKey, pick
 import { expandGroups } from "@remo/model";
 import { openKanbanTitleEdit } from "./kanbanTitleEditStore";
 import { measureText } from "./KanbanTitleEditor";
+import { openImageViewer } from "./imageViewer";
 
 /**
    * Double-click edits what is under the cursor.
@@ -17,6 +18,14 @@ export function doubleClick(env: GestureEnv, event: React.MouseEvent<HTMLCanvasE
   const { camera, settings, widgets, layouts, selectedIds, isCardOfKanban, toWorld, worldToScreenPoint, onSelect, onAddCard, onDeleteWaypoint, onEdit, readOnly, widgetById } = env;
   const world = toWorld(event);
   const hit = pick(widgets, world, isCardOfKanban);
+
+  // A picture opens in the viewer, and a reader may look at it: viewing a file is not a
+  // write, so this answer comes before the read-only gate (`spec/images.md` §9.7).
+  if (hit?.type === "image") {
+    onSelect([hit.id]);
+    openImageViewer(hit.id);
+    return;
+  }
 
   if (readOnly) return;
   if (hit && layouts.has(hit.id)) {

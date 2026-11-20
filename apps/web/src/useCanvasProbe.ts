@@ -101,6 +101,13 @@ export function useCanvasProbe({
         tagIds: w.tagIds ?? null,
         cell: w.cell ? { ...w.cell } : null,
         layout: w.layout ?? null,
+        // An image object's own fields (ADR-249): a scenario asserts the picture, the
+        // description and the size without reaching into the Yjs document.
+        fileId: w.fileId ?? null,
+        naturalWidth: w.naturalWidth ?? null,
+        naturalHeight: w.naturalHeight ?? null,
+        dominantColor: w.dominantColor ?? null,
+        alt: w.alt ?? null,
       })),
       /** Paint counters: shows that cursor traffic never repaints the board layer. */
       perf: () => ({ ...paintStats.current }),

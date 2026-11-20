@@ -70,3 +70,30 @@ export async function readClipboard(): Promise<string | null> {
   }
   return null;
 }
+
+/**
+ * Pictures on the clipboard, or null when there are none or the browser will not say.
+ *
+ * A screenshot wins over the text beside it (`spec/images.md` §9.2): Miro and FigJam paste
+ * the picture too, because that is what the person copied. The first ⌘V in Chromium may ask
+ * once for the clipboard-read permission; a browser that refuses `read()` (a plain-HTTP LAN
+ * install, a denied permission) returns nothing and the paste event carries the picture
+ * instead. The text path is unchanged either way.
+ */
+export async function readClipboardImages(): Promise<File[] | null> {
+  try {
+    if (!navigator.clipboard?.read) return null;
+    const items = await navigator.clipboard.read();
+    const files: File[] = [];
+    for (const item of items) {
+      const type = item.types.find((candidate) => candidate.startsWith("image/"));
+      if (!type) continue;
+      const blob = await item.getType(type);
+      const extension = type.split("/")[1]?.replace(/\+.*$/, "") || "png";
+      files.push(new File([blob], `pasted.${extension}`, { type }));
+    }
+    return files.length ? files : null;
+  } catch {
+    return null;
+  }
+}

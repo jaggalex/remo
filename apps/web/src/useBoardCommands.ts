@@ -70,7 +70,16 @@ import {
 import type { ArrangeBarActions } from "./ArrangeBar";
 import type { ConnectorBarActions } from "./ConnectorBar";
 import { mainLevel, sharedFillLevel, toneColor } from "./object-panel/colorWindowData";
-import { decodeFragment, encodeFragment, readClipboard, writeClipboard } from "./clipboard";
+import {
+  decodeFragment,
+  encodeFragment,
+  readClipboard,
+  readClipboardImages,
+  writeClipboard,
+} from "./clipboard";
+import { cameraStore } from "./cameraStore";
+import { hoveredPoint, startImageUploads } from "./imageIntake";
+import { canEditNow } from "./accessSnapshot";
 import { isGroupable, selectionHasGroup, type CommandContext } from "./commands";
 import { useBoardCreation } from "./useBoardCreation";
 import type { BoardSettings } from "./settings";
@@ -358,6 +367,18 @@ export function useBoardCommands(deps: BoardCommandDeps) {
    */
   const pasteSelection = useCallback(
     async (at?: { x: number; y: number }) => {
+      // A picture wins over text beside it (§9.2): the clipboard of a screenshot is what
+      // the person meant, and a note with no picture is not a substitute for it.
+      const images = await readClipboardImages();
+      if (images) {
+        // An upload is a write: a viewer pasting a screenshot would only get a refusal.
+        if (!canEditNow()) return;
+        const camera = cameraStore.get();
+        const point = at ?? hoveredPoint() ?? { x: camera.x, y: camera.y };
+        await startImageUploads(images, point, { centred: true });
+        return;
+      }
+
       const text = await readClipboard();
       const fragment = (text ? decodeFragment(text) : null) ?? clipboardFragment.current;
       if (fragment) {

@@ -4,6 +4,7 @@ import type { RailTool } from "./ToolRail";
 import { cardTargetFor } from "./cardTarget";
 import { useI18n } from "./i18n";
 import { noteFillChoices, noteFillExtras } from "./object-panel/palette";
+import { requestImagePicker } from "./imageIntake";
 
 /**
  * The rail's behaviour, in one place (ADR-119).
@@ -87,6 +88,11 @@ export function useBoardTools({
       case "text":
         createText();
         break;
+      case "image":
+        // The picker lives on the canvas: only it knows the camera, so the drop point and
+        // the placeholder of a chosen file are in the same place as a dropped one.
+        requestImagePicker();
+        break;
       case "rectangle":
       case "ellipse":
       case "diamond":
@@ -118,6 +124,7 @@ export function useBoardTools({
     onSelect: () => run("select"),
     onSticky: (fill?: string) => run("sticky", fill),
     onText: () => run("text"),
+    onImage: () => requestImagePicker(),
     onShape: (kind: ShapeKind) => {
       createShape(kind);
       setFlyout(null);

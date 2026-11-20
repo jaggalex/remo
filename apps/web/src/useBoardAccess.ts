@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, type Access, type OrgSummary, type SessionUser } from "./api";
 import { currentRoom } from "./identity";
+import { publishAccess } from "./accessSnapshot";
 
 /**
  * Who is signed in, and what this viewer may do with this board.
@@ -111,6 +112,16 @@ export function useBoardAccess(room: string | null = currentRoom()) {
   useEffect(() => {
     void refreshAccess();
   }, [refreshAccess, me?.id]);
+
+  /**
+   * The canvas leaves need one answer from this hook — the export right behind "Download
+   * original" — and `BoardApp` is at the size ratchet, so the answer is published here
+   * instead of drilled through it. The decision itself stays in this one place.
+   */
+  useEffect(() => {
+    if (!room) return;
+    publishAccess(room, access, orgs, boardOrgId);
+  }, [room, access, orgs, boardOrgId]);
 
   const canShare = Boolean(access?.capabilities.includes("board.share"));
   const canExport = Boolean(access?.capabilities.includes("board.export"));

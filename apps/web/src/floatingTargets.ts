@@ -17,6 +17,7 @@ import type { StickyBarTarget } from "./StickyBar";
 import type { NoteDirection } from "@remo/doc";
 import { GATHERABLE_TYPES } from "@remo/doc";
 import type { BoardSettings } from "./settings";
+import type { ImageBarTarget } from "./object-panel/ImagePanel";
 import { COMPACT_BAR_ROOM, barTop } from "./canvasGeometry";
 import { DEFAULT_FILL, DEFAULT_INK } from "./objectDefaults";
 
@@ -341,5 +342,44 @@ export function connectorBarTarget(args: {
     fontSize: widget.style?.fontSize ?? null,
     textColor: widget.style?.textColor,
     ink: widget.style?.textColor ?? DEFAULT_INK,
+  };
+}
+
+/**
+ * The picture bar: Replace, Description, Open and More (`spec/images.md` §9.5).
+ *
+ * Measured at 1440 in English: Replace + Description + two icon buttons ≈ 372 px, so half
+ * of it keeps the bar centred on the picture.
+ */
+const IMAGE_BAR_HALF = 186;
+
+export function imageBarTarget(args: {
+  widget: Widget;
+  frame: Frame;
+}): ImageBarTarget | null {
+  const { widget, frame } = args;
+  if (widget.type !== "image") return null;
+  const screen = screenBox(widget, frame);
+  return {
+    id: widget.id,
+    rect: screen,
+    placement: {
+      left: Math.max(
+        8,
+        Math.min(
+          screen.left + screen.width / 2 - IMAGE_BAR_HALF,
+          frame.viewport.width - IMAGE_BAR_HALF * 2 - 8,
+        ),
+      ),
+      top: barTop(screen, frame.viewport, COMPACT_BAR_ROOM),
+    },
+    x: widget.x,
+    y: widget.y,
+    width: widget.width,
+    alt: widget.alt,
+    fileId: widget.fileId,
+    naturalWidth: widget.naturalWidth,
+    naturalHeight: widget.naturalHeight,
+    locked: Boolean(widget.locked),
   };
 }

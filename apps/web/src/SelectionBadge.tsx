@@ -46,6 +46,13 @@ export function SelectionBadge({
             {(selectedLineSize?.width ?? Math.round(selectedWidget.width))} ×{" "}
             {(selectedLineSize?.height ?? Math.round(selectedWidget.height))}
           </span>
+          {selectedWidget.type === "image" && (
+            // The accessible name of a picture (§9.10): its description, or the fact that
+            // it has none. Read out with the selection, before its size.
+            <span className="muted">
+              {selectedWidget.alt?.trim() ? selectedWidget.alt : t("image.noDescription")}
+            </span>
+          )}
           {selectedWidget.locked && (
             <span
               className="badge-lock"

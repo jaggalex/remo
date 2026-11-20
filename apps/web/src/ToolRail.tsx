@@ -19,6 +19,7 @@ export type RailTool =
   | "rectangle"
   | "ellipse"
   | "diamond"
+  | "image"
   | "connector"
   | "frame"
   | "card"
@@ -47,6 +48,7 @@ export function ToolRail({
   onSticky,
   onText,
   onShape,
+  onImage,
   onConnector,
   onFrame,
   onCard,
@@ -70,6 +72,8 @@ export function ToolRail({
   onSticky: (fill?: string) => void;
   onText: () => void;
   onShape: (kind: ShapeKind) => void;
+  /** Open the system file picker: pictures become objects after they are uploaded. */
+  onImage: () => void;
   onConnector: () => void;
   onFrame: () => void;
   onCard: () => void;
@@ -274,6 +278,15 @@ export function ToolRail({
             </Popover>
           )}
         </div>
+
+        {tool({
+          icon: "image",
+          label: "tool.image",
+          shortcut: "I",
+          hint: t("tool.imageHint"),
+          disabled: writeBlocked,
+          onClick: onImage,
+        })}
 
         {tool({
           icon: "connector",

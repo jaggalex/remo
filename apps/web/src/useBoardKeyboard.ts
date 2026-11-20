@@ -9,6 +9,7 @@ import {
 import { isEditable } from "./BoardCanvas";
 import { commandForShortcut, type CommandContext } from "./commands";
 import type { RailTool } from "./ToolRail";
+import { openImageViewer } from "./imageViewer";
 
 /**
  * Keyboard: undo/redo, clipboard, groups, delete, escape. Mirrors the source product's
@@ -128,6 +129,17 @@ useEffect(() => {
           });
           return;
         }
+      }
+    }
+
+    // Enter on a selected picture opens the viewer, and a reader may look: this answer
+    // sits before the write gate for the same reason the double click does (§9.7).
+    if (event.key === "Enter" && !editingId && selectedIds.length === 1) {
+      const only = widgets.find((widget) => widget.id === selectedIds[0]);
+      if (only?.type === "image") {
+        event.preventDefault();
+        openImageViewer(only.id);
+        return;
       }
     }
 
@@ -264,6 +276,7 @@ useEffect(() => {
         v: "select",
         n: "sticky",
         t: "text",
+        i: "image",
         r: "rectangle",
         o: "ellipse",
         l: "connector",

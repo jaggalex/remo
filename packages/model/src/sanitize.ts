@@ -47,9 +47,22 @@ const STRING_FIELDS = [
   "createdBy",
   "lockedBy",
   "lockedByName",
+  // An image's file reference and its description (ADR-249). The description is text a
+  // person typed, so a non-string is a repair, not data to keep.
+  "fileId",
+  "alt",
+  "dominantColor",
 ] as const;
 
-const NUMBER_FIELDS = ["z", "createdAt", "lockedAt", "bend"] as const;
+const NUMBER_FIELDS = [
+  "z",
+  "createdAt",
+  "lockedAt",
+  "bend",
+  // The picture's own size (ADR-249): geometry for the proportion, never a layout value.
+  "naturalWidth",
+  "naturalHeight",
+] as const;
 
 const BOOLEAN_FIELDS = ["locked", "elbowFlip"] as const;
 

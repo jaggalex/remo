@@ -47,6 +47,9 @@ import { SocialLayer } from "./SocialLayer";
 import { VoteLayer } from "./VoteLayer";
 import type { VoteSession } from "./api";
 import { useFloatingBars } from "./useFloatingBars";
+import { ImageIntake } from "./ImageUploads";
+import { ImageLightbox } from "./ImageLightbox";
+import { ImagePanel } from "./object-panel/ImagePanel";
 import { isEditable } from "./editable";
 
 export { isEditable };
@@ -519,7 +522,7 @@ export function BoardCanvas({
    * It hides while the inline editor is open — the formatting toolbar of the editor
    * is already there, and two rows of controls above the same note would fight.
    */
-  const { stickyBar, arrangeBar, connectorBar } = useFloatingBars({
+  const { stickyBar, arrangeBar, connectorBar, imageBar } = useFloatingBars({
     camera,
     viewport,
     settings,
@@ -692,6 +695,22 @@ export function BoardCanvas({
         selectedIds={selectedIds}
         onNotice={onNotice}
       />
+      {/* Pictures arrive through three doors and one owner (§9.2, §9.3). */}
+      <ImageIntake
+        boardRef={boardRef}
+        camera={camera}
+        viewport={viewport}
+        widgets={widgets}
+        readOnly={Boolean(readOnly)}
+        onSelect={onSelect}
+        onNotice={(text) => onNotice?.(text)}
+      />
+      <ImagePanel
+        key={imageBar?.id ?? "no-image"}
+        target={presenting ? null : imageBar}
+        board={board}
+        onNotice={(text) => onNotice?.(text)}
+      />
       <InlineEditor
         target={presenting ? null : editorTarget}
         onChange={onSetText}
@@ -715,6 +734,7 @@ export function BoardCanvas({
         camera={camera}
         viewport={viewport}
       />
+      <ImageLightbox widgets={presenting ? [] : widgets} />
       <ConnectorBar
         target={presenting ? null : connectorBar}
         actions={connectorActions}
