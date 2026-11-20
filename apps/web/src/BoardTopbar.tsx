@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { MutableRefObject } from "react";
 import type { Presence, SaveState } from "@remo/doc";
-import { ConfirmDialog, IconButton, Separator, Tooltip } from "@remo/ui";
+import { Button, ConfirmDialog, IconButton, Separator, Tooltip } from "@remo/ui";
 import type { SessionUser } from "./api";
 import type { FollowState } from "./follow";
 import { useI18n } from "./i18n";
@@ -39,6 +39,9 @@ export interface BoardTopbarProps {
   orgName: string | null;
   writeBlocked: boolean;
   readOnly: boolean;
+  /** The plan froze this room (§2.5): read-only, with a way to the plan screen. */
+  planFrozen: boolean;
+  onOpenBilling: () => void;
   onOpenHome: () => void;
   canShare: boolean;
   copied: boolean;
@@ -113,7 +116,7 @@ export function BoardTopbar(props: BoardTopbarProps) {
   const [renaming, setRenaming] = useState(false);
   const {
     title, titleDraft, setTitleDraft, titleCancelled, renameBoard, orgName, writeBlocked,
-    readOnly, onOpenHome, canShare, copied, copyShareLink, setShareOpen,
+    readOnly, planFrozen, onOpenBilling, onOpenHome, canShare, copied, copyShareLink, setShareOpen,
     canExport, canBackup, canImport, canDuplicate, canDelete, canFacilitate, canAskAgents, canUseApps,
     setSettingsOpen, setExportOpen, onRestore, onDuplicate, onTrash, onReplace, voteRunning, voteHint,
     timerRunning, timerHint, setVoteOpen, setTimerOpen, setFollowOpen, setAgentOpen,
@@ -388,6 +391,14 @@ export function BoardTopbar(props: BoardTopbarProps) {
         <InterfaceToggles theme={theme} onTheme={setTheme} />
       </div>
     </header>
+    {planFrozen && (
+      <div className="plan-frozen-bar" role="status">
+        <span>{t("billing.frozenRoom")}</span>
+        <Button size="compact" variant="ghost" onClick={onOpenBilling}>
+          {t("billing.seePlans")}
+        </Button>
+      </div>
+    )}
     {confirmReplace && (
       <ConfirmDialog
         title={t("board.replaceHeading")}

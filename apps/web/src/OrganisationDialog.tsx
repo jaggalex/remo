@@ -11,6 +11,10 @@ import {
 } from "./api";
 import { formatMoment, initials } from "./format";
 import { AgentsPanel } from "./AgentsPanel";
+import { BillingPanel } from "./BillingPanel";
+import { planLimitFrom } from "./apiBilling";
+import { useOrgBilling } from "./useOrgBilling";
+import { PlanNotice } from "./PlanNotice";
 import { OrganisationTeams } from "./OrganisationTeams";
 import { Button, Checkbox, Dialog, Input, Tabs } from "@remo/ui";
 import { useI18n } from "./i18n";
@@ -43,7 +47,7 @@ export function OrganisationDialog({
   /** The organisation chosen in the directory (ADR-166); null means "pick one". */
   initialOrgId?: string | null;
   /** Which tab the caller wants first; the room agent settings open "agents". */
-  initialTab?: "people" | "audit" | "agents";
+  initialTab?: "people" | "audit" | "agents" | "billing";
   /** The directory list changed: a new organisation or a new name. */
   onOrgsChanged?: () => void | Promise<void>;
   onClose: () => void;
@@ -68,8 +72,8 @@ export function OrganisationDialog({
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [invitations, setInvitations] = useState<OrgInvitation[]>([]);
   const [audit, setAudit] = useState<AuditEvent[]>([]);
-  const [tab, setTab] = useState<"people" | "audit" | "agents">(initialTab);
-  const openedTab = useRef<"people" | "audit" | "agents">(initialTab);
+  const [tab, setTab] = useState<"people" | "audit" | "agents" | "billing">(initialTab);
+  const openedTab = useRef<"people" | "audit" | "agents" | "billing">(initialTab);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +91,10 @@ export function OrganisationDialog({
     userId: string;
     boards: { id: string; title: string }[];
   } | null>(null);
+  /** Billing answers `404` when plans are not sold; the tab must then not exist (§8). */
+  const billing = useOrgBilling(orgId, open);
+  /** A plan refusal replaces the ordinary error line instead of hiding inside it. */
+  const [planNotice, setPlanNotice] = useState<ReturnType<typeof planLimitFrom>>(null);
 
   const isUserAdmin = roles.includes("org_admin") || roles.includes("user_admin");
   const isOrgAdmin = roles.includes("org_admin");
@@ -192,9 +200,15 @@ export function OrganisationDialog({
     setRenamingOrg(false);
     setOrgNameDraft("");
     setError(null);
+    setPlanNotice(null);
     setTab("people");
     void load(orgId);
   }, [open, orgId, load]);
+
+  // A `404` is the feature switch (`REMO_BILLING=off`); then the tab must not exist (§8).
+  useEffect(() => {
+    if (billing.available === false && tab === "billing") setTab("people");
+  }, [billing.available, tab]);
 
   useEffect(() => {
     if (!open || !orgId) return;
@@ -213,7 +227,13 @@ export function OrganisationDialog({
       await action();
       await load(orgId);
     } catch (failure) {
-      setError(describe(failure));
+      const notice = planLimitFrom(failure);
+      if (notice) {
+        setPlanNotice(notice);
+        setError(null);
+      } else {
+        setError(describe(failure));
+      }
     } finally {
       setBusy(false);
     }
@@ -467,13 +487,22 @@ export function OrganisationDialog({
               { id: "people", label: t("org.people") },
               { id: "agents", label: t("org.agents") },
               ...(seesAudit ? [{ id: "audit", label: t("org.audit") }] : []),
+              ...(billing.available ? [{ id: "billing", label: t("billing.tab") }] : []),
             ]}
             value={tab}
             onChange={(id) => setTab(id as typeof tab)}
           />
         )}
 
-        {error && <p className="auth-error">{error}</p>}
+        {planNotice ? (
+          <PlanNotice
+            notice={planNotice}
+            onSeePlans={billing.available ? () => { setPlanNotice(null); setTab("billing"); } : undefined}
+            onDismiss={() => setPlanNotice(null)}
+          />
+        ) : error ? (
+          <p className="auth-error">{error}</p>
+        ) : null}
         {!orgId && !error && <p className="muted">{t("org.noOrg")}</p>}
 
         {!isGuest && tab === "people" && (
@@ -719,6 +748,16 @@ export function OrganisationDialog({
             isOrgAdmin={isOrgAdmin}
             canReadJournal={seesAudit}
             meId={me.id}
+          />
+        )}
+
+        {!isGuest && tab === "billing" && orgId && (
+          <BillingPanel
+            orgId={orgId}
+            initial={billing.seed}
+            isOrgAdmin={isOrgAdmin}
+            orgKind={org?.kind ?? "shared"}
+            onUnavailable={billing.unavailable}
           />
         )}
 

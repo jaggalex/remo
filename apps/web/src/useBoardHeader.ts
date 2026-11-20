@@ -1,8 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { TimerPhase, Widget } from "@remo/model";
 import { formatRemaining } from "@remo/model";
 import type { Access, OrgSummary, SessionUser } from "./api";
 import { api } from "./api";
+import { billingApi } from "./apiBilling";
+import { requestBillingTab } from "./billingNav";
 import { currentRoom } from "./identity";
 import { roleSourceLine } from "./roleSource";
 import { useNow } from "./useNow";
@@ -97,6 +99,41 @@ export function useBoardHeader({
     }
   }, [showNotice, t]);
 
+  /**
+   * A frozen room keeps its content and loses only the right to change it (§2.5).
+   *
+   * The signal is the organisation's billing read, not the role: a viewer is read-only
+   * for a different reason and must not be told the plan froze the room. The server's
+   * `readOnly` covers the seat grace; `frozenRooms` names individual rooms once the
+   * chooser ships. No signal means no banner.
+   */
+  const [planFrozen, setPlanFrozen] = useState(false);
+  useEffect(() => {
+    setPlanFrozen(false);
+    if (!boardOrgId) return;
+    const editable = access?.allowed === true && access.capabilities.includes("board.edit");
+    if (editable) return;
+    let alive = true;
+    billingApi
+      .org(boardOrgId)
+      .then((summary) => {
+        if (!alive) return;
+        // `frozenRooms` is the explicit list once the chooser ships; until then an
+        // organisation above its room limit is the signal that some rooms are frozen.
+        const overRooms =
+          summary.limits.rooms !== null && summary.usage.rooms > summary.limits.rooms;
+        setPlanFrozen(
+          summary.readOnly || overRooms || summary.frozenRooms.includes(currentRoom()),
+        );
+      })
+      .catch(() => {
+        // Billing is off, or the room is not the billing subject: silence is honest.
+      });
+    return () => {
+      alive = false;
+    };
+  }, [access, boardOrgId]);
+
   const orgName = orgs.find((org) => org.id === boardOrgId)?.name ?? null;
   const roleLine = roleSourceLine(t, access?.role ?? null, access?.sources ?? []);
 
@@ -137,5 +174,7 @@ export function useBoardHeader({
     roleLine,
     voteHint,
     timerHint,
+    planFrozen,
+    onOpenBilling: () => requestBillingTab(boardOrgId),
   };
 }

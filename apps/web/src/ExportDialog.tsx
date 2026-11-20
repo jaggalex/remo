@@ -7,6 +7,8 @@ import {
 import type { Tag, Board, KanbanState, TextDeltaOp, Widget } from "@remo/model";
 import { Button, Checkbox, Dialog } from "@remo/ui";
 import { api, ApiError } from "./api";
+import { planLimitFrom, type PlanLimitNotice } from "./apiBilling";
+import { PlanNotice } from "./PlanNotice";
 import { backupToBoard, BackupError, verifyBoardBackup } from "./backupFormat";
 import { commentsApi, type BackupCommentThread, type CommentThread } from "./commentsApi";
 import { canvasPaletteFromTokens } from "./canvasPalette";
@@ -55,6 +57,7 @@ export function ExportDialog({
   canBackup,
   canImport,
   restoreRequest,
+  onOpenBilling,
   onClose,
   onImported,
 }: {
@@ -75,6 +78,8 @@ export function ExportDialog({
    * one entry point leads here instead of two copies of the same verify-and-replace code.
    */
   restoreRequest?: number;
+  /** A `402` offers the plan screen; the board owns the one organisation dialog. */
+  onOpenBilling?: () => void;
   onClose: () => void;
   onImported: () => void;
 }) {
@@ -84,6 +89,7 @@ export function ExportDialog({
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [planLimit, setPlanLimit] = useState<PlanLimitNotice | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -104,6 +110,7 @@ export function ExportDialog({
     setStatus("idle");
     setProgress(0);
     setError(null);
+    setPlanLimit(null);
     setJobId(null);
     setPendingImport(null);
     setImportError(null);
@@ -163,6 +170,7 @@ export function ExportDialog({
     if (!canRun || !effectiveScope) return;
     setStatus("running");
     setError(null);
+    setPlanLimit(null);
     setProgress(0.05);
     try {
       if (format === "backup") {
@@ -239,7 +247,14 @@ export function ExportDialog({
       setJobId(null);
     } catch (failure) {
       // The job id stays, so "retry" resumes the same audited request instead of
-      // creating a second `export.requested` for one click.
+      // creating a second `export.requested` for one click. A plan refusal is shown as
+      // an offer to change the plan, not as a broken export.
+      const notice = planLimitFrom(failure);
+      if (notice) {
+        setPlanLimit(notice);
+        setStatus("idle");
+        return;
+      }
       setError(failureText(failure));
       setStatus("error");
     }
@@ -426,6 +441,13 @@ export function ExportDialog({
           <p className="auth-error" role="alert">
             {error}
           </p>
+        )}
+        {planLimit && (
+          <PlanNotice
+            notice={planLimit}
+            onSeePlans={onOpenBilling}
+            onDismiss={() => setPlanLimit(null)}
+          />
         )}
 
         <footer className="export-actions">

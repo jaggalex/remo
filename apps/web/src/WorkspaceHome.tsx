@@ -118,7 +118,13 @@ export function WorkspaceHome({
   const [reloadKey, setReloadKey] = useState(0);
 
   const [accountOpen, setAccountOpen] = useState(false);
-  const [orgOpen, setOrgOpen] = useState(false);
+  // `?billing=1` comes from billing mail: open the organisation screen on its plan tab.
+  const [orgOpen, setOrgOpen] = useState(() => new URLSearchParams(window.location.search).has("billing"));
+  const [orgTab, setOrgTab] = useState<"people" | "billing">(
+    () => (new URLSearchParams(window.location.search).has("billing") ? "billing" : "people"),
+  );
+  /** The organisation the dialog was opened for, when it is not the one being viewed. */
+  const [orgTargetId, setOrgTargetId] = useState<string | null>(null);
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
@@ -128,6 +134,11 @@ export function WorkspaceHome({
   const startNew = (template: "empty" | TemplateKey = "empty") => {
     setTemplatePreset(template);
     setCreating(true);
+  };
+  const openOrg = (tab: "people" | "billing" = "people", orgId: string | null = null) => {
+    setOrgTargetId(orgId);
+    setOrgTab(tab);
+    setOrgOpen(true);
   };
   const [pendingDelete, setPendingDelete] = useState<BoardTile | null>(null);
   const [emojiBoard, setEmojiBoard] = useState<string | null>(null);
@@ -377,7 +388,7 @@ export function WorkspaceHome({
             orgName={activeOrg?.name ?? null}
             onOrg={() => {
               setAccountOpen(false);
-              setOrgOpen(true);
+              openOrg();
             }}
             onSessions={() => {
               setAccountOpen(false);
@@ -419,7 +430,7 @@ export function WorkspaceHome({
           <Icon name="building" size={36} />
           <h1>{t("org.noOrg")}</h1>
           <p className="muted">{t("home.noOrg")}</p>
-          <Button variant="primary" onClick={() => setOrgOpen(true)}>
+          <Button variant="primary" onClick={() => openOrg()}>
             {t("org.newOrg")}
           </Button>
         </section>
@@ -720,6 +731,10 @@ export function WorkspaceHome({
         orgs={orgs}
         defaultOrgId={activeOrg?.id ?? null}
         initialTemplate={templatePreset}
+        onOpenBilling={(orgId) => {
+          setCreating(false);
+          openOrg("billing", orgId);
+        }}
         onClose={() => setCreating(false)}
         onCreated={createdBoard}
       />
@@ -738,9 +753,13 @@ export function WorkspaceHome({
         <OrganisationDialog
           open={orgOpen}
           me={me}
-          initialOrgId={activeOrg?.id ?? null}
+          initialOrgId={orgTargetId ?? activeOrg?.id ?? null}
+          initialTab={orgTab}
           onOrgsChanged={refreshOrgs}
-          onClose={() => setOrgOpen(false)}
+          onClose={() => {
+            setOrgOpen(false);
+            setOrgTargetId(null);
+          }}
           onSignedOut={() => void signOut()}
         />
       )}

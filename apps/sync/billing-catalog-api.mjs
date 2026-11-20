@@ -58,6 +58,7 @@ export function forSalePrices(prices, currency) {
       return INTERVALS.indexOf(a.interval) - INTERVALS.indexOf(b.interval);
     })
     .map((price) => ({
+      id: price.id,
       plan: price.plan,
       interval: price.interval,
       amount: Number(price.amount),

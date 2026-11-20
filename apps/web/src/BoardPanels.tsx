@@ -1,4 +1,5 @@
 import type { AgentPlan, AppliedAgentPlan } from "@remo/doc";
+import { useEffect, useState } from "react";
 import type { Widget } from "@remo/model";
 import type { Access, SessionUser } from "./api";
 import { AgentDialog } from "./AgentDialog";
@@ -9,6 +10,7 @@ import { OrganisationDialog } from "./OrganisationDialog";
 import { SettingsPanel } from "./SettingsPanel";
 import { useI18n } from "./i18n";
 import { Contained } from "./ErrorBoundary";
+import { onBillingTabRequest } from "./billingNav";
 import type { BoardSettings } from "./settings";
 
 /**
@@ -85,16 +87,22 @@ function PanelsBody({
   onConfirmTrash: () => void;
 }) {
   const { t } = useI18n();
+  /** A `402` anywhere in the room opens the same organisation screen on its plan tab. */
+  const [billingOpen, setBillingOpen] = useState(false);
+  useEffect(() => onBillingTabRequest(() => setBillingOpen(true)), []);
   return (
     <>
       {me && (
         <OrganisationDialog
-          open={accountOpen}
+          open={accountOpen || billingOpen}
           me={me}
           initialOrgId={boardOrgId}
-          initialTab={accountTab}
+          initialTab={billingOpen ? "billing" : accountTab}
           onOrgsChanged={refreshOrgs}
-          onClose={onCloseAccount}
+          onClose={() => {
+            setBillingOpen(false);
+            onCloseAccount();
+          }}
           onSignedOut={onSignedOut}
         />
       )}

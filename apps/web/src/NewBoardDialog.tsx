@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { TEMPLATE_KEYS, type TemplateKey } from "@remo/model";
 import { Button, ChoiceCard, Dialog, Input, Select } from "@remo/ui";
 import { api, ApiError, type OrgSummary } from "./api";
+import { planLimitFrom, type PlanLimitNotice } from "./apiBilling";
+import { PlanNotice } from "./PlanNotice";
 import { useI18n } from "./i18n";
 import { HelpLink } from "./help/HelpLink";
 import { TEMPLATE_LABEL_KEY } from "./templateLabels";
@@ -21,6 +23,7 @@ export function NewBoardDialog({
   orgs,
   defaultOrgId = null,
   initialTemplate = "empty",
+  onOpenBilling,
   onClose,
   onCreated,
 }: {
@@ -30,6 +33,8 @@ export function NewBoardDialog({
   defaultOrgId?: string | null;
   /** The home's example link preselects an authored template; the default is empty. */
   initialTemplate?: "empty" | TemplateKey;
+  /** A `402` offers the plan screen; the home owns the one organisation dialog. */
+  onOpenBilling?: (orgId: string) => void;
   onClose: () => void;
   onCreated: (boardId: string, template: Choice, title: string) => void;
 }) {
@@ -41,6 +46,7 @@ export function NewBoardDialog({
   const [template, setTemplate] = useState<Choice>("empty");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planLimit, setPlanLimit] = useState<PlanLimitNotice | null>(null);
 
   const canCreate = orgs.filter((org) => org.capabilities?.includes("board.create"));
 
@@ -49,6 +55,7 @@ export function NewBoardDialog({
     setTitle("");
     setTemplate(initialTemplate);
     setError(null);
+    setPlanLimit(null);
     setTeamId("");
     setTeams([]);
     const preferred = canCreate.find((org) => org.id === defaultOrgId) ?? canCreate[0];
@@ -81,6 +88,7 @@ export function NewBoardDialog({
     if (busy || !orgId) return;
     setBusy(true);
     setError(null);
+    setPlanLimit(null);
     try {
       const created = await api.createBoard(orgId, {
         title: title.trim(),
@@ -88,6 +96,12 @@ export function NewBoardDialog({
       });
       onCreated(created.board.id, template, title.trim());
     } catch (failure) {
+      // A plan refusal is not a failed form: it names the limit and offers the plan screen.
+      const notice = planLimitFrom(failure);
+      if (notice) {
+        setPlanLimit(notice);
+        return;
+      }
       const code = failure instanceof ApiError ? failure.code : "";
       setError(
         code === "BOARD_CREATE_FORBIDDEN"
@@ -174,6 +188,13 @@ export function NewBoardDialog({
         </fieldset>
 
         {error && <p className="auth-error">{error}</p>}
+        {planLimit && (
+          <PlanNotice
+            notice={planLimit}
+            onSeePlans={onOpenBilling ? () => onOpenBilling(orgId) : undefined}
+            onDismiss={() => setPlanLimit(null)}
+          />
+        )}
 
         <div className="auth-actions">
           <Button disabled={busy} onClick={onClose}>

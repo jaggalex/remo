@@ -13,6 +13,7 @@ import { VoteSurface } from "./VoteSurface";
 import { ShareLinkDialog } from "./ShareLinkDialog";
 import { ShareDialog } from "./ShareDialog";
 import { Contained } from "./ErrorBoundary";
+import { requestBillingTab } from "./billingNav";
 import type { TimerPhase } from "@remo/model";
 
 /**
@@ -165,6 +166,10 @@ function DialogsBody({
         canExport={canExport}
         canBackup={canBackup}
         canImport={canImport}
+        onOpenBilling={() => {
+          setExportOpen(false);
+          requestBillingTab(boardOrgId);
+        }}
         onClose={() => setExportOpen(false)}
         onImported={onImported}
       />

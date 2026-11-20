@@ -28,13 +28,15 @@ import { enCollab } from "./i18n/en-collab";
 import { enWork } from "./i18n/en-work";
 import { enSection } from "./i18n/en-section";
 import { enMail } from "./i18n/en-mail";
+import { enBilling } from "./i18n/en-billing";
 import { ruCore } from "./i18n/ru-core";
 import { ruCollab } from "./i18n/ru-collab";
 import { ruWork } from "./i18n/ru-work";
 import { ruSection } from "./i18n/ru-section";
 import { ruMail } from "./i18n/ru-mail";
+import { ruBilling } from "./i18n/ru-billing";
 
-const en = { ...enCore, ...enCollab, ...enWork, ...enSection, ...enMail };
+const en = { ...enCore, ...enCollab, ...enWork, ...enSection, ...enMail, ...enBilling };
 
 type Key = keyof typeof en;
 /** Every translation key, for code that builds labels dynamically (commands, menus). */
@@ -46,6 +48,7 @@ const ru: Record<Key, string> = {
   ...ruWork,
   ...ruSection,
   ...ruMail,
+  ...ruBilling,
 };
 
 const STRINGS: Record<Lang, Record<Key, string>> = { en, ru };
