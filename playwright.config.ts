@@ -25,6 +25,7 @@ import {
  *
  *   pnpm e2e                       # defaults: 1235 / 1237 / 5175, remo_e2e_<run id>
  *   E2E_PORT_BASE=1000 pnpm e2e    # 2235 / 2237 / 6175, remo_e2e_1000_<run id>
+ *   pnpm e2e --billing             # the same servers with REMO_BILLING=on (ADR-247 §11)
  *
  * Artifact directories are run-scoped siblings; no run's output is an ancestor of another
  * run's output, so Playwright's cleanup of one cannot delete the other's evidence.
@@ -69,6 +70,10 @@ export default defineConfig({
         REMO_E2E_RUN_ID: RUN_ID,
         REMO_TEST_POSTGRES_URL: TEST_POSTGRES_URL,
         PORT: String(SYNC_PORT),
+        // Plans are a product mode, not a default (ADR-247, `spec/billing.md` §11/§13):
+        // `pnpm e2e --billing` turns the feature on for its run and every other run keeps
+        // the self-host answer, so the 0.4.1 scenarios stay exactly as they were.
+        REMO_BILLING: process.env.E2E_BILLING === "1" ? "on" : "off",
         REMO_METRICS: "off",
         // A deterministic plan instead of a provider. `ai-fake.mjs` accepts it only
         // because this process also carries REMO_E2E_RUN_ID and is not production.

@@ -13,6 +13,12 @@
  *
  * `--linux-browser` runs the scenarios against Chromium in the Playwright Linux image, the
  * one browser the visual baselines are compared in (ADR-222).
+ *
+ * `--billing` starts sync with `REMO_BILLING=on` for this run only. The flag is the
+ * decision, not the developer's shell: without it the variable is removed, so the ordinary
+ * run keeps the self-host behaviour and its 0.4.1 scenario set (`spec/billing.md` §11,
+ * §13, ADR-247). The 0.4.1 scenarios assume no plan limits, so the billing acceptance is
+ * run on its own: `pnpm e2e --billing e2e/billing.spec.ts`.
  */
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -35,10 +41,17 @@ env.REMO_E2E_DATABASE_NAME = e2eDatabaseName(suffix, env.E2E_RUN_ID);
 
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const linux = process.argv.includes("--linux-browser");
-const args = process.argv.slice(2).filter((arg) => arg !== "--linux-browser");
+const billing = process.argv.includes("--billing");
+const args = process.argv.slice(2).filter((arg) => arg !== "--linux-browser" && arg !== "--billing");
+
+// The flag owns the feature switch in both directions: a stray `E2E_BILLING=1` in the
+// shell must not turn the ordinary run into a billing run (spec/billing.md §11).
+if (billing) env.E2E_BILLING = "1";
+else delete env.E2E_BILLING;
 
 const browser = linux ? await startLinuxBrowser() : null;
 if (browser) env.REMO_BROWSER_WS = browser.wsEndpoint;
+if (billing) console.log("[e2e] billing on: sync starts with REMO_BILLING=on");
 
 const tests = spawnSync(pnpm, ["exec", "playwright", "test", ...args], {
   stdio: "inherit",
