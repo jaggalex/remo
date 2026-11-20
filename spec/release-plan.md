@@ -61,9 +61,9 @@ ADR-249/250/251 сдвинуты на 24/25/26 **до принятия** и ос
 
 ## Незакрытые долги (важно)
 
-1. **Цикл продления не запущен.** `createBillingLoops` написан и протестирован, но
-   `server.mjs` его не создаёт: нужны `charge` (адаптер + `openConnectionSecret` +
-   `openPaymentMethodRef`) и `notify` (`enqueueMail` с шаблонами `payment_*`).
+1. ~~Цикл продления не запущен~~ — проводка в `server.mjs` есть (`REMO_BILLING=on`),
+   `charge` через адаптер и `notify` письмами. Осталось проверить загрузку сервиса с
+   `REMO_BILLING=on` в e2e.
 2. **UI «Тариф и оплата»** — четвёртая вкладка `OrganisationDialog`, промокоды, плашки `402`
    и заморозки, i18n в новых файлах (`apiBilling.ts`, `en-billing.ts`).
 3. **e2e при `REMO_BILLING=on`**: каталог → счёт → `billing:mark-paid` → Pro → лимит комнат →

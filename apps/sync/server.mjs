@@ -43,8 +43,13 @@ import { CSRF_COOKIE, csrfCookie, csrfProblem } from "./csrf.mjs";
 import { newToken } from "./iam.mjs";
 import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
-import { assertMailConfig, mailCapabilities, mailDriver, resolveMailConfig } from "./mail.mjs";
+import { assertMailConfig, enqueueMail, mailCapabilities, mailDriver, resolveMailConfig } from "./mail.mjs";
 import { createMailDrain } from "./mail-drain.mjs";
+import { createBillingLoops, openPaymentMethodRef } from "./billing-renewals.mjs";
+import { manualAdapter } from "./pay-manual.mjs";
+import { yookassaAdapter } from "./pay-yookassa.mjs";
+import { openConnectionSecret } from "./payment-connections.mjs";
+import { kekFromEnv } from "./secrets.mjs";
 import { handleBilling } from "./billing-api.mjs";
 import { buildInfo } from "./build-info.mjs";
 
@@ -236,6 +241,72 @@ const mail = createMailDrain({
   config: mailConfig,
   log: console,
   metrics,
+});
+
+
+/* -------------------------------------------------------------- billing -- */
+
+// Renewal runs in this process for providers that charge a saved method (ADR-247 §3.3).
+// With billing off there is nothing to renew, and a missing connection or saved method is
+// a failed attempt, not a crash: the subscription moves to `past_due` and a letter says so.
+const BILLING_ADAPTERS = { manual: manualAdapter, yookassa: yookassaAdapter };
+const billing = createBillingLoops({
+  store,
+  async charge({ subscription, invoice, idempotencyKey }) {
+    if (process.env.REMO_BILLING !== "on") throw new Error("billing is off");
+    const connection = await store.connectionById(subscription.connection_id);
+    const adapter = connection ? BILLING_ADAPTERS[connection.provider] : null;
+    if (!connection || typeof adapter?.chargeSaved !== "function") {
+      throw new Error("this connection cannot renew");
+    }
+    const method = await store.withTenant(subscription.org_id, () =>
+      store.paymentMethod(subscription.org_id),
+    );
+    if (!method) throw new Error("no saved payment method");
+    const kek = kekFromEnv();
+    const sealed = {
+      ciphertext: method.ref_ciphertext,
+      nonce: method.ref_nonce,
+      dek_wrapped: method.ref_dek_wrapped,
+      dek_nonce: method.ref_dek_nonce,
+    };
+    const payment = await adapter.chargeSaved(
+      { ...connection, secret: openConnectionSecret(connection, { kek }) },
+      {
+        paymentId: invoice.id,
+        idempotencyKey,
+        methodRef: openPaymentMethodRef({ sealed }, { kek }),
+        amount: Number(invoice.total),
+        currency: invoice.currency,
+        description: `Subscription ${subscription.plan}`,
+      },
+    );
+    return { status: payment.status, failureCode: payment.failureCode };
+  },
+  async notify(type, { orgId, invoice, failureCode }) {
+    if (!mailConfig || mailConfig.driver === "disabled") return;
+    const account = orgId
+      ? await store.withTenant(orgId, () => store.billingAccount(orgId))
+      : null;
+    const toEmail = account?.billing_email;
+    if (!toEmail) return;
+    const amount = invoice ? `${Number(invoice.total) / 100} ${invoice.currency}` : "";
+    const params = {
+      amount,
+      currency: invoice?.currency ?? "",
+      period: invoice?.period_end ? new Date(invoice.period_end).toISOString().slice(0, 10) : "",
+      retryAt: new Date(Date.now() + 24 * 3600_000).toISOString().slice(0, 10),
+      date: new Date().toISOString().slice(0, 10),
+      invoiceUrl: `${mailConfig.appOrigin}/?billing=1`,
+      billingUrl: `${mailConfig.appOrigin}/?billing=1`,
+      failureCode: failureCode ?? "",
+    };
+    await enqueueMail(
+      store,
+      { toEmail, template: type, locale: "ru", params },
+      { config: mailConfig, kek: kekFromEnv() },
+    );
+  },
 });
 
 // Product metrics live in their own database (ADR-082). Their absence is normal:
@@ -617,6 +688,7 @@ server.listen(PORT, () => {
   agents.start();
   events.start();
   mail.start();
+  if (process.env.REMO_BILLING === "on") billing.start();
   if (mailConfig.driver !== "disabled") console.log(`[mail] driver ${mailConfig.driver}`);
 });
 
@@ -628,6 +700,7 @@ const shutdown = async (signal, exitCode = 0) => {
   agents.stop();
   events.stop();
   mail.stop();
+  billing.stop();
   connections.stopSweep();
   try {
     await store.close();
