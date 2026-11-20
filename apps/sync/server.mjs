@@ -43,6 +43,7 @@ import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
 import { assertMailConfig, mailCapabilities, mailDriver, resolveMailConfig } from "./mail.mjs";
 import { createMailDrain } from "./mail-drain.mjs";
+import { handleBilling } from "./billing-api.mjs";
 import { buildInfo } from "./build-info.mjs";
 
 import { websocketUtils } from "./y.mjs";
@@ -377,10 +378,13 @@ async function routeRequest(request, response, url) {
   }
 
   /**
-   * Everything an operator asks first: is it up, where is the data, how much of it,
-   * and since when. Always 200 with `ok`, so a probe never has to parse the body;
-   * the status code still reflects the store, so a shallow probe can use it.
+   * Billing comes before IAM: `/billing/catalog` is global, and `/orgs/:id/billing`
+   * shares the `/orgs` prefix with IAM, which would otherwise treat it as an unknown
+   * organisation route. For an org path `tenantOrgForRequest` has already set the
+   * tenant, so the module reads tenant tables under the same policy as everything else.
    */
+  if (await handleBilling({ request, response, url, store })) return;
+
   // Accounts, organisations and sharing (spec/IAM-v1.md). The module reads its own
   // body and answers its own errors; `true` means this request was one of its routes.
   if (
@@ -449,6 +453,11 @@ async function routeRequest(request, response, url) {
     return;
   }
 
+  /**
+   * Everything an operator asks first: is it up, where is the data, how much of it,
+   * and since when. Always 200 with `ok`, so a probe never has to parse the body;
+   * the status code still reflects the store, so a shallow probe can use it.
+   */
   if (url.pathname === "/health") {
     // A probe answers one bit, plus which build answered it. The store version, board
     // and room counts and a raw driver error stay in metrics, not on the internet.

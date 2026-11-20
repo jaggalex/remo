@@ -7,6 +7,7 @@
  * quietly downgrade a paying organisation to Free. Call them inside
  * `store.withTenant(orgId, …)`; `entitlementsFor` and the org-scoped billing routes do.
  */
+import { billingMoneyMethods } from "./billing-money.mjs";
 
 /** Every sellable pair, the unit `checkPriceLists` reports a gap for (§2.1.1). */
 const PAID_PLAN_KEYS = Object.freeze(
@@ -407,4 +408,76 @@ export const billingMethods = {
       missing: PAID_PLAN_KEYS.filter((key) => !available.has(`${currency}|${key}`)),
     }));
   },
+
+  /** One price by id; checkout refuses anything that is not `for_sale` (§2.1). */
+  async priceById(id) {
+    const { rows } = await this.pool.query(
+      `select id, plan, interval, currency, amount, version, status, promo_only
+         from prices where id = $1`,
+      [id],
+    );
+    return rows[0] ?? null;
+  },
+
+  /** The invoice behind an operator command, without knowing the tenant yet. */
+  async billingInvoiceGlobal(invoiceId) {
+    const { rows } = await this.pool.query(
+      `select id, org_id, number, status, currency, subtotal, discount, credit_applied,
+              total, lines, period_start, period_end
+         from invoices where id = $1`,
+      [invoiceId],
+    );
+    return rows[0] ?? null;
+  },
+
+  /** One payment of this organisation, for the return page after checkout. */
+  async billingPayment(orgId, paymentId) {
+    const { rows } = await this.pool.query(
+      `select id, invoice_id, status, amount, currency, provider_payment_id, failure_code
+         from payments where org_id = $1 and id = $2`,
+      [orgId, paymentId],
+    );
+    return rows[0] ?? null;
+  },
+
+  /**
+   * The owner's explicit choice of active rooms (§2.5). Only rooms of this organisation
+   * are accepted; the rest are frozen, so the chosen set is exactly the active one.
+   */
+  async setFrozenRooms(orgId, boardIds) {
+    if (!Array.isArray(boardIds)) throw new TypeError("boardIds must be an array");
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      const { rows: owned } = await client.query(
+        "select id from boards where org_id = $1 and id = any($2::text[])",
+        [orgId, boardIds],
+      );
+      if (owned.length !== boardIds.length) {
+        throw Object.assign(new Error("a room does not belong to this organisation"), {
+          code: "BOARD_NOT_FOUND",
+        });
+      }
+      await client.query(
+        `update boards
+            set frozen_at = case
+              when id = any($2::text[]) then null
+              else coalesce(frozen_at, now())
+            end
+          where org_id = $1 and archived_at is null`,
+        [orgId, boardIds],
+      );
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
 };
+
+// The money methods are a separate file because §4 is a separate reason to change, but
+// they register here: `postgres.mjs` already mixes in one billing object, and a second
+// registration point would make it possible to load plans without the ledger.
+Object.assign(billingMethods, billingMoneyMethods);
