@@ -61,6 +61,8 @@ type DragState =
       origin: Rect;
       /** The last target box, so the release can pass the factors to the command. */
       target?: Rect;
+      /** The kind keeps its proportion, so Shift cannot turn it off (ADR-249). */
+      aspectLocked: boolean;
       /** The factors actually applied (after the minimum floor). */
       factors?: { x: number; y: number };
       /** The boxes as they were when the gesture started; the preview must not feed itself. */

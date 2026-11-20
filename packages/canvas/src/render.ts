@@ -23,6 +23,7 @@ import { drawClipMark } from "./clipMark";
 import { deviceScale, roundRect } from "./path";
 import { drawCardSheet } from "./cardSheet";
 import { castElevation } from "./elevation";
+import { imageFieldsOf, paintImage } from "./imagePaint";
 import { layoutLabel } from "./labelLayout";
 export { deviceScale, roundRect } from "./path";
 import { DEFAULT_PALETTE, withAlpha, type CanvasPalette } from "./palette";
@@ -164,6 +165,17 @@ export interface DrawWidgetOptions {
    * (ADR-211).
    */
   memberRing?: boolean;
+  /**
+   * The decoded picture for an image object, or null while it loads (ADR-249).
+   *
+   * Loading belongs to the app, not to the painter: the screen reads its cache and an
+   * export reads the same cache after preloading, so both paint the same frame. The
+   * callback is only asked about objects that are actually being painted, which is
+   * what keeps off-screen pictures from loading.
+   */
+  image?: (widget: Widget) => ImageBitmap | null;
+  /** The picture could not be loaded, so the placeholder says so (ADR-249). */
+  imageUnavailable?: (widget: Widget) => boolean;
 }
 
 /** Visual defaults that come from the person's settings. */
@@ -175,6 +187,8 @@ export interface PaintTheme {
   cardPlaceholder: string;
   /** Copy shown on a finished shared timer; the app passes its translation. */
   timerExpired: string;
+  /** Copy on an image that could not be loaded; the app passes its translation. */
+  imageUnavailable?: string;
   /** Card status labels, passed by the app so the canvas stays language-neutral. */
   cardStatus: Record<CardStatus, string>;
   /** Colours resolved from the design-system tokens (`readCanvasTokens()`). */
@@ -189,6 +203,7 @@ export const DEFAULT_THEME: PaintTheme = {
   shapeStrokeWidth: 2,
   cardPlaceholder: "Type something",
   timerExpired: "Time is up",
+  imageUnavailable: "Image unavailable",
   cardStatus: { todo: "To do", in_progress: "In progress", done: "Done" },
   palette: DEFAULT_PALETTE,
 };
@@ -460,6 +475,25 @@ function paintWidget(
         ctx.textBaseline = "middle";
         ctx.fillText(theme.cardPlaceholder, left + 12, titleY);
       }
+      break;
+    }
+    case "image": {
+      // The app decides which variant is decoded; the painter contains it in the
+      // object's box and falls back to the dominant colour while nothing is there
+      // (ADR-249, `spec/images.md` §6).
+      paintImage(
+        ctx,
+        { x: left, y: top, width: widget.width, height: widget.height },
+        zoom,
+        {
+          bitmap: options.image?.(widget) ?? null,
+          dominantColor: imageFieldsOf(widget).dominantColor,
+          unavailable: options.imageUnavailable?.(widget) ?? false,
+          palette,
+          fontFamily: theme.fontFamily,
+          unavailableLabel: theme.imageUnavailable,
+        },
+      );
       break;
     }
     case "shape": {

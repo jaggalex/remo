@@ -85,6 +85,9 @@ export interface BoardPaintInput {
   theme: PaintTheme;
   /** The object under the inline editor, if any. */
   editingId?: string | null;
+  /** Decoded pictures, asked only for objects that are actually painted (ADR-249). */
+  image?: (widget: Widget) => ImageBitmap | null;
+  imageUnavailable?: (widget: Widget) => boolean;
 }
 
 export function paintBoardLayer(input: BoardPaintInput): void {
@@ -201,6 +204,8 @@ export function paintBoardLayer(input: BoardPaintInput): void {
       theme,
       editingId: editingId ?? undefined,
       memberRing: outlined.length > 1,
+      image: input.image,
+      imageUnavailable: input.imageUnavailable,
     });
     if (widget.type === "frame" && widget.layout?.kind === "table") {
       drawTable(ctx, widget, widgets, camera.zoom, palette, theme.fontFamily);
@@ -350,6 +355,9 @@ export interface OverlayPaintInput {
   presenting?: boolean;
   /** The edge "+" preview, painted until the click (ADR-195). */
   continuePreview?: ContinuePreview | null;
+  /** Decoded pictures, for the ghost of a dragged or copied object (ADR-249). */
+  image?: (widget: Widget) => ImageBitmap | null;
+  imageUnavailable?: (widget: Widget) => boolean;
 }
 
 export function paintOverlayLayer(input: OverlayPaintInput): void {
@@ -425,7 +433,10 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
   }
 
   if (continuePreview && !presenting) {
-    drawContinuePreview(ctx, continuePreview, camera.zoom, theme);
+    drawContinuePreview(ctx, continuePreview, camera.zoom, theme, {
+      image: input.image,
+      imageUnavailable: input.imageUnavailable,
+    });
   }
 
   // Four connector anchors on a single selection, and the link being dragged.
@@ -494,7 +505,7 @@ export function paintOverlayLayer(input: OverlayPaintInput): void {
         ctx,
         { ...card, x: dragPreview.x, y: dragPreview.y },
         camera.zoom,
-        { theme },
+        { theme, image: input.image, imageUnavailable: input.imageUnavailable },
       );
       ctx.restore();
     }
@@ -610,6 +621,10 @@ function drawContinuePreview(
   preview: ContinuePreview,
   zoom: number,
   theme: PaintTheme,
+  images: {
+    image?: (widget: Widget) => ImageBitmap | null;
+    imageUnavailable?: (widget: Widget) => boolean;
+  } = {},
 ): void {
   const { source, direction, decision, freeCenter } = preview;
   const palette = theme.palette;
@@ -645,7 +660,11 @@ function drawContinuePreview(
     ctx.lineTo(to.x, to.y);
     ctx.stroke();
     ctx.globalAlpha = 0.45;
-    drawWidget(ctx, ghost, zoom, { theme });
+    drawWidget(ctx, ghost, zoom, {
+      theme,
+      image: images.image,
+      imageUnavailable: images.imageUnavailable,
+    });
   }
 
   ctx.restore();

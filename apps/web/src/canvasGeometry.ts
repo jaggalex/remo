@@ -246,6 +246,21 @@ export interface ResizeOptions {
   ratio?: number;
   /** Alt — grow and shrink around the centre instead of the opposite corner. */
   fromCenter?: boolean;
+  /**
+   * The kind keeps its proportion, so the corner handle ignores Shift (ADR-249).
+   *
+   * A picture has a natural shape: stretching it is almost always an accident, and
+   * the generic Shift override would turn that accident into a one-key mistake.
+   */
+  aspectLocked?: boolean;
+}
+
+/** The proportion a resize keeps: the locked kind wins over the Shift override. */
+function keptRatio(origin: Rect, options: ResizeOptions): number | undefined {
+  if (options.aspectLocked) {
+    return origin.height > 0 ? origin.width / origin.height : undefined;
+  }
+  return options.ratio;
 }
 
 /**
@@ -274,7 +289,7 @@ export function resizedBox(
     const centreY = origin.y + origin.height / 2;
     let halfWidth = Math.max(Math.abs(point.x - centreX), minWidth / 2);
     let halfHeight = Math.max(Math.abs(point.y - centreY), minHeight / 2);
-    const ratio = options.ratio;
+    const ratio = keptRatio(origin, options);
     if (ratio && ratio > 0) {
       // One factor for both axes, chosen by the larger half-size so the pointer keeps
       // the corner it points at.
@@ -299,7 +314,7 @@ export function resizedBox(
   let newRight = west ? right : Math.max(point.x, origin.x + minWidth);
   let newBottom = north ? bottom : Math.max(point.y, origin.y + minHeight);
 
-  const ratio = options.ratio;
+  const ratio = keptRatio(origin, options);
   if (ratio && ratio > 0) {
     let width = newRight - left;
     let height = newBottom - top;

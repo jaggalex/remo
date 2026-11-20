@@ -30,6 +30,14 @@ export interface KindSpec {
   /** Gets corner handles when it is selected alone. */
   resizable: boolean;
   /**
+   * Keeps its proportions while a corner handle is dragged (ADR-249).
+   *
+   * The flag, not the Shift key: Shift is the generic free-resize override, and a
+   * picture that can be squashed is almost always a mistake (`spec/images.md` §3.2).
+   * Only a kind whose content has a natural shape sets it.
+   */
+  aspectLocked?: boolean;
+  /**
    * Smallest box a corner handle may leave (ADR-141).
    *
    * Absent means the generic floor below, which is enough for a handle and a word.
@@ -108,7 +116,10 @@ export const WIDGET_KINDS: Record<WidgetType, KindSpec> = {
     layered: true,
     movable: true,
     groupable: true,
-    resizable: false,
+    // A picture has a natural shape: it takes the same corner handles as a note, and
+    // the handle never lets the proportion go (ADR-249).
+    resizable: true,
+    aspectLocked: true,
   },
   unsupported: {
     rank: 2,

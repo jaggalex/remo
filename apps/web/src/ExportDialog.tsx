@@ -16,6 +16,7 @@ import {
   buildPdfFromJpeg,
   canvasToBlob,
   frameForSelection,
+  preloadExportImages,
   renderScope,
   scopeWidgets,
   type ExportScope,
@@ -200,6 +201,32 @@ export function ExportDialog({
         // The discussion is a server read; a failure must not block the picture.
         comments = await commentsApi.list(boardId).then((result) => result.threads).catch(() => []);
       }
+      const theme = {
+        fontFamily: settings.text.fontFamily,
+        fontCap: settings.notes.fontCap,
+        shapeStrokeWidth: settings.shapes.strokeWidth,
+        cardPlaceholder: t("kanban.cardPlaceholder"),
+        timerExpired: t("facilitation.timer.timeUp"),
+        imageUnavailable: t("canvas.imageUnavailable"),
+        cardStatus: {
+          todo: t("card.status.todo"),
+          in_progress: t("card.status.in_progress"),
+          done: t("card.status.done"),
+        },
+        palette,
+        // The same card faces as on screen, tags included (ADR-106).
+        tags: new Map(
+          Object.values(board.tags.toJSON() as Record<string, Tag>).map((tag) => [tag.id, tag]),
+        ),
+      };
+      // Pictures are decoded before the synchronous render; one that does not arrive
+      // in time becomes a placeholder rather than an empty hole (§6.1).
+      const images = await preloadExportImages({
+        widgets,
+        kanbanStates,
+        selectedIds,
+        scope: effectiveScope,
+      });
       const rendered = renderScope({
         widgets,
         kanbanStates,
@@ -210,23 +237,9 @@ export function ExportDialog({
         includeComments,
         commentsTitle: t("export.commentsTitle"),
         commentPointLabel: t("export.commentsPoint"),
-        theme: {
-          fontFamily: settings.text.fontFamily,
-          fontCap: settings.notes.fontCap,
-          shapeStrokeWidth: settings.shapes.strokeWidth,
-          cardPlaceholder: t("kanban.cardPlaceholder"),
-          timerExpired: t("facilitation.timer.timeUp"),
-          cardStatus: {
-            todo: t("card.status.todo"),
-            in_progress: t("card.status.in_progress"),
-            done: t("card.status.done"),
-          },
-          palette,
-          // The same card faces as on screen, tags included (ADR-106).
-          tags: new Map(
-            Object.values(board.tags.toJSON() as Record<string, Tag>).map((tag) => [tag.id, tag]),
-          ),
-        },
+        theme,
+        image: images.image,
+        imageUnavailable: images.unavailable,
       });
       if (!rendered) throw new Error("EMPTY_SCOPE");
       setProgress(0.65);

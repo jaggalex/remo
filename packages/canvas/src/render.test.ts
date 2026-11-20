@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Widget } from "@remo/model";
-import { deviceScale, drawWidget } from "./render";
+import { DEFAULT_THEME, deviceScale, drawWidget } from "./render";
 
 /**
  * A 2D context stand-in: every method is a recorded no-op, every property is writable,
@@ -9,6 +9,7 @@ import { deviceScale, drawWidget } from "./render";
  */
 function fakeContext(failing: string[] = []) {
   const calls: string[] = [];
+  const fillStyles: string[] = [];
   const state: Record<string | symbol, unknown> = {};
   const ctx = new Proxy(state, {
     get(target, key) {
@@ -21,11 +22,12 @@ function fakeContext(failing: string[] = []) {
       };
     },
     set(target, key, value) {
+      if (key === "fillStyle" && typeof value === "string") fillStyles.push(value);
       target[key] = value;
       return true;
     },
   });
-  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls };
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, state, fillStyles };
 }
 
 const shape: Widget = {
@@ -98,5 +100,47 @@ describe("inline editing and the canvas (ADR-033)", () => {
     const { ctx, calls } = fakeContext();
     drawWidget(ctx, textWidget, 1, { editingId: "t1" });
     expect(calls).not.toContain("fillText");
+  });
+});
+
+describe("images on the canvas (ADR-249)", () => {
+  const imageWidget = {
+    id: "i1",
+    type: "image",
+    parentId: null,
+    x: 100,
+    y: 100,
+    width: 200,
+    height: 100,
+    fileId: "f1",
+    naturalWidth: 800,
+    naturalHeight: 400,
+    dominantColor: "#336699",
+  } as unknown as Widget;
+
+  it("draws the bitmap the app hands over", () => {
+    const { ctx, calls } = fakeContext();
+    const bitmap = { width: 800, height: 400 } as unknown as ImageBitmap;
+    drawWidget(ctx, imageWidget, 1, { image: () => bitmap });
+    expect(calls).toContain("drawImage");
+  });
+
+  it("paints the dominant colour while the bitmap is missing", () => {
+    const { ctx, calls, fillStyles } = fakeContext();
+    drawWidget(ctx, imageWidget, 1, { image: () => null });
+    expect(calls).toContain("fill");
+    expect(calls).not.toContain("drawImage");
+    expect(fillStyles[0]).toBe("#336699");
+  });
+
+  it("paints the unavailable sentence for a failed file", () => {
+    const { ctx, calls } = fakeContext();
+    drawWidget(ctx, imageWidget, 1, {
+      image: () => null,
+      imageUnavailable: () => true,
+      theme: { ...DEFAULT_THEME, imageUnavailable: "No picture" },
+    });
+    const text = calls.filter((call) => call === "fillText");
+    expect(text.length).toBeGreaterThan(0);
   });
 });

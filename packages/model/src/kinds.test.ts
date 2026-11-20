@@ -77,14 +77,19 @@ describe("the capability table", () => {
     expect([...kinds.filter((type) => !kindOf(type).movable)].sort()).toEqual(["card", "connector"]);
   });
 
-  it("lets notes, text, timers, frames and shapes take a resize handle", () => {
+  it("lets notes, text, timers, frames, shapes and images take a resize handle", () => {
     expect([...kinds.filter((type) => kindOf(type).resizable)].sort()).toEqual([
       "frame",
+      "image",
       "shape",
       "sticky_note",
       "text",
       "timer",
     ]);
+  });
+
+  it("locks the aspect of a picture and nothing else (ADR-249)", () => {
+    expect([...kinds.filter((type) => kindOf(type).aspectLocked)].sort()).toEqual(["image"]);
   });
 
   it("gives a frame a floor that keeps it a container (ADR-141)", () => {
@@ -141,8 +146,12 @@ describe("scalesInBlock (ADR-211)", () => {
   });
 
   it("refuses an imported placeholder", () => {
-    expect(scalesInBlock(note({ type: "image" }))).toBe(false);
     expect(scalesInBlock(note({ type: "unsupported" }))).toBe(false);
+  });
+
+  it("scales a picture, whose aspect the handle locks (ADR-249)", () => {
+    expect(scalesInBlock(note({ type: "image" }))).toBe(true);
+    expect(scalesInBlock(note({ type: "image", locked: true }))).toBe(false);
   });
 
   it("refuses a table section whose size comes from its axes", () => {

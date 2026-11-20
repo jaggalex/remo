@@ -156,14 +156,15 @@ export function pointerMove(env: GestureEnv, event: React.PointerEvent<HTMLCanva
 
     // Shift keeps the proportion, Alt anchors the centre (ADR-212). Either one also
     // turns snapping off for the gesture: a ratio and a glued edge are different
-    // promises, and applying both would break the ratio silently.
+    // promises, and applying both would break the ratio silently. A picture's own
+    // lock does the same, and Shift cannot turn it off (ADR-249).
     const ratio = event.shiftKey && drag.origin.height > 0
       ? drag.origin.width / drag.origin.height
       : undefined;
     const fromCenter = event.altKey;
-    let target = resizedBox(drag.origin, drag.corner, world, 0, 0, { ratio, fromCenter });
+    let target = resizedBox(drag.origin, drag.corner, world, 0, 0, { ratio, fromCenter, aspectLocked: drag.aspectLocked });
 
-    const snapping = !event.shiftKey && !event.metaKey && !event.ctrlKey;
+    const snapping = !drag.aspectLocked && !event.shiftKey && !event.metaKey && !event.ctrlKey;
     if (snapping) {
       const edges: ResizeEdges = {
         x: drag.corner === "ne" || drag.corner === "se" ? "right" : "left",

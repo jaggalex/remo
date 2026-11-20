@@ -511,4 +511,44 @@ describe("resize modifiers (ADR-212)", () => {
     expect(box.height).toBeCloseTo(60, 6);
     expect(box.width / box.height).toBeCloseTo(ratio, 6);
   });
+
+  it("keeps a picture's proportion even when Shift asks for a free resize (ADR-249)", () => {
+    const locked = resizedBox(
+      { x: 0, y: 0, width: 200, height: 120 },
+      "se",
+      { x: 380, y: 220 },
+      80,
+      60,
+      { aspectLocked: true },
+    );
+    expect(locked.width / locked.height).toBeCloseTo(ratio, 6);
+    expect(locked.width).toBeCloseTo(380, 6);
+    expect(locked.height).toBeCloseTo(228, 6);
+  });
+
+  it("locks the aspect around the centre as well", () => {
+    const locked = resizedBox(
+      { x: 0, y: 0, width: 200, height: 120 },
+      "se",
+      { x: 300, y: 200 },
+      80,
+      60,
+      { aspectLocked: true, fromCenter: true },
+    );
+    expect(locked.width / locked.height).toBeCloseTo(ratio, 6);
+    expect(locked.x + locked.width / 2).toBe(100);
+    expect(locked.y + locked.height / 2).toBe(60);
+  });
+
+  it("ignores the Shift ratio on a kind that is not locked", () => {
+    const free = resizedBox(
+      { x: 0, y: 0, width: 200, height: 150 },
+      "se",
+      { x: 380, y: 220 },
+      80,
+      60,
+      { ratio: 2 },
+    );
+    expect(free.width / free.height).toBeCloseTo(2, 6);
+  });
 });

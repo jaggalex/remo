@@ -457,6 +457,7 @@ export const enCore = {
   "canvas.text.overflow": "Text does not fit",
   "canvas.resize.moveOnly": "Can be moved, not resized",
   "canvas.resize.limit": "Size limit · {size}",
+  "canvas.imageUnavailable": "Image unavailable",
   "canvas.resize.limitPx": "Size limit · {size} px",
   "canvas.locked": "Locked: its size and text are protected; it can still be moved",
   "canvas.inGroup": "In a group: double-click to edit just this object",

@@ -10,6 +10,8 @@ import {
 import { canvasPaletteFromTokens } from "./canvasPalette";
 import { connectorResolver, type ContinuePreview } from "./canvasGeometry";
 import { useProposalLayout } from "./proposalStore";
+import { imageFieldsOf, imageVariantFallbacks, imageVariantForWidget } from "@remo/canvas";
+import { boardImageCache } from "./imageCache";
 import type { Camera, KanbanLayout } from "@remo/canvas";
 import type { Presence } from "@remo/doc";
 import type { KanbanState, Widget } from "@remo/model";
@@ -163,6 +165,7 @@ export function useCanvasPainting({
       shapeStrokeWidth: settings.shapes.strokeWidth,
       cardPlaceholder: t("kanban.cardPlaceholder"),
       timerExpired: t("facilitation.timer.timeUp"),
+      imageUnavailable: t("canvas.imageUnavailable"),
       cardStatus: {
         todo: t("card.status.todo"),
         in_progress: t("card.status.in_progress"),
@@ -174,6 +177,35 @@ export function useCanvasPainting({
     // `fontsLoaded` is not read: a new theme object is what makes both layers repaint.
     [settings, t, palette, fontsLoaded, tags],
   );
+
+  /**
+   * The decoded picture for an image object, and the request that will supply it.
+   *
+   * The callback is reached only for objects that survive the painter's culling, so
+   * asking here is also what keeps off-screen pictures from loading. The variant follows
+   * the object's size on this screen; a larger one already decoded is not dropped until
+   * the smaller arrives, so the picture never blinks back to a placeholder.
+   */
+  const imageOf = useCallback((widget: Widget): ImageBitmap | null => {
+    if (widget.type !== "image") return null;
+    const { fileId } = imageFieldsOf(widget);
+    if (!fileId) return null;
+    const variant = imageVariantForWidget(widget, camera.zoom, window.devicePixelRatio || 1);
+    void boardImageCache.load(fileId, variant);
+    for (const candidate of imageVariantFallbacks(variant)) {
+      const bitmap = boardImageCache.peek(fileId, candidate);
+      if (bitmap) return bitmap;
+    }
+    return null;
+  }, [camera.zoom]);
+
+  const imageIsUnavailable = useCallback((widget: Widget): boolean => {
+    if (widget.type !== "image") return false;
+    const { fileId } = imageFieldsOf(widget);
+    if (!fileId) return true;
+    const variant = imageVariantForWidget(widget, camera.zoom, window.devicePixelRatio || 1);
+    return boardImageCache.status(fileId, variant) === "error";
+  }, [camera.zoom]);
 
   const paintBoard = useCallback(() => {
     const canvas = boardRef.current;
@@ -200,6 +232,8 @@ export function useCanvasPainting({
       isCardOfKanban,
       theme: paintTheme,
       editingId,
+      image: imageOf,
+      imageUnavailable: imageIsUnavailable,
     };
     paintBoardLayer(input);
     paintStats.current.board += 1;
@@ -223,6 +257,8 @@ export function useCanvasPainting({
     resolveConnector,
     widgets,
     isCardOfKanban,
+    imageOf,
+    imageIsUnavailable,
   ]);
 
   const paintOverlay = useCallback(() => {
@@ -256,6 +292,8 @@ export function useCanvasPainting({
       proposal,
       presenting,
       continuePreview,
+      image: imageOf,
+      imageUnavailable: imageIsUnavailable,
     };
     paintOverlayLayer(input);
     paintStats.current.overlay += 1;
@@ -284,6 +322,8 @@ export function useCanvasPainting({
     resolveConnector,
     widgets,
     isCardOfKanban,
+    imageOf,
+    imageIsUnavailable,
   ]);
 
   /**
@@ -367,6 +407,16 @@ export function useCanvasPainting({
 
   const invalidateBoard = useCallback(() => invalidate({ board: true }), [invalidate]);
   const invalidateOverlay = useCallback(() => invalidate({ overlay: true }), [invalidate]);
+
+  /**
+   * A decoded picture is a reason to repaint, and the only one the document cannot
+   * announce: nothing in Yjs changed when the bytes arrived. The cache emits once per
+   * finished request, so a board of loading pictures costs one paint each, not a loop.
+   */
+  useEffect(
+    () => boardImageCache.subscribe(() => invalidateBoard()),
+    [invalidateBoard],
+  );
 
   // Board layer: camera, document, selection.
   const boardDeps = useRef<Record<string, unknown>>({});

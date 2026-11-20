@@ -2,7 +2,7 @@ import { ANCHOR_GAP, HANDLE_GAP, anchorsOf, portsAreEdgePlus, bendAxis, connectT
 import type { GestureEnv } from "./gestureEnv";
 import type { ConnectDraft } from "./gestureTypes";
 import { boxOf, connectorHandles, connectorPath, facingSide, labelPoint, layerKey, layoutTable, pick, pickConnector, placementAt, plusHit, resolvedEndSide, tableHitAt, unionBox, kanbanTitleAt } from "@remo/canvas";
-import { canConnect, expandGroups, minimumSizeOf, scalesInBlock } from "@remo/model";
+import { canConnect, expandGroups, kindOf, minimumSizeOf, scalesInBlock } from "@remo/model";
 import type { ConnectorSide } from "@remo/model";
 import { capture } from "./gestureEnv";
 import {
@@ -31,6 +31,9 @@ export function pointerDown(env: GestureEnv, event: React.PointerEvent<HTMLCanva
         ids: resizeMembers.map((widget) => widget.id),
         corner: hit,
         origin: box,
+        // A single picture keeps its shape whatever the modifiers say (ADR-249).
+        aspectLocked:
+          resizeMembers.length === 1 && kindOf(resizeMembers[0]!.type).aspectLocked === true,
         // Captured once: during the drag every move scales the original boxes, never
         // the preview it just painted.
         members: resizeMembers.map((widget) => ({

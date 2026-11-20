@@ -4,6 +4,7 @@ export * from "./elevation";
 export * from "./connectors";
 export * from "./guides";
 export * from "./hit";
+export * from "./imagePaint";
 export * from "./kanban";
 export * from "./labelLayout";
 export * from "./layout";

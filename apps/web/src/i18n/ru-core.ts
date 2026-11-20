@@ -456,6 +456,7 @@ export const ruCore = {
   "canvas.text.overflow": "Текст не помещается",
   "canvas.resize.moveOnly": "Можно перенести, но не изменить размер",
   "canvas.resize.limit": "Предел размера · {size}",
+  "canvas.imageUnavailable": "Изображение недоступно",
   "canvas.resize.limitPx": "Предел размера · {size} px",
   "canvas.locked": "Закреплено: размер и текст защищены, но объект можно переместить",
   "canvas.inGroup": "В группе: двойной клик — работать только с этим объектом",

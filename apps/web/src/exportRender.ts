@@ -2,8 +2,12 @@ import {
   drawKanban,
   drawTable,
   drawWidget,
+  imageFieldsOf,
+  imageVariantFallbacks,
+  imageVariantFor,
   layoutKanban,
   layoutTable,
+  type ImageVariant,
   type KanbanLayout,
   type PaintTheme,
 } from "@remo/canvas";
@@ -14,6 +18,7 @@ import {
   type Widget,
 } from "@remo/model";
 import { internalConnectors, placementOfCard } from "./canvasGeometry";
+import { boardImageCache, type ImageCache } from "./imageCache";
 import type { BoardSettings } from "./settings";
 
 /**
@@ -59,6 +64,12 @@ export interface ExportRenderInput {
   includeComments?: boolean;
   commentsTitle?: string;
   commentPointLabel?: string;
+  /**
+   * The decoded picture for an image object (ADR-249). An export takes the same
+   * callback as the screen, after `preloadExportImages` has filled the cache.
+   */
+  image?: (widget: Widget) => ImageBitmap | null;
+  imageUnavailable?: (widget: Widget) => boolean;
 }
 
 export interface ExportRenderResult {
@@ -68,6 +79,79 @@ export interface ExportRenderResult {
   /** World box that was painted, useful for the dialog's object count copy. */
   box: Rect;
   objects: number;
+}
+
+/** How long an export waits for pictures before it draws placeholders (§6.1). */
+export const EXPORT_IMAGE_TIMEOUT_MS = 15_000;
+
+export interface ExportImageLookup {
+  /** The decoded picture, or null when it did not arrive in time. */
+  image: (widget: Widget) => ImageBitmap | null;
+  /** True for a picture the cache tried and failed to load. */
+  unavailable: (widget: Widget) => boolean;
+  /** How many pictures had no bitmap when the wait ended. */
+  failed: number;
+}
+
+/** The variant an export needs: the object's size in final device pixels. */
+function exportVariant(widget: Widget, scale: number): ImageVariant {
+  return imageVariantFor(widget.width * scale, widget.height * scale, 1);
+}
+
+/**
+ * Fill the cache before painting the scope.
+ *
+ * An export is synchronous: once `renderScope` starts, a picture that is not decoded
+ * cannot appear later. So the visible (in fact, the scoped) images are requested first,
+ * with the export's own variant, and the wait is bounded: a slow or missing file
+ * becomes a placeholder and the picture is still produced. `spec/images.md` §6.1.
+ */
+export async function preloadExportImages(
+  input: Pick<ExportRenderInput, "widgets" | "selectedIds" | "scope" | "kanbanStates" | "scale">,
+  cache: ImageCache = boardImageCache,
+  timeoutMs: number = EXPORT_IMAGE_TIMEOUT_MS,
+): Promise<ExportImageLookup> {
+  const scoped = scopeWidgets(input.widgets, input.selectedIds, input.scope);
+  const scale = Math.max(0.5, input.scale ?? 2);
+  const wanted = new Map<string, { fileId: string; variant: ImageVariant }>();
+  for (const widget of scoped) {
+    if (widget.type !== "image") continue;
+    const { fileId } = imageFieldsOf(widget);
+    if (!fileId) continue;
+    const variant = exportVariant(widget, scale);
+    wanted.set(`${fileId}/${variant}`, { fileId, variant });
+  }
+
+  const jobs = [...wanted.values()].map(({ fileId, variant }) => cache.load(fileId, variant));
+  if (jobs.length) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const limit = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, timeoutMs);
+    });
+    await Promise.race([Promise.allSettled(jobs).then(() => undefined), limit]);
+    if (timer != null) clearTimeout(timer);
+  }
+
+  const image = (widget: Widget): ImageBitmap | null => {
+    if (widget.type !== "image") return null;
+    const { fileId } = imageFieldsOf(widget);
+    if (!fileId) return null;
+    for (const variant of imageVariantFallbacks(exportVariant(widget, scale))) {
+      const bitmap = cache.peek(fileId, variant);
+      if (bitmap) return bitmap;
+    }
+    return null;
+  };
+  const unavailable = (widget: Widget): boolean => {
+    if (widget.type !== "image") return false;
+    const { fileId } = imageFieldsOf(widget);
+    if (!fileId) return true;
+    return cache.status(fileId, exportVariant(widget, scale)) === "error";
+  };
+  const failed = scoped.filter(
+    (widget) => widget.type === "image" && !image(widget),
+  ).length;
+  return { image, unavailable, failed };
 }
 
 /** A frame selected directly, or the frame that contains the selected object. */
@@ -415,6 +499,8 @@ export function renderScope(input: ExportRenderInput): ExportRenderResult | null
       selectedIds: [],
       resolve,
       theme: input.theme,
+      image: input.image,
+      imageUnavailable: input.imageUnavailable,
     });
     if (widget.type === "frame" && widget.layout?.kind === "table") {
       drawTable(ctx, widget, scoped, scale, palette, input.theme.fontFamily);
