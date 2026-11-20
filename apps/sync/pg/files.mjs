@@ -3,12 +3,11 @@
  *
  * Every method runs under the request's tenant (`app.org_id`, ADR-178), so the policy on
  * `files` is the second wall behind the route's own access check. The two deliberate
- * exceptions read across tenants and are marked `withoutTenant` with the reason: the
- * read route must learn a file's organisation before a tenant exists, and a copy into
- * another organisation must see the source row. `schema.sql` (and therefore a
- * `security definer` lookup) is outside this slice, so both are plain reads that answer
- * `null` once `FORCE ROW LEVEL SECURITY` hides the row; the route then falls back to the
- * board's organisation where it can, and otherwise answers `404`.
+ * exceptions happen before a tenant exists: the read route must learn a file's
+ * organisation, and a copy into another organisation must see the source row. Neither
+ * may be a plain read — `FORCE ROW LEVEL SECURITY` answers `null` for an unset tenant —
+ * so both ask `remo_file_org` (schema 25) for the organisation and then read the row
+ * under it.
  */
 import { randomUUID } from "node:crypto";
 import { withoutTenant } from "../tenant.mjs";
@@ -84,18 +83,14 @@ export const fileMethods = {
 
   /**
    * Cross-tenant boundary: `/files/:id/...` is answered without `app.org_id`, so the
-   * organisation has to come from the row itself. A `security definer` function would
-   * keep this inside the policy; until `schema.sql` owns one, the read runs with the
-   * tenant context removed and answers `null` under `FORCE ROW LEVEL SECURITY`.
+   * organisation has to come from the row itself. `FORCE ROW LEVEL SECURITY` hides that
+   * row from the app role, so the answer comes from the `security definer` lookup that
+   * owns the read (schema 25) — the same mechanism `boardOrg` uses for a room. The row
+   * is then read again under this organisation, so a stale answer proves nothing.
    */
   async fileOrgId(id) {
-    return withoutTenant(async () => {
-      const { rows } = await this.pool.query(
-        "select org_id from files where id = $1",
-        [id],
-      );
-      return rows[0]?.org_id ?? null;
-    });
+    const { rows } = await this.pool.query("select remo_file_org($1) as org_id", [id]);
+    return rows[0]?.org_id ?? null;
   },
 
   /**
@@ -168,21 +163,28 @@ export const fileMethods = {
   },
 
   /**
-   * Copy a file into another organisation (§5.2). The source row is read across tenants
-   * for the same reason `fileOrgId` is; the insert then runs under the target tenant.
+   * Copy a file into another organisation (§5.2). The source organisation comes from the
+   * same `security definer` lookup `fileOrgId` uses, and the source row is read under it;
+   * the insert then runs under the target tenant.
    *
    * `id` is supplied by the route so the storage keys can be written before the row and
    * removed if the insert loses to a concurrent duplicate. Without it the database
    * generates one, which is still correct but leaves the caller unable to clean up.
    */
   async copyFileForBoard({ fileId, targetOrgId, boardId, uploadedBy, id = null }) {
-    const source = await withoutTenant(async () => {
-      const { rows } = await this.pool.query(
-        `select ${COLUMNS} from files where id = $1 and status = 'ready'`,
-        [fileId],
-      );
-      return rows[0] ?? null;
-    });
+    const sourceOrgId = await this.fileOrgId(fileId);
+    if (!sourceOrgId) return null;
+    // The caller is inside the target tenant; leave it for the source read, because
+    // `withTenant` refuses to switch an existing one.
+    const source = await withoutTenant(() =>
+      this.withTenant(sourceOrgId, async () => {
+        const { rows } = await this.pool.query(
+          `select ${COLUMNS} from files where id = $1 and status = 'ready'`,
+          [fileId],
+        );
+        return rows[0] ?? null;
+      }),
+    );
     if (!source) return null;
     // Inside one organisation the object reuses the same fileId, so there is nothing to
     // copy (§5.2).

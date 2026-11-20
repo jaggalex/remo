@@ -194,15 +194,15 @@ export function createFilesApi({
   /**
    * The organisation of a file, for a path that never passed the tenant resolver.
    *
-   * `fileOrgId` is the direct answer and works while the app role can still see the row;
-   * under `FORCE ROW LEVEL SECURITY` that read returns nothing, so the board's
-   * organisation (the security-definer lookup that already exists) is used instead. The
-   * later `fileById` under that tenant still proves the file belongs there.
+   * `/files/:id/...` is answered before a room — and therefore a tenant — is known, and
+   * `FORCE ROW LEVEL SECURITY` hides the row from an unset tenant. `store.fileOrgId` is
+   * the `security definer` lookup that answers it (schema 25), the same mechanism
+   * `boardOrg` uses for a room; there is no second guess from the board, because the
+   * later `fileById` under that organisation already proves the file belongs there.
    */
-  async function fileOrg(fileId, boardId) {
-    const direct = await store.fileOrgId?.(fileId).catch(() => null);
-    if (direct) return direct;
-    return store.boardOrg ? store.boardOrg(boardId).catch(() => null) : null;
+  async function fileOrg(fileId) {
+    if (typeof store.fileOrgId !== "function") return null;
+    return store.fileOrgId(fileId).catch(() => null);
   }
 
   /** Storage quota and the per-room image count (§4.1 step 5, §7). */
@@ -409,7 +409,7 @@ export function createFilesApi({
     const boardId = url.searchParams.get("board");
     if (!boardId) return notFound(response);
 
-    const orgId = await fileOrg(fileId, boardId);
+    const orgId = await fileOrg(fileId);
     if (!orgId) return notFound(response);
 
     let prepared = null;
@@ -464,7 +464,7 @@ export function createFilesApi({
     const boardId = url.searchParams.get("board");
     if (!boardId) return notFound(response);
 
-    const orgId = await fileOrg(fileId, boardId);
+    const orgId = await fileOrg(fileId);
     if (!orgId) return notFound(response);
 
     let prepared = null;
@@ -524,7 +524,7 @@ export function createFilesApi({
     const targetOrgId = target.board?.orgId ?? null;
     if (!targetOrgId) return notFound(response);
 
-    const sourceOrgId = await store.fileOrgId?.(fileId).catch(() => null);
+    const sourceOrgId = await fileOrg(fileId);
     if (!sourceOrgId) return notFound(response);
 
     // Two rooms, two tenants: leave the request's organisation, read the source under its

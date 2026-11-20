@@ -1624,6 +1624,26 @@ create table if not exists files (
 create index if not exists files_org_idx on files (org_id) where status = 'ready';
 create unique index if not exists files_org_sha_idx on files (org_id, sha256) where status = 'ready';
 
+/* ------------------------------------------------ file organisation (25) -- */
+-- `/files/:id/...` is answered before a room — and therefore a tenant — is known, and a
+-- copy into another organisation reads the source row from outside its tenant (§4.3,
+-- §5.2). `FORCE ROW LEVEL SECURITY` hides a `files` row from both, so the organisation
+-- comes from this lookup instead of a plain read: the same shape as `remo_board_lookup`
+-- for rooms (ADR-178). It answers only a `ready` row, because a deleted one has no
+-- object left to serve. It stands here, after the table it reads, because `language sql`
+-- bodies are checked when the function is created — the helpers block above runs before
+-- `files` exists.
+create or replace function remo_file_org(file_id uuid)
+returns uuid language sql security definer set search_path = public
+as $$ select org_id from files where id = file_id and status = 'ready' $$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'remo_app') then
+    grant execute on function remo_file_org(uuid) to remo_app;
+  end if;
+end $$;
+
 /* ---------------------------------------------------------- schema meta -- */-- The service reads this before applying the file, so a running suite or a second
 -- instance does not run DDL on every start (and cannot deadlock with live queries).
 
@@ -1638,5 +1658,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 24)
+insert into schema_meta (id, version) values (1, 25)
 on conflict (id) do update set version = excluded.version, updated_at = now();

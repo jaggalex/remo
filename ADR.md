@@ -10122,7 +10122,7 @@ pictures onto a board. Four constraints shape the design:
 ## ADR-250: Support is an optional thin layer in the core; the help desk and the AI first line are separate services
 
 **Status:** proposed (2026-11-20). Implementation spec: `spec/support.md`. Amended before
-acceptance: schema 25 adds `users.support_id`; the client reads the mode from
+acceptance: schema 26 adds `users.support_id`; the client reads the mode from
 `GET /api/support/config` instead of inventing it.
 
 **Context.** Users need one place to ask for help, report a bug or suggest an idea. Nobody
@@ -10171,7 +10171,7 @@ self-hosted installations must not depend on the operator's support stack.
 ## ADR-251: Model calls go through an optional, self-owned AI gateway on a separate host; inbound agent traffic gets its own address
 
 **Status:** proposed (2026-11-20). Implementation spec: `spec/ai-gateway.md`. Amended before
-acceptance: schema 26 adds `ai_runs.gateway_provider`; the tunnel carries HTTPS with a
+acceptance: schema 27 adds `ai_runs.gateway_provider`; the tunnel carries HTTPS with a
 certificate pinned in sync, so the outbound client is not weakened for user keys.
 
 **Context.** Agents run inside sync: a queued task calls a model through `ai.mjs` and

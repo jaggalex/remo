@@ -5,9 +5,11 @@
  * What the unit tests cannot prove: the upload writes a `files` row and one command
  * creates the image object, the projection carries `fileId` so the read check and the GC
  * can see it, deduplication inside an organisation reuses the row, a room that does not
- * use the file gets `404`, a missing variant falls back to the nearest smaller one, and a
- * copy into another organisation produces a new id with its own bytes.
+ * use the file gets `404`, a missing variant falls back to the nearest smaller one, the
+ * organisation lookup answers before a room is known, and a copy into another
+ * organisation produces a new id with its own bytes.
  */
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -19,6 +21,7 @@ import { createFileStore } from "./files-store.mjs";
 import { handleCommands } from "./commands-api.mjs";
 import { accessForBoard, handleIam, linkUnlockToken, sessionFromRequest } from "./iam-api.mjs";
 import { testDatabaseStore } from "./test-db.mjs";
+import { withoutTenant } from "./tenant.mjs";
 
 const opened = await testDatabaseStore("files API");
 const store = opened?.store ?? null;
@@ -267,6 +270,32 @@ suite("files API (ADR-249)", () => {
     expect(malformed.status).toBe(404);
   });
 
+  it("learns a file's organisation without a room, and only for a ready row", async () => {
+    const { api, orgId } = await account("file-org");
+    const boardId = await boardOf(api, orgId, "File org");
+    const uploaded = await upload(api, boardId);
+    const fileId = uploaded.body.file.id;
+
+    // `/files/:id/...` is answered before any tenant exists, so the read runs with no
+    // `app.org_id`. Only the definer lookup may answer it; a plain select answers
+    // nothing once `FORCE ROW LEVEL SECURITY` is on (schema 25).
+    expect(await withoutTenant(() => store.fileOrgId(fileId))).toBe(orgId);
+
+    const { rows } = await store.pool.query(
+      "select prosecdef, proconfig from pg_proc where proname = 'remo_file_org'",
+    );
+    expect(rows).toHaveLength(1);
+    // The two properties that make the read work under RLS, pinned so an edit that
+    // drops one fails here instead of in production.
+    expect(rows[0].prosecdef).toBe(true);
+    expect(rows[0].proconfig).toContain("search_path=public");
+
+    // An unknown id and a deleted row both answer nothing: there is no guess to make.
+    expect(await withoutTenant(() => store.fileOrgId(randomUUID()))).toBeNull();
+    await store.pool.query("update files set status = 'deleted' where id = $1", [fileId]);
+    expect(await withoutTenant(() => store.fileOrgId(fileId))).toBeNull();
+  });
+
   it("serves the nearest smaller variant when one is missing", async () => {
     const { api, orgId } = await account("fallback");
     const boardId = await boardOf(api, orgId, "Fallback");
@@ -356,6 +385,10 @@ suite("files API (ADR-249)", () => {
     const row = await fileRow(copied.body.file.id);
     expect(row).toMatchObject({ org_id: targetOrg, board_id: boardB, status: "ready" });
     expect(row.sha256).toBe((await fileRow(original)).sha256);
+    // The lookup follows the row, not the caller: the copy answers the target tenant
+    // while the source still answers its own.
+    expect(await withoutTenant(() => store.fileOrgId(copied.body.file.id))).toBe(targetOrg);
+    expect(await withoutTenant(() => store.fileOrgId(original))).toBe(orgId);
 
     // The bytes moved too: the target room can serve its own copy.
     const variant = await api("GET", `/files/${copied.body.file.id}/w256?board=${boardB}`);

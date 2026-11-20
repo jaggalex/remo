@@ -6,7 +6,7 @@ import { SCHEMA_VERSION } from "./schema-version.mjs";
 const schema = readFileSync(new URL("./schema.sql", import.meta.url), "utf8");
 const rls = readFileSync(new URL("./rls.sql", import.meta.url), "utf8");
 
-describe("schema 24: the files table", () => {
+describe("schema 25: the files table and its organisation lookup", () => {
   it("declares the files table from spec/images.md §3.1", () => {
     const ddl = /create table if not exists files \(([\s\S]*?)\n\);/.exec(schema)?.[1] ?? "";
     expect(ddl).not.toBe("");
@@ -32,8 +32,24 @@ describe("schema 24: the files table", () => {
     expect(schema).toContain(
       "create unique index if not exists files_org_sha_idx on files (org_id, sha256) where status = 'ready'",
     );
-    expect(schema).toContain("insert into schema_meta (id, version) values (1, 24)");
-    expect(SCHEMA_VERSION).toBe(24);
+    expect(schema).toContain("insert into schema_meta (id, version) values (1, 25)");
+    expect(SCHEMA_VERSION).toBe(25);
+  });
+
+  it("answers a file's organisation through a definer lookup after the table", () => {
+    const lookup =
+      /create or replace function remo_file_org\(file_id uuid\)([\s\S]*?)\$\$;/.exec(schema)?.[1] ??
+      "";
+    // `security definer` is what survives `FORCE ROW LEVEL SECURITY`; `search_path` is
+    // pinned so the function cannot be pointed at another schema.
+    expect(lookup).toContain("security definer");
+    expect(lookup).toContain("set search_path = public");
+    expect(lookup).toContain("from files where id = file_id and status = 'ready'");
+    expect(schema).toContain("grant execute on function remo_file_org(uuid) to remo_app");
+    // `language sql` bodies are checked at creation, so the table must come first.
+    expect(schema.indexOf("create or replace function remo_file_org")).toBeGreaterThan(
+      schema.indexOf("create table if not exists files"),
+    );
   });
 
   it("is a tenant table in both RLS lists", () => {
