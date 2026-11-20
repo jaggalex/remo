@@ -6,9 +6,12 @@
 -- bypass it. The lookup and claim functions live in `schema.sql`.
 --
 -- Every tenant table is covered: content, access, organisations, seats, teams,
--- invitations, integration tokens, agents, AI logs, audit and the outbox. `users`,
--- `sessions`, `agent_tokens`, `ai_credentials`, `auth_tokens`, `mail_outbox` and
--- `schema_meta` are global identity/secrets and stay outside tenant RLS.
+-- invitations, integration tokens, agents, AI logs, audit, the outbox and billing.
+-- `users`, `sessions`, `agent_tokens`, `ai_credentials`, `auth_tokens`, `mail_outbox`
+-- and `schema_meta` are global identity/secrets and stay outside tenant RLS, as do the
+-- installation-level billing tables: `prices`, `price_events`, `promo_codes`,
+-- `payment_connections`, `payment_connection_events`, `billing_provider_events` and
+-- `instance_operators` (ADR-247, ADR-248).
 --
 -- A missing setting returns zero rows, never all rows: `nullif(..., '')::uuid` is null
 -- and no `org_id` equals null.
@@ -39,7 +42,9 @@ begin
     'agents', 'agent_tasks', 'agent_schedules', 'agent_change_sets', 'agent_task_plans',
     'board_agents', 'agent_threads', 'agent_thread_messages',
     'ai_runs', 'ai_log_anchors',
-    'event_outbox', 'org_webhooks'
+    'event_outbox', 'org_webhooks',
+    'billing_accounts', 'payment_methods', 'subscriptions', 'invoices',
+    'payments', 'refunds', 'org_credit_ledger', 'billing_events'
   ] loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);

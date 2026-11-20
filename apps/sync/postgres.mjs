@@ -28,6 +28,7 @@ import { appMethods } from "./pg/apps.mjs";
 import { voteMethods } from "./pg/votes.mjs";
 import { commentMethods } from "./pg/comments.mjs";
 import { roomMergeMethods } from "./pg/room-merge.mjs";
+import { billingMethods } from "./pg/billing.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -400,6 +401,7 @@ Object.assign(
   voteMethods,
   commentMethods,
   roomMergeMethods,
+  billingMethods,
 );
 
 export async function connectWithRetry({

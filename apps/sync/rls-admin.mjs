@@ -41,6 +41,17 @@ const TABLES = [
   "comment_reads",
   "votes",
   "agent_task_inputs",
+  // Billing rows belong to the organisation and are protected like any other tenant
+  // table; the installation-level tables (`prices`, `payment_connections`, …) are not
+  // listed here because they carry no `org_id` (ADR-247).
+  "billing_accounts",
+  "payment_methods",
+  "subscriptions",
+  "invoices",
+  "payments",
+  "refunds",
+  "org_credit_ledger",
+  "billing_events",
 ];
 
 export async function applyRls(client) {

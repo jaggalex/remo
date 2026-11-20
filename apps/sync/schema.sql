@@ -1332,6 +1332,258 @@ alter table agent_tasks add column if not exists thread_id uuid
 create unique index if not exists agent_tasks_running_board_idx
   on agent_tasks (board_id) where status = 'running';
 
+/* ------------------------------------------------------- billing (ADR-247) -- */
+
+-- Two catalogues change for different reasons (`spec/billing.md` §2.1). What a plan
+-- gives is product behaviour in `billing-catalog.mjs`; what it costs is this price
+-- book, changed by the operator without a release. A published amount is never edited:
+-- a new version replaces it, and a live subscription keeps its snapshot.
+create table if not exists prices (
+  id text primary key,                   -- e.g. 'pro-rub-month-v2'
+  plan text not null,
+  interval text not null check (interval in ('month', 'year')),
+  currency text not null,                -- ISO 4217
+  amount bigint not null check (amount >= 0),   -- minor units, tax-inclusive
+  version integer not null,
+  status text not null default 'draft'
+    check (status in ('draft', 'for_sale', 'sale_ended', 'archived')),
+  promo_only boolean not null default false,    -- sold only through a price_override code
+  created_by uuid references users (id),
+  created_at timestamptz not null default now(),
+  unique (plan, interval, currency, version)
+);
+
+-- At most one price for sale per plan, interval and currency (promo-only prices aside).
+create unique index if not exists prices_for_sale_idx on prices (plan, interval, currency)
+  where status = 'for_sale' and not promo_only;
+
+create table if not exists price_events (
+  id uuid primary key default gen_random_uuid(),
+  price_id text references prices (id),
+  type text not null,                    -- created | published | sale_ended | archived | migration_planned
+  data jsonb not null default '{}'::jsonb,
+  reason text,
+  actor_id uuid references users (id),
+  occurred_at timestamptz not null default now()
+);
+
+-- A connection belongs to the installation, not to an organisation: organisations do
+-- not bring their own shop (`spec/payment-providers.md` §1). The sealed columns are the
+-- `encryptSecret` envelope; only the fingerprint is ever shown.
+create table if not exists payment_connections (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null check (provider in ('manual','yookassa','robokassa','cloudpayments','prodamus','paddle','fake')),
+  name text not null,                    -- "ЮKassa боевая", shown to the operator only
+  mode text not null check (mode in ('test','live')),
+  status text not null default 'draft'
+    check (status in ('draft','ready','active','paused','retiring','disabled')),
+  currencies text[] not null,            -- what it can charge, e.g. {RUB}
+  method_groups text[] not null,         -- ru_card | foreign_card | invoice | global_card
+  priority integer not null default 100, -- lower wins inside a method group
+  settings jsonb not null default '{}',  -- non-secret: shop id, tax system, vat code, receipt on/off
+  ciphertext bytea, nonce bytea, dek_wrapped bytea,
+  dek_nonce bytea, kek_id text, fingerprint text,
+  webhook_token text not null,           -- random; required in the webhook URL, wrong or missing → 404
+  verified_at timestamptz,
+  last_health_at timestamptz, last_health_error text,
+  created_by uuid references users (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists payment_connection_events (
+  id uuid primary key default gen_random_uuid(),
+  connection_id uuid not null references payment_connections (id),
+  type text not null,                    -- created | config_changed | verified | status_changed | secret_rotated
+  from_status text, to_status text,
+  reason text,
+  actor_id uuid references users (id),
+  occurred_at timestamptz not null default now()
+);
+
+-- Inbound provider events: the inbox. One row per verified delivery. Global like the
+-- connection, because the organisation is only known after processing (§5).
+create table if not exists billing_provider_events (
+  id uuid primary key default gen_random_uuid(),
+  connection_id uuid not null references payment_connections (id),
+  provider_event_key text not null,      -- provider's event id, or a derived key (§5)
+  type text not null,                    -- normalized type, §4
+  org_id uuid,                           -- resolved during processing
+  payload jsonb not null,                -- normalized object only, no card data
+  received_at timestamptz not null default now(),
+  processed_at timestamptz,
+  attempts integer not null default 0,
+  next_attempt_at timestamptz,
+  dead_at timestamptz,
+  last_error text,
+  unique (connection_id, provider_event_key)
+);
+
+-- The installation operator is granted by a server command only, and the role is about
+-- money and connections, never about room content (`spec/payment-providers.md` §6.1).
+create table if not exists instance_operators (
+  user_id uuid primary key references users (id) on delete cascade,
+  granted_at timestamptz not null default now(),
+  granted_by uuid references users (id) on delete set null
+);
+
+create table if not exists billing_accounts (
+  org_id uuid primary key references orgs (id) on delete restrict,
+  billing_email text not null,
+  billing_name text,
+  country text,                          -- ISO 3166-1 alpha-2, for routing and receipts
+  currency text,                         -- set at first checkout; fixed while a subscription lives (§2.1.1)
+  test_mode boolean not null default false,  -- routes only to test connections
+  created_at timestamptz not null default now()
+);
+
+create table if not exists payment_methods (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete restrict,
+  connection_id uuid not null,           -- payment_connections.id (global connection)
+  -- The provider's reference to a method IT stores. Not card data: card numbers never
+  -- reach remo (ADR-247 §1 rule 9). Sealed anyway, because with our shop keys it charges.
+  ref_ciphertext bytea not null, ref_nonce bytea not null,
+  ref_dek_wrapped bytea not null, ref_dek_nonce bytea not null, ref_kek_id text not null,
+  display jsonb not null,                -- { kind, brand, last4, expMonth, expYear } — nothing more
+  state text not null default 'active' check (state in ('active', 'revoked', 'expired')),
+  autopay_consent_at timestamptz not null,
+  autopay_consent_version text not null,
+  created_by uuid references users (id),
+  created_at timestamptz not null default now(),
+  revoked_at timestamptz
+);
+
+create table if not exists subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete restrict,
+  plan text not null,
+  price_id text not null,
+  amount bigint not null,                -- snapshot, minor units
+  currency text not null,
+  interval text not null check (interval in ('month', 'year')),
+  status text not null check (status in ('trialing','active','past_due','suspended','canceled')),
+  current_period_start timestamptz not null,
+  current_period_end timestamptz not null,
+  cancel_at_period_end boolean not null default false,
+  pending_change jsonb,                  -- { plan, priceId, at } for a downgrade at period end
+  trial_end timestamptz,
+  past_due_since timestamptz,
+  suspended_at timestamptz,
+  canceled_at timestamptz,
+  payment_method_id uuid references payment_methods (id),
+  connection_id uuid,                    -- who renews it
+  provider_subscription_id text,         -- only for provider-managed subscriptions (Paddle)
+  promo_code_id uuid,
+  -- snapshot of the discount at checkout: { kind, value, currency, targetAmount, periodsLeft }
+  discount jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- At most one live subscription per organisation.
+create unique index if not exists subscriptions_live_idx on subscriptions (org_id)
+  where status in ('trialing','active','past_due','suspended');
+
+create table if not exists invoices (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete restrict,
+  subscription_id uuid references subscriptions (id),
+  number text not null unique,
+  status text not null check (status in ('draft','open','paid','void','uncollectible')),
+  currency text not null,
+  subtotal bigint not null, discount bigint not null default 0,
+  credit_applied bigint not null default 0, total bigint not null,
+  lines jsonb not null,
+  period_start timestamptz, period_end timestamptz,
+  due_at timestamptz, paid_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (subscription_id, period_start)
+);
+
+create table if not exists payments (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete restrict,
+  invoice_id uuid not null references invoices (id),
+  connection_id uuid not null,
+  provider_payment_id text,
+  idempotency_key text not null unique,
+  amount bigint not null, currency text not null,
+  status text not null check (status in ('pending','succeeded','failed','canceled','refunded','partially_refunded')),
+  failure_code text,                     -- normalized, see payment-providers §4
+  receipt_status text,                   -- 'none' | 'pending' | 'issued' | 'failed'
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (connection_id, provider_payment_id)
+);
+
+create table if not exists refunds (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete restrict,
+  payment_id uuid not null references payments (id),
+  amount bigint not null, currency text not null,
+  reason text not null,
+  status text not null check (status in ('pending','succeeded','failed')),
+  provider_refund_id text,
+  idempotency_key text not null unique,
+  created_by uuid references users (id),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists org_credit_ledger (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete restrict,
+  amount bigint not null,                -- signed
+  currency text not null,
+  kind text not null check (kind in ('proration','goodwill','refund_to_credit','applied')),
+  invoice_id uuid references invoices (id),
+  note text,
+  created_by uuid references users (id),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists promo_codes (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,             -- stored upper-case
+  kind text not null check (kind in ('percent','amount','price_override')),
+  value bigint,                          -- percent (1..100) or amount in minor units
+  currency text,                         -- required for 'amount'
+  target_price_id text references prices (id),  -- required for 'price_override'
+  plans text[], intervals text[], currencies text[],  -- null = any
+  new_subscriptions_only boolean not null default true,
+  check (kind <> 'amount' or currency is not null),
+  check (kind <> 'price_override' or target_price_id is not null),
+  check (kind <> 'percent' or value between 1 and 100),
+  duration text not null check (duration in ('once','repeating','forever')),
+  duration_periods integer,
+  max_redemptions integer, redeemed integer not null default 0,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists billing_events (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs (id) on delete restrict,
+  type text not null,                    -- e.g. subscription.activated, payment.failed
+  subject_id uuid,
+  data jsonb not null default '{}'::jsonb,
+  actor_id uuid,
+  occurred_at timestamptz not null default now()
+);
+
+-- Why the money tables above use `on delete restrict` instead of a cascade: an
+-- organisation with payment history cannot be deleted by a cascade. v1 has no deletion
+-- at all — only an archive — so this fixes the rule for the future and makes a test
+-- delete the money rows first (ADR-247).
+
+-- Over the limit a room becomes read-only, not deleted: `effective()` drops a frozen
+-- room to viewer plus export and backup (§2.5). This is separate from the archive, which
+-- keeps only `board.read`.
+alter table boards add column if not exists frozen_at timestamptz;
+
+-- Fourteen days over the seat limit make the whole organisation read-only (§2.5).
+alter table orgs add column if not exists read_only_at timestamptz;
+
 /* ---------------------------------------------------------- schema meta -- */-- The service reads this before applying the file, so a running suite or a second
 -- instance does not run DDL on every start (and cannot deadlock with live queries).
 
@@ -1346,5 +1598,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 21)
+insert into schema_meta (id, version) values (1, 22)
 on conflict (id) do update set version = excluded.version, updated_at = now();

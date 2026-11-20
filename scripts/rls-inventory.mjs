@@ -68,7 +68,9 @@ try {
     "agent_task_inputs",
   ]);
   // Identity and secrets are looked up before an organisation exists; they are not
-  // tenant-scoped by a column and are covered by their own auth boundary.
+  // tenant-scoped by a column and are covered by their own auth boundary. The billing
+  // installation tables are the same kind of global row: a price, a connection or an
+  // inbound provider event is known before (or without) an organisation (ADR-247/248).
   const GLOBAL = new Set([
     "agent_tokens",
     "ai_credentials",
@@ -77,9 +79,20 @@ try {
     "sessions",
     "users",
     "schema_meta",
+    "prices",
+    "price_events",
+    "promo_codes",
+    "payment_connections",
+    "payment_connection_events",
+    "billing_provider_events",
+    "instance_operators",
   ]);
 
-  const tenant = rows.filter((row) => row.has_org || row.has_board);
+  // `billing_provider_events.org_id` is resolved during processing, so a nullable
+  // column must not turn a global inbox table into a tenant gap.
+  const tenant = rows.filter(
+    (row) => !GLOBAL.has(row.table_name) && (row.has_org || row.has_board),
+  );
   const related = rows.filter((row) => RELATED.has(row.table_name));
   const scoped = tenant.filter((row) => row.has_org);
   const boardOnly = tenant.filter((row) => !row.has_org && row.has_board);

@@ -144,7 +144,7 @@ lookups run as that role and return no rows otherwise.
 All tenant tables are protected: the room's content and access tables, organisations and
 seats, teams, invitations, integration tokens, agents, AI logs and anchors, audit, webhooks
 and the event outbox. `pnpm db:rls --check` inventories tenant tables. `pnpm db:rls:enable --check`
-verifies RLS and policies on all 40 protected tables in schema 21. The production release
+verifies RLS and policies on all 48 protected tables in schema 22. The production release
 controller applies and verifies the policies before it starts the updated service.
 
 `users`, `sessions`, `agent_tokens`, `ai_credentials`, `auth_tokens`, `mail_outbox` and
