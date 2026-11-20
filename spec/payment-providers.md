@@ -84,7 +84,7 @@
 1. `validateConfig` — все обязательные поля есть и в правильном формате.
 2. `healthCheck` — запрос к API сервиса с этими ключами успешен. Например, у ЮKassa —
    информация о магазине, у CloudPayments — `test`/ping-метод.
-3. **Вебхук:** адрес `https://<REMO_APP_ORIGIN>/billing/webhooks/<connectionId>` доступен
+3. **Вебхук:** адрес `https://<REMO_APP_ORIGIN>/billing/webhooks/<connectionId>/<token>` доступен
    снаружи. Если сервис умеет отправлять тестовое уведомление, оно получено и прошло
    проверку подлинности. Если не умеет, оператор отмечает шаг вручную после тестового
    платежа.
@@ -107,10 +107,11 @@ create table if not exists payment_connections (
   method_groups text[] not null,         -- ru_card | foreign_card | invoice | global_card
   priority integer not null default 100, -- lower wins inside a method group
   settings jsonb not null default '{}',  -- non-secret: shop id, tax system, vat code, receipt on/off
-  -- secret config (API keys, passwords), sealed with the KEK envelope
-  secret_ciphertext bytea, secret_nonce bytea, secret_dek_wrapped bytea,
-  secret_dek_nonce bytea, secret_kek_id text, secret_fingerprint text,
-  webhook_token text not null,           -- random; part of nothing secret, used to spot misrouted calls
+  -- secret config (API keys, passwords), sealed with the KEK envelope; column names as
+  -- encryptSecret returns them and decryptSecret reads them
+  ciphertext bytea, nonce bytea, dek_wrapped bytea,
+  dek_nonce bytea, kek_id text, fingerprint text,
+  webhook_token text not null,           -- random; required in the webhook URL, wrong or missing → 404
   verified_at timestamptz,
   last_health_at timestamptz, last_health_error text,
   created_by uuid references users (id),
@@ -147,6 +148,10 @@ create table if not exists billing_provider_events (
 ```
 
 Строки `billing_provider_events` старше 400 дней удаляются (дольше срока чарджбэков).
+
+AAD строится из `scope`, `scope_id`, `provider`, `id`; для подключения это
+`scope: "connection"`, `scope_id: id`, `provider: <provider>`, `id: id`. Строка вскрывается
+только через эту сборку, второго способа нет.
 
 ### 3.2 Две модели подписки
 
@@ -271,10 +276,14 @@ type NormalizedEvent =
 
 ## 5. Приём вебхуков
 
-`POST /billing/webhooks/:connectionId`:
+`POST /billing/webhooks/:connectionId/:token`:
 
-1. Найти подключение. Неизвестный id → `404`. Подключение в `draft` → `404`.
-2. Прочитать **сырое тело** (до 64 КиБ) и не парсить его до проверки.
+1. Найти подключение. Неизвестный id → `404`. Неверный или отсутствующий токен → `404`, как
+   неизвестное подключение. Подключение в `draft` → `404`.
+2. Прочитать **сырое тело** (до 64 КиБ) и не парсить его до проверки. Сырое тело читает новый
+   потоковый ридер (рядом с `http-body.mjs`), предел 64 КиБ, байты не парсятся до проверки
+   подписи. Пере-сериализованный JSON не годится: подпись CloudPayments/Paddle считается по
+   исходным байтам.
 3. `adapter.parseWebhook(...)`. `verified: false` → ответ `401`, запись в лог с id
    подключения и IP, метрика `remo_billing_webhook_rejected_total{connection}`.
 4. Каждое событие вставить в `billing_provider_events`
@@ -282,7 +291,9 @@ type NormalizedEvent =
 5. Вернуть `respond` адаптера: у Robokassa тело ответа должно быть `OK{InvId}`, остальные
    сервисы ждут `200`.
 
-Дренаж `billing-inbox` (как `sync-events.mjs`, интервал 2 с) обрабатывает строки:
+Дренаж `billing-inbox` идёт через общий каркас дренажа (тот же, что у событий и почты),
+интервал 2 с, пачка 10, повторы по общей `backoffMs`, после 8 попыток `dead_at`.
+Обрабатывает строки:
 - найти платёж по `paymentId` или `(connection_id, provider_payment_id)`;
 - применить к нему переход статуса **только вперёд** (`pending → succeeded`, но не наоборот);
 - выполнить последствия в биллинге (`spec/billing.md`): открыть период, записать
@@ -317,7 +328,8 @@ type NormalizedEvent =
 ### 6.1 Оператор установки
 
 Новая глобальная роль — **оператор** (`instance_operators`: `user_id`, `granted_at`,
-`granted_by`).
+`granted_by`). `instance_operators` — отдельная глобальная таблица, вне tenant-RLS и вне
+`admin_roles`; роль не даёт доступа к содержимому комнат.
 - Выдаётся только командой на сервере: `pnpm operator:grant --email <адрес>`. Через
   интерфейс её не получить.
 - Оператор не видит содержимого комнат организаций: это роль для денег и подключений, не
@@ -406,7 +418,8 @@ API под неё — `/operator/billing/...`, только для операт�
 - Ведёт себя как `merchant_scheduled`-сервис: страница оплаты с кнопками «Успех», «Отказ»,
   «3DS не пройден».
 - Вебхук с HMAC; управляемые задержки и дубли уведомлений.
-- В production не загружается: проверка при старте.
+- Загружается только при `NODE_ENV !== "production"` и явном флаге `REMO_PAY_FAKE=1`; в
+  production процесс не стартует — та же проверка, что у `ai-fake.mjs`.
 
 ## 8. Тесты
 
@@ -456,5 +469,5 @@ API под неё — `/operator/billing/...`, только для операт�
 - Какой сервис для иностранных карт: Robokassa или Prodamus (сравнить договорные комиссии и
   поддержку рекуррентных платежей).
 - Нужен ли CloudPayments как резерв к ЮKassa с самого начала.
-- Реквизиты для оплаты по счёту и минимальная сумма такого счёта (например, годовая
-  подписка Team и выше).
+- Реквизиты для оплаты по счёту и минимальная сумма такого счёта. Решение по умолчанию:
+  реквизиты и минимальная сумма — годовая подписка Team и выше.

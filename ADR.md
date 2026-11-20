@@ -9855,7 +9855,10 @@ because nothing is raised until someone chooses it. The painter gains one helper
 
 ## ADR-246: Transactional mail goes through one outbox and pluggable drivers; password reset and address verification use it
 
-**Status:** proposed (2026-11-20). Implementation spec: `spec/mail.md`.
+**Status:** accepted (2026-11-20). Implementation spec: `spec/mail.md`. Amended before
+acceptance: account mutations stay outside the command layer, exactly as every `/auth/*`
+route already does, and each flow writes its own audit row; the operator scripts live in the
+root `scripts/` beside the others.
 
 **Context.** remo sends no mail. IAM v1 accepted this as a known limit (`spec/IAM-v1.md`
 §6, §13):
@@ -9938,7 +9941,11 @@ in §13.
 ## ADR-247: Plans are enforced through one entitlements function; billing owns subscriptions and a ledger independent of any payment provider
 
 **Status:** proposed (2026-11-20). Implementation spec: `spec/billing.md`. Providers:
-ADR-248.
+ADR-248. Amended before acceptance: the fourteen-day organisation read-only is one more
+input to `effective()` (`orgs.read_only_at`), not a second check; v1 has no organisation
+deletion, so an organisation is archived and money rows merely use `restrict`; and turning
+billing on revokes, with audit and notice, the advanced roles and protected links a Free
+organisation already holds.
 
 **Context.** remo is sold as a hosted service with a free plan and three paid team plans
 (Pro up to 5 seats, Team up to 20, Business up to 50). It is also distributed under the AGPL,
@@ -10003,6 +10010,9 @@ appear as scattered checks, and payment providers will change over time (ADR-248
 ## ADR-248: Payment providers are adapters behind one interface, managed as installation-level connections with a lifecycle
 
 **Status:** proposed (2026-11-20). Implementation spec: `spec/payment-providers.md`.
+Amended before acceptance: a webhook URL carries the connection's token
+(`/billing/webhooks/:connectionId/:token`), which makes the existing `webhook_token` column
+serve a purpose instead of being decorative.
 
 **Context.** The Russian installation starts with YooKassa (Russian cards, SBP, receipts).
 Foreign cards on a Russian sole proprietorship need another provider (Robokassa or
@@ -10051,7 +10061,9 @@ move between providers.
 
 ## ADR-249: Images are files in an S3-compatible or disk store, served only through the app with room access; the room document holds references
 
-**Status:** proposed (2026-11-20). Implementation spec: `spec/images.md`.
+**Status:** proposed (2026-11-20). Implementation spec: `spec/images.md`. Amended before
+acceptance: schema 23 adds `files`, and the backup format becomes version 3, filling the
+`assets` section that `backup.mjs` already reserves.
 
 **Context.** The model has declared `image` since early on, but nothing paints, uploads or
 stores it ("images come later" in `schema.sql`). Teams expect to drop screenshots and
@@ -10109,7 +10121,9 @@ pictures onto a board. Four constraints shape the design:
 
 ## ADR-250: Support is an optional thin layer in the core; the help desk and the AI first line are separate services
 
-**Status:** proposed (2026-11-20). Implementation spec: `spec/support.md`.
+**Status:** proposed (2026-11-20). Implementation spec: `spec/support.md`. Amended before
+acceptance: schema 24 adds `users.support_id`; the client reads the mode from
+`GET /api/support/config` instead of inventing it.
 
 **Context.** Users need one place to ask for help, report a bug or suggest an idea. Nobody
 is available for live replies, so an AI agent must take the first line. A ticket system
@@ -10139,7 +10153,7 @@ self-hosted installations must not depend on the operator's support stack.
   - It answers from the product guide and approved replies, with a source for every answer.
   - It hands off to a human with a private summary for money, account security, data loss,
     complaints, explicit requests and low confidence.
-  - It can only read a read-only, aggregate context endpoint (`GET /support/context`),
+  - It can only read a read-only, aggregate context endpoint (`GET /api/support/context`),
     keyed by the verified support identifier and a bearer token. It cannot change anything
     in remo.
 - **Chatwoot is the record of every request.** The agent keeps its own decision log for
@@ -10156,7 +10170,9 @@ self-hosted installations must not depend on the operator's support stack.
 
 ## ADR-251: Model calls go through an optional, self-owned AI gateway on a separate host; inbound agent traffic gets its own address
 
-**Status:** proposed (2026-11-20). Implementation spec: `spec/ai-gateway.md`.
+**Status:** proposed (2026-11-20). Implementation spec: `spec/ai-gateway.md`. Amended before
+acceptance: schema 25 adds `ai_runs.gateway_provider`; the tunnel carries HTTPS with a
+certificate pinned in sync, so the outbound client is not weakened for user keys.
 
 **Context.** Agents run inside sync: a queued task calls a model through `ai.mjs` and
 `outbound.mjs` and then applies changes to the in-memory room. Every model call leaves from

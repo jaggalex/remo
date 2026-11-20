@@ -17,6 +17,12 @@ behaviour, the boundaries and the invariants; the numbered decisions behind them
 | [Webhooks](../../spec/webhooks.md) | signed delivery, retries and the dead-letter queue |
 | [Metrics](../../spec/metrics.md) | typed events, no content or PII |
 | [Forms](../../spec/forms.md) | dialog and form rules |
+| [Mail](../../spec/mail.md) | one outbox, four drivers, password reset and address verification (ADR-246) |
+| [Images](../../spec/images.md) | the file store, uploads, painting, quotas and backup (ADR-249) |
+| [Billing](../../spec/billing.md) | plans, entitlements, subscriptions and the money ledger (ADR-247) |
+| [Payment providers](../../spec/payment-providers.md) | adapters, connections and webhook intake (ADR-248) |
+| [Support](../../spec/support.md) | the thin help layer, Chatwoot and the first-line agent (ADR-250) |
+| [AI gateway](../../spec/ai-gateway.md) | provider isolation, kill switches and limits (ADR-251) |
 | [Canvas objects: next steps](canvas-objects-next.md) | what to adopt from Excalidraw, what stays ours, and the plan for selection resize, snapping, shape text and label wrapping |
 | [Agent skills](../../spec/skills/) | the brief-to-room, cards and tidy-selection contracts |
 
