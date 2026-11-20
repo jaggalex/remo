@@ -111,7 +111,7 @@ self-host) квоты нет — `storageBytes` = `null`; проверка `402`
 
 ## 3. Данные
 
-### 3.1 Таблица `files` (schema 23, после почты 21 и биллинга 22; RLS по `org_id`, ADR-178)
+### 3.1 Таблица `files` (schema 24, после почты 21, биллинга 22 и биллинговых писем 23; RLS по `org_id`, ADR-178)
 
 ```sql
 create table if not exists files (

@@ -873,6 +873,15 @@ create table if not exists mail_outbox (
   last_error text,
   provider_id text
 );
+-- billing adds its templates in schema 23 (ADR-247 §7)
+alter table mail_outbox drop constraint if exists mail_outbox_template_check;
+alter table mail_outbox add constraint mail_outbox_template_check
+  check (template in (
+    'verify_email', 'password_reset', 'password_changed', 'invitation',
+    'payment_succeeded', 'payment_failed', 'trial_ending', 'renewal_upcoming',
+    'subscription_suspended', 'subscription_canceled', 'payment_method_expiring',
+    'price_change', 'payment_method_migrate'
+  ));
 create index if not exists mail_outbox_pending_idx
   on mail_outbox (created_at) where sent_at is null and dead_at is null;
 
@@ -1598,5 +1607,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 22)
+insert into schema_meta (id, version) values (1, 23)
 on conflict (id) do update set version = excluded.version, updated_at = now();

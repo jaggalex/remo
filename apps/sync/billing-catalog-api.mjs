@@ -13,6 +13,7 @@
 import { billingEnabled, entitlementsFor } from "./billing.mjs";
 import { checkPromo, handleCheckoutRoutes } from "./billing-checkout-api.mjs";
 import { PLAN_NAMES, PLANS } from "./billing-catalog.mjs";
+import { handlePaymentWebhook } from "./payment-webhooks.mjs";
 import { PAID_PLANS, billingCurrencies } from "../../scripts/billing-prices.mjs";
 import { fail, json, sessionFromRequest } from "./iam-http.mjs";
 import { readJsonBody } from "./http-body.mjs";
@@ -139,6 +140,27 @@ export async function handleBilling({
   }
 
   const method = request.method ?? "GET";
+
+  // Provider webhooks carry a connection token instead of a session, so they are handled
+  // before the organisation match. Billing being off still answers 404 above: the whole
+  // family is absent, and a live webhook URL must not survive a feature switch.
+  const webhookMatch = /^\/billing\/webhooks\/([^/]+)\/([^/]+)$/.exec(url.pathname);
+  if (webhookMatch) {
+    if (method !== "POST") {
+      fail(response, 405, "METHOD_NOT_ALLOWED", "use POST");
+      return true;
+    }
+    let connectionId;
+    let token;
+    try {
+      connectionId = decodeURIComponent(webhookMatch[1]);
+      token = decodeURIComponent(webhookMatch[2]);
+    } catch {
+      fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
+      return true;
+    }
+    return handlePaymentWebhook({ request, response, store, connectionId, token, env });
+  }
 
   if (url.pathname === "/billing/promo/check" && method === "POST") {
     if (typeof store.promoByCode !== "function" || typeof store.priceById !== "function") {

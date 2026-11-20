@@ -137,15 +137,51 @@ export const paymentProviderMethods = {
     return rows.map((row) => mapConnection(row));
   },
 
-  /** One connection for the operator CLI; the token is here because `webhook-url` needs it. */
+  /**
+   * One connection with what only the runtime may see: the webhook token and the sealed
+   * envelope. Never serialise this object into a response; `createCheckout`/the webhook
+   * open the secret and pass it to an adapter.
+   */
   async connectionById(id) {
     const { rows } = await this.pool.query(
-      `select ${PUBLIC_COLUMNS}, webhook_token
+      `select ${PUBLIC_COLUMNS}, webhook_token, ciphertext, nonce,
+              dek_wrapped, dek_nonce, kek_id
          from payment_connections
         where id = $1`,
       [id],
     );
-    return mapConnection(rows[0], { withToken: true });
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      ...mapConnection(row, { withToken: true }),
+      ciphertext: row.ciphertext,
+      nonce: row.nonce,
+      dek_wrapped: row.dek_wrapped,
+      dek_nonce: row.dek_nonce,
+      kek_id: row.kek_id,
+    };
+  },
+
+  /**
+   * One provider event into the inbox, at most once. A webhook may be delivered twice and
+   * a repeated key is a no-op, not an error (§5).
+   */
+  async recordProviderEvent({
+    connectionId,
+    providerEventKey,
+    type,
+    orgId = null,
+    payload = {},
+  }) {
+    const { rows } = await this.pool.query(
+      `insert into billing_provider_events
+         (connection_id, provider_event_key, type, org_id, payload)
+       values ($1, $2, $3, $4, $5::jsonb)
+       on conflict (connection_id, provider_event_key) do nothing
+       returning id`,
+      [connectionId, providerEventKey, type, orgId, JSON.stringify(payload)],
+    );
+    return rows.length > 0;
   },
 
   /**

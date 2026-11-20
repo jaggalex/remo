@@ -7,11 +7,14 @@
  * file only decides what to sell, to whom, and in which currency.
  */
 import { manualAdapter } from "./pay-manual.mjs";
+import { yookassaAdapter } from "./pay-yookassa.mjs";
+import { openConnectionSecret } from "./payment-connections.mjs";
+import { kekFromEnv } from "./secrets.mjs";
 import { periodEnd as endOfPeriod, promoDiscount, priceInvoice } from "./billing-money.mjs";
 import { readJsonBody } from "./http-body.mjs";
 import { fail, json, sessionFromRequest } from "./iam-http.mjs";
 
-const ADAPTERS = { manual: manualAdapter };
+const ADAPTERS = { manual: manualAdapter, yookassa: yookassaAdapter };
 const CURRENCY = /^[A-Z]{3}$/;
 
 async function memberOr404(store, request, response, orgId) {
@@ -108,13 +111,29 @@ async function checkout({ request, response, store, orgId }) {
     currency,
     testMode: Boolean(account.test_mode),
   });
-  const connection = routes[0];
-  if (!connection) {
+  const route = routes[0];
+  if (!route) {
     return fail(response, 422, "NO_PAYMENT_ROUTE", "no connection serves this method"), true;
   }
+  // The route list is public on purpose; the keys live only on the runtime read.
+  const connection = (await store.connectionById?.(route.id)) ?? route;
   const adapter = ADAPTERS[connection.provider];
   if (!adapter) {
     return fail(response, 501, "PROVIDER_NOT_READY", "this provider arrives in a later stage"), true;
+  }
+
+  // A provider that talks to a network needs its sealed keys; a manual connection has no
+  // envelope. The plaintext lives only for this request and goes to the adapter, never
+  // into the response or the log.
+  let usable = connection;
+  if (connection.has_secret || connection.ciphertext) {
+    let secret;
+    try {
+      secret = openConnectionSecret(connection, { kek: kekFromEnv() });
+    } catch {
+      return fail(response, 503, "PROVIDER_UNAVAILABLE", "the connection cannot be used"), true;
+    }
+    usable = { ...connection, secret };
   }
 
   // `bigint` columns arrive as strings from `pg`; money arithmetic is numeric here.
@@ -165,7 +184,7 @@ async function checkout({ request, response, store, orgId }) {
     status: "pending",
   });
 
-  const started = await adapter.createCheckout(connection, {
+  const started = await adapter.createCheckout(usable, {
     paymentId: payment.id,
     idempotencyKey: `checkout:${invoice.invoice.id}`,
     amount: totals.total,

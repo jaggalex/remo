@@ -130,7 +130,7 @@
 - **`probeProvider`** при сохранении BYOK в режиме шлюза ходит в `GET /v1/upstreams/check`, а
   не напрямую к провайдеру: прямая проверка обошла бы изоляцию.
 - **Журнал `ai_runs`.** Без изменений по смыслу, плюс поле `gateway_provider` из заголовка
-  ответа. `ai_runs.gateway_provider` — схема 25 (`alter table ai_runs add column if not exists
+  ответа. `ai_runs.gateway_provider` — схема 26 (`alter table ai_runs add column if not exists
   gateway_provider text`). Поле входит в каноническую форму хеша; уже записанные строки
   пересчитываются чтением (`null` = прямой вызов), цепочка не переписывается.
 - **Бюджет задачи** (токены и секунды) остаётся в sync. Шлюз отвечает за лимиты по времени

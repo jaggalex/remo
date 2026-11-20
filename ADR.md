@@ -10062,7 +10062,7 @@ move between providers.
 ## ADR-249: Images are files in an S3-compatible or disk store, served only through the app with room access; the room document holds references
 
 **Status:** proposed (2026-11-20). Implementation spec: `spec/images.md`. Amended before
-acceptance: schema 23 adds `files`, and the backup format becomes version 3, filling the
+acceptance: schema 24 adds `files`, and the backup format becomes version 3, filling the
 `assets` section that `backup.mjs` already reserves.
 
 **Context.** The model has declared `image` since early on, but nothing paints, uploads or
@@ -10122,7 +10122,7 @@ pictures onto a board. Four constraints shape the design:
 ## ADR-250: Support is an optional thin layer in the core; the help desk and the AI first line are separate services
 
 **Status:** proposed (2026-11-20). Implementation spec: `spec/support.md`. Amended before
-acceptance: schema 24 adds `users.support_id`; the client reads the mode from
+acceptance: schema 25 adds `users.support_id`; the client reads the mode from
 `GET /api/support/config` instead of inventing it.
 
 **Context.** Users need one place to ask for help, report a bug or suggest an idea. Nobody
@@ -10171,7 +10171,7 @@ self-hosted installations must not depend on the operator's support stack.
 ## ADR-251: Model calls go through an optional, self-owned AI gateway on a separate host; inbound agent traffic gets its own address
 
 **Status:** proposed (2026-11-20). Implementation spec: `spec/ai-gateway.md`. Amended before
-acceptance: schema 25 adds `ai_runs.gateway_provider`; the tunnel carries HTTPS with a
+acceptance: schema 26 adds `ai_runs.gateway_provider`; the tunnel carries HTTPS with a
 certificate pinned in sync, so the outbound client is not weakened for user keys.
 
 **Context.** Agents run inside sync: a queued task calls a model through `ai.mjs` and
