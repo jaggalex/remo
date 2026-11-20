@@ -18,6 +18,7 @@ import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createFilesApi } from "./files-api.mjs";
 import { createFileStore } from "./files-store.mjs";
+import { Metrics } from "./metrics.mjs";
 import { handleCommands } from "./commands-api.mjs";
 import { accessForBoard, handleIam, linkUnlockToken, sessionFromRequest } from "./iam-api.mjs";
 import { testDatabaseStore } from "./test-db.mjs";
@@ -32,6 +33,8 @@ let base = "";
 let files = null;
 let filesApi = null;
 let directory = "";
+/** §8 counters: this suite is the only place the real upload path runs. */
+const metrics = new Metrics();
 
 /** A real PNG: 1200×800 is wider than `w1024`, narrower than `w2048`. */
 const PNG = await sharp({
@@ -51,6 +54,7 @@ beforeAll(async () => {
   filesApi = createFilesApi({
     store,
     files,
+    metrics,
     getDocument: (boardId) => store.roomDocument(boardId),
     sessionFromRequest,
     accessForBoard,
@@ -226,6 +230,12 @@ suite("files API (ADR-249)", () => {
     expect(String(original.headers.get("content-disposition"))).toContain("filename*=UTF-8''");
     expect(original.headers.get("cache-control")).toContain("no-store");
     expect(original.body.equals(PNG)).toBe(true);
+
+    // §8: one accepted upload, counted once, with the original bytes and no file name.
+    const exposition = metrics.render();
+    expect(exposition).toContain('remo_files_uploads_total{result="ok"} 1');
+    expect(exposition).toContain(`remo_files_upload_bytes_total ${PNG.length}`);
+    expect(exposition).not.toContain("shot.png");
   });
 
   it("deduplicates the same bytes inside one organisation", async () => {

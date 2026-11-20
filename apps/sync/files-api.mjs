@@ -68,6 +68,15 @@ function multipartProblem(response, error) {
   return fail(response, 400, "BAD_MULTIPART", "the multipart body is malformed");
 }
 
+/** The §8 upload outcome for a failure: one of the six documented labels. */
+function uploadResult(error) {
+  if (error?.code === "too_large" || error?.code === "too_many_pixels") return "too_large";
+  if (error?.code === "bad_type" || error?.code === "bad_content_type") return "bad_type";
+  if (error?.code === "missing_file") return "bad_type";
+  if (error?.code === "busy") return "busy";
+  return "error";
+}
+
 /** Map a processing or storage failure without ever echoing a key or a file name. */
 function filesProblem(response, error, log) {
   if (error?.code === "too_large" || error?.code === "too_many_pixels") {
@@ -165,12 +174,19 @@ export function createFilesApi({
   sessionFromRequest,
   accessForBoard,
   linkUnlockToken,
+  metrics = null,
   log = console,
   env = process.env,
 }) {
   const maxBytes = positive(env.REMO_FILES_MAX_BYTES, DEFAULT_MAX_BYTES);
   const maxPixels = positive(env.REMO_FILES_MAX_PIXELS, DEFAULT_MAX_PIXELS);
   const perRoom = positive(env.REMO_FILES_PER_ROOM, DEFAULT_MAX_PER_ROOM);
+
+  /** §8: every upload attempt ends in exactly one outcome; no org id, no file name. */
+  function upload(result, bytes = 0) {
+    metrics?.inc("remo_files_uploads_total", { result });
+    if (bytes > 0) metrics?.inc("remo_files_upload_bytes_total", undefined, bytes);
+  }
 
   /** Session or public link, resolved the same way the socket and the export routes do. */
   async function resolveAccess(request, boardId) {
@@ -252,6 +268,7 @@ export function createFilesApi({
     // 60 uploads per person in ten minutes (§4.1). The same in-memory limiter as sign-in;
     // a restart forgetting the window is an accepted v1 limit.
     if (!reserveAttempt(`upload:${userId}`, { limit: 60, windowMs: 10 * 60_000 })) {
+      upload("busy");
       return fail(response, 429, "RATE_LIMITED", "too many uploads; try again later");
     }
 
@@ -259,15 +276,20 @@ export function createFilesApi({
     try {
       parsed = await readMultipart(request, { maxBytes });
     } catch (error) {
+      upload(uploadResult(error));
       return multipartProblem(response, error);
     }
-    if (!parsed.file) return fail(response, 400, "MISSING_FILE", "the form has no file field");
+    if (!parsed.file) {
+      upload("bad_type");
+      return fail(response, 400, "MISSING_FILE", "the form has no file field");
+    }
 
     let mime;
     try {
       // The signature, never the name or the browser's Content-Type.
       mime = detectImageType(parsed.file.buffer, parsed.file.filename);
     } catch (error) {
+      upload(uploadResult(error));
       return filesProblem(response, error, log);
     }
 
@@ -275,12 +297,16 @@ export function createFilesApi({
     // larger than the original; the difference is bounded by the variants of the same
     // picture, so the check stays honest at the limit.
     const problem = await quotaProblem(orgId, boardId, parsed.file.buffer.length);
-    if (problem) return planLimitResponse(response, problem);
+    if (problem) {
+      upload("quota");
+      return planLimitResponse(response, problem);
+    }
 
     let processed;
     try {
       processed = await filesQueue.withSlot(() => processImage(parsed.file.buffer, { maxPixels }));
     } catch (error) {
+      upload(uploadResult(error));
       return filesProblem(response, error, log);
     }
 
@@ -310,6 +336,7 @@ export function createFilesApi({
       }
     } catch (error) {
       await removeFiles(orgId, fileId);
+      upload("error");
       return filesProblem(response, error, log);
     }
 
@@ -333,10 +360,12 @@ export function createFilesApi({
       });
     } catch (error) {
       await removeFiles(orgId, fileId);
+      upload("error");
       return filesProblem(response, error, log);
     }
     if (!row) {
       await removeFiles(orgId, fileId);
+      upload("error");
       return fail(response, 500, "FILES_FAILED", "the image could not be recorded");
     }
     // The same bytes already have a ready row in this organisation (§3.1): the existing
@@ -373,6 +402,7 @@ export function createFilesApi({
         getDocument,
       });
     } catch (error) {
+      upload("error");
       return filesProblem(response, error, log);
     }
 
@@ -398,6 +428,7 @@ export function createFilesApi({
       },
     });
 
+    upload("ok", parsed.file.buffer.length);
     return json(response, 201, { file: fileView(row) });
   }
 

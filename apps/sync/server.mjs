@@ -32,6 +32,7 @@ import { createConnections } from "./sync-connections.mjs";
 import { createSaveAcks } from "./sync-save-ack.mjs";
 import { createExportRoutes } from "./sync-export.mjs";
 import { createFilesApi } from "./files-api.mjs";
+import { createFilesGc } from "./files-gc.mjs";
 import { createFileStore } from "./files-store.mjs";
 import { attachWebSocket } from "./sync-websocket.mjs";
 import { FATAL_FLUSH_MS, guardPersistence, installProcessGuards } from "./failure-boundary.mjs";
@@ -118,6 +119,17 @@ metrics.describe("remo_mail_sent_total", "Transactional mail sent, by template")
 metrics.describe("remo_mail_failed_total", "Transactional mail attempts that failed, by template and code");
 metrics.describe("remo_mail_dead_total", "Transactional mail buried, by template and code");
 metrics.describe("remo_mail_queue_depth", "Mail rows waiting to be sent", "gauge");
+metrics.describe("remo_files_uploads_total", "Image uploads, by result");
+metrics.describe(
+  "remo_files_upload_bytes_total",
+  "Original bytes accepted by image uploads",
+);
+metrics.describe("remo_files_gc_deleted_total", "Files removed by the image collector");
+metrics.describe(
+  "remo_files_stored_bytes",
+  "Bytes held by ready image files across the installation",
+  "gauge",
+);
 
 // Lag only means something while the process is doing work, so it is sampled on a
 // timer that does not itself count as work.
@@ -206,9 +218,11 @@ const exports = createExportRoutes({
 
 // Uploaded images live outside the database (§2): one store for the configured driver,
 // and one route module that owns the ceiling, the quota and the access checks.
+const fileStore = await createFileStore();
 const files = createFilesApi({
   store,
-  files: await createFileStore(),
+  files: fileStore,
+  metrics,
   getDocument: async (boardId) =>
     typeof store.roomDocument === "function" ? store.roomDocument(boardId) : docs.get(boardId),
   sessionFromRequest,
@@ -216,6 +230,10 @@ const files = createFilesApi({
   linkUnlockToken,
   log: console,
 });
+
+// A file no image widget points at waits a month before the collector removes it
+// (ADR-249, §5.4). A disk store has no `files` rows, so it is started only on Postgres.
+const filesGc = createFilesGc({ store, fileStore, log: console, metrics });
 
 const agents = createAgentLoops({ store, ai, log: console });
 
@@ -584,6 +602,13 @@ async function routeRequest(request, response, url) {
         // A failed gauge must not take the whole scrape down with it.
       }
     }
+    if (typeof store.totalStoredBytes === "function") {
+      try {
+        metrics.set("remo_files_stored_bytes", await store.totalStoredBytes());
+      } catch {
+        // Same rule: a scrape is more useful without one gauge than not at all.
+      }
+    }
     response.writeHead(200, { "Content-Type": METRICS_CONTENT_TYPE });
     response.end(`${metrics.render()}\n${processMetrics(STARTED_AT)}\n`);
     return;
@@ -688,6 +713,7 @@ server.listen(PORT, () => {
   agents.start();
   events.start();
   mail.start();
+  if (databaseUrl) filesGc.start();
   if (process.env.REMO_BILLING === "on") billing.start();
   if (mailConfig.driver !== "disabled") console.log(`[mail] driver ${mailConfig.driver}`);
 });
@@ -700,6 +726,7 @@ const shutdown = async (signal, exitCode = 0) => {
   agents.stop();
   events.stop();
   mail.stop();
+  filesGc.stop();
   billing.stop();
   connections.stopSweep();
   try {

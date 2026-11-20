@@ -155,6 +155,55 @@ async function transition(store, id, { allowed, type, apply, data }) {
   });
 }
 
+/**
+ * The one live subscription of an organisation with `cancel_at_period_end` set to
+ * `enabled`, and its event. `null` means there is nothing to change: the route turns that
+ * into `409 NO_SUBSCRIPTION` rather than inventing a subscription.
+ */
+async function setPeriodEndFlag(store, orgId, enabled, type) {
+  return store.withTenant(orgId, async () => {
+    const client = await store.pool.connect();
+    try {
+      await client.query("begin");
+      const { rows: [current] } = await client.query(
+        `select * from subscriptions
+          where org_id = $1 and status = any($2::text[])
+          order by created_at desc
+          limit 1
+          for update`,
+        [orgId, LIVE_STATUSES],
+      );
+      if (!current) {
+        await client.query("commit");
+        return null;
+      }
+      if (current.cancel_at_period_end === enabled) {
+        await client.query("commit");
+        return mapSubscription(current);
+      }
+      const { rows: [row] } = await client.query(
+        `update subscriptions
+            set cancel_at_period_end = $2, updated_at = now()
+          where id = $1
+          returning *`,
+        [current.id, enabled],
+      );
+      await client.query(
+        `insert into billing_events (org_id, type, subject_id, data)
+         values ($1, $2, $3, $4::jsonb)`,
+        [orgId, type, current.id, JSON.stringify({ currentPeriodEnd: row.current_period_end })],
+      );
+      await client.query("commit");
+      return mapSubscription(row);
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  });
+}
+
 export const billingRenewalMethods = {
   /**
    * Active subscriptions whose period has ended, plus every past-due one (a failed
@@ -332,6 +381,23 @@ export const billingRenewalMethods = {
       apply: () => `status = 'suspended', suspended_at = now(), updated_at = now()`,
       data: () => ({}),
     });
+  },
+
+  /**
+   * Renewal off, or back on, without touching the period (§3.4). The flag is the whole
+   * state: the renewal loop already skips a subscription that carries it, and the
+   * subscription stays live until `current_period_end`. Repeating the call is a no-op and
+   * writes no second event, so a double click cannot double the journal.
+   */
+  async cancelAtPeriodEnd(orgId) {
+    if (!orgId) throw new TypeError("cancelAtPeriodEnd needs an organisation");
+    return setPeriodEndFlag(this, orgId, true, "subscription.canceled_at_period_end");
+  },
+
+  /** "Resume" before the period ends is the same flag cleared, and nothing else. */
+  async resumeSubscription(orgId) {
+    if (!orgId) throw new TypeError("resumeSubscription needs an organisation");
+    return setPeriodEndFlag(this, orgId, false, "subscription.resumed");
   },
 
   /**
@@ -590,7 +656,12 @@ export const billingRenewalMethods = {
     });
   },
 
-  /** Turn autopay off in one action; the subscription keeps running until its period end. */
+  /**
+   * Turn autopay off in one action; the subscription keeps running until its period end
+   * and does not renew (§13.5). The card, the link and the flag move in one transaction:
+   * a card gone without the flag would still renew, and a flag without the card would
+   * promise a renewal that cannot be charged.
+   */
   async revokePaymentMethod(orgId) {
     if (!orgId) throw new TypeError("revokePaymentMethod needs an organisation");
     return this.withTenant(orgId, async () => {
@@ -615,6 +686,26 @@ export const billingRenewalMethods = {
             where org_id = $1 and payment_method_id = any($2::uuid[])`,
           [orgId, ids],
         );
+        // No saved method means no renewal: the period stays as it is, the flag stops the
+        // charge. A subscription already flagged needs no second event.
+        const { rows: stopped } = await client.query(
+          `update subscriptions
+              set cancel_at_period_end = true, updated_at = now()
+            where org_id = $1 and status = any($2::text[]) and not cancel_at_period_end
+            returning id, current_period_end`,
+          [orgId, LIVE_STATUSES],
+        );
+        if (stopped[0]) {
+          await client.query(
+            `insert into billing_events (org_id, type, subject_id, data)
+             values ($1, 'subscription.canceled_at_period_end', $2, $3::jsonb)`,
+            [
+              orgId,
+              stopped[0].id,
+              JSON.stringify({ currentPeriodEnd: stopped[0].current_period_end }),
+            ],
+          );
+        }
         await client.query(
           `insert into billing_events (org_id, type, subject_id, data)
            values ($1, 'payment_method.revoked', $2, $3::jsonb)`,

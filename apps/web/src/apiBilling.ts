@@ -37,6 +37,15 @@ export interface BillingUsage {
   rooms: number;
 }
 
+/** The flat spelling the billing summary uses for a saved method. */
+interface FlatPaymentMethod {
+  kind?: string | null;
+  brand?: string | null;
+  last4?: string | null;
+  expMonth?: number | null;
+  expYear?: number | null;
+}
+
 /** What a provider returns for display: a brand, four digits and an expiry, never a card. */
 export interface BillingPaymentMethod {
   display: {
@@ -188,8 +197,31 @@ export const billingApi = {
     call<BillingCatalog>(
       `/billing/catalog${currency ? `?currency=${encodeURIComponent(currency)}` : ""}`,
     ),
-  org: (orgId: string) =>
-    call<OrgBilling>(`/orgs/${encodeURIComponent(orgId)}/billing`),
+  org: async (orgId: string): Promise<OrgBilling> => {
+    const data = await call<
+      Omit<OrgBilling, "paymentMethod" | "credit"> & {
+        paymentMethod?: BillingPaymentMethod | FlatPaymentMethod | null;
+        credit?: number | { amount: number; currency: string } | null;
+      }
+    >(`/orgs/${encodeURIComponent(orgId)}/billing`);
+    // The server names the card fields flat; the panel wants one `display` object.
+    const method = data.paymentMethod;
+    const withDisplay = method as { display?: BillingPaymentMethod["display"] } | null;
+    const flat = method as FlatPaymentMethod | null;
+    const display = withDisplay?.display
+      ? withDisplay.display
+      : flat
+        ? {
+            kind: flat.kind,
+            brand: flat.brand,
+            last4: flat.last4,
+            expMonth: flat.expMonth,
+            expYear: flat.expYear,
+          }
+        : null;
+    const credit = typeof data.credit === "number" ? data.credit : (data.credit?.amount ?? null);
+    return { ...data, paymentMethod: display ? { display } : null, credit };
+  },
   checkout: (
     orgId: string,
     body: {

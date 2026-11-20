@@ -12,6 +12,7 @@
  */
 import { billingEnabled, entitlementsFor } from "./billing.mjs";
 import { checkPromo, handleCheckoutRoutes } from "./billing-checkout-api.mjs";
+import { handleSubscriptionRoutes } from "./billing-subscription-api.mjs";
 import { PLAN_NAMES, PLANS } from "./billing-catalog.mjs";
 import { handlePaymentWebhook } from "./payment-webhooks.mjs";
 import { PAID_PLANS, billingCurrencies } from "../../scripts/billing-prices.mjs";
@@ -116,6 +117,23 @@ function subscriptionDto(row) {
     currentPeriodEnd: row.current_period_end,
     cancelAtPeriodEnd: row.cancel_at_period_end,
     trialEnd: row.trial_end ?? null,
+  };
+}
+
+/**
+ * The five display facts of a saved method, rebuilt field by field (§1 rule 9). The store
+ * row also carries the sealed provider reference; it stops here, because what the screen
+ * shows is all a client may ever see.
+ */
+function paymentMethodDto(method) {
+  const display = method?.display;
+  if (!display) return null;
+  return {
+    kind: display.kind ?? null,
+    brand: display.brand ?? null,
+    last4: display.last4 ?? null,
+    expMonth: display.expMonth ?? null,
+    expYear: display.expYear ?? null,
   };
 }
 
@@ -244,13 +262,25 @@ export async function handleBilling({
     return true;
   }
 
+  const subscriptionRoutes = await handleSubscriptionRoutes({
+    request,
+    response,
+    store,
+    orgId,
+    rest,
+    session,
+  });
+  if (subscriptionRoutes) return true;
+
   if (rest === "") {
     if (method !== "GET") {
       fail(response, 405, "METHOD_NOT_ALLOWED", "use PUT /orgs/:id/billing/frozen-rooms");
       return true;
     }
     const entitlements = await entitlementsFor(store, orgId, { env });
-    const [seats, rooms, subscription, account] = await Promise.all([
+    // §3.2: a member sees the plan and the limits; the card is the payer's data.
+    const isAdmin = await store.hasOrgRole(orgId, session.user.id, "org_admin");
+    const [seats, rooms, subscription, account, savedMethod] = await Promise.all([
       store.seatUsage(orgId),
       store.activeRoomCount(orgId),
       store.liveSubscription(orgId),
@@ -258,10 +288,21 @@ export async function handleBilling({
       // before that module is registered (an earlier stage or a test double): no account
       // means no currency yet, never a guessed one.
       typeof store.billingAccount === "function" ? store.billingAccount(orgId) : null,
+      // The card is the money module's row too; the same guard keeps an older store
+      // readable instead of failing the whole page.
+      typeof store.paymentMethod === "function" ? store.paymentMethod(orgId) : null,
     ]);
     // `read_only_at` lives on `orgs`; the billing read includes it once the org read
     // selects the column. A missing column is "not read-only", never an error.
     const org = typeof store.billingOrg === "function" ? await store.billingOrg(orgId) : null;
+
+    // Credit lives in the organisation's one currency (§2.1.1); without a currency there
+    // is no balance to name, and a zero balance is not shown at all (§8.1).
+    let credit = null;
+    if (account?.currency && typeof store.creditBalance === "function") {
+      const amount = await store.creditBalance(orgId, account.currency);
+      if (amount !== 0) credit = { amount, currency: account.currency };
+    }
 
     json(response, 200, {
       plan: entitlements.plan,
@@ -271,6 +312,10 @@ export async function handleBilling({
       usage: { seats, rooms },
       subscription: subscriptionDto(subscription),
       currency: account?.currency ?? null,
+      paymentMethod: isAdmin ? paymentMethodDto(savedMethod) : null,
+      credit,
+      cancelAtPeriodEnd: Boolean(subscription?.cancel_at_period_end),
+      trialEnd: subscription?.trial_end ?? null,
       // The chooser is not shipped yet; the PUT below says so. Frozen rooms are still
       // reconciled by the plan guard, so the list is a view that arrives with the UI.
       frozenRooms: [],

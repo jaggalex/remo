@@ -119,6 +119,53 @@ export const fileMethods = {
     return Number(rows[0]?.bytes ?? 0);
   },
 
+  /**
+   * Every `ready` file with the one fact the collector needs: does any `image` widget
+   * point at it?
+   *
+   * The collector runs on a timer, not in a request, so there is no tenant to read under.
+   * One owner connection answers the whole installation in a single repeatable-read
+   * snapshot; each row is then changed under its own organisation (`withTenant`), so the
+   * policy still decides the write. Rooms in the trash keep their widgets, so they count
+   * as references without a second condition.
+   */
+  async filesForCollection() {
+    return this.withOwnerClient(async (client) => {
+      await client.query("begin isolation level repeatable read read only");
+      try {
+        const { rows } = await client.query(
+          `select f.id, f.org_id, f.unreferenced_since,
+                  exists (
+                    select 1 from widgets w
+                     where w.type = 'image' and w.props->>'fileId' = f.id::text
+                  ) as referenced
+             from files f
+            where f.status = 'ready'
+            order by f.created_at, f.id`,
+        );
+        await client.query("commit");
+        return rows;
+      } catch (error) {
+        await client.query("rollback").catch(() => {});
+        throw error;
+      }
+    });
+  },
+
+  /**
+   * Bytes held by ready files across the whole installation, for the `/metrics` gauge.
+   * Like `filesForCollection`, this is a background read with no tenant, so it uses the
+   * owner connection; the quota itself stays per organisation (`storedBytesForOrg`).
+   */
+  async totalStoredBytes() {
+    return this.withOwnerClient(async (client) => {
+      const { rows } = await client.query(
+        "select coalesce(sum(stored_bytes), 0)::bigint as bytes from files where status = 'ready'",
+      );
+      return Number(rows[0]?.bytes ?? 0);
+    });
+  },
+
   /** Image objects currently in the room, for `REMO_FILES_PER_ROOM`. */
   async imageCountForBoard(boardId) {
     const { rows } = await this.pool.query(
