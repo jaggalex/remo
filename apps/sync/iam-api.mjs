@@ -15,6 +15,7 @@ import { clientIp } from "./client-ip.mjs";
 import { fail, sessionFromRequest } from "./iam-http.mjs";
 import { iamContext } from "./iam-api-context.mjs";
 import { handleAuthRoutes } from "./iam-api-auth.mjs";
+import { handleRecoveryRoutes } from "./iam-api-recovery.mjs";
 import { handleOrgRoutes } from "./iam-api-org.mjs";
 import { handleInvitations } from "./iam-api-invitations.mjs";
 import { handleAdminRoutes } from "./iam-api-admin.mjs";
@@ -46,6 +47,8 @@ export async function handleIam({
   onAclChanged = null,
   onUserSuspended = null,
   onCommentsChanged = null,
+  mail = null,
+  mailConfig = null,
 }) {
   if (
     !url.pathname.startsWith("/auth") &&
@@ -94,8 +97,12 @@ export async function handleIam({
     session,
     user,
     onCommentsChanged,
+    mail,
+    mailConfig,
   };
 
+  // `/auth/capabilities` ships with the mail module; the rest of `/auth` follows.
+  if (await handleRecoveryRoutes(base)) return true;
   if (await handleAuthRoutes(base)) return true;
 
   const ctx = {

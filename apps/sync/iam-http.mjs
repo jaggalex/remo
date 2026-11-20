@@ -103,6 +103,7 @@ export async function sessionFromRequest(request, store) {
       email: row.email,
       name: row.name,
       handle: row.handle,
+      emailVerified: Boolean(row.email_verified_at),
       preferences: { theme: row.theme ?? null, lang: row.lang ?? null },
     },
   };

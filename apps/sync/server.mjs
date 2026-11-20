@@ -41,7 +41,7 @@ import { CSRF_COOKIE, csrfCookie, csrfProblem } from "./csrf.mjs";
 import { newToken } from "./iam.mjs";
 import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
-import { assertMailConfig, mailDriver, resolveMailConfig } from "./mail.mjs";
+import { assertMailConfig, mailCapabilities, mailDriver, resolveMailConfig } from "./mail.mjs";
 import { createMailDrain } from "./mail-drain.mjs";
 import { buildInfo } from "./build-info.mjs";
 
@@ -389,6 +389,8 @@ async function routeRequest(request, response, url) {
       response,
       url,
       store,
+      mail: mailCapabilities(mailConfig),
+      mailConfig,
       onAclChanged: connections.refreshBoardAccess,
       onUserSuspended: connections.closeUserConnections,
       onCommentsChanged: (boardId) =>

@@ -9,6 +9,7 @@
 import { ApiError, call } from "./apiCall";
 import { roomAgentApi } from "./roomAgentApi";
 import { backupFilename } from "./backupFormat";
+import type { SessionUser } from "./sessionUser";
 import type { VoteSession } from "./vote/voteTypes";
 
 export { ApiError, call } from "./apiCall";
@@ -22,14 +23,7 @@ export type {
   VoteSession,
 } from "./vote/voteTypes";
 
-export interface SessionUser {
-  id: string;
-  email: string;
-  name: string;
-  handle: string;
-  /** Display preferences that follow the account, not the browser (ADR-150). */
-  preferences?: { theme: "system" | "light" | "dark" | null; lang: "ru" | "en" | null };
-}
+export type { SessionUser } from "./sessionUser";
 
 export interface OrgSummary {
   id: string;

@@ -28,7 +28,8 @@ async findUserByHandle(handle) {
 
 async findUserByEmail(email) {
   const { rows } = await this.pool.query(
-    `select id, email, name, handle, state, theme, lang, password_hash, created_at
+    `select id, email, name, handle, state, theme, lang, password_hash, created_at,
+            email_verified_at
        from users where email = $1`,
     [email],
   );
@@ -37,7 +38,8 @@ async findUserByEmail(email) {
 
 async findUserById(id) {
   const { rows } = await this.pool.query(
-    `select id, email, name, handle, state, theme, lang, created_at from users where id = $1`,
+    `select id, email, name, handle, state, theme, lang, created_at, email_verified_at
+       from users where id = $1`,
     [id],
   );
   return rows[0] ?? null;
@@ -74,7 +76,7 @@ async createSession({ userId, tokenHash, expiresAt, userAgent }) {
 async findSession(tokenHash) {
   const { rows } = await this.pool.query(
     `select s.id, s.user_id, s.expires_at,
-            u.email, u.name, u.handle, u.state, u.theme, u.lang
+            u.email, u.name, u.handle, u.state, u.theme, u.lang, u.email_verified_at
        from sessions s
        join users u on u.id = s.user_id
       where s.token_hash = $1

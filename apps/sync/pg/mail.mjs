@@ -166,6 +166,129 @@ export const mailMethods = {
   },
 
   /**
+   * A new token of the same purpose voids the old ones in the same transaction, so a
+   * second "forgot password" click leaves exactly one working link (`spec/mail.md` §5.1,
+   * §8). Another purpose is left alone: a reset request must not kill a verify link.
+   */
+  async issueAuthToken({ id, userId, purpose, tokenHash, email, expiresAt }) {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      await client.query(
+        `update auth_tokens
+            set used_at = now()
+          where user_id = $1 and purpose = $2 and used_at is null`,
+        [userId, purpose],
+      );
+      await client.query(
+        `insert into auth_tokens (id, user_id, purpose, token_hash, email, expires_at)
+         values ($1, $2, $3, $4, $5, $6)`,
+        [id, userId, purpose, tokenHash, email, expiresAt],
+      );
+      await client.query("commit");
+      return { id };
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  /**
+   * The one transaction behind `POST /auth/password/reset` (`spec/mail.md` §5.2). The
+   * locked token decides the answer: a missing or used row is rejected, an expired one
+   * is reported without being marked used (so the caller can say "request a new link"
+   * instead of "invalid"), and only a live one changes the password. Every session ends
+   * because the old password is gone, and the address is confirmed only when the token
+   * still names the account's current address — otherwise the token proves nothing about
+   * the new one.
+   */
+  async completePasswordReset({ tokenHash, passwordHash }) {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      const { rows } = await client.query(
+        `select id, user_id, email, expires_at, used_at, (expires_at <= now()) as expired
+           from auth_tokens
+          where token_hash = $1
+          for update`,
+        [tokenHash],
+      );
+      const token = rows[0];
+      if (!token || token.used_at) {
+        await client.query("rollback");
+        return { status: "invalid" };
+      }
+      if (token.expired) {
+        await client.query("rollback");
+        return { status: "expired" };
+      }
+      await client.query(
+        `update users
+            set password_hash = $2,
+                updated_at = now(),
+                email_verified_at = case when email = $3
+                                         then coalesce(email_verified_at, now())
+                                         else email_verified_at end
+          where id = $1`,
+        [token.user_id, passwordHash, token.email],
+      );
+      await client.query(
+        `update auth_tokens
+            set used_at = now()
+          where user_id = $1 and purpose = 'password_reset' and used_at is null`,
+        [token.user_id],
+      );
+      await client.query(
+        `update sessions set revoked_at = now() where user_id = $1 and revoked_at is null`,
+        [token.user_id],
+      );
+      await client.query("commit");
+      return { status: "ok", userId: token.user_id, email: token.email };
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  /**
+   * The caller knows which kind of token it expects, so the purpose is part of the key:
+   * the table holds reset and verification rows side by side.
+   */
+  async findAuthToken(tokenHash, purpose) {
+    const { rows } = await this.pool.query(
+      `select * from auth_tokens where token_hash = $1 and purpose = $2`,
+      [tokenHash, purpose],
+    );
+    return rows[0] ?? null;
+  },
+
+  /** False means the token was already spent: a link works once (`spec/mail.md` §8). */
+  async consumeAuthToken(id) {
+    const { rowCount } = await this.pool.query(
+      `update auth_tokens set used_at = now() where id = $1 and used_at is null`,
+      [id],
+    );
+    return rowCount > 0;
+  },
+
+  /**
+   * The address must still be the account's own: a token issued before an address change
+   * must not confirm the new one (`spec/mail.md` §3). A mismatch writes nothing.
+   */
+  async setEmailVerified(userId, email) {
+    const { rowCount } = await this.pool.query(
+      `update users set email_verified_at = coalesce(email_verified_at, now())
+        where id = $1 and email = $2`,
+      [userId, email],
+    );
+    return rowCount > 0;
+  },
+
+  /**
    * The hourly retention pass: 30 days of letters, 7 days of tokens. Bounded to 1000 rows
    * per table so one pass never holds a long lock, like the other operator cleanups.
    */

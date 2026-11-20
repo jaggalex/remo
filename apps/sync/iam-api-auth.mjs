@@ -26,6 +26,7 @@ import {
   sessionCookie,
 } from "./iam-http.mjs";
 import { csrfToken } from "./csrf.mjs";
+import { enqueueMail, pickLocale } from "./mail.mjs";
 
 const THEMES = new Set(["system", "light", "dark"]);
 const LANGS = new Set(["ru", "en"]);
@@ -134,6 +135,7 @@ export async function handleAuthRoutes(ctx) {
           email: created.email,
           name: created.name,
           handle: created.handle,
+          emailVerified: false,
           preferences: preferencesOf(created),
         },
         org,
@@ -217,6 +219,7 @@ export async function handleAuthRoutes(ctx) {
           email: found.email,
           name: found.name,
           handle: found.handle,
+          emailVerified: Boolean(found.email_verified_at),
           preferences: preferencesOf(found),
         },
       },
@@ -360,10 +363,41 @@ export async function handleAuthRoutes(ctx) {
     }
     const weak = passwordProblem(body.newPassword);
     if (weak) return fail(response, 422, weak.code, weak.message), true;
-    await store.updatePassword(user.id, await hashPassword(body.newPassword));
+    // One hashing mechanism: the queue is what keeps a burst from exhausting the pool.
+    let passwordHash;
+    try {
+      passwordHash = await hashQueue.withSlot(() => hashPassword(body.newPassword));
+    } catch (error) {
+      if (error?.code === "HASH_BUSY") {
+        return fail(response, 503, "SERVER_BUSY", "the server is busy; try again"), true;
+      }
+      throw error;
+    }
+    await store.updatePassword(user.id, passwordHash);
     // Changing a password ends every other session, the way people expect.
     await store.revokeUserSessions(user.id);
     await audit({ actorId: user.id, action: "auth.password_changed", subject: user.email });
+    if (ctx.mailConfig && ctx.mailConfig.driver !== "disabled") {
+      try {
+        await enqueueMail(
+          store,
+          {
+            userId: user.id,
+            toEmail: user.email,
+            template: "password_changed",
+            locale: pickLocale({
+              userLang: found.lang,
+              acceptLanguage: request.headers["accept-language"],
+            }),
+            params: { email: user.email, forgotLink: `${ctx.mailConfig.appOrigin}/?forgot=1` },
+          },
+          { config: ctx.mailConfig },
+        );
+      } catch (error) {
+        // The password changed; a failed notice must not turn that into an error.
+        ctx.log?.error?.("[auth] password_changed mail failed:", error.message);
+      }
+    }
     json(response, 200, { ok: true }, { "Set-Cookie": clearedSessionCookie });
     return true;
   }
