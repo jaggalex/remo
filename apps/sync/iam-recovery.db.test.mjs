@@ -176,6 +176,90 @@ suite("password recovery (ADR-246)", () => {
     expect(rows[0].n).toBe(1);
   });
 
+  it("verifies the address, refuses reuse and blocks invitations until then", async () => {
+    const { api, user } = await registered("verify");
+    const { rows: orgRows } = await store.pool.query(
+      "select id from orgs where created_by = $1 and kind = 'personal'",
+      [user.id],
+    );
+    const orgId = orgRows[0].id;
+
+    const { rows } = await store.pool.query(
+      `select * from mail_outbox where user_id = $1 and template = 'verify_email'`,
+      [user.id],
+    );
+    expect(rows).toHaveLength(1);
+    const link = JSON.parse(decryptSecret(sealedMailRow(rows[0]), { kek: kekFromEnv() })).link;
+    const token = new URL(link).searchParams.get("verify");
+
+    const blocked = await api("POST", `/orgs/${orgId}/invitations`, {
+      email: email("guest-blocked"),
+    });
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error).toBe("EMAIL_NOT_VERIFIED");
+
+    const anonymous = client();
+    const verified = await anonymous("POST", "/auth/email/verify", { token });
+    expect(verified.status).toBe(200);
+
+    const again = await anonymous("POST", "/auth/email/verify", { token });
+    expect(again.status).toBe(200);
+
+    const me = await api("GET", "/auth/me");
+    expect(me.body.user.emailVerified).toBe(true);
+
+    const invited = await api("POST", `/orgs/${orgId}/invitations`, {
+      email: email("guest-ok"),
+    });
+    expect(invited.status).toBe(201);
+    expect(invited.body.emailQueued).toBe(true);
+  });
+
+  it("reports an expired verification link and a changed address", async () => {
+    const { user } = await registered("verify-bad");
+    const { rows } = await store.pool.query(
+      `select * from auth_tokens where user_id = $1 and purpose = 'email_verify'`,
+      [user.id],
+    );
+    const [row] = rows;
+    await store.pool.query("update auth_tokens set expires_at = now() - interval '1 minute' where id = $1", [
+      row.id,
+    ]);
+    // A fresh token with a foreign address proves nothing about this account.
+    const { rows: mail } = await store.pool.query(
+      `select * from mail_outbox where user_id = $1 and template = 'verify_email'`,
+      [user.id],
+    );
+    const token = new URL(
+      JSON.parse(decryptSecret(sealedMailRow(mail[0]), { kek: kekFromEnv() })).link,
+    ).searchParams.get("verify");
+    const expired = await client()("POST", "/auth/email/verify", { token });
+    expect(expired.body.error).toBe("TOKEN_EXPIRED");
+
+    await store.pool.query("update auth_tokens set expires_at = now() + interval '1 day' where id = $1", [
+      row.id,
+    ]);
+    await store.pool.query("update auth_tokens set email = $2 where id = $1", [
+      row.id,
+      "someone-else@example.test",
+    ]);
+    const changed = await client()("POST", "/auth/email/verify", { token });
+    expect(changed.status).toBe(409);
+    expect(changed.body.error).toBe("EMAIL_CHANGED");
+  });
+
+  it("rate-limits the resend and says when the address is already proven", async () => {
+    const { api } = await registered("resend");
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const answer = await api("POST", "/auth/email/resend");
+      expect(answer.status).toBe(200);
+      expect(answer.body.alreadyVerified).toBeUndefined();
+    }
+    const limited = await api("POST", "/auth/email/resend");
+    expect(limited.status).toBe(429);
+    expect(limited.body.error).toBe("RATE_LIMITED");
+  });
+
   it("resets the password, revokes sessions and verifies the address", async () => {
     const { api, user } = await registered("reset");
     const other = client();

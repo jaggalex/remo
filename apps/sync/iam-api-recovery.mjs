@@ -8,6 +8,7 @@
 import { clearFailures, reserveAttempt } from "./attempts.mjs";
 import {
   dummyAuthTokenWork,
+  hashAuthToken,
   issueAuthToken,
   resetPasswordWithToken,
 } from "./auth-tokens.mjs";
@@ -113,8 +114,7 @@ export async function handleRecoveryRoutes(ctx) {
     return answer();
   }
 
-  if (url.pathname === "/auth/password/reset" && method === "POST") {
-    const body = await readBody(request);
+  if (url.pathname === "/auth/password/reset" && method === "POST") {    const body = await readBody(request);
     if (!body) return fail(response, 400, "BAD_JSON", "malformed request"), true;
     if (
       !reserveAttempt(`reset-ip:${ip ?? "unknown"}`, {
@@ -163,6 +163,91 @@ export async function handleRecoveryRoutes(ctx) {
       log,
     });
     // No automatic sign-in: the link may have leaked, so only the password changes.
+    return json(response, 200, { ok: true }), true;
+  }
+
+  if (url.pathname === "/auth/email/verify" && method === "POST") {
+    const body = await readBody(request);
+    if (!body) return fail(response, 400, "BAD_JSON", "malformed request"), true;
+    if (!mailConfig || mailConfig.driver === "disabled") {
+      return fail(response, 404, "MAIL_DISABLED", "this installation does not send mail"), true;
+    }
+    const row = await store.findAuthToken(hashAuthToken(String(body.token ?? "")), "email_verify");
+    if (!row) return fail(response, 400, "TOKEN_INVALID", "this link is not valid"), true;
+    const owner = await store.findUserById(row.user_id);
+    if (!owner) return fail(response, 400, "TOKEN_INVALID", "this link is not valid"), true;
+    if (owner.email_verified_at && !row.used_at) {
+      // Already proven: the link is spent, the address is confirmed either way.
+      await store.consumeAuthToken(row.id);
+      return json(response, 200, { ok: true }), true;
+    }
+    if (row.used_at) {
+      return owner.email_verified_at
+        ? (json(response, 200, { ok: true }), true)
+        : (fail(response, 400, "TOKEN_INVALID", "this link is not valid"), true);
+    }
+    if (new Date(row.expires_at).getTime() <= Date.now()) {
+      return fail(response, 400, "TOKEN_EXPIRED", "this link has expired; request a new one"), true;
+    }
+    if (row.email !== owner.email) {
+      return fail(response, 409, "EMAIL_CHANGED", "the address on this link is no longer yours"), true;
+    }
+    if (!(await store.consumeAuthToken(row.id))) {
+      return fail(response, 400, "TOKEN_INVALID", "this link is not valid"), true;
+    }
+    await store.setEmailVerified(owner.id, owner.email);
+    await audit({ actorId: owner.id, action: "auth.email_verified", subject: owner.id });
+    return json(response, 200, { ok: true }), true;
+  }
+
+  if (url.pathname === "/auth/email/resend" && method === "POST") {
+    if (!store.createUser) return fail(response, 501, "IAM_UNAVAILABLE", "accounts need postgres"), true;
+    const me = ctx.user;
+    if (!me) return fail(response, 401, "AUTH_REQUIRED", "sign in first"), true;
+    if (!mailConfig || mailConfig.driver === "disabled") {
+      return fail(response, 404, "MAIL_DISABLED", "this installation does not send mail"), true;
+    }
+    if (me.emailVerified) return json(response, 200, { ok: true, alreadyVerified: true }), true;
+    if (
+      !reserveAttempt(`verify-resend:${me.id}`, {
+        limit: 3,
+        windowMs: HOUR_MS,
+      })
+    ) {
+      return json(
+        response,
+        429,
+        { error: "RATE_LIMITED", message: "too many letters; try again later" },
+        { "Retry-After": String(Math.round(HOUR_MS / 1000)) },
+      ), true;
+    }
+    try {
+      const user = await store.findUserById(me.id);
+      const issued = await issueAuthToken(store, {
+        userId: me.id,
+        purpose: "email_verify",
+        email: user.email,
+      });
+      await enqueueMail(
+        store,
+        {
+          userId: me.id,
+          toEmail: user.email,
+          template: "verify_email",
+          locale: pickLocale({
+            userLang: user.lang,
+            acceptLanguage: request.headers["accept-language"],
+          }),
+          params: { name: user.name },
+          linkParams: { link: `${mailConfig.appOrigin}/?verify=${issued.token}` },
+          validUntil: issued.expiresAt,
+        },
+        { config: mailConfig },
+      );
+    } catch (error) {
+      log.error("[auth] resend failed:", error.message);
+      return fail(response, 502, "MAIL_FAILED", "the letter could not be queued"), true;
+    }
     return json(response, 200, { ok: true }), true;
   }
 

@@ -3,6 +3,46 @@
  */
 import { hashToken, isEmail, newToken, normalizeEmail } from "./iam.mjs";
 import { accessForBoard, fail, json, readBody } from "./iam-http.mjs";
+import { enqueueMail, pickLocale } from "./mail.mjs";
+
+/**
+ * An unverified address must not make the installation send mail in its name, so
+ * invitations are the one thing it may not do while mail is on (ADR-246 §5.3).
+ */
+function invitationsBlocked(ctx, me) {
+  return Boolean(
+    ctx.mail?.mail && ctx.mailConfig?.requireVerifiedForInvites && !me.emailVerified,
+  );
+}
+
+/** Queue the invitation letter; a failure is reported, not thrown into the invitation. */
+async function queueInvitation(ctx, { email, inviter, target, targetKind, role, link, expiresAt }) {
+  if (!ctx.mail?.mail) return false;
+  try {
+    const locale = pickLocale({ userLang: inviter.preferences?.lang });
+    const date = new Date(expiresAt).toLocaleDateString(locale === "ru" ? "ru-RU" : "en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    await enqueueMail(
+      ctx.store,
+      {
+        toEmail: email,
+        template: "invitation",
+        locale,
+        params: { inviter: inviter.name, target, targetKind, role, expires: date },
+        linkParams: { link },
+        validUntil: expiresAt,
+      },
+      { config: ctx.mailConfig },
+    );
+    return true;
+  } catch (error) {
+    ctx.log?.error?.("[auth] invitation mail failed:", error.message);
+    return false;
+  }
+}
 
 export async function handleInvitations(ctx) {
   const { request, response, url, store, method, parts, audit, requireUser, hasOrgRole, inviteUrl, onAclChanged } = ctx;
@@ -24,6 +64,9 @@ export async function handleInvitations(ctx) {
       if (!(await hasOrgRole(orgId, me.id, ["org_admin", "user_admin"]))) {
         return fail(response, 403, "FORBIDDEN", "only an administrator can invite members"), true;
       }
+      if (invitationsBlocked(ctx, me)) {
+        return fail(response, 403, "EMAIL_NOT_VERIFIED", "confirm your email to invite people"), true;
+      }
       const body = await readBody(request);
       const email = normalizeEmail(body?.email);
       if (!isEmail(email)) return fail(response, 422, "BAD_EMAIL", "enter a valid email"), true;
@@ -44,8 +87,17 @@ export async function handleInvitations(ctx) {
         createdBy: me.id,
       });
       await audit({ actorId: me.id, orgId, action: "invitation.create", subject: email });
-      // No mail service yet: the inviter copies the link and sends it themselves.
-      json(response, 201, { invitation, url: inviteUrl(token) });
+      const org = await store.getOrg(orgId);
+      const emailQueued = await queueInvitation(ctx, {
+        email,
+        inviter: me,
+        target: org?.name ?? "",
+        targetKind: "organisation",
+        role: "member",
+        link: inviteUrl(token),
+        expiresAt: invitation.expires_at,
+      });
+      json(response, 201, { invitation, url: inviteUrl(token), emailQueued });
       return true;
     }
 
@@ -108,6 +160,9 @@ export async function handleInvitations(ctx) {
     if (!resolved?.access.capabilities.includes("board.share")) {
       return fail(response, 403, "FORBIDDEN", "you cannot invite to this board"), true;
     }
+    if (invitationsBlocked(ctx, me)) {
+      return fail(response, 403, "EMAIL_NOT_VERIFIED", "confirm your email to invite people"), true;
+    }
     const body = await readBody(request);
     const email = normalizeEmail(body?.email);
     const role = String(body?.role ?? "viewer");
@@ -133,7 +188,16 @@ export async function handleInvitations(ctx) {
       createdBy: me.id,
     });
     await audit({ actorId: me.id, orgId: board.org_id, boardId, action: "guest.invite", subject: email });
-    json(response, 201, { invitation, url: inviteUrl(token) });
+    const emailQueued = await queueInvitation(ctx, {
+      email,
+      inviter: me,
+      target: board.title ?? "",
+      targetKind: "room",
+      role,
+      link: inviteUrl(token),
+      expiresAt: invitation.expires_at,
+    });
+    json(response, 201, { invitation, url: inviteUrl(token), emailQueued });
     return true;
   }
 

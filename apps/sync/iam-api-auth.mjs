@@ -26,6 +26,7 @@ import {
   sessionCookie,
 } from "./iam-http.mjs";
 import { csrfToken } from "./csrf.mjs";
+import { issueAuthToken } from "./auth-tokens.mjs";
 import { enqueueMail, pickLocale } from "./mail.mjs";
 
 const THEMES = new Set(["system", "light", "dark"]);
@@ -126,6 +127,35 @@ export async function handleAuthRoutes(ctx) {
       action: "auth.register",
       subject: email,
     });
+    // The address is unproven until the link is used; with mail off nothing changes.
+    if (ctx.mailConfig && ctx.mailConfig.driver !== "disabled") {
+      try {
+        const issued = await issueAuthToken(store, {
+          userId: created.id,
+          purpose: "email_verify",
+          email: created.email,
+        });
+        await enqueueMail(
+          store,
+          {
+            userId: created.id,
+            toEmail: created.email,
+            template: "verify_email",
+            locale: pickLocale({
+              userLang: created.lang,
+              acceptLanguage: request.headers["accept-language"],
+            }),
+            params: { name: created.name },
+            linkParams: { link: `${ctx.mailConfig.appOrigin}/?verify=${issued.token}` },
+            validUntil: issued.expiresAt,
+          },
+          { config: ctx.mailConfig },
+        );
+      } catch (error) {
+        // Signing up must not fail because the letter could not be queued.
+        ctx.log?.error?.("[auth] verify mail failed:", error.message);
+      }
+    }
     json(
       response,
       201,
