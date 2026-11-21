@@ -153,6 +153,7 @@ describe("nginx configs include the policy wherever nginx would drop it", () => 
   const configs = {
     "deploy/nginx-remo.conf": read("deploy/nginx-remo.conf"),
     "deploy/nginx.container.conf": read("deploy/nginx.container.conf"),
+    "deploy/nginx-remo-agents.conf": read("deploy/nginx-remo-agents.conf"),
   };
 
   for (const [path, config] of Object.entries(configs)) {

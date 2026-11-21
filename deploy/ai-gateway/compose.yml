@@ -1,0 +1,77 @@
+# The AI gateway on VPS 2 (ADR-251 §6.3). One container, host networking: the listener
+# binds 10.77.0.2:8080 on wg0, and the admin API binds 127.0.0.1:8081, which inside this
+# container is the host's loopback.
+#
+# Prerequisites on the host:
+#   /srv/remo                          checkout with `pnpm install --frozen-lockfile`
+#   /etc/remo-ai-gateway/config.json   registry, mode 600
+#   /etc/remo-ai-gateway/gateway.env   GATEWAY_TOKEN and provider keyEnv values, mode 600
+#   /etc/remo-ai-gateway/admin.token   random token for `remo-gw`, mode 600
+#   /etc/remo-ai-gateway/tls/          fullchain.pem and key.pem (SAN 10.77.0.2)
+#   /var/lib/remo-ai-gateway/          state and request logs, owner 998:998
+#
+# Create the service account and directories once:
+#   groupadd --system --gid 998 remo-gateway
+#   useradd --system --uid 998 --gid remo-gateway --home /srv/remo --shell /usr/sbin/nologin remo-gateway
+#   install -d -o remo-gateway -g remo-gateway -m 700 /etc/remo-ai-gateway /etc/remo-ai-gateway/tls
+#   install -d -o remo-gateway -g remo-gateway -m 700 /var/lib/remo-ai-gateway
+#   chown -R remo-gateway:remo-gateway /etc/remo-ai-gateway /var/lib/remo-ai-gateway
+#   chmod 600 /etc/remo-ai-gateway/gateway.env /etc/remo-ai-gateway/admin.token
+#   chmod 600 /etc/remo-ai-gateway/config.json /etc/remo-ai-gateway/tls/*.pem
+#
+# Both ends of the tunnel are configured here on purpose: sync on VPS 1 pins the gateway
+# certificate with REMO_AI_GATEWAY_CA, the gateway itself does not read that variable.
+#
+# The listener cannot bind before wg0 exists, so start the tunnel first; `restart:
+# unless-stopped` retries the container until the address appears.
+#
+# Start with `docker compose -f compose.yml up -d`, and check `docker compose ps` and
+# `journalctl -u docker` before trusting the tunnel.
+
+name: remo-ai-gateway
+
+services:
+  gateway:
+    image: node:22-bookworm-slim
+    container_name: remo-ai-gateway
+    working_dir: /srv/remo
+    command: ["node", "apps/ai-gateway/server.mjs"]
+    network_mode: host
+    read_only: true
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 10s
+    user: "${REMO_GATEWAY_UID:-998}:${REMO_GATEWAY_GID:-998}"
+    env_file:
+      - /etc/remo-ai-gateway/gateway.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_CONFIG: /etc/remo-ai-gateway/config.json
+      GATEWAY_ADMIN_TOKEN_FILE: /etc/remo-ai-gateway/admin.token
+      GATEWAY_STATE_DIR: /var/lib/remo-ai-gateway
+      GATEWAY_TLS_CERT: /etc/remo-ai-gateway/tls/fullchain.pem
+      GATEWAY_TLS_KEY: /etc/remo-ai-gateway/tls/key.pem
+      # Read by sync on VPS 1, not by the gateway. Kept here so a rotation touches one file.
+      REMO_AI_GATEWAY_CA: ${REMO_AI_GATEWAY_CA:-}
+    volumes:
+      - /srv/remo:/srv/remo:ro
+      - /etc/remo-ai-gateway:/etc/remo-ai-gateway:ro
+      - /var/lib/remo-ai-gateway:/var/lib/remo-ai-gateway
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      # /healthz needs no token and returns no details. The certificate is self-signed,
+      # so the probe disables verification for this one loopback call into wg0.
+      test:
+        - CMD
+        - node
+        - -e
+        - "process.env.NODE_TLS_REJECT_UNAUTHORIZED='0';fetch('https://10.77.0.2:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

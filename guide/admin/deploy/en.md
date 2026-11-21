@@ -50,6 +50,52 @@ install -d -o remo -g remo /srv/remo
 
 `console` is refused in production: it prints links to the service log.
 
+## AI gateway
+
+The gateway moves model calls to a separate server: remo sends the request over a tunnel, and only the gateway reaches providers. It is optional. Without it, agents call providers directly as before; our service keeps the gateway on to manage the provider list, kill switches and limits.
+
+You need two servers: one with remo and a separate one, where 1 vCPU and 1 GB of memory are enough. Both need `wireguard-tools`; the gateway server also needs `nftables`.
+
+1. **Tunnel.** The subnet is `10.77.0.0/30`: remo is `10.77.0.1`, the gateway is `10.77.0.2`. Generate keys on each machine, exchange the public keys, and keep only the other side's address in `AllowedIPs`. Ready-made configurations and the order of steps are in `deploy/ai-gateway/wireguard.md`. Do not route all traffic through the tunnel: that would remove the isolation.
+2. **Firewall.** On the gateway server apply `deploy/ai-gateway/nftables.conf`: SSH from your addresses only, WireGuard UDP from remo's address only, and on `wg0` only TCP 8080 from `10.77.0.1`. Outbound is TCP 443 and DNS only. The management port 8081 listens on `127.0.0.1` and is not opened.
+3. **Start.** Choose one way:
+   - Compose: `deploy/ai-gateway/compose.yml`, variables in `/etc/remo-ai-gateway/gateway.env`, state in `/var/lib/remo-ai-gateway`;
+   - systemd: `deploy/ai-gateway/remo-ai-gateway.service`.
+
+   Both run one process as a dedicated user, with a read-only filesystem and writes only to the state directory. Do not enable both. Create the `remo-gateway` user and the directories from the list at the top of `compose.yml`.
+4. **Registry.** Start from `config.example.json` in the gateway directory and save it as `/etc/remo-ai-gateway/config.json` with mode 600, owned by the gateway user. List providers, models, regions, timeouts and limits. Put installation keys in `gateway.env` under the names from `keyEnv`. What is not in the registry does not exist: an arbitrary provider address is refused.
+5. **Certificate.** Issue a self-signed certificate with the IP address `10.77.0.2` in a SAN and put it and its key in `/etc/remo-ai-gateway/tls/`, owned by the gateway user. On the remo server set `REMO_AI_GATEWAY_URL=https://10.77.0.2:8080`, the shared `REMO_AI_GATEWAY_TOKEN`, the certificate PEM in `REMO_AI_GATEWAY_CA` and the region in `REMO_AI_REGION`. Sync pins the certificate: without the pin the connection is refused. The PEM spans lines, so a systemd `EnvironmentFile` cannot carry it: start sync through a wrapper that reads the certificate file and exports the variable.
+6. **Check.** From the remo server: `curl --cacert gateway-ca.pem https://10.77.0.2:8080/healthz` → `{"status":"ok"}`. On the gateway server: `remo-gw status` and `remo-gw providers`. Then run an agent task in a room.
+
+`remo-gw` runs on the gateway server and calls the management API on `127.0.0.1`. The token lives in `/etc/remo-ai-gateway/admin.token`.
+
+| Command | What it does |
+|---|---|
+| `remo-gw status` | version, configuration, kill switches, load |
+| `remo-gw providers` | providers, models, regions, errors and latency |
+| `remo-gw limits` | effective limits and overrides |
+| `remo-gw usage` | tokens and cost by day and organisation |
+| `remo-gw kill provider openrouter` | switch a provider off without restarting remo |
+| `remo-gw unkill provider openrouter` | switch it back on |
+| `remo-gw reload` | re-read `config.json` |
+
+### Monitoring and alerts
+
+- `/healthz` answers without a token and without details; `/metrics` only with `GATEWAY_METRICS_TOKEN`.
+- Alert when the provider error share is above 20% over 10 minutes.
+- Alert when agents receive `503 AI_GATEWAY_UNAVAILABLE`: tasks answer “AI is temporarily unavailable” while the room keeps working. Look at the sync log and at `remo-gw status` on the gateway.
+- Alert on the daily cost: `remo-gw usage` and `limits.global.costPerDay`.
+
+The gateway does not change the legal side: if text goes to a provider abroad, it is still a transfer of data across a border. The provider list in the registry and the privacy policy must agree.
+
+### Address for external agents
+
+Give external agents and integrations a separate name, `agents.<domain>`: `deploy/nginx-remo-agents.conf` proxies only the agent and integration API, without static files or sockets, with its own limits by address and by token. On the main domain bearer tokens keep working for compatibility, but instructions should use `https://agents.<domain>`.
+
+### What a self-hosted installation may not have
+
+If `REMO_AI_GATEWAY_URL` is not set, agents call the provider directly: no tunnel, no second server, no `remo-gw`. Such an installation works as before. Turn the gateway on when you need one provider list, kill switches and per-organisation limits.
+
 ## Check
 
 ```sh

@@ -60,6 +60,19 @@ Keep a copy outside the server.
 With one URL the service runs as the owner and row-level security cannot contain a missing
 predicate. Keep the two roles separate; only `remo_app` serves requests.
 
+## AI gateway
+
+Agents can send every model call through a separate host instead of leaving from the server
+that holds the rooms. The gateway keeps one provider registry, kill switches, per-organisation
+limits and metadata-only logs; sync reaches it over WireGuard and fails closed when it is
+down. It is optional: without `REMO_AI_GATEWAY_URL` the service calls providers directly, as
+before, and a self-hosted installation can leave it out.
+
+The two-host setup — tunnel, firewall, Compose or systemd, `remo-gw`, alerts and the separate
+`agents.<domain>` address — is in the deployment guide:
+[AI gateway](https://docs.remo.letii.ru/guide/en/admin/deploy.html#ai-gateway). The variable
+names are in [Settings](https://docs.remo.letii.ru/guide/en/reference/env.html#ai-gateway).
+
 ## First start
 
 ```sh

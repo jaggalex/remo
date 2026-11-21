@@ -1,0 +1,44 @@
+[Unit]
+# The alternative to deploy/ai-gateway/compose.yml: pick one, not both (ADR-251 §6.3).
+Description=remo AI gateway
+Documentation=file:///srv/remo/docs/self-hosting.md
+After=network-online.target wg-quick@wg0.service
+Wants=network-online.target wg-quick@wg0.service
+
+[Service]
+Type=simple
+User=remo-gateway
+Group=remo-gateway
+WorkingDirectory=/srv/remo
+EnvironmentFile=/etc/remo-ai-gateway/gateway.env
+Environment=NODE_ENV=production
+Environment=GATEWAY_CONFIG=/etc/remo-ai-gateway/config.json
+Environment=GATEWAY_ADMIN_TOKEN_FILE=/etc/remo-ai-gateway/admin.token
+Environment=GATEWAY_STATE_DIR=/var/lib/remo-ai-gateway
+Environment=GATEWAY_TLS_CERT=/etc/remo-ai-gateway/tls/fullchain.pem
+Environment=GATEWAY_TLS_KEY=/etc/remo-ai-gateway/tls/key.pem
+ExecStart=/usr/bin/node apps/ai-gateway/server.mjs
+# SIGHUP re-reads config.json; a broken file leaves the previous registry in place.
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=10
+
+# The process reads code and its configuration, and writes only its state directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=remo-ai-gateway
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/remo-ai-gateway
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

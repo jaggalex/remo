@@ -75,6 +75,36 @@ Metrics are never written to the rooms database.
 
 Without a key tasks finish with `AI_NOT_CONFIGURED`; the rest of the product works.
 
+## AI gateway
+
+The gateway is a separate service: sync talks to it, and only it reaches providers. The sync variables:
+
+| Variable | What it sets | Without it |
+|---|---|---|
+| `REMO_AI_GATEWAY_URL` | gateway address; setting it turns gateway mode on | direct provider calls |
+| `REMO_AI_GATEWAY_TOKEN` | shared secret of sync and the gateway, 32 bytes | agents report that AI is not configured; there is no direct bypass |
+| `REMO_AI_GATEWAY_CA` | PEM of the gateway certificate | the certificate is checked against the usual trust store; a self-signed one fails |
+| `REMO_AI_GATEWAY_TIMEOUT_MS` | timeout of a gateway request | `REMO_AI_TIMEOUT_MS + 5000` |
+| `REMO_AI_REGION` | `ru` or `eu`; the value travels in `X-Remo-Region` | the header is not sent and region rules come from the gateway configuration |
+
+Gateway mode fails closed: when the gateway is down, a task never goes to the provider directly. `REMO_AI_API_KEY` is not needed in this mode when the installation key lives in the gateway.
+
+`REMO_AI_GATEWAY_CA` is a multi-line PEM. In Compose put it in a quoted `env_file` value; a systemd `EnvironmentFile` does not support multi-line values, so start sync through a wrapper that reads the certificate file and exports the variable before `exec`.
+
+The gateway's own variables:
+
+| Variable | What it sets | Without it |
+|---|---|---|
+| `GATEWAY_TOKEN` | shared secret with sync | the service does not start |
+| `GATEWAY_ADMIN_TOKEN_FILE` | file with the management token for `remo-gw` | `/etc/remo-ai-gateway/admin.token` |
+| `GATEWAY_CONFIG` | provider registry file | `/etc/remo-ai-gateway/config.json` |
+| `GATEWAY_STATE_DIR` | state and log directory | `/var/lib/remo-ai-gateway` |
+| `GATEWAY_METRICS_TOKEN` | token for `/metrics` | `/metrics` answers 404 |
+| `GATEWAY_TLS_CERT`, `GATEWAY_TLS_KEY` | certificate and key PEM | plain HTTP inside the tunnel |
+| names from `keyEnv` | installation provider keys, for example `OPENROUTER_KEY` | a provider without a user key refuses the call |
+
+Sync pins the gateway certificate through `REMO_AI_GATEWAY_CA`. If the certificate is issued by a public CA, the variable can be omitted.
+
 ## Files and images
 
 | Variable | What it sets | When unset |

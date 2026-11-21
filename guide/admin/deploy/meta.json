@@ -8,8 +8,8 @@
     "en": "Deploy remo on a server"
   },
   "summary": {
-    "ru": "Один сервер, один процесс: пакеты, база, окружение, сборка, systemd, nginx, почта и проверка.",
-    "en": "One server, one process: packages, database, environment, build, systemd, nginx, mail and a check."
+    "ru": "Один сервер, один процесс: пакеты, база, окружение, сборка, systemd, nginx, почта, необязательный шлюз ИИ и проверка.",
+    "en": "One server, one process: packages, database, environment, build, systemd, nginx, mail, the optional AI gateway and a check."
   },
   "related": [
     "admin/security",
@@ -17,11 +17,11 @@
     "admin/backup-restore",
     "support/migrations"
   ],
-  "updated": "2026-11-20",
+  "updated": "2026-11-21",
   "translations": {
     "en": {
-      "sourceHash": "sha256:5b1c90582317ab791fa0856f303418dc339d7b22df04c02e3a8a9ad09e4ea876",
-      "targetHash": "sha256:e7c26ddea7324fa6bb5ad65739078334fc30eacfb22d0faa4f80d91b1b8ed009"
+      "sourceHash": "sha256:b141058f0c949b340027b5e8b1239940d4e12d27e3576c7e43aa2c4a204caca1",
+      "targetHash": "sha256:bfc56031db1a0f6a4d0874062601fcde04a7fde59b89555fe1fd18c7f7443725"
     }
   }
 }
