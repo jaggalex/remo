@@ -38,6 +38,7 @@ Input: three sticky notes and one frame. Action: drag the sticky notes inside th
 
 - [/guide/start/first-scenario](/guide/start/first-scenario) — assemble a planning room.
 - [/guide/how-to/build-board](/guide/how-to/build-board) — build a room step by step.
+- [/guide/how-to/add-image](/guide/how-to/add-image) — add a picture, replace it and download the original.
 - [/guide/concepts/colors](/guide/concepts/colors) — the palette and keys 1–7.
 - [/guide/how-to/export-backup](/guide/how-to/export-backup) — take the result out.
 

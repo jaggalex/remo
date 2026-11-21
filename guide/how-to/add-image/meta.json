@@ -1,0 +1,26 @@
+{
+  "id": "how-to/add-image",
+  "type": "how-to",
+  "status": "available",
+  "order": 7,
+  "title": {
+    "ru": "Добавить изображение",
+    "en": "Add an image"
+  },
+  "summary": {
+    "ru": "Загрузить картинку кнопкой, перетаскиванием или вставкой, заменить и описать её, открыть лайтбокс и скачать оригинал.",
+    "en": "Upload a picture with the button, by dragging or by pasting, replace and describe it, open the lightbox and download the original."
+  },
+  "related": [
+    "capabilities/canvas",
+    "reference/limits",
+    "how-to/export-backup"
+  ],
+  "updated": "2026-11-20",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:81a5c56c31a089cff579c3a3d2cad8fd69b4b091925e887177d3cba2571fd3c5",
+      "targetHash": "sha256:867b34d4abb9c94c0213a84d7bed599ad3d11b53b8373ccd674100b1944b4aec"
+    }
+  }
+}

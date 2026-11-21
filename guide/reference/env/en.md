@@ -75,6 +75,25 @@ Metrics are never written to the rooms database.
 
 Without a key tasks finish with `AI_NOT_CONFIGURED`; the rest of the product works.
 
+## Files and images
+
+| Variable | What it sets | When unset |
+|---|---|---|
+| `REMO_FILES_DRIVER` | where files live: `disk` or `s3` | `disk` |
+| `REMO_FILES_DIR` | directory of the disk store | `REMO_DATA_DIR/files` |
+| `REMO_FILES_MAX_BYTES` | limit of one file in bytes | 20 MB |
+| `REMO_FILES_MAX_PIXELS` | limit of decoded pixels in one image | 50,000,000 |
+| `REMO_FILES_PER_ROOM` | images in one room | 500 |
+| `REMO_FILES_CONCURRENCY` | images processed at the same time | 2 |
+| `REMO_FILES_QUEUE` | waiting jobs; beyond it the answer is `503 SERVER_BUSY` | 16 |
+| `REMO_S3_ENDPOINT` | address of the S3-compatible service, `http://` or `https://` | the service does not start with `REMO_FILES_DRIVER=s3` |
+| `REMO_S3_BUCKET` | the private bucket | the service does not start with `s3` |
+| `REMO_S3_REGION` | bucket region | `us-east-1` |
+| `REMO_S3_ACCESS_KEY_ID`, `REMO_S3_SECRET_ACCESS_KEY` | bucket access key | the service does not start with `s3` |
+| `REMO_S3_FORCE_PATH_STYLE` | `1` for MinIO and services without subdomains | off |
+
+Keys in the bucket are built only from identifiers: `orgs/{org}/files/{file}/{variant}`. A user's file name never reaches a key. The bucket must be private: only sync serves the files through `/files/...` after checking access to the room, and there are no public object URLs. For Yandex Object Storage set `REMO_S3_ENDPOINT=https://storage.yandexcloud.net`, the region and a service account key. Without S3, images work on disk.
+
 ## Proxy and limits
 
 | Variable | What it sets |

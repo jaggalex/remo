@@ -202,6 +202,9 @@ export const enWork = {
   "export.importVersion": "This backup was made by a newer remo version.",
   "export.importChecksum": "The file is damaged or was edited: its checksum does not match.",
   "export.importShape": "The backup is missing the room data it declares.",
+  "export.importFailed": "The room could not be restored: the server refused the backup. Nothing changed.",
+  "export.importTooLarge": "This backup with images is over the import limit. Use a backup without images.",
+  "export.importBadImage": "One picture in the backup is damaged or unsupported. Nothing changed.",
   "export.importDone": "The room was restored from the backup.",
   "export.backupTooLarge":
     "The room is over 200 MiB with its pictures, so a full backup is not available. A backup without images keeps every object and restores them as placeholders.",

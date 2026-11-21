@@ -7,15 +7,28 @@
  */
 import { randomUUID } from "node:crypto";
 import { featureLimit, planFeatureResponse } from "./billing-guard.mjs";
-import { readJsonBody } from "./http-body.mjs";
-import { buildBoardBackup } from "./backup.mjs";
-import { BackupTooLarge, collectBackupAssets } from "./backup-assets.mjs";
+import { readJsonBody, readJsonBodyResult } from "./http-body.mjs";
+import { buildBoardBackup, verifyBoardBackup } from "./backup.mjs";
+import { BACKUP_ASSET_LIMIT, BackupTooLarge, collectBackupAssets } from "./backup-assets.mjs";
+import { applyBoardBackup, assetOutcome } from "./backup-restore.mjs";
 import { Y } from "./y.mjs";
+
+/**
+ * The request body of a backup with images (§5.3).
+ *
+ * The 200 MiB ceiling is measured on the bytes themselves, and base64 adds a third:
+ * 200 MiB becomes ~267 MiB inside the JSON. The slack covers the rest of the bundle
+ * (widgets, comments, the manifest) without becoming a second, larger limit.
+ */
+export const BACKUP_IMPORT_BODY_LIMIT =
+  Math.ceil((BACKUP_ASSET_LIMIT * 4) / 3) + 16 * 1024 * 1024;
 
 export function createExportRoutes({
   store,
   docs,
   files,
+  getDocument = (boardId) => docs.get(boardId),
+  ingestImage = null,
   sessionFromRequest,
   accessForBoard,
   linkUnlockToken,
@@ -72,12 +85,15 @@ export function createExportRoutes({
       /^\/boards\/([^/]+)\/export-jobs\/([^/]+)\/complete$/,
     );
     const backupMatch = url.pathname.match(/^\/boards\/([^/]+)\/backup$/);
-    if (!jobMatch && !completeMatch && !backupMatch) return false;
+    const importMatch = url.pathname.match(/^\/boards\/([^/]+)\/backup\/import$/);
+    if (!jobMatch && !completeMatch && !backupMatch && !importMatch) return false;
     // Disk mode is a development fallback without IAM; there is no role to check an
     // export grant against, so the route does not exist there.
     if (typeof store.accessFacts !== "function") return false;
 
-    const boardId = decodeURIComponent((jobMatch ?? completeMatch ?? backupMatch)[1]);
+    const boardId = decodeURIComponent(
+      (jobMatch ?? completeMatch ?? backupMatch ?? importMatch)[1],
+    );
     const access = await boardAccessForRequest(request, boardId);
     if (!access) {
       response.writeHead(404, { "Content-Type": "application/json" });
@@ -165,6 +181,174 @@ export function createExportRoutes({
         "Content-Disposition": backupDisposition(title),
       });
       response.end(body);
+      return true;
+    }
+
+    if (importMatch && request.method === "POST") {
+      if (!access.resolved.access.capabilities.includes("board.edit")) {
+        response.writeHead(403, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ error: "FORBIDDEN" }));
+        return true;
+      }
+      const userId = actorId;
+      if (!userId) {
+        response.writeHead(403, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ error: "ACCOUNT_REQUIRED" }));
+        return true;
+      }
+      if (!ingestImage) {
+        response.writeHead(501, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ error: "FILES_UNAVAILABLE" }));
+        return true;
+      }
+
+      const body = await readJsonBodyResult(request, BACKUP_IMPORT_BODY_LIMIT);
+      if (!body.ok) {
+        const status = body.error === "TOO_LARGE" ? 413 : 422;
+        response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(
+          JSON.stringify({
+            error: body.error,
+            message:
+              body.error === "TOO_LARGE"
+                ? "this backup exceeds the import limit; use a backup without images"
+                : "the request is not a JSON backup",
+          }),
+        );
+        return true;
+      }
+      const bundle = body.value;
+      // The checksum is verified on the server too: the browser's check protects the
+      // person who chose the file, this one protects the room from any other caller.
+      if (!verifyBoardBackup(bundle)) {
+        response.writeHead(422, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ error: "BAD_BACKUP" }));
+        return true;
+      }
+
+      // Assets with bytes become rows in the target organisation through the upload
+      // pipeline (§4.2); the imports keep their new ids. An asset without `data` keeps
+      // the old id and shows the unavailable placeholder (§9.6).
+      const fileIds = new Map();
+      for (const asset of Array.isArray(bundle.assets) ? bundle.assets : []) {
+        if (typeof asset?.data !== "string" || !asset.data) continue;
+        if (typeof asset.fileId !== "string" || !asset.fileId) continue;
+        let ingested;
+        try {
+          ingested = await ingestImage({
+            orgId,
+            boardId,
+            userId,
+            buffer: Buffer.from(asset.data, "base64"),
+            // The backup does not carry the user's file name; the type is what the
+            // pipeline reads from the bytes anyway.
+            filename: "image",
+            // The room is replaced, not added to: its old pictures are removed by the
+            // same operation, so the per-room count starts from the backup itself.
+            roomImages: false,
+          });
+        } catch (error) {
+          if (error?.code === "PLAN_LIMIT" && error.problem) {
+            planLimitResponse(response, error.problem);
+            return true;
+          }
+          const status =
+            error?.code === "too_large" || error?.code === "too_many_pixels"
+              ? 413
+              : error?.code === "bad_type"
+                ? 415
+                : error?.code === "busy"
+                  ? 503
+                  : 500;
+          response.writeHead(status, { "Content-Type": "application/json" });
+          response.end(
+            JSON.stringify({
+              error:
+                status === 413
+                  ? "TOO_LARGE"
+                  : status === 415
+                    ? "BAD_TYPE"
+                    : status === 503
+                      ? "SERVER_BUSY"
+                      : "IMPORT_FAILED",
+              message: "one image in this backup could not be stored",
+            }),
+          );
+          return true;
+        }
+        fileIds.set(asset.fileId, ingested.row.id);
+        await store.recordAudit?.({
+          actorId,
+          orgId,
+          boardId,
+          action: "file.imported",
+          subject: ingested.row.id,
+          after: { sourceFileId: asset.fileId, bytes: ingested.bytes },
+        });
+      }
+
+      // One document replacement, the same result the browser import produced before
+      // pictures moved to the server (ADR-071, ADR-249 §5.3).
+      const doc = await getDocument(boardId);
+      if (!doc) {
+        response.writeHead(404, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ error: "RESOURCE_NOT_AVAILABLE" }));
+        return true;
+      }
+      const applied = applyBoardBackup(doc, bundle, { fileIds });
+      const persisted = await store.flushRoom?.(boardId);
+      if (store.flushRoom && !persisted) {
+        response.writeHead(503, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ error: "NOT_PERSISTED" }));
+        return true;
+      }
+
+      // A discussion is separately governed (`board.manage`, ADR-161): an editor may
+      // replace the document, but an import must not become a way to erase comments.
+      const canManage = access.resolved.access.capabilities.includes("board.manage");
+      if (canManage && Array.isArray(bundle.comments)) {
+        await store.replaceCommentsFromBackup?.(boardId, bundle.comments);
+        await store.recordAudit?.({
+          actorId,
+          orgId,
+          boardId,
+          action: "comment.restored",
+          after: { threads: bundle.comments.length },
+        });
+      }
+
+      const outcome = assetOutcome(bundle);
+      await store.recordAudit?.({
+        actorId,
+        orgId,
+        boardId,
+        action: "board.imported",
+        subject: "backup",
+        after: {
+          version: bundle.manifest.version,
+          widgets: applied.widgets,
+          assets: outcome.restored,
+          placeholders: outcome.placeholders,
+          comments: canManage && Array.isArray(bundle.comments),
+        },
+      });
+      emitMetric({
+        name: "board.imported",
+        orgId,
+        actorId,
+        boardId,
+        props: { assets: outcome.restored, placeholders: outcome.placeholders },
+      });
+      response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(
+        JSON.stringify({
+          imported: {
+            widgets: applied.widgets,
+            assets: outcome.restored,
+            placeholders: outcome.placeholders,
+          },
+        }),
+      );
       return true;
     }
 

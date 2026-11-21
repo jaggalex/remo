@@ -38,6 +38,7 @@
 
 - [/guide/start/first-scenario](/guide/start/first-scenario) — собрать комнату планирования.
 - [/guide/how-to/build-board](/guide/how-to/build-board) — собрать комнату по шагам.
+- [/guide/how-to/add-image](/guide/how-to/add-image) — добавить картинку, заменить её и скачать оригинал.
 - [/guide/concepts/colors](/guide/concepts/colors) — палитра и клавиши 1–7.
 - [/guide/how-to/export-backup](/guide/how-to/export-backup) — вынести результат.
 

@@ -22,6 +22,7 @@
   "sync.status": "concepts/sync",
   "rooms.create": "how-to/create-board",
   "cards.fields": "how-to/card-fields",
+  "canvas.image": "how-to/add-image",
   "tags.links": "how-to/tags-links",
   "presentation.mode": "how-to/present",
   "comments.thread": "how-to/comment",

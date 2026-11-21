@@ -23,6 +23,17 @@
 | Account name | 1 to 80 characters |
 | Account handle | 3 to 32 characters; Latin letters, digits, `.`, `-`, `_`; reserved words are taken |
 
+## Images
+
+| What | Value |
+|---|---|
+| Formats | PNG, JPEG, WebP, GIF, AVIF; SVG and HEIC are not accepted |
+| Size of one file | 20 MB |
+| Images in a room | 500 |
+| Screen variants | 256, 1024 and 2048 px on the long side |
+| Room backup with images | 200 MiB; larger rooms get a backup without images |
+| Organisation storage | the plan quota when billing is on; otherwise no limit |
+
 ## Access and links
 
 | What | Value |

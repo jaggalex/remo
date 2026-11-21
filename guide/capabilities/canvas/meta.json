@@ -14,14 +14,15 @@
   "related": [
     "concepts/board",
     "start/first-scenario",
+    "how-to/add-image",
     "how-to/export-backup",
     "capabilities/export"
   ],
   "updated": "2026-11-16",
   "translations": {
     "en": {
-      "sourceHash": "sha256:c77782d911a4022a4e22e8e5a89df70e7feef31854a06ba1806690d449e9573a",
-      "targetHash": "sha256:bff472e14b3766a2249bea0e5cb37200a4efc450d908f18fc62c487b3c38fc53"
+      "sourceHash": "sha256:ea28c768c5bf6d63b6c2bcfb023a5cee90b483365a920d75db3cf2a0c86cd5f9",
+      "targetHash": "sha256:74bfd5864f164692010b5eeeddf3f803013af65e9ecd535e932d98ed9ed2204b"
     }
   }
 }

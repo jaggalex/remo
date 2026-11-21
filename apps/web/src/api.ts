@@ -6,6 +6,7 @@
  * JavaScript to hold (ADR-062).
  */
 
+import { backupApi } from "./apiBackup";
 import { ApiError, call } from "./apiCall";
 import { roomAgentApi } from "./roomAgentApi";
 import { backupFilename } from "./backupFormat";
@@ -266,7 +267,7 @@ export interface AuditEvent {
   reason: string | null;
 }
 
-export const api = { ...roomAgentApi,
+export const api = { ...roomAgentApi, ...backupApi,
   me: () =>
     call<{ user: SessionUser; orgs: OrgSummary[]; csrfToken?: string | null }>("/auth/me"),
   register: (body: { email: string; password: string; name: string }) =>

@@ -211,17 +211,8 @@ store.onPersisted = saveAcks.flushSaveAcks;
 // and one route module that owns the ceiling, the quota and the access checks.
 const fileStore = await createFileStore();
 
-const exports = createExportRoutes({
-  store,
-  docs,
-  // A backup embeds the originals (§5.3), so the export route reads the same store.
-  files: fileStore,
-  sessionFromRequest,
-  accessForBoard,
-  linkUnlockToken,
-  emitMetric,
-});
-
+// The image API comes first: a backup import stores its pictures through the same
+// pipeline, so the export routes receive that function instead of a second copy.
 const files = createFilesApi({
   store,
   files: fileStore,
@@ -232,6 +223,21 @@ const files = createFilesApi({
   accessForBoard,
   linkUnlockToken,
   log: console,
+});
+
+const exports = createExportRoutes({
+  store,
+  docs,
+  // A backup embeds the originals (§5.3), so the export route reads the same store.
+  files: fileStore,
+  // The live room document, for the one write the import performs.
+  getDocument: async (boardId) =>
+    typeof store.roomDocument === "function" ? store.roomDocument(boardId) : docs.get(boardId),
+  ingestImage: files.ingestImage,
+  sessionFromRequest,
+  accessForBoard,
+  linkUnlockToken,
+  emitMetric,
 });
 
 // A file no image widget points at waits a month before the collector removes it

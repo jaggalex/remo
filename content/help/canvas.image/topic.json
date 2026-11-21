@@ -1,0 +1,25 @@
+{
+  "id": "canvas.image",
+  "type": "how-to",
+  "title": {
+    "ru": "Добавить изображение на холст",
+    "en": "Add an image to the canvas"
+  },
+  "summary": {
+    "ru": "Загрузка, перетаскивание и вставка, замена и описание, просмотр и скачивание оригинала, предел хранилища.",
+    "en": "Upload, drag and paste, replace and describe, view and download the original, and the storage limit."
+  },
+  "related": [
+    "export.backup",
+    "objects.lock"
+  ],
+  "verifiedAgainst": "2026-11-20",
+  "audience": "public",
+  "sourceLocale": "ru",
+  "translations": {
+    "en": {
+      "sourceHash": "sha256:80d15c3abe024cb31241e0e600c0bee826168f3bcee6ce3b61b46d6d407b7133",
+      "targetHash": "sha256:13c1538b514edcdcbdd17218c82d6910965557b9f08d8066ad7dd1fbe2681fed"
+    }
+  }
+}

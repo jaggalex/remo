@@ -9,7 +9,12 @@ import { Button, Checkbox, Dialog } from "@remo/ui";
 import { api, ApiError } from "./api";
 import { planLimitFrom, type PlanLimitNotice } from "./apiBilling";
 import { PlanNotice } from "./PlanNotice";
-import { backupToBoard, BackupError, verifyBoardBackup } from "./backupFormat";
+import {
+  backupToBoard,
+  BackupError,
+  verifyBoardBackup,
+  type BoardBackup,
+} from "./backupFormat";
 import { commentsApi, type BackupCommentThread, type CommentThread } from "./commentsApi";
 import { canvasPaletteFromTokens } from "./canvasPalette";
 import {
@@ -30,11 +35,17 @@ type Status = "idle" | "running" | "done" | "error";
 
 interface PendingImport {
   filename: string;
-  board: Board;
-  kanbanStates: Record<string, KanbanState>;
-  textDeltas: Record<string, TextDeltaOp[]>;
-  comments: BackupCommentThread[];
   objects: number;
+  /**
+   * A version 3 backup with an `assets` section is restored by the server, which owns
+   * the file pipeline and the `fileId` rewrite. Versions without it keep the client
+   * path: there is nothing to upload, so the old mechanism is still the right one.
+   */
+  bundle?: BoardBackup;
+  board?: Board;
+  kanbanStates?: Record<string, KanbanState>;
+  textDeltas?: Record<string, TextDeltaOp[]>;
+  comments?: BackupCommentThread[];
 }
 
 /**
@@ -299,13 +310,19 @@ export function ExportDialog({
       const parsed = JSON.parse(await file.text()) as unknown;
       const bundle = await verifyBoardBackup(parsed);
       const { board: model, kanbanStates: states, textDeltas, comments } = backupToBoard(bundle);
+      // `assets` present (even empty) is the version 3 shape: the server restores it.
+      const server = Array.isArray(bundle.assets);
       setPendingImport({
         filename: file.name,
-        board: model,
-        kanbanStates: states,
-        textDeltas,
-        comments: comments as BackupCommentThread[],
         objects: model.widgets.length,
+        ...(server
+          ? { bundle }
+          : {
+              board: model,
+              kanbanStates: states,
+              textDeltas,
+              comments: comments as BackupCommentThread[],
+            }),
       });
     } catch (failure) {
       setPendingImport(null);
@@ -325,12 +342,40 @@ export function ExportDialog({
     }
   };
 
+  const importFailureText = (failure: unknown) => {
+    const code = failure instanceof ApiError ? failure.code : "";
+    if (code === "TOO_LARGE") return t("export.importTooLarge");
+    if (code === "BAD_TYPE") return t("export.importBadImage");
+    return t("export.importFailed");
+  };
+
   const confirmImport = async () => {
     if (!pendingImport) return;
     setImportBusy(true);
     setImportError(null);
-    loadBoard(board, pendingImport.board, pendingImport.kanbanStates);
-    for (const [id, delta] of Object.entries(pendingImport.textDeltas)) {
+
+    if (pendingImport.bundle) {
+      // Pictures are not document state: the server stores their bytes, rewrites every
+      // `fileId`, applies the document and restores the discussion in one request.
+      try {
+        await api.importBackup(boardId, pendingImport.bundle);
+      } catch (failure) {
+        const notice = planLimitFrom(failure);
+        if (notice) setPlanLimit(notice);
+        setImportError(importFailureText(failure));
+        setImportBusy(false);
+        return;
+      }
+      setPendingImport(null);
+      setImportBusy(false);
+      onImported();
+      return;
+    }
+
+    // A version 1 or 2 backup has no `assets` section and therefore no bytes: the local
+    // replacement is still the whole operation.
+    loadBoard(board, pendingImport.board!, pendingImport.kanbanStates!);
+    for (const [id, delta] of Object.entries(pendingImport.textDeltas ?? {})) {
       setWidgetDelta(board, id, delta);
     }
     board.undo.clear();

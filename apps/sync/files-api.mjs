@@ -167,6 +167,22 @@ function altField(value) {
   return typeof value === "string" ? value.slice(0, 500) : "";
 }
 
+/**
+ * The quota refused an upload (§4.1 step 5, §7).
+ *
+ * It is an exception rather than a `null` so the one ingestion path can be used both by
+ * the upload route and by a backup import, and the caller still receives the numbers the
+ * `402` body needs.
+ */
+export class QuotaExceeded extends Error {
+  constructor(problem) {
+    super("the storage quota does not allow this image");
+    this.name = "QuotaExceeded";
+    this.code = "PLAN_LIMIT";
+    this.problem = problem;
+  }
+}
+
 export function createFilesApi({
   store,
   files,
@@ -251,6 +267,112 @@ export function createFilesApi({
     }
   }
 
+  /**
+   * One image through the whole pipeline (§4.2): signature, size, quota, decode,
+   * variants, storage, row.
+   *
+   * The upload route and the backup import both end here. A backup asset is exactly an
+   * upload with no file field: skipping a step here would let a restored room carry a
+   * picture no upload could ever have produced.
+   */
+  async function ingestImage({
+    orgId,
+    boardId,
+    userId,
+    buffer,
+    filename = "image",
+    roomImages = true,
+  }) {
+    // The upload route's multipart reader applies the same ceiling; an import arrives as
+    // JSON and must check it per asset before a decode.
+    if (buffer.length > maxBytes) {
+      const error = new Error("the image exceeds the size limit");
+      error.code = "too_large";
+      throw error;
+    }
+    // The signature, never the name or the browser's Content-Type.
+    const mime = detectImageType(buffer, filename);
+
+    // The quota is asked before the decode, as the order in §4.1 says. `stored_bytes` is
+    // larger than the original; the difference is bounded by the variants of the same
+    // picture, so the check stays honest at the limit.
+    const problem = await quotaProblem(orgId, boardId, buffer.length, { roomImages });
+    if (problem) throw new QuotaExceeded(problem);
+
+    const processed = await filesQueue.withSlot(() => processImage(buffer, { maxPixels }));
+
+    const fileId = randomUUID();
+    const variants = {};
+    let storedBytes = processed.bytes;
+    for (const [name, entry] of Object.entries(processed.variants)) {
+      variants[name] = {
+        w: entry.w,
+        h: entry.h,
+        bytes: entry.bytes,
+        // The read route answers an ETag; the original's sha256 covers its bytes, each
+        // variant needs its own.
+        sha256: createHash("sha256").update(entry.buffer).digest("hex"),
+      };
+      storedBytes += entry.bytes;
+    }
+
+    try {
+      await files.put(fileKey(orgId, fileId, "original"), buffer, {
+        contentType: mime,
+      });
+      for (const [name, entry] of Object.entries(processed.variants)) {
+        await files.put(fileKey(orgId, fileId, name), entry.buffer, {
+          contentType: "image/webp",
+        });
+      }
+    } catch (error) {
+      await removeFiles(orgId, fileId);
+      throw error;
+    }
+
+    let row;
+    try {
+      row = await store.createFile({
+        id: fileId,
+        orgId,
+        boardId,
+        uploadedBy: userId,
+        sha256: processed.sha256,
+        mime,
+        bytes: processed.bytes,
+        storedBytes,
+        width: processed.width,
+        height: processed.height,
+        dominantColor: processed.dominantColor,
+        variants,
+        originalName: originalName(filename),
+      });
+    } catch (error) {
+      await removeFiles(orgId, fileId);
+      throw error;
+    }
+    if (!row) {
+      await removeFiles(orgId, fileId);
+      const error = new Error("the image could not be recorded");
+      error.code = "not_recorded";
+      throw error;
+    }
+    // The same bytes already have a ready row in this organisation (§3.1): the existing
+    // id is reused and the keys written for the rejected id are removed.
+    if (row.id !== fileId) await removeFiles(orgId, fileId);
+    return {
+      row,
+      // The id this upload asked the store for, not the deduplicated row id: it names
+      // one attempt and is what the command's idempotency key must use.
+      uploadId: fileId,
+      mime,
+      bytes: processed.bytes,
+      width: processed.width,
+      height: processed.height,
+      dominantColor: processed.dominantColor,
+    };
+  }
+
   async function handleUpload(request, response, boardId) {
     if (request.method !== "POST") {
       return fail(response, 405, "METHOD_NOT_ALLOWED", "use POST");
@@ -289,97 +411,27 @@ export function createFilesApi({
     const replaceId =
       typeof parsed.fields.replace === "string" ? parsed.fields.replace.slice(0, 200) : "";
 
-    let mime;
+    let ingested;
     try {
-      // The signature, never the name or the browser's Content-Type.
-      mime = detectImageType(parsed.file.buffer, parsed.file.filename);
-    } catch (error) {
-      upload(uploadResult(error));
-      return filesProblem(response, error, log);
-    }
-
-    // The quota is asked before the decode, as the order in §4.1 says. `stored_bytes` is
-    // larger than the original; the difference is bounded by the variants of the same
-    // picture, so the check stays honest at the limit.
-    const problem = await quotaProblem(orgId, boardId, parsed.file.buffer.length, {
-      roomImages: !replaceId,
-    });
-    if (problem) {
-      upload("quota");
-      return planLimitResponse(response, problem);
-    }
-
-    let processed;
-    try {
-      processed = await filesQueue.withSlot(() => processImage(parsed.file.buffer, { maxPixels }));
-    } catch (error) {
-      upload(uploadResult(error));
-      return filesProblem(response, error, log);
-    }
-
-    const fileId = randomUUID();
-    const variants = {};
-    let storedBytes = processed.bytes;
-    for (const [name, entry] of Object.entries(processed.variants)) {
-      variants[name] = {
-        w: entry.w,
-        h: entry.h,
-        bytes: entry.bytes,
-        // The read route answers an ETag; the original's sha256 covers its bytes, each
-        // variant needs its own.
-        sha256: createHash("sha256").update(entry.buffer).digest("hex"),
-      };
-      storedBytes += entry.bytes;
-    }
-
-    try {
-      await files.put(fileKey(orgId, fileId, "original"), parsed.file.buffer, {
-        contentType: mime,
-      });
-      for (const [name, entry] of Object.entries(processed.variants)) {
-        await files.put(fileKey(orgId, fileId, name), entry.buffer, {
-          contentType: "image/webp",
-        });
-      }
-    } catch (error) {
-      await removeFiles(orgId, fileId);
-      upload("error");
-      return filesProblem(response, error, log);
-    }
-
-    const name = originalName(parsed.file.filename);
-    let row;
-    try {
-      row = await store.createFile({
-        id: fileId,
+      ingested = await ingestImage({
         orgId,
         boardId,
-        uploadedBy: userId,
-        sha256: processed.sha256,
-        mime,
-        bytes: processed.bytes,
-        storedBytes,
-        width: processed.width,
-        height: processed.height,
-        dominantColor: processed.dominantColor,
-        variants,
-        originalName: name,
+        userId,
+        buffer: parsed.file.buffer,
+        filename: parsed.file.filename,
+        roomImages: !replaceId,
       });
     } catch (error) {
-      await removeFiles(orgId, fileId);
-      upload("error");
+      if (error instanceof QuotaExceeded) {
+        upload("quota");
+        return planLimitResponse(response, error.problem);
+      }
+      upload(uploadResult(error));
       return filesProblem(response, error, log);
     }
-    if (!row) {
-      await removeFiles(orgId, fileId);
-      upload("error");
-      return fail(response, 500, "FILES_FAILED", "the image could not be recorded");
-    }
-    // The same bytes already have a ready row in this organisation (§3.1): the existing
-    // id is reused and the keys written for the rejected id are removed.
-    if (row.id !== fileId) await removeFiles(orgId, fileId);
+    const { row, uploadId, mime, bytes, width, height, dominantColor } = ingested;
 
-    const size = fitImage(processed.width, processed.height);
+    const size = fitImage(width, height);
     const actor = { type: "user", id: userId, name: access.session.user.name ?? null };
     // A replacement ends in `board.image.replace`, not in a second object that the client
     // would have to delete (§5.3). Everything else still creates its object here (§5.1).
@@ -398,9 +450,9 @@ export function createFilesApi({
           ? { boardId, widgetId: replaceId, fileId: row.id }
           : {
               fileId: row.id,
-              naturalWidth: processed.width,
-              naturalHeight: processed.height,
-              dominantColor: processed.dominantColor,
+              naturalWidth: width,
+              naturalHeight: height,
+              dominantColor,
               alt: altField(parsed.fields.alt),
               x: numberField(parsed.fields.x),
               y: numberField(parsed.fields.y),
@@ -409,7 +461,7 @@ export function createFilesApi({
             },
         // The upload's own id, not the deduplicated file id: two deliberate uploads of
         // one picture are two objects, while a retried request replays one.
-        idempotencyKey: `${replaceId ? "replace" : "upload"}:${fileId}`,
+        idempotencyKey: `${replaceId ? "replace" : "upload"}:${uploadId}`,
         capabilities: access.resolved.access.capabilities,
         getDocument,
       });
@@ -425,7 +477,7 @@ export function createFilesApi({
       boardId,
       action: "file.uploaded",
       subject: row.id,
-      after: { bytes: processed.bytes, mime },
+      after: { bytes, mime },
     });
     await audit({
       actorId,
@@ -684,5 +736,7 @@ export function createFilesApi({
     return true;
   }
 
-  return { handleFilesRoutes };
+  // A backup import stores its pictures through the same pipeline; the export route gets
+  // this function rather than a second copy of the upload steps.
+  return { handleFilesRoutes, ingestImage };
 }

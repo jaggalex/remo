@@ -6,6 +6,7 @@ import {
   usedImageFiles,
   verifyBoardBackup,
 } from "./backup.mjs";
+import { applyBoardBackup, assetOutcome } from "./backup-restore.mjs";
 
 function fixture() {
   const doc = new Y.Doc();
@@ -183,6 +184,65 @@ describe("board backup (ADR-071)", () => {
       columnId: "col-1",
     });
     expect(verifyBoardBackup(JSON.parse(JSON.stringify(backup)))).toBe(true);
+  });
+
+  it("rebuilds the document and rewrites only the images it restored", () => {
+    const source = new Y.Doc();
+    const image = new Y.Map();
+    image.set("id", "img-1");
+    image.set("type", "image");
+    image.set("fileId", "file-1");
+    image.set("width", 480);
+    image.set("height", 320);
+    source.getMap("widgets").set("img-1", image);
+    const broken = new Y.Map();
+    broken.set("id", "img-2");
+    broken.set("type", "image");
+    broken.set("fileId", "file-2");
+    source.getMap("widgets").set("img-2", broken);
+    const note = new Y.Text();
+    note.insert(0, "kept");
+    source.getMap("texts").set("img-1", note);
+    const kanban = new Y.Map();
+    kanban.set("newColumnWidth", 500);
+    kanban.set("headerHeight", 96);
+    const column = new Y.Map();
+    column.set("id", "col-1");
+    column.set("title", "Now");
+    column.set("accent", "#9ca3af");
+    column.set("width", 500);
+    const columns = new Y.Array();
+    columns.push([column]);
+    kanban.set("columns", columns);
+    kanban.set("swimlanes", new Y.Array());
+    kanban.set("cards", new Y.Map());
+    source.getMap("kanbans").set("kb-1", kanban);
+    const state = Y.encodeStateAsUpdate(source);
+    source.destroy();
+
+    const bundle = buildBoardBackup({
+      state,
+      boardId: "board-1",
+      title: "Restored",
+      assets: [
+        { fileId: "file-1", sha256: "a".repeat(64), mime: "image/png", width: 1, height: 1, data: "AAAA" },
+        { fileId: "file-2", sha256: "b".repeat(64), mime: "image/png", width: 1, height: 1 },
+      ],
+    });
+    expect(verifyBoardBackup(JSON.parse(JSON.stringify(bundle)))).toBe(true);
+    expect(assetOutcome(bundle)).toEqual({ restored: 1, placeholders: 1 });
+
+    const target = new Y.Doc();
+    applyBoardBackup(target, bundle, { fileIds: new Map([["file-1", "new-1"]]) });
+    const widgets = target.getMap("widgets").toJSON();
+    // The restored picture is the new row; the one without bytes keeps the id the
+    // target organisation cannot resolve, which is what shows the placeholder.
+    expect(widgets["img-1"].fileId).toBe("new-1");
+    expect(widgets["img-2"].fileId).toBe("file-2");
+    expect(target.getMap("texts").get("img-1").toString()).toBe("kept");
+    expect(target.getMap("kanbans").get("kb-1").get("columns").length).toBe(1);
+    expect(target.getMap("meta").get("title")).toBe("Restored");
+    target.destroy();
   });
 
   it("detects a changed bundle", () => {

@@ -40,14 +40,22 @@ const MAX_DIFF_PIXELS = 20;
  */
 const PIXEL_THRESHOLD = 0.03;
 
-async function capture(page: Page, target: ReturnType<Page["locator"]>, name: string, mask: ReturnType<Page["locator"]>[] = []) {
+async function capture(
+  page: Page,
+  target: ReturnType<Page["locator"]>,
+  name: string,
+  mask: ReturnType<Page["locator"]>[] = [],
+  maskAvatar = true,
+) {
   if (!linuxBrowser) return;
   // Every scenario registers a fresh account, and the avatar's colour follows the account.
+  // An overlay capture turns the mask into a pink rectangle showing through the scrim, so
+  // it can opt out; its account has a fixed name and therefore a stable avatar.
   const avatar = page.locator(".account-button");
   await expect(target).toHaveScreenshot(`${name}.png`, {
     maxDiffPixels: MAX_DIFF_PIXELS,
     threshold: PIXEL_THRESHOLD,
-    mask: [avatar, ...mask],
+    mask: [...(maskAvatar ? [avatar] : []), ...mask],
   });
 }
 
@@ -60,6 +68,46 @@ async function captureClip(
 ) {
   if (!linuxBrowser) return;
   await expect(page).toHaveScreenshot(`${name}.png`, { maxDiffPixels: MAX_DIFF_PIXELS, threshold: PIXEL_THRESHOLD, clip, mask });
+}
+
+/** A real PNG, drawn in the page: the upload checks signatures, not extensions. */
+async function makePng(page: Page, width = 900, height = 600): Promise<Buffer> {
+  const bytes = await page.evaluate(
+    async ({ width, height }) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#3366cc";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(20, 20, 120, 120);
+      ctx.fillStyle = "#f0c040";
+      ctx.fillRect(width - 160, height - 160, 100, 100);
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((value) => resolve(value!), "image/png"),
+      );
+      return Array.from(new Uint8Array(await blob.arrayBuffer()));
+    },
+    { width, height },
+  );
+  return Buffer.from(bytes);
+}
+
+/** The theme is a browser preference; the captures need both without a reload. */
+async function setTheme(page: Page, theme: "light" | "dark"): Promise<void> {
+  await page.evaluate((value) => {
+    window.localStorage.setItem("remo.theme", value);
+    document.documentElement.dataset.theme = value;
+  }, theme);
+}
+
+/** A picture through the rail, as a person adds it (`spec/images.md` §9.1). */
+async function uploadImage(page: Page, png: Buffer, name = "diagram.png"): Promise<void> {
+  const rail = page.getByRole("toolbar", { name: "Tools" });
+  const chooser = page.waitForEvent("filechooser");
+  await rail.getByRole("button", { name: "Image", exact: true }).click();
+  await (await chooser).setFiles([{ name, mimeType: "image/png", buffer: png }]);
 }
 
 function canvasPixels(page: Page) {
@@ -1047,4 +1095,183 @@ test("room access reads as one form", async ({ page }) => {
   await dialog.getByRole("button", { name: "Turn on", exact: true }).click();
   await expect(dialog.getByRole("button", { name: "Turn off", exact: true })).toBeVisible();
   await capture(page, dialog, "share", [dialog.getByRole("textbox", { name: "Public link" })]);
+});
+
+/**
+ * Pictures on a board (`spec/images.md` §9.1–§9.3, §9.5, §9.7) and the storage tab
+ * (§9.8). The captures are the evidence a reviewer looks at; the assertions keep them
+ * from becoming a screenshot of an empty state that happens to be stable.
+ */
+test("the image states are readable in both themes", async ({ page }) => {
+  // Ten captures, two of them with a held upload: the default budget is for one screen.
+  test.setTimeout(180_000);
+  const account = await register(page, "visual-images");
+  // Two notes at the edges keep the first-use card out of the captures and leave the
+  // centre free for the drop frame and the upload placeholder.
+  await seedNote(page, account.boardId, { x: -700, y: 0 });
+  await seedNote(page, account.boardId, { x: 700, y: 0 });
+  await openBoard(page, account.boardId, { template: "empty" });
+  // The first-use hint hides itself after six seconds: whether a capture caught it would
+  // depend on how fast the run got there, not on the state being reviewed.
+  await page.evaluate(() => window.localStorage.setItem("remo.canvas.hint", "seen"));
+  await openBoard(page, account.boardId, { template: "empty" });
+  const png = await makePng(page);
+
+  // The rail button, not the picker: the icon and its label are the entry point (§9.1).
+  await expect(page.getByRole("toolbar", { name: "Tools" }).getByRole("button", { name: "Image" })).toBeVisible();
+  await capture(page, page.locator(".tool-rail"), "image-rail");
+  await setTheme(page, "dark");
+  await capture(page, page.locator(".tool-rail"), "image-rail-dark");
+  await setTheme(page, "light");
+
+  // The drop frame covers the canvas and names the count (§9.2). The transfer is never
+  // released here, so the frame stays until the explicit leave.
+  await page.evaluate(() => {
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], "drop.png", { type: "image/png" }));
+    const canvas = document.querySelector<HTMLCanvasElement>(".layer.overlay")!;
+    const rect = canvas.getBoundingClientRect();
+    const options = {
+      dataTransfer: transfer,
+      bubbles: true,
+      cancelable: true,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    };
+    window.dispatchEvent(new DragEvent("dragenter", options));
+    window.dispatchEvent(new DragEvent("dragover", options));
+  });
+  await expect(page.locator(".image-drop")).toBeVisible();
+  await capture(page, page.locator(".canvas-wrap"), "image-drop");
+  await setTheme(page, "dark");
+  await capture(page, page.locator(".canvas-wrap"), "image-drop-dark");
+  await setTheme(page, "light");
+  await page.evaluate(() => window.dispatchEvent(new DragEvent("dragleave", { bubbles: true })));
+  await expect(page.locator(".image-drop")).toHaveCount(0);
+
+  // The author's placeholder while the bytes travel (§9.3). The request is held at the
+  // route so the state is captured rather than raced; the progress ring is masked
+  // because its arc moves between frames.
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let continued: () => void = () => {};
+  const settled = new Promise<void>((resolve) => {
+    continued = resolve;
+  });
+  await page.route("**/api/boards/*/files", async (route) => {
+    await gate;
+    // `unroute` may already have handled the request: releasing and unregistering are
+    // two steps, and the handler must not report that race as a test failure.
+    await route.continue().catch(() => {});
+    continued();
+  });
+  await uploadImage(page, png, "upload.png");
+  const slot = page.locator(".image-slot");
+  await expect(slot).toBeVisible();
+  // The ring's arc and percentage move with the request; the slot itself is the state.
+  const ring = page.locator(".image-slot .rm-ring");
+  await capture(page, page.locator(".canvas-wrap"), "image-upload", [ring]);
+  await setTheme(page, "dark");
+  await capture(page, page.locator(".canvas-wrap"), "image-upload-dark", [ring]);
+  await setTheme(page, "light");
+  // The object appears when the document says so, then the painter asks for a variant;
+  // a capture in between is a dominant-colour placeholder, not a picture.
+  const variantLoaded = page.waitForResponse((response) =>
+    /\/files\/[^/]+\/w(256|1024|2048)\?board=/.test(response.url()),
+  );
+  release();
+  await settled;
+  await page.unroute("**/api/boards/*/files");
+  await expect(slot).toHaveCount(0, { timeout: 20_000 });
+  await variantLoaded;
+  await page.waitForTimeout(200);
+
+  // The selected picture and its object bar (§9.5): Replace · Description · Open · More.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as unknown as { __remo?: { selectedIds?: string[] } }).__remo?.selectedIds?.length ?? 0,
+      ),
+    )
+    .toBeGreaterThan(0);
+  const bar = page.locator(".sticky-bar").filter({ has: page.getByRole("button", { name: "Replace" }) });
+  await expect(bar).toBeVisible();
+  await expect(bar.getByRole("button", { name: "Description" })).toBeVisible();
+  // Let the 2048 px variant decode, or the capture catches the dominant-colour placeholder.
+  await page.waitForTimeout(500);
+  await capture(page, page.locator(".canvas-wrap"), "image-selected");
+  await setTheme(page, "dark");
+  await capture(page, page.locator(".canvas-wrap"), "image-selected-dark");
+  await setTheme(page, "light");
+
+  // The viewer (§9.7): the picture, its size and the download action.
+  await bar.getByRole("button", { name: "Open" }).click();
+  const lightbox = page.locator(".rm-lightbox");
+  await expect(lightbox).toBeVisible();
+  const picture = lightbox.locator(".image-lightbox-picture");
+  await expect(picture).toBeVisible();
+  // A visible `<img>` can still be empty: wait for the decoded w2048 bitmap.
+  await expect
+    .poll(() => picture.evaluate((element) => (element as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  // `onLoad` fits the picture in a second render; a capture between the two is at 100 %.
+  await page.waitForTimeout(300);
+  await capture(page, lightbox, "image-lightbox", [], false);
+  await setTheme(page, "dark");
+  await capture(page, lightbox, "image-lightbox-dark", [], false);
+  await setTheme(page, "light");
+  await page.keyboard.press("Escape");
+  await expect(lightbox).toHaveCount(0);
+
+  // The room is untouched by the captures: one image object, no placeholder left behind.
+  const images = await page.evaluate(() =>
+    (window as unknown as { __remo?: { widgets?: Array<{ type: string }> } }).__remo?.widgets?.filter(
+      (widget) => widget.type === "image",
+    ).length ?? 0,
+  );
+  expect(images).toBe(1);
+  expect(account.boardId).toBeTruthy();
+});
+
+/**
+ * The organisation's storage tab (§9.8). It exists only when plans are enabled
+ * (`REMO_BILLING=on`), so the visual gate skips it in an ordinary self-host run; the
+ * baseline is produced by a billing run, which is also the installation that shows the
+ * quota bar. `pnpm baselines` covers the image states above.
+ */
+test("the storage tab shows the organisation's pictures", async ({ page }) => {
+  await freshBoard(page, "visual-storage", { template: "empty" });
+  const png = await makePng(page, 600, 400);
+  await uploadImage(page, png, "stored.png");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as unknown as { __remo?: { widgets?: Array<{ type: string }> } }).__remo?.widgets?.filter(
+          (widget) => widget.type === "image",
+        ).length ?? 0,
+      ),
+    )
+    .toBe(1);
+
+  await page.getByRole("button", { name: /^Account and interface/ }).click();
+  await page.getByRole("button", { name: "Organisation and people" }).click();
+  await expect(page.locator(".org-dialog")).toBeVisible();
+  // The tab list arrives after the billing catalogue answers; counting too early reads
+  // as "billing is off" and skips a screen that exists.
+  await expect(page.getByRole("tab").first()).toBeVisible();
+  const storage = page.getByRole("tab", { name: "Storage" });
+  test.skip((await storage.count()) === 0, "the storage tab needs REMO_BILLING=on");
+  await storage.click();
+  const panel = page.locator(".storage-panel");
+  await expect(panel).toBeVisible();
+  // The picture uploaded above is the one this tab counts.
+  await expect(panel).toContainText(/kB/);
+  // The footer names the account, and every scenario registers a fresh one. The whole
+  // footer is masked, not just the email: a mask's own width follows its text.
+  const foot = page.locator(".org-foot");
+  await capture(page, page.locator(".org-dialog"), "image-storage", [foot]);
+  await setTheme(page, "dark");
+  await capture(page, page.locator(".org-dialog"), "image-storage-dark", [foot]);
 });
