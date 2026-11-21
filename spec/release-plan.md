@@ -115,3 +115,14 @@ node scripts/file-size-check.mjs
 - Эталон панели поддержки не снят: нужен Linux-браузер с `REMO_SUPPORT_PROVIDER=chatwoot`.
 - Этапы 2–3 R6 (Chatwoot, `remo-support-agent`, почтовый канал) — инфраструктура и отдельный
   репозиторий, не код этого дерева.
+
+## R7: что осталось
+
+- `@remo/outbound` не отдаёт заголовки ответа, поэтому `X-Remo-Gateway-Provider` пока не
+  читается: в `ai_runs.gateway_provider` пишется отправленный upstream (id или BYOK baseUrl).
+  Добавить `headers` в результат `safeFetch` и брать значение из ответа.
+- `REMO_AI_GATEWAY_CA` не подключён: в `safeFetch` нет опции `ca`. Либо правка пакета,
+  либо `NODE_EXTRA_CA_CERTS` в деплое; решить на этапе развёртывания.
+- Деплой: WireGuard, nftables, compose/systemd, `guide/admin/deploy`, алерты.
+- `agents.<домен>`: отдельный server в nginx, метка `source=agent`, документация.
+- Сквозной e2e: sync + шлюз + поддельный провайдер (`docker-compose.test.yml`).
