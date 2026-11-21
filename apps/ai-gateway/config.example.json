@@ -1,0 +1,39 @@
+{
+  "region": "eu",
+  "listen": "10.77.0.2:8080",
+  "admin": "127.0.0.1:8081",
+  "limits": {
+    "concurrency": 32,
+    "perOrg": { "rpm": 30, "tokensPerDay": 2000000 },
+    "perUser": { "rpm": 15, "tokensPerDay": 500000 },
+    "global": { "rpm": 600, "costPerDay": 50 }
+  },
+  "providers": [
+    {
+      "id": "openrouter",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "match": ["https://openrouter.ai/api/v1"],
+      "models": ["*"],
+      "regions": ["eu"],
+      "timeoutMs": 60000,
+      "rpm": 300,
+      "byok": true,
+      "keyEnv": "OPENROUTER_KEY",
+      "price": { "inPerMTok": 0.5, "outPerMTok": 1.5 },
+      "enabled": true
+    },
+    {
+      "id": "yandex",
+      "baseUrl": "https://llm.api.cloud.yandex.net/v1",
+      "match": ["https://llm.api.cloud.yandex.net/v1"],
+      "models": ["yandexgpt*"],
+      "regions": ["ru"],
+      "timeoutMs": 60000,
+      "rpm": 60,
+      "byok": true,
+      "keyEnv": "YANDEX_KEY",
+      "price": { "inPerMTok": 0, "outPerMTok": 0 },
+      "enabled": true
+    }
+  ]
+}

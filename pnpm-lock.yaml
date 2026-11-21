@@ -30,6 +30,12 @@ importers:
         specifier: ^4.1.12
         version: 4.1.12(vite@6.4.5)
 
+  apps/ai-gateway:
+    dependencies:
+      '@remo/outbound':
+        specifier: workspace:*
+        version: link:../../packages/outbound
+
   apps/sync:
     dependencies:
       '@aws-sdk/client-s3':

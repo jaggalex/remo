@@ -24,6 +24,9 @@ export default defineConfig({
       // their tests beside the runtime module.
       "packages/**/*.test.mjs",
       "apps/sync/**/*.test.mjs",
+      // The AI gateway is a plain-ESM service with no build step; its tests sit beside
+      // the runtime modules, as in sync.
+      "apps/ai-gateway/**/*.test.mjs",
       // The web app keeps its pure modules (settings, clipboard, rich text) beside the
       // components, so their tests live there too.
       "apps/web/src/**/*.test.ts",

@@ -1,0 +1,22 @@
+{
+  "name": "@remo/ai-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The optional remo AI gateway: registry, kill switches, limits and metadata-only logging (ADR-251).",
+  "bin": {
+    "remo-gw": "./bin/remo-gw.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "dependencies": {
+    "@remo/outbound": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "AGPL-3.0-only",
+  "author": "Alexander Kostylev"
+}
