@@ -106,3 +106,12 @@ node scripts/file-size-check.mjs
 - `git status` чист, `pnpm verify` зелёный, тестовая БД поднята.
 - Схема в `AGENTS.md`/`TESTING.md` совпадает с `SCHEMA_VERSION` (сейчас 24, ADR 252).
 - Незакоммиченные чужие файлы не удалять: рабочее дерево может делить другая сессия.
+
+## Мелкие долги после R6.1
+
+- Тема справки `account.support` привязана к `guide/support/known-issues`: отдельной страницы
+  «как связаться» в гайде нет. Добавить `guide/how-to/contact-support` и переназначить
+  `guide/help-links.json`.
+- Эталон панели поддержки не снят: нужен Linux-браузер с `REMO_SUPPORT_PROVIDER=chatwoot`.
+- Этапы 2–3 R6 (Chatwoot, `remo-support-agent`, почтовый канал) — инфраструктура и отдельный
+  репозиторий, не код этого дерева.
