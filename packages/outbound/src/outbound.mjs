@@ -9,7 +9,7 @@
  * redirect to `169.254.169.254` after the check.
  *
  * It speaks only HTTPS and returns the small slice of the fetch API the AI client uses
- * (`ok`, `status`, `text()`, `json()`).
+ * (`ok`, `status`, `text()`, `json()`, `headers`).
  */
 import { lookup as dnsLookup } from "node:dns/promises";
 import { request as httpsRequest } from "node:https";
@@ -61,6 +61,16 @@ function parseJson(text) {
   return JSON.parse(text);
 }
 
+/** Response headers as a plain object: lowercase names, one string per name. */
+function plainHeaders(raw) {
+  const headers = {};
+  for (const [name, value] of Object.entries(raw ?? {})) {
+    if (value === undefined) continue;
+    headers[name.toLowerCase()] = Array.isArray(value) ? value.join(", ") : String(value);
+  }
+  return headers;
+}
+
 /**
  * A fetch-shaped request to a verified public HTTPS host.
  *
@@ -74,6 +84,8 @@ export function safeFetchWith(requestImpl, rawUrl, options = {}) {
     timeoutMs = 60_000,
     signal = null,
     allowPrivate = false,
+    // A pinned CA for a gateway with a self-signed certificate; `https.request` reads it.
+    ca = undefined,
   } = options;
 
   let target;
@@ -128,6 +140,7 @@ export function safeFetchWith(requestImpl, rawUrl, options = {}) {
               lookupOptions?.all
                 ? callback(null, [{ address, family }])
                 : callback(null, address, family),
+            ...(ca ? { ca } : {}),
             timeout: timeoutMs,
           },
           (response) => {
@@ -155,6 +168,7 @@ export function safeFetchWith(requestImpl, rawUrl, options = {}) {
                 status,
                 text: async () => text,
                 json: async () => parseJson(text),
+                headers: plainHeaders(response.headers),
               });
             });
             // A peer can close after the headers without ever ending the body. The

@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { assertNotRedirect, resolvePublicAddress, safeFetchWith } from "./index.mjs";
 
 /** Minimal https.request stand-in: records the config and answers with one status. */
-function transport(status, body = "", captured = []) {
+function transport(status, body = "", captured = [], headers = {}) {
   const request = (config, onResponse) => {
     captured.push(config);
     const req = new EventEmitter();
@@ -16,6 +16,7 @@ function transport(status, body = "", captured = []) {
     req.end = () => {
       const response = new EventEmitter();
       response.statusCode = status;
+      response.headers = headers;
       onResponse(response);
       queueMicrotask(() => {
         if (body) response.emit("data", Buffer.from(body));
@@ -62,6 +63,27 @@ describe("outbound requests", () => {
       );
     });
     expect(all).toEqual([{ address: "1.1.1.1", family: 4 }]);
+  });
+
+  it("returns the answer headers with lowercase names", async () => {
+    const { request } = transport(200, '{"ok":true}', [], {
+      "X-Remo-Gateway-Provider": "openrouter",
+      "Content-Type": "application/json",
+    });
+    const answer = await safeFetchWith(request, "https://1.1.1.1/v1/models", {});
+    expect(answer.headers).toEqual({
+      "x-remo-gateway-provider": "openrouter",
+      "content-type": "application/json",
+    });
+  });
+
+  it("passes a pinned CA to the transport only when one is set", async () => {
+    const captured = [];
+    const { request } = transport(200, "", captured);
+    await safeFetchWith(request, "https://1.1.1.1/v1", { ca: "-----BEGIN CERTIFICATE-----" });
+    expect(captured[0].ca).toBe("-----BEGIN CERTIFICATE-----");
+    await safeFetchWith(request, "https://1.1.1.1/v1", {});
+    expect(captured[1].ca).toBeUndefined();
   });
 
   it("works through the real Node HTTPS transport with an { all: true } lookup", async () => {

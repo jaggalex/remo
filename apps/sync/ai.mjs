@@ -48,6 +48,8 @@ export function gatewaySettings(env = process.env) {
         ? configured
         : directTimeout + GATEWAY_TIMEOUT_SLACK_MS,
     region: String(env.REMO_AI_REGION ?? "").trim(),
+    // The gateway's self-signed certificate, pinned here instead of trusting it globally.
+    ca: String(env.REMO_AI_GATEWAY_CA ?? "").trim(),
   };
 }
 
@@ -102,15 +104,12 @@ function gatewayError(response, body) {
 /**
  * The provider that answered, from the gateway's answer header.
  *
- * The shared outbound client exposes status but not headers; when a transport has none,
- * the upstream we sent is the honest record of where the call went.
+ * `safeFetch` returns headers as a plain lowercase object. A transport without them
+ * (or a gateway too old to send the header) falls back to the upstream we sent, which
+ * is still the honest record of where the call went.
  */
 function gatewayProviderOf(response, upstream) {
-  const headers = response?.headers;
-  const header =
-    typeof headers?.get === "function"
-      ? headers.get("x-remo-gateway-provider")
-      : headers?.["x-remo-gateway-provider"];
+  const header = response?.headers?.["x-remo-gateway-provider"];
   if (header) return String(header);
   return upstream ? String(upstream) : null;
 }
@@ -137,6 +136,7 @@ export class AiClient {
     gatewayToken = null,
     gatewayTimeoutMs = null,
     region = null,
+    gatewayCa = null,
     log = console,
   } = {}) {
     this.apiKey = apiKey;
@@ -160,6 +160,7 @@ export class AiClient {
         ? gatewayDeadline
         : this.timeoutMs + GATEWAY_TIMEOUT_SLACK_MS;
     this.region = String(region ?? gateway?.region ?? "").trim();
+    this.gatewayCa = String(gatewayCa ?? gateway?.ca ?? "").trim();
     this.log = log;
   }
 
@@ -253,6 +254,8 @@ export class AiClient {
             // this call and this call only (ADR-251 §3.3). A user key or custom URL
             // never gets this flag.
             ...(viaGateway || this.allowPrivate ? { allowPrivate: true } : {}),
+            // The gateway certificate is pinned only for the gateway call.
+            ...(viaGateway && this.gatewayCa ? { ca: this.gatewayCa } : {}),
           },
         );
 

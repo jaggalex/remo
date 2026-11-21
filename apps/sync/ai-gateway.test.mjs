@@ -24,7 +24,7 @@ function answer(content, { status = 200, id = "req-1", provider = null } = {}) {
   return {
     ok: status >= 200 && status < 300,
     status,
-    headers: provider ? { get: (name) => (name === "x-remo-gateway-provider" ? provider : null) } : null,
+    headers: provider ? { "x-remo-gateway-provider": provider } : null,
     json: async () => ({
       id,
       model: "provider/model",
@@ -53,7 +53,7 @@ describe("AiClient in gateway mode", () => {
     const seen = [];
     const ai = client(async (url, init) => {
       seen.push({ url, init });
-      return answer('{"nodes":[]}', { provider: "openrouter" });
+      return answer('{"nodes":[]}', { provider: "yandex" });
     });
 
     const result = await ai.chatJson({
@@ -94,7 +94,8 @@ describe("AiClient in gateway mode", () => {
       response_format: { type: "json_object" },
     });
     expect(result.json).toEqual({ nodes: [] });
-    expect(result.gatewayProvider).toBe("openrouter");
+    // The header wins over the upstream we sent: it names the provider that answered.
+    expect(result.gatewayProvider).toBe("yandex");
     expect(result.requestId).toBe("req-1");
     expect(result.usage).toMatchObject({ promptTokens: 10, completionTokens: 5 });
   });
@@ -112,6 +113,39 @@ describe("AiClient in gateway mode", () => {
     await ai.chatJson({ user: "u", maxTokens: 10, gateway: { upstream: "openrouter", upstreamKey: "" } });
     expect(seen[0].headers["X-Remo-Region"]).toBeUndefined();
     expect(seen[0].headers["X-Remo-Upstream-Key"]).toBeUndefined();
+  });
+
+  it("falls back to the sent upstream when the answer has no provider header", async () => {
+    const ai = client(async () => answer('{"ok":true}'));
+    const result = await ai.chatJson({
+      user: "u",
+      maxTokens: 10,
+      gateway: { upstream: "openrouter" },
+    });
+    expect(result.gatewayProvider).toBe("openrouter");
+  });
+
+  it("pins the gateway certificate only when REMO_AI_GATEWAY_CA is set", async () => {
+    const seen = [];
+    const fetchImpl = async (_url, init) => {
+      seen.push(init);
+      return answer('{"ok":true}');
+    };
+    const withCa = new AiClient({
+      model: "m",
+      gateway: gatewaySettings({
+        REMO_AI_GATEWAY_URL: gateway.url,
+        REMO_AI_GATEWAY_TOKEN: gateway.token,
+        REMO_AI_GATEWAY_CA: "-----BEGIN CERTIFICATE-----",
+      }),
+      fetchImpl,
+    });
+    await withCa.chatJson({ user: "u", maxTokens: 10 });
+    expect(seen[0].ca).toBe("-----BEGIN CERTIFICATE-----");
+
+    const withoutCa = client(fetchImpl);
+    await withoutCa.chatJson({ user: "u", maxTokens: 10 });
+    expect(seen[1].ca).toBeUndefined();
   });
 
   it("maps every gateway code to the same AiError code", async () => {

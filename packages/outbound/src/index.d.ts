@@ -34,6 +34,8 @@ export interface SafeFetchOptions {
   timeoutMs?: number;
   signal?: AbortSignal | null;
   allowPrivate?: boolean;
+  /** A PEM certificate (string or bytes) to trust instead of the system roots. */
+  ca?: string | Uint8Array;
 }
 
 export interface SafeFetchResponse {
@@ -41,6 +43,8 @@ export interface SafeFetchResponse {
   status: number;
   text(): Promise<string>;
   json(): Promise<unknown>;
+  /** The answer headers: lowercase names, one string per name. */
+  headers: Record<string, string>;
 }
 
 export type RequestImpl = (
