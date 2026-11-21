@@ -64,6 +64,22 @@ async updatePassword(userId, passwordHash) {
   );
 },
 
+/**
+ * Replace the support identifier (ADR-250, `spec/support.md` §2.3).
+ *
+ * The Chatwoot identity hash has no expiry, so a leaked hash can speak as this person for
+ * ever. The identifier is separate from the account for exactly this reason: an operator
+ * can issue a new one and the old hash stops matching a real conversation. Nothing else
+ * about the account changes — the chat history stays, the person stays.
+ */
+async rotateSupportId(userId, supportId) {
+  const { rows } = await this.pool.query(
+    `update users set support_id = $2 where id = $1 returning support_id`,
+    [userId, supportId],
+  );
+  return rows[0]?.support_id ?? null;
+},
+
 async createSession({ userId, tokenHash, expiresAt, userAgent }) {
   const { rows } = await this.pool.query(
     `insert into sessions (user_id, token_hash, expires_at, user_agent)

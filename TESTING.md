@@ -108,8 +108,8 @@ _Tree facts, checked by `pnpm state:check`; run facts are printed by the command
 |---|---|
 | ADR | 252, latest ADR-252 |
 | Schema version | 26 |
-| Browser scenarios | 211 in 40 files |
-| Help topics | 37 (RU + EN) |
+| Browser scenarios | 214 in 40 files |
+| Help topics | 38 (RU + EN) |
 | Portal pages | 70 |
 | Baselines | 46 product + 12 DS |
 | Largest file | `apps/web/src/OrganisationDialog.tsx` — 800 lines |

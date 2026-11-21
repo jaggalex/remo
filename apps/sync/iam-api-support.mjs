@@ -1,11 +1,12 @@
 /**
  * The support HTTP surface (ADR-250, `spec/support.md` §2.3–§2.5).
  *
- * Three routes, one provider switch:
+ * Four routes, one provider switch:
  *
- *   GET  /support/config    no session; the mode and the waiting text
- *   POST /support/identity  session + CSRF; the signed identity for the widget
- *   GET  /support/context   bearer token; read-only aggregates for the first-line agent
+ *   GET  /support/config          no session; the mode and the waiting text
+ *   POST /support/identity        session + CSRF; the signed identity for the widget
+ *   POST /support/identity/rotate session + CSRF + instance operator; a new identifier
+ *   GET  /support/context         bearer token; read-only aggregates for the first-line agent
  *
  * The server has already stripped `/api` (the same contract as `/auth`), and the global
  * CSRF check has already run for every non-GET. Nothing here can change a room, an
@@ -116,6 +117,36 @@ async function orgContext(store, org) {
   };
 }
 
+/**
+ * The operator's rotation (§2.3): a new `support_id` for the signed-in account.
+ *
+ * Only an `instance_operators` holder may do it (ADR-248): the identifier is what Chatwoot
+ * trusts, so replacing it is an installation-level act, not a profile setting. The account
+ * is untouched — the same person, a different handle the widget knows them by — and the
+ * audit row is what proves who retired the old one.
+ */
+async function rotateSupportIdentity({ response, store, user, audit }) {
+  if (!store.pool) {
+    return fail(response, 501, "IAM_UNAVAILABLE", "support needs the postgres store");
+  }
+  if (!(await store.isInstanceOperator(user.id))) {
+    return fail(
+      response,
+      403,
+      "FORBIDDEN",
+      "only an instance operator may rotate a support identity",
+    );
+  }
+
+  const identifier = await store.rotateSupportId(user.id, randomSupportId());
+  if (!identifier) {
+    return fail(response, 409, "SUPPORT_IDENTITY_UNAVAILABLE", "the account has no support identity");
+  }
+
+  await audit({ action: "support.identity_rotated", subject: identifier, actorId: user.id });
+  json(response, 200, { identifier });
+}
+
 async function supportContext({ request, response, store, support, audit }) {
   const token = bearer(request);
   if (!support.contextToken || !sameSecret(token, support.contextToken)) {
@@ -205,6 +236,19 @@ export async function handleSupportRoutes({
       return true;
     }
     await supportIdentity({ response, store, user, support });
+    return true;
+  }
+
+  if (url.pathname === "/support/identity/rotate" && method === "POST") {
+    if (!session) {
+      fail(response, 401, "AUTH_REQUIRED", "sign in first");
+      return true;
+    }
+    if (support.provider !== "chatwoot") {
+      fail(response, 404, "NOT_FOUND", "support identity is not configured");
+      return true;
+    }
+    await rotateSupportIdentity({ response, store, user, audit });
     return true;
   }
 

@@ -1,6 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Banner, EmptyState } from "@remo/ui";
+import { installClientErrors, recordClientError } from "./clientErrorBuffer";
 import { useI18n } from "./i18n";
+import { SupportEntryButton } from "./SupportPanel";
 
 /**
  * Where a render failure stops (ADR-171).
@@ -19,8 +21,16 @@ import { useI18n } from "./i18n";
  *
  * This catches render and lifecycle errors only — that is what React offers. Painting
  * runs outside render and has its own per-object boundary in `drawWidget`.
+ *
+ * Every failure that reaches this boundary is also the first record in the support
+ * buffer (ADR-250 §2.4): the room fallback offers "Report a problem" with the technical
+ * context already agreed to, because "it broke" without the error is not a report.
  */
 type Scope = "room" | "panel";
+
+// The global handlers cover what React never sees: an event handler, a timer, a paint, a
+// promise nobody awaited. Installed once, where the app's own boundary is defined.
+if (typeof window !== "undefined") installClientErrors(window);
 
 interface Props {
   scope: Scope;
@@ -48,6 +58,7 @@ export class Contained extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // The stack is what a bug report needs; the person sees the fallback, not this.
+    recordClientError(error);
     console.error(`[remo] ${this.props.scope} failed to render`, error, info.componentStack);
   }
 
@@ -72,6 +83,9 @@ function RoomFallback() {
       >
         {t("contained.room.body")}
       </EmptyState>
+      {/* The error is in the buffer; this is the one place where attaching it is the
+          obvious thing to want, so the box starts ticked. Absent when support is off. */}
+      <SupportEntryButton technical>{t("support.reportBug")}</SupportEntryButton>
       <a className="contained-room-home" href="/">
         {t("contained.room.home")}
       </a>

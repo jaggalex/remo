@@ -35,5 +35,6 @@
   "objects.name": "concepts/board",
   "agents.room": "capabilities/room-agent",
   "section.table": "capabilities/frames-kanban",
-  "room.panel": "concepts/board-chrome"
+  "room.panel": "concepts/board-chrome",
+  "account.support": "support/known-issues"
 }

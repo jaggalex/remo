@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n, type Lang } from "../i18n";
 import { ThemeSwitch } from "../ThemeSwitch";
+import { SupportEntryButton } from "../SupportPanel";
 import { ABOUT, ABOUT_LABEL } from "../about";
 import generated from "./generated.json";
 import type { HelpLocale, HelpTopicId } from "./topics.generated";
@@ -91,6 +92,9 @@ export function HelpPage() {
         </a>
         <a className="help-back" href="/">{t("help.back")}</a>
         <ThemeSwitch />
+        {/* The help centre is public; support is not. The entry asks the session before it
+            draws anything (ADR-250 §2.4). */}
+        <SupportEntryButton requireSession>{t("support.write")}</SupportEntryButton>
         <nav className="help-langs" aria-label={t("help.language")}>
           {(["ru", "en"] as const).map((code) => (
             <button

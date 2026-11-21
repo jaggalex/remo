@@ -86,7 +86,7 @@ test("a brief with a file becomes a plan, applies once and undoes in one step", 
   await page
     .getByLabel("What should it draw?")
     .fill("Собери US-карту для оформления заказа");
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.locator('.agent-file input[type="file"]').setInputFiles({
     name: "stories.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(longBriefCsv(), "utf8"),
@@ -305,7 +305,7 @@ test("the attach field refuses a wrong type and an oversized file in words", asy
   await openAgents(page);
   await chooseBrief(page);
 
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.locator('.agent-file input[type="file"]').setInputFiles({
     name: "brief.pdf",
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-1.7", "utf8"),
@@ -316,7 +316,7 @@ test("the attach field refuses a wrong type and an oversized file in words", asy
   await expect(page.getByRole("button", { name: "Ask the agent" })).toBeDisabled();
   await expect(page.locator(".agent-file-limits")).toContainText("100 000 bytes");
 
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.locator('.agent-file input[type="file"]').setInputFiles({
     name: "huge.txt",
     mimeType: "text/plain",
     buffer: Buffer.alloc(100_001, "a"),

@@ -60,6 +60,8 @@ const suite = store ? describe : describe.skip;
 let base = "";
 let account = null;
 let identifier = "";
+/** Identifiers a rotation retired; their audit rows are this suite's litter too. */
+const retired = [];
 
 beforeAll(async () => {
   if (!store) return;
@@ -88,7 +90,11 @@ afterAll(async () => {
   for (const server of servers) await new Promise((resolve) => server.close(resolve));
   if (!store) return;
   if (identifier) await store.pool.query("delete from audit_events where subject = $1", [identifier]);
+  if (retired.length) {
+    await store.pool.query("delete from audit_events where subject = any($1)", [retired]);
+  }
   if (account) {
+    await store.pool.query("delete from instance_operators where user_id = $1", [account.userId]).catch(() => {});
     await store.pool.query("delete from orgs where id = $1", [account.orgId]).catch(() => {});
     await store.pool.query("delete from users where id = $1", [account.userId]).catch(() => {});
   }
@@ -206,5 +212,37 @@ suite("support routes", () => {
       [identifier],
     );
     expect(rows.length).toBeGreaterThan(0);
+  });
+
+  // Last, because a rotation replaces the identifier the tests above share.
+  it("refuses a rotation to everyone but an instance operator", async () => {
+    const answer = await account.owner("POST", "/support/identity/rotate");
+    expect(answer.status).toBe(403);
+    const unchanged = await account.owner("POST", "/support/identity");
+    expect(unchanged.body.identifier).toBe(identifier);
+  });
+
+  it("rotates the identifier for an instance operator and records it", async () => {
+    await store.grantInstanceOperator({ email: account.email });
+    const answer = await account.owner("POST", "/support/identity/rotate");
+    expect(answer.status).toBe(200);
+    expect(answer.body.identifier).toMatch(/^sup_[0-9a-f]{32}$/);
+    expect(answer.body.identifier).not.toBe(identifier);
+
+    // The old hash stops matching a real person: that is the whole point of the rotation.
+    const signed = await account.owner("POST", "/support/identity");
+    expect(signed.body.identifier).toBe(answer.body.identifier);
+    expect(signed.body.identifierHash).toBe(
+      signSupportIdentity(answer.body.identifier, SUPPORT.hmacSecret),
+    );
+
+    const { rows } = await store.pool.query(
+      `select actor_id from audit_events where subject = $1 and action = 'support.identity_rotated'`,
+      [answer.body.identifier],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].actor_id).toBe(account.userId);
+    retired.push(identifier);
+    identifier = answer.body.identifier;
   });
 });

@@ -1,5 +1,6 @@
 import { Button } from "@remo/ui";
 import type { PlanLimitNotice } from "./apiBilling";
+import { SupportEntryButton } from "./SupportPanel";
 import { useI18n, type TranslationKey } from "./i18n";
 
 /**
@@ -66,6 +67,11 @@ export function PlanNotice({
             {t("billing.seePlans")}
           </Button>
         )}
+        {/* A limit is also a question about money, and a person answers that better than
+            the plans screen. Absent when the installation has no support (ADR-250). */}
+        <SupportEntryButton requireSession variant="ghost">
+          {t("support.planQuestion")}
+        </SupportEntryButton>
         {onDismiss && (
           <Button size="compact" variant="ghost" onClick={onDismiss}>
             {t("billing.dismiss")}

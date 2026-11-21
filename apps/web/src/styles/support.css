@@ -1,21 +1,25 @@
 /* -------------------------------------------------------------- support --- */
 
-/* The operator's widget in an isolated frame (ADR-250). The panel is a fixed side sheet:
-   the canvas underneath stays where it was, and closing it returns focus to the menu. */
+/* The operator's widget in an isolated frame (ADR-250). The panel is a side sheet below
+   the header, the same shape as the discussion panel (ADR-119): the room's own controls —
+   the account menu, the theme, the title — stay reachable while it is open, so signing out
+   with the chat on screen is a thing a person can do. */
 .support-panel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--z-dialog);
+  top: calc(var(--topbar-height) + var(--space-6));
+  right: 12px;
+  bottom: 12px;
+  z-index: var(--z-bar);
   display: flex;
   flex-direction: column;
-  width: min(var(--dialog-sm), 100vw);
+  width: min(var(--dialog-sm), calc(100vw - 24px));
   background: var(--bg-panel);
-  border-left: var(--panel-border-width) solid var(--border-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-pop);
   color: var(--text-primary);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .support-panel-head {
@@ -48,6 +52,21 @@
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Consent lives above the frame: what is attached is a decision, not a setting hidden
+   behind the operator's page. */
+.support-consent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.support-consent-note {
+  font: var(--type-caption);
+  color: var(--text-secondary);
 }
 
 .support-panel-frame {
