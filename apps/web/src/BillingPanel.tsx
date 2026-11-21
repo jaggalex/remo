@@ -13,6 +13,7 @@ import {
 import {
   billingApi,
   formatMoney,
+  priceId,
   TERMS_VERSION,
   type BillingCatalog,
   type BillingCatalogCurrency,
@@ -22,7 +23,9 @@ import {
   type PromoResult,
 } from "./apiBilling";
 import { ApiError } from "./apiCall";
+import { BillingPaymentMethod } from "./BillingPaymentMethod";
 import { BillingRooms } from "./BillingRooms";
+import { checkoutErrorKey } from "./billingCheckoutError";
 import { formatDate } from "./format";
 import { useI18n, type TranslationKey } from "./i18n";
 
@@ -91,15 +94,6 @@ const PROMO_ERROR: Record<string, TranslationKey> = {
   PROMO_EXPIRED: "billing.promo.expired",
   PROMO_CURRENCY_MISMATCH: "billing.promo.currency",
   PROMO_NOT_APPLICABLE: "billing.promo.notApplicable",
-};
-
-const CHECKOUT_ERROR: Record<string, TranslationKey> = {
-  FORBIDDEN: "billing.checkout.forbidden",
-  CURRENCY_LOCKED: "billing.checkout.currencyLocked",
-  PERSONAL_ORG: "billing.personal",
-  CONSENT_REQUIRED: "billing.checkout.consent",
-  NO_PAYMENT_ROUTE: "billing.checkout.noRoute",
-  RESOURCE_NOT_AVAILABLE: "billing.checkout.unavailable",
 };
 
 function priceAmount(
@@ -314,7 +308,7 @@ export function BillingPanel({
         });
     } catch (failure) {
       const code = failure instanceof ApiError ? failure.code : "";
-      setActionError(t(CHECKOUT_ERROR[code] ?? "billing.checkout.failed"));
+      setActionError(t(checkoutErrorKey(code)));
     } finally {
       setBusy(false);
     }
@@ -472,27 +466,7 @@ export function BillingPanel({
       />
 
       {isOrgAdmin && data.paymentMethod !== undefined && (
-        <section className="billing-usage">
-          <h3>{t("billing.paymentMethod")}</h3>
-          {data.paymentMethod?.display ? (
-            <p>
-              {t("billing.cardMasked", {
-                last4: data.paymentMethod.display.last4 ?? "—",
-              })}
-              {data.paymentMethod.display.expMonth && data.paymentMethod.display.expYear && (
-                <span className="muted">
-                  {" · "}
-                  {t("billing.cardExpires", {
-                    month: data.paymentMethod.display.expMonth,
-                    year: data.paymentMethod.display.expYear,
-                  })}
-                </span>
-              )}
-            </p>
-          ) : (
-            <p className="muted">{t("billing.noPaymentMethod")}</p>
-          )}
-        </section>
+        <BillingPaymentMethod key={`card-${orgId}`} orgId={orgId} org={data} />
       )}
 
       {checkout && (
@@ -750,12 +724,5 @@ export function BillingPanel({
         </ConfirmDialog>
       )}
     </section>
-  );
-}
-
-/** A catalogue price carries the server's id when it sends one; the slug is the fallback. */
-function priceId(price: { id?: string; plan: string; interval: string; currency: string }): string {
-  return (
-    price.id ?? `${price.plan}-${price.currency}-${price.interval}-v1`.toLowerCase()
   );
 }

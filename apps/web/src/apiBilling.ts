@@ -284,6 +284,16 @@ export const billingApi = {
     ),
 };
 
+/** A catalogue price carries the server's id when it sends one; the slug is the fallback. */
+export function priceId(price: {
+  id?: string;
+  plan: string;
+  interval: string;
+  currency: string;
+}): string {
+  return price.id ?? `${price.plan}-${price.currency}-${price.interval}-v1`.toLowerCase();
+}
+
 /**
  * Money for the screen. `Intl` knows how many minor digits a currency has, so the
  * divisor is never a hard-coded 100 (JPY has none, KWD has three).

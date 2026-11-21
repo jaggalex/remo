@@ -74,6 +74,10 @@ export default defineConfig({
         // `pnpm e2e --billing` turns the feature on for its run and every other run keeps
         // the self-host answer, so the 0.4.1 scenarios stay exactly as they were.
         REMO_BILLING: process.env.E2E_BILLING === "1" ? "on" : "off",
+        // The card replacement scenario needs the fake provider's page; the adapter is
+        // gated by `REMO_PAY_FAKE=1` and by a non-production process (ADR-248 §7). Off in
+        // the ordinary run, exactly like the billing family itself.
+        ...(process.env.E2E_BILLING === "1" ? { REMO_PAY_FAKE: "1" } : {}),
         REMO_METRICS: "off",
         // A deterministic plan instead of a provider. `ai-fake.mjs` accepts it only
         // because this process also carries REMO_E2E_RUN_ID and is not production.

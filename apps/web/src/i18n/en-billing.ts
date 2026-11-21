@@ -23,6 +23,12 @@ export const enBilling = {
   "billing.cardMasked": "•••• {last4}",
   "billing.cardExpires": "until {month}/{year}",
   "billing.noPaymentMethod": "No saved payment method.",
+  "billing.card.replace": "Replace",
+  "billing.card.attach": "Add a card",
+  "billing.card.unavailable": "Card payment is not available on this installation yet.",
+  "billing.card.choosePlan": "A card is saved by a plan payment. Choose a plan first.",
+  "billing.card.instructions":
+    "Continue in the provider's window. The new card appears here once the provider confirms it.",
 
   "billing.rooms.title": "Active rooms",
   "billing.rooms.hint":

@@ -285,3 +285,72 @@ test("paying by invoice creates an invoice for a shared organisation", async ({ 
   await expect(instructions).toContainText("The invoice is open.");
   await expect(page.locator(".billing-invoices")).toContainText("Awaiting payment");
 });
+
+test("the owner replaces the saved card through the provider's page", async ({ page }) => {
+  // A card is saved only by a checkout, and a checkout needs a price and a card route —
+  // both operator data (`spec/billing.md` §2.1, §5) with no HTTP route. With the empty
+  // catalogue of the ordinary run there is nothing to buy, so the scenario declares why.
+  const catalog = await page.request.get("/api/billing/catalog");
+  expect(catalog.ok()).toBeTruthy();
+  const { currencies } = (await catalog.json()) as {
+    currencies: Array<{ currency: string; methodGroups: string[] }>;
+  };
+  const cardOffer = currencies.find((offer) => offer.methodGroups.includes("ru_card"));
+  test.skip(
+    !cardOffer,
+    "needs an operator seed: `pnpm billing:prices seed` and a live `fake` connection for " +
+      "`ru_card` from `pnpm billing:providers` (neither has an HTTP route)",
+  );
+
+  // A personal organisation cannot buy a plan; the card belongs to a shared one.
+  await freshBoard(page, "billing-card");
+  const created = await page.request.post("/api/orgs", { data: { name: "Card team" } });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  const { org } = (await created.json()) as { org: { slug: string } };
+  const home = `/?org=${encodeURIComponent(org.slug)}&lang=en`;
+
+  const openBilling = async () => {
+    await page.goto(home);
+    await openOrganisation(page);
+    await page.getByRole("tab", { name: "Plan & payment" }).click();
+    await expect(page.locator(".billing-panel")).toBeVisible();
+  };
+
+  await openBilling();
+
+  // The first purchase is what makes the provider keep a card: the replacement verb
+  // exists only next to a saved method, so the scenario buys the plan once.
+  await page.getByRole("button", { name: "Change plan" }).click();
+  const chooser = page.locator(".billing-choose");
+  await expect(chooser).toContainText("Choose a plan");
+  await chooser.getByRole("radio", { name: "Russian bank card or SBP" }).check();
+  await chooser.getByRole("checkbox").check();
+  await Promise.all([
+    page.waitForURL(/[?&]fake_pay=/),
+    chooser.getByRole("button", { name: /^Pay / }).click(),
+  ]);
+
+  // The fake provider's page is the redirect the checkout returned (ADR-248 §7).
+  await Promise.all([
+    page.waitForURL(/billing=return/),
+    page.getByRole("button", { name: "Success" }).click(),
+  ]);
+
+  await openBilling();
+  const card = page.locator(".billing-card");
+  await expect(card).toContainText("•••• 4242");
+
+  // "Replace" is the same checkout for the same plan, with autopay consent: the
+  // provider is asked for a reusable token and the screen shows what it kept (§8.1).
+  await Promise.all([
+    page.waitForURL(/[?&]fake_pay=/),
+    card.getByRole("button", { name: "Replace" }).click(),
+  ]);
+  await Promise.all([
+    page.waitForURL(/billing=return/),
+    page.getByRole("button", { name: "Success" }).click(),
+  ]);
+
+  await openBilling();
+  await expect(page.locator(".billing-card")).toContainText("•••• 4242");
+});

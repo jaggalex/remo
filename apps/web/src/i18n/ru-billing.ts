@@ -21,6 +21,12 @@ export const ruBilling = {
   "billing.cardMasked": "•••• {last4}",
   "billing.cardExpires": "до {month}/{year}",
   "billing.noPaymentMethod": "Сохранённого способа оплаты нет.",
+  "billing.card.replace": "Заменить",
+  "billing.card.attach": "Привязать карту",
+  "billing.card.unavailable": "Оплата картой пока недоступна на этой установке.",
+  "billing.card.choosePlan": "Карта сохраняется при оплате тарифа. Сначала выберите тариф.",
+  "billing.card.instructions":
+    "Продолжите в окне провайдера. Новая карта появится здесь после подтверждения провайдером.",
 
   "billing.rooms.title": "Активные комнаты",
   "billing.rooms.hint":
