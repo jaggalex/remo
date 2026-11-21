@@ -374,12 +374,12 @@
     ],
     "code": [
       "apps/sync/readonly.mjs",
-      "apps/sync/outbound.mjs",
+      "packages/outbound/src/outbound.mjs",
       "apps/sync/http-boundary.mjs"
     ],
     "tests": [
       "apps/sync/readonly.test.mjs",
-      "apps/sync/outbound.test.mjs"
+      "packages/outbound/src/outbound.test.mjs"
     ]
   },
   "concepts/colors": {

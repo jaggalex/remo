@@ -7,7 +7,7 @@
  * it only turns a prompt into JSON and reports what it cost.
  */
 
-import { safeFetch } from "./outbound.mjs";
+import { safeFetch } from "@remo/outbound";
 
 export class AiError extends Error {
   constructor(code, message, status = 0) {

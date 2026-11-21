@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assertNotRedirect, resolvePublicAddress, safeFetchWith } from "./outbound.mjs";
+import { assertNotRedirect, resolvePublicAddress, safeFetchWith } from "./index.mjs";
 
 /** Minimal https.request stand-in: records the config and answers with one status. */
 function transport(status, body = "", captured = []) {

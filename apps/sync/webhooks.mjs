@@ -12,7 +12,7 @@ import { createHmac } from "node:crypto";
 import { backoffMs } from "./backoff.mjs";
 import { newToken } from "./iam.mjs";
 import { decryptSecret, encryptSecret, fingerprintSecret } from "./secrets.mjs";
-import { safeFetch } from "./outbound.mjs";
+import { safeFetch } from "@remo/outbound";
 
 export const WEBHOOK_SECRET_PREFIX = "whsec_";
 /** Eight failures: 10 s, 30 s, 2 min, 10 min, 30 min, 1 h, 3 h, then the dead letter. */

@@ -14,9 +14,10 @@
 import { lookup as dnsLookup } from "node:dns/promises";
 import { request as httpsRequest } from "node:https";
 import { isIP } from "node:net";
-import { isPrivateHost } from "./secrets.mjs";
+import { isPrivateHost } from "./address.mjs";
 
-const MAX_BODY = 2 * 1024 * 1024;
+/** The answer cap; a bigger body is refused instead of buffered. */
+export const MAX_BODY = 2 * 1024 * 1024;
 
 export class OutboundError extends Error {
   constructor(code, message) {

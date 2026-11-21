@@ -11,7 +11,7 @@
  * use the provider's own `payment_method_id`. The adapter never logs a key, and an error
  * carries a status or a reason, never the Basic-auth header.
  */
-import { safeFetch } from "./outbound.mjs";
+import { safeFetch } from "@remo/outbound";
 
 const API = "https://api.yookassa.ru/v3";
 const TIMEOUT_MS = 20_000;

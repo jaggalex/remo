@@ -14,7 +14,7 @@ import {
   openWebhookSecret,
   webhookBackoffMs,
 } from "./webhooks.mjs";
-import { safeFetch } from "./outbound.mjs";
+import { safeFetch } from "@remo/outbound";
 
 /**
  * The webhook consumer: one endpoint per organisation, so a row with no endpoint (or a

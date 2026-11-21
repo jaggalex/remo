@@ -41,6 +41,9 @@ importers:
       '@remo/metrics':
         specifier: workspace:*
         version: link:../../packages/metrics
+      '@remo/outbound':
+        specifier: workspace:*
+        version: link:../../packages/outbound
       lib0:
         specifier: ^0.2.102
         version: 0.2.119
@@ -139,6 +142,8 @@ importers:
   packages/metrics: {}
 
   packages/model: {}
+
+  packages/outbound: {}
 
   packages/ui:
     dependencies:

@@ -11,7 +11,7 @@
  */
 import { appendFile } from "node:fs/promises";
 import nodemailer from "nodemailer";
-import { safeFetch } from "./outbound.mjs";
+import { safeFetch } from "@remo/outbound";
 
 export const MAIL_DRIVERS = ["disabled", "console", "smtp", "resend"];
 

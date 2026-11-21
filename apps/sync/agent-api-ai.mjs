@@ -14,7 +14,7 @@ import {
   kekFromEnv,
 } from "./secrets.mjs";
 import { randomUUID } from "node:crypto";
-import { safeFetch } from "./outbound.mjs";
+import { safeFetch } from "@remo/outbound";
 
 export async function handleAiCredentials(ctx) {
   const { request, response, url, parts, method, store, me, audit, isMember, isOrgAdmin } = ctx;
