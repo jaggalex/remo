@@ -14,6 +14,7 @@ import { pathSegments } from "./http-boundary.mjs";
 import { clientIp } from "./client-ip.mjs";
 import { fail, sessionFromRequest } from "./iam-http.mjs";
 import { iamContext } from "./iam-api-context.mjs";
+import { handleSupportRoutes } from "./iam-api-support.mjs";
 import { handleAuthRoutes } from "./iam-api-auth.mjs";
 import { handleRecoveryRoutes } from "./iam-api-recovery.mjs";
 import { handleOrgRoutes } from "./iam-api-org.mjs";
@@ -49,12 +50,15 @@ export async function handleIam({
   onCommentsChanged = null,
   mail = null,
   mailConfig = null,
+  support = null,
 }) {
   if (
     !url.pathname.startsWith("/auth") &&
     !url.pathname.startsWith("/orgs") &&
     !url.pathname.startsWith("/boards/") &&
-    !url.pathname.startsWith("/invitations/")
+    !url.pathname.startsWith("/invitations/") &&
+    !url.pathname.startsWith("/support/") &&
+    url.pathname !== "/support"
   ) {
     return false;
   }
@@ -100,6 +104,10 @@ export async function handleIam({
     mail,
     mailConfig,
   };
+
+  // Support owns its prefix and is consulted before the account routes: `/support/config`
+  // is public, and with `REMO_SUPPORT_PROVIDER=none` the whole surface is a 404.
+  if (await handleSupportRoutes({ ...base, support })) return true;
 
   // `/auth/capabilities` ships with the mail module; the rest of `/auth` follows.
   if (await handleRecoveryRoutes(base)) return true;

@@ -60,3 +60,29 @@ read_release_config() {
     esac
   done < "$file"
 }
+
+# Render the app's security headers with the one support origin allowed to be framed.
+#
+# `add_header` is static: nginx cannot substitute a variable into a CSP at request time,
+# so the alternative is one rendered file per installation (ADR-250). The origin is
+# validated here rather than at the first blocked iframe, and only `__SUPPORT_ORIGIN__`
+# in the template is replaced — sed never sees the rest of the policy.
+render_support_headers() {
+  local origin=$1 output=$2 template directory
+  [[ $origin =~ ^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?$ ]] || {
+    echo "Support origin must be https://host[:port] without a path: $origin" >&2
+    return 1
+  }
+  directory=$(dirname -- "$output")
+  [[ -d $directory ]] || {
+    echo "Cannot write rendered headers: no directory $directory" >&2
+    return 1
+  }
+  template="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/nginx-security-headers-support.conf"
+  [[ -f $template ]] || {
+    echo "Cannot read template: $template" >&2
+    return 1
+  }
+  sed "s|__SUPPORT_ORIGIN__|$origin|g" "$template" > "$output.tmp.$$" &&
+    mv -f -- "$output.tmp.$$" "$output"
+}

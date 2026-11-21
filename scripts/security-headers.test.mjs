@@ -10,13 +10,17 @@
  * - an inline script creeping back into the app shell, which `script-src 'self'` blocks.
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const read = (path) => readFileSync(`${ROOT}${path}`, "utf8");
 
 const APP_SNIPPET = read("deploy/nginx-security-headers.conf");
+const SUPPORT_TEMPLATE = read("deploy/nginx-security-headers-support.conf");
 const DOCS_SNIPPET = read("deploy/nginx-security-headers-docs.conf");
 
 function csp(snippet) {
@@ -65,6 +69,73 @@ describe("app policy", () => {
     const html = read("apps/web/index.html");
     const inline = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>/g)].map((tag) => tag[0]);
     expect(inline).toEqual([]);
+  });
+});
+
+describe("support policy (ADR-250)", () => {
+  it("frames nothing in the default and link modes", () => {
+    expect(csp(APP_SNIPPET)["frame-src"]).toBeUndefined();
+  });
+
+  it("names exactly one origin in the chatwoot variant", () => {
+    const policy = csp(SUPPORT_TEMPLATE);
+    // The template is rendered per installation; one placeholder is the whole difference.
+    expect(policy["frame-src"]).toEqual(["__SUPPORT_ORIGIN__"]);
+    expect(policy["frame-ancestors"]).toEqual(["'none'"]);
+    expect(policy["script-src"]).toEqual(["'self'"]);
+    // A second framed origin would quietly widen what the app embeds.
+    const policyLine = SUPPORT_TEMPLATE.split("\n").find((line) =>
+      line.trimStart().startsWith("add_header Content-Security-Policy"),
+    );
+    expect(policyLine?.match(/frame-src/g)).toHaveLength(1);
+  });
+
+  it("renders the support origin into a copy of the policy", () => {
+    const directory = mkdtempSync(join(tmpdir(), "remo-headers-"));
+    const output = join(directory, "nginx-security-headers.conf");
+    try {
+      const rendered = spawnSync(
+        "bash",
+        [
+          "-c",
+          '. "$1"; render_support_headers "$2" "$3"',
+          "render",
+          `${ROOT}deploy/config.sh`,
+          "https://support.example.com",
+          output,
+        ],
+        { encoding: "utf8" },
+      );
+      expect(rendered.status, rendered.stderr).toBe(0);
+      const policy = csp(readFileSync(output, "utf8"));
+      expect(policy["frame-src"]).toEqual(["https://support.example.com"]);
+      expect(policy["frame-ancestors"]).toEqual(["'none'"]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses a support origin that is not a bare https origin", () => {
+    const directory = mkdtempSync(join(tmpdir(), "remo-headers-"));
+    try {
+      for (const origin of ["http://support.example.com", "https://support.example.com/widget"]) {
+        const rendered = spawnSync(
+          "bash",
+          [
+            "-c",
+            '. "$1"; render_support_headers "$2" "$3"',
+            "render",
+            `${ROOT}deploy/config.sh`,
+            origin,
+            join(directory, "headers.conf"),
+          ],
+          { encoding: "utf8" },
+        );
+        expect(rendered.status, origin).not.toBe(0);
+      }
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 

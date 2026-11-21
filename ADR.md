@@ -10121,8 +10121,8 @@ pictures onto a board. Four constraints shape the design:
 
 ## ADR-250: Support is an optional thin layer in the core; the help desk and the AI first line are separate services
 
-**Status:** proposed (2026-11-20). Implementation spec: `spec/support.md`. Amended before
-acceptance: schema 26 adds `users.support_id`; the client reads the mode from
+**Status:** accepted (2026-11-20, accepted 2026-11-21). Implementation spec: `spec/support.md`.
+Amended before acceptance: schema 26 adds `users.support_id`; the client reads the mode from
 `GET /api/support/config` instead of inventing it.
 
 **Context.** Users need one place to ask for help, report a bug or suggest an idea. Nobody

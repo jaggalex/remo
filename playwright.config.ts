@@ -92,6 +92,20 @@ export default defineConfig({
         REMO_MAIL_CONSOLE_FILE: MAIL_FILE,
         REMO_APP_ORIGIN: `http://localhost:${WEB_PORT}`,
         REMO_KEK: E2E_KEK,
+        // Support is off unless the run asks for it (ADR-250). The scenarios read the
+        // mode from `/api/support/config`, so one configuration drives all of them:
+        // `E2E_SUPPORT_PROVIDER=link|chatwoot pnpm e2e e2e/support.spec.ts`.
+        REMO_SUPPORT_PROVIDER: process.env.E2E_SUPPORT_PROVIDER ?? "none",
+        ...(process.env.E2E_SUPPORT_URL ? { REMO_SUPPORT_URL: process.env.E2E_SUPPORT_URL } : {}),
+        ...(process.env.E2E_SUPPORT_ORIGIN
+          ? { REMO_SUPPORT_ORIGIN: process.env.E2E_SUPPORT_ORIGIN }
+          : {}),
+        ...(process.env.E2E_SUPPORT_HMAC_SECRET
+          ? { REMO_SUPPORT_HMAC_SECRET: process.env.E2E_SUPPORT_HMAC_SECRET }
+          : {}),
+        ...(process.env.E2E_SUPPORT_CONTEXT_TOKEN
+          ? { REMO_SUPPORT_CONTEXT_TOKEN: process.env.E2E_SUPPORT_CONTEXT_TOKEN }
+          : {}),
         // The invitation scenarios predate verification; the guard has its own test.
         REMO_REQUIRE_VERIFIED_EMAIL_FOR_INVITES: "0",
       },

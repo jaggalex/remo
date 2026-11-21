@@ -46,6 +46,7 @@ import { createAgentLoops } from "./sync-agents.mjs";
 import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
 import { assertMailConfig, enqueueMail, mailCapabilities, mailDriver, resolveMailConfig } from "./mail.mjs";
 import { createMailDrain } from "./mail-drain.mjs";
+import { resolveSupportConfig } from "./support.mjs";
 import { createBillingLoops, openPaymentMethodRef } from "./billing-renewals.mjs";
 import { assertFakeProviderGate } from "./pay-fake.mjs";
 import { paymentAdapters } from "./payment-adapters.mjs";
@@ -273,6 +274,10 @@ const mail = createMailDrain({
   log: console,
   metrics,
 });
+
+// Support is off by default; a broken `chatwoot` configuration refuses to start instead
+// of serving a panel that cannot sign anyone in (ADR-250, `spec/support.md` §2.1).
+const supportConfig = resolveSupportConfig();
 
 
 /* -------------------------------------------------------------- billing -- */
@@ -519,6 +524,7 @@ async function routeRequest(request, response, url) {
       store,
       mail: mailCapabilities(mailConfig),
       mailConfig,
+      support: supportConfig,
       onAclChanged: connections.refreshBoardAccess,
       onUserSuspended: connections.closeUserConnections,
       onCommentsChanged: (boardId) =>
@@ -728,6 +734,9 @@ server.listen(PORT, () => {
   if (databaseUrl) filesGc.start();
   if (process.env.REMO_BILLING === "on") billing.start();
   if (mailConfig.driver !== "disabled") console.log(`[mail] driver ${mailConfig.driver}`);
+  if (supportConfig.provider !== "none") {
+    console.log(`[support] provider ${supportConfig.provider}`);
+  }
 });
 
 let shuttingDown = false;

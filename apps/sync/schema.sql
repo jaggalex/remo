@@ -162,6 +162,11 @@ alter table users add column if not exists handle text;
 -- null on purpose: nothing ever checked them, so claiming otherwise would be a lie.
 alter table users add column if not exists email_verified_at timestamptz;
 
+-- Support identity (ADR-250): a separate, rotatable id the help desk may know. It is not
+-- the account id, because the Chatwoot HMAC has no expiry: one leaked hash must never
+-- point at the account itself. Created on the first `POST /api/support/identity`.
+alter table users add column if not exists support_id text unique;
+
 -- The author of a board is its creator, not its current owner: ownership can be
 -- transferred, history should not be rewritten (ADR-168).
 alter table boards add column if not exists created_by uuid;
@@ -1658,5 +1663,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 25)
+insert into schema_meta (id, version) values (1, 26)
 on conflict (id) do update set version = excluded.version, updated_at = now();

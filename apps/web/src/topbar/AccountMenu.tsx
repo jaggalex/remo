@@ -3,6 +3,13 @@ import { useEffect, useState } from "react";
 import type { Presence } from "@remo/doc";
 import { api, ApiError, type SessionUser } from "../api";
 import { authCapabilities, resendVerification } from "../apiMail";
+import {
+  supportConfig,
+  supportIdentity,
+  type SupportConfig,
+  type SupportIdentity,
+} from "../apiSupport";
+import { SupportPanel } from "../SupportPanel";
 import { useI18n } from "../i18n";
 import { ABOUT_LABEL } from "../about";
 import { useMenuFocus } from "../useMenuFocus";
@@ -64,6 +71,44 @@ export function AccountMenu({
   const [savingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameSaved, setNameSaved] = useState(false);
+
+  // Support is a server fact (ADR-250): the menu learns it when it opens, and a 404 in
+  // `none` mode simply means no entry. Nothing here guesses a provider.
+  const [support, setSupport] = useState<SupportConfig | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportSelf, setSupportSelf] = useState<SupportIdentity | null>(null);
+  const [supportFailed, setSupportFailed] = useState(false);
+
+  useEffect(() => {
+    if (!open || !signedIn) return;
+    let alive = true;
+    supportConfig()
+      .then((config) => {
+        if (alive) setSupport(config);
+      })
+      .catch(() => {
+        if (alive) setSupport(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [open, signedIn]);
+
+  const openSupport = () => {
+    onOpen(false);
+    if (!support || support.provider === "none") return;
+    if (support.provider === "link") {
+      if (support.url) window.open(support.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (support.provider !== "chatwoot") return;
+    setSupportOpen(true);
+    setSupportSelf(null);
+    setSupportFailed(false);
+    supportIdentity()
+      .then(setSupportSelf)
+      .catch(() => setSupportFailed(true));
+  };
 
   useEffect(() => setNameDraft(name), [name]);
   useEffect(() => setHandleDraft(handle), [handle]);
@@ -246,6 +291,15 @@ export function AccountMenu({
               >
                 {t("account.sessions")}
               </button>
+              {support && support.provider !== "none" && (
+                <button
+                  type="button"
+                  className="rm-menu-item account-item"
+                  onClick={openSupport}
+                >
+                  {t("support.menu")}
+                </button>
+              )}
               <button
                 type="button"
                 className="rm-menu-item account-item"
@@ -261,6 +315,7 @@ export function AccountMenu({
                 className="rm-menu-item account-item"
                 onClick={() => {
                   onOpen(false);
+                  setSupportOpen(false);
                   onSignOut();
                 }}
               >
@@ -291,6 +346,15 @@ export function AccountMenu({
             <span className="muted">{ABOUT_LABEL}</span>
           </div>
         </Popover>
+      )}
+      {support && (
+        <SupportPanel
+          open={supportOpen}
+          config={support}
+          identity={supportSelf}
+          failed={supportFailed}
+          onClose={() => setSupportOpen(false)}
+        />
       )}
     </span>
   );

@@ -64,6 +64,22 @@ export function reserveAttempt(
   return true;
 }
 
+/**
+ * Reserve one slot in a fixed window, counting successes as well as failures.
+ *
+ * The sign-in limiter counts wrong passwords and clears the key on success. A read API
+ * needs the opposite: every call counts, and no success resets the window. It shares the
+ * map, the sweep and the synchronous check-and-count with `reserveAttempt`, so there is
+ * still one limiter in the process (`spec/support.md` §2.5).
+ */
+export function reserveQuota(
+  key,
+  { limit, windowMs = WINDOW_MS, now = Date.now(), maxKeys = MAX_KEYS } = {},
+) {
+  if (!Number.isInteger(limit) || limit < 1) throw new Error("reserveQuota needs a positive limit");
+  return reserveAttempt(key, { limit, now, windowMs, maxKeys });
+}
+
 /** A success clears the key: the next wrong password starts a fresh window. */
 export function clearFailures(key) {
   buckets.delete(key);
