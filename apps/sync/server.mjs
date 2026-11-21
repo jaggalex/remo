@@ -47,8 +47,8 @@ import { createEventDrain, createWebhookConsumer } from "./sync-events.mjs";
 import { assertMailConfig, enqueueMail, mailCapabilities, mailDriver, resolveMailConfig } from "./mail.mjs";
 import { createMailDrain } from "./mail-drain.mjs";
 import { createBillingLoops, openPaymentMethodRef } from "./billing-renewals.mjs";
-import { manualAdapter } from "./pay-manual.mjs";
-import { yookassaAdapter } from "./pay-yookassa.mjs";
+import { assertFakeProviderGate } from "./pay-fake.mjs";
+import { paymentAdapters } from "./payment-adapters.mjs";
 import { openConnectionSecret } from "./payment-connections.mjs";
 import { kekFromEnv } from "./secrets.mjs";
 import { handleBilling } from "./billing-api.mjs";
@@ -70,6 +70,10 @@ try {
 } catch {
   /* no .env: the process environment is the source of truth */
 }
+
+// The fake payment provider is a development seam: a production process that carries
+// the flag stops here instead of starting with a switchable free-money button.
+assertFakeProviderGate();
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.REMO_DATA_DIR ?? join(HERE, ".data");
@@ -276,13 +280,12 @@ const mail = createMailDrain({
 // Renewal runs in this process for providers that charge a saved method (ADR-247 §3.3).
 // With billing off there is nothing to renew, and a missing connection or saved method is
 // a failed attempt, not a crash: the subscription moves to `past_due` and a letter says so.
-const BILLING_ADAPTERS = { manual: manualAdapter, yookassa: yookassaAdapter };
 const billing = createBillingLoops({
   store,
   async charge({ subscription, invoice, idempotencyKey }) {
     if (process.env.REMO_BILLING !== "on") throw new Error("billing is off");
     const connection = await store.connectionById(subscription.connection_id);
-    const adapter = connection ? BILLING_ADAPTERS[connection.provider] : null;
+    const adapter = connection ? paymentAdapters()[connection.provider] : null;
     if (!connection || typeof adapter?.chargeSaved !== "function") {
       throw new Error("this connection cannot renew");
     }

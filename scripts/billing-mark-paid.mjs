@@ -11,7 +11,7 @@
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PLANS } from "../apps/sync/billing-catalog.mjs";
+import { settleInvoice } from "../apps/sync/billing-settle.mjs";
 import { PostgresStore } from "../apps/sync/postgres.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -54,50 +54,17 @@ try {
   } else if (invoice.status === "paid") {
     console.log(`[billing:mark-paid] ${invoice.number} is already paid`);
   } else {
-    const lines = Array.isArray(invoice.lines) ? invoice.lines : [];
-    const subscription = lines.find((line) => line?.kind === "subscription");
-
-    await store.withTenant(invoice.org_id, async () => {
-      // The credit was promised on the invoice; this is the moment it is spent.
-      const creditApplied = Number(invoice.credit_applied);
-      const total = Number(invoice.total);
-      const subtotal = Number(invoice.subtotal);
-      if (creditApplied > 0) {
-        const balance = Number(await store.creditBalance(invoice.org_id, invoice.currency));
-        const applied = Math.min(balance, creditApplied);
-        if (applied > 0) {
-          await store.applyCredit({
-            orgId: invoice.org_id,
-            currency: invoice.currency,
-            amount: applied,
-            invoiceId: invoice.id,
-          });
-        }
-      }
-      await store.markInvoicePaid({
-        invoiceId: invoice.id,
-        amount: total,
-        currency: invoice.currency,
-        providerPaymentId: ref ? `manual:${ref}` : `manual:${invoice.id}`,
-      });
-      if (subscription) {
-        await store.upsertOperatorPlan({
-          orgId: invoice.org_id,
-          plan: subscription.plan,
-          priceId: subscription.priceId,
-          amount: subtotal,
-          currency: invoice.currency,
-          interval: subscription.interval ?? "month",
-          until: invoice.period_end ?? new Date(Date.now() + 30 * 86400000),
-        });
-        const plan = PLANS[subscription.plan];
-        await store.reconcileFrozenRooms(invoice.org_id, plan?.rooms ?? null);
-      }
+    // The fake provider's page settles through the same function, so a browser test and
+    // an operator command cannot disagree about what "paid" means.
+    const settled = await settleInvoice({
+      store,
+      invoice,
+      providerPaymentId: ref ? `manual:${ref}` : `manual:${invoice.id}`,
     });
 
     console.log(
       `[billing:mark-paid] ${invoice.number} paid: ${invoice.total} ${invoice.currency}` +
-        (subscription ? ` → ${subscription.plan}` : ""),
+        (settled.subscription ? ` → ${settled.subscription.plan}` : ""),
     );
   }
 } finally {

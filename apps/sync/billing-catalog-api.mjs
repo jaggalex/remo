@@ -11,6 +11,7 @@
  * `404`, not an empty catalogue: the feature is absent, not "not configured yet".
  */
 import { billingEnabled, entitlementsFor } from "./billing.mjs";
+import { handleFakeBilling } from "./billing-fake-api.mjs";
 import { checkPromo, handleCheckoutRoutes } from "./billing-checkout-api.mjs";
 import { handleSubscriptionRoutes } from "./billing-subscription-api.mjs";
 import { PLAN_NAMES, PLANS } from "./billing-catalog.mjs";
@@ -162,6 +163,10 @@ export async function handleBilling({
   }
 
   const method = request.method ?? "GET";
+
+  // The development fake provider answers 404 unless its gate is on; the call comes
+  // before every session-bearing route because its two paths carry no organisation.
+  if (await handleFakeBilling({ request, response, url, store, env })) return true;
 
   // Provider webhooks carry a connection token instead of a session, so they are handled
   // before the organisation match. Billing being off still answers 404 above: the whole

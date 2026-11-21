@@ -21,12 +21,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { clientIp } from "./client-ip.mjs";
 import { openConnectionSecret } from "./payment-connections.mjs";
-import { manualAdapter } from "./pay-manual.mjs";
-import { yookassaAdapter } from "./pay-yookassa.mjs";
+import { paymentAdapters } from "./payment-adapters.mjs";
 import { kekFromEnv } from "./secrets.mjs";
 import { fail } from "./iam-http.mjs";
-
-const ADAPTERS = Object.freeze({ manual: manualAdapter, yookassa: yookassaAdapter });
 
 const MAX_BODY = 64 * 1024;
 
@@ -190,7 +187,7 @@ export async function handlePaymentWebhook({
     return true;
   }
 
-  const adapter = ADAPTERS[connection.provider];
+  const adapter = paymentAdapters(env)[connection.provider];
   if (!adapter) {
     fail(response, 501, "PROVIDER_NOT_READY", "this provider has no adapter yet");
     return true;

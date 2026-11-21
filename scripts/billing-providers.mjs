@@ -28,6 +28,7 @@ import {
   MODES,
   PROVIDERS,
 } from "../apps/sync/pg/payment-providers.mjs";
+import { fakeProviderEnabled } from "../apps/sync/pay-fake.mjs";
 import { encryptSecret, fingerprintSecret, kekFromEnv } from "../apps/sync/secrets.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -292,9 +293,21 @@ const ADAPTERS = Object.freeze({
 });
 
 async function loadAdapter(provider) {
-  const load = ADAPTERS[provider];
+  // The fake adapter is imported here, not at module load: `.env` is read just before
+  // `main` runs, so a flag placed there must still be able to select the development
+  // provider without turning it into a production import.
+  const load =
+    provider === "fake"
+      ? fakeProviderEnabled()
+        ? () => import("../apps/sync/pay-fake.mjs")
+        : null
+      : ADAPTERS[provider];
   if (!load) {
-    throw new Error(`provider ${provider} has no adapter yet (apps/sync/pay-${provider}.mjs)`);
+    throw new Error(
+      provider === "fake"
+        ? "the fake provider is for development only: run with NODE_ENV!=production and REMO_PAY_FAKE=1"
+        : `provider ${provider} has no adapter yet (apps/sync/pay-${provider}.mjs)`,
+    );
   }
   const module = await load();
   return module.default ?? module[`${provider}Adapter`];
@@ -368,6 +381,11 @@ async function main(argv) {
     }
 
     if (args.command === "create") {
+      if (args.provider === "fake" && !fakeProviderEnabled()) {
+        throw new Error(
+          "the fake provider is for development only: run with NODE_ENV!=production and REMO_PAY_FAKE=1",
+        );
+      }
       if (args.provider === "manual" && args.secretFile) {
         throw new Error("manual needs no secret; refuse to store an unused key");
       }

@@ -22,6 +22,27 @@ export const ruBilling = {
   "billing.cardExpires": "до {month}/{year}",
   "billing.noPaymentMethod": "Сохранённого способа оплаты нет.",
 
+  "billing.rooms.title": "Активные комнаты",
+  "billing.rooms.hint":
+    "Тариф сохраняет {max} активных комнат. Остальные станут только для чтения: содержимое сохранится, экспорт продолжит работать.",
+  "billing.rooms.choose": "Выбрать активные",
+  "billing.rooms.change": "Изменить активные",
+  "billing.rooms.counter": "Выбрано {selected} из {max}",
+  "billing.rooms.fewer":
+    "Выбрано {selected} из {max}. Остальные комнаты станут только для чтения.",
+  "billing.rooms.save": "Сохранить",
+  "billing.rooms.saving": "Сохраняем…",
+  "billing.rooms.saved": "Сохранено",
+  "billing.rooms.loadFailed": "Не удалось загрузить комнаты. Попробуйте ещё раз.",
+  "billing.rooms.empty": "В организации пока нет комнат.",
+  "billing.rooms.badList":
+    "Сервер не принял этот список. Обновите страницу и попробуйте ещё раз.",
+  "billing.rooms.gone":
+    "Одна из комнат больше не принадлежит этой организации. Обновите список.",
+  "billing.rooms.forbidden": "Выбрать активные комнаты может только владелец организации.",
+  "billing.rooms.askOwner":
+    "Организация превысила лимит комнат. Попросите владельца выбрать, какие комнаты останутся активными.",
+
   "billing.changePlan": "Сменить тариф",
   "billing.cancel": "Отменить подписку",
   "billing.cancelConfirm":
@@ -125,4 +146,18 @@ export const ruBilling = {
   "billing.feature.other": "эта функция",
   "billing.frozenRoom":
     "Комната только для чтения по тарифу. Содержимое сохранено, экспорт работает.",
+
+  "fake.title": "Тестовый платёжный провайдер",
+  "fake.hint": "Этот экран существует только в тестовой установке. Деньги не списываются.",
+  "fake.unavailable": "Тестовый платёжный провайдер недоступен на этой установке.",
+  "fake.error": "Тестовый провайдер не ответил. Попробуйте ещё раз.",
+  "fake.amount": "Сумма",
+  "fake.statusLabel": "Статус",
+  "fake.status.pending": "Ожидает",
+  "fake.status.succeeded": "Успешно",
+  "fake.status.failed": "Отказ",
+  "fake.status.canceled": "Отменён",
+  "fake.success": "Успешно",
+  "fake.fail": "Отказ",
+  "fake.finished": "Результат записан. Вернитесь в биллинг.",
 };

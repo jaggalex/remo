@@ -13,6 +13,7 @@
  * (the token is only in `connectionById`, for the operator CLI's `webhook-url`).
  */
 import { randomBytes, randomUUID } from "node:crypto";
+import { fakeProviderEnabled } from "../pay-fake.mjs";
 
 /** Closed lists, mirrored by the check constraints in `schema.sql`. */
 export const PROVIDERS = Object.freeze([
@@ -203,6 +204,13 @@ export const paymentProviderMethods = {
     createdBy = null,
   }) {
     if (!PROVIDERS.includes(provider)) throw new Error(`unknown provider ${provider}`);
+    // A fake connection is a development object: creating one in a production database
+    // would leave a route that the runtime can never load, so the refusal belongs here.
+    if (provider === "fake" && !fakeProviderEnabled()) {
+      throw new Error(
+        "the fake payment provider is available only outside production with REMO_PAY_FAKE=1",
+      );
+    }
     if (!MODES.includes(mode)) throw new Error(`unknown mode ${mode}`);
     const trimmedName = String(name ?? "").trim();
     if (!trimmedName) throw new Error("a connection needs a name");

@@ -70,6 +70,55 @@
   gap: var(--space-2);
 }
 
+/* The owner's choice of active rooms when the organisation is over the plan (§2.5). */
+.billing-rooms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.billing-rooms-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.billing-rooms-head h3 {
+  margin: 0;
+}
+
+.billing-rooms-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  list-style: none;
+}
+
+.billing-rooms-list > li {
+  min-width: 0;
+}
+
+.billing-rooms-list .rm-check-text {
+  overflow-wrap: anywhere;
+}
+
+.billing-rooms-count {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.billing-rooms-saved {
+  font: var(--type-label);
+  color: var(--state-success);
+}
+
 .billing-choose {
   display: flex;
   flex-direction: column;

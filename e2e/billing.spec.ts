@@ -163,6 +163,46 @@ test("Free keeps five rooms and names the sixth refusal", async ({ page }) => {
   await expect(page.locator(".billing-usage").first()).toContainText("Rooms 5/5");
 });
 
+test("the owner chooses which rooms stay active from the plan tab", async ({ page }) => {
+  const account = await freshBoard(page, "billing-picker");
+  // Five rooms is exactly the Free ceiling: the choice is the owner's, not a repair.
+  const extra = await createRooms(page, account.orgId, 4, "Picker");
+  await page.getByRole("button", { name: "All rooms" }).click();
+  await openOrganisation(page);
+  await page.getByRole("tab", { name: "Plan & payment" }).click();
+
+  const panel = page.locator(".billing-panel");
+  await expect(panel.locator(".billing-usage").first()).toContainText("Rooms 5/5");
+
+  // At the limit the chooser waits behind the owner's button (§2.5).
+  await panel.getByRole("button", { name: "Change active rooms" }).click();
+  const list = panel.locator(".billing-rooms-list");
+  await expect(list.getByRole("checkbox")).toHaveCount(5);
+  await expect(panel.locator(".billing-rooms-count")).toContainText("5 of 5");
+
+  // Keep the first board and Picker 1–3; Picker 4 becomes read-only.
+  for (const box of await list.getByRole("checkbox").all()) {
+    if (await box.isChecked()) await box.uncheck();
+  }
+  await expect(panel.locator(".billing-rooms-count")).toContainText("0 of 5");
+  for (const title of ["billing-picker board", "Picker 1", "Picker 2", "Picker 3"]) {
+    await list.getByRole("checkbox", { name: title, exact: true }).check();
+  }
+  await expect(panel.locator(".billing-rooms-count")).toContainText("4 of 5");
+  await expect(panel.locator(".billing-warning")).toContainText(
+    "Only 4 of 5 are selected",
+  );
+
+  await panel.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(panel.locator(".billing-rooms-saved")).toContainText("Saved");
+
+  // The fifth room keeps its content and loses editing, exactly as the spec says.
+  const frozenId = extra[extra.length - 1]!;
+  await page.goto(`/?room=${frozenId}&lang=en`);
+  await expect(page.locator(".save-state")).toHaveText(/saved/i, { timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Sticky note", exact: true })).toBeDisabled();
+});
+
 test("a frozen room keeps its content and loses editing", async ({ page }) => {
   const account = await freshBoard(page, "billing-frozen");
   const extra = await createRooms(page, account.orgId, 4, "Kept");

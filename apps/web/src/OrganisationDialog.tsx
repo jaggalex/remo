@@ -755,6 +755,7 @@ export function OrganisationDialog({
         {!isGuest && tab === "billing" && orgId && (
           <BillingPanel
             orgId={orgId}
+            orgSlug={org?.slug ?? null}
             initial={billing.seed}
             isOrgAdmin={isOrgAdmin}
             orgKind={org?.kind ?? "shared"}

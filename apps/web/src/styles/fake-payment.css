@@ -1,0 +1,60 @@
+/* The development payment provider's page (ADR-248 §7). One centred card, two outcomes. */
+.fake-payment {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--space-6);
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.fake-payment-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(100%, 420px);
+  padding: var(--space-6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+}
+
+.fake-payment-card h1 {
+  margin: 0;
+  font: var(--type-title);
+}
+
+.fake-payment-hint,
+.fake-payment-note,
+.fake-payment-error {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.fake-payment-error {
+  color: var(--danger);
+}
+
+.fake-payment-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.fake-payment-facts dt {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.fake-payment-facts dd {
+  margin: 0;
+  font: var(--type-subtitle);
+}
+
+.fake-payment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

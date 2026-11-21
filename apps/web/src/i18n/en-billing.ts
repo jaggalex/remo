@@ -24,6 +24,27 @@ export const enBilling = {
   "billing.cardExpires": "until {month}/{year}",
   "billing.noPaymentMethod": "No saved payment method.",
 
+  "billing.rooms.title": "Active rooms",
+  "billing.rooms.hint":
+    "The plan keeps {max} active rooms. The others become read-only: their content is kept and export still works.",
+  "billing.rooms.choose": "Choose active rooms",
+  "billing.rooms.change": "Change active rooms",
+  "billing.rooms.counter": "{selected} of {max} selected",
+  "billing.rooms.fewer":
+    "Only {selected} of {max} are selected. The other rooms will become read-only.",
+  "billing.rooms.save": "Save",
+  "billing.rooms.saving": "Saving…",
+  "billing.rooms.saved": "Saved",
+  "billing.rooms.loadFailed": "Could not load the rooms. Try again.",
+  "billing.rooms.empty": "This organisation has no rooms yet.",
+  "billing.rooms.badList":
+    "The server did not accept this list. Refresh the page and try again.",
+  "billing.rooms.gone":
+    "One of the rooms no longer belongs to this organisation. Refresh the list.",
+  "billing.rooms.forbidden": "Only the organisation owner can choose active rooms.",
+  "billing.rooms.askOwner":
+    "The organisation is over its room limit. Ask the owner to choose which rooms stay active.",
+
   "billing.changePlan": "Change plan",
   "billing.cancel": "Cancel subscription",
   "billing.cancelConfirm":
@@ -127,4 +148,18 @@ export const enBilling = {
   "billing.feature.other": "this feature",
   "billing.frozenRoom":
     "This room is read-only on the current plan. Its content is kept and export still works.",
+
+  "fake.title": "Test payment provider",
+  "fake.hint": "This screen exists only in a development installation. No money moves.",
+  "fake.unavailable": "The test payment provider is not available on this installation.",
+  "fake.error": "The test provider did not answer. Try again.",
+  "fake.amount": "Amount",
+  "fake.statusLabel": "Status",
+  "fake.status.pending": "Pending",
+  "fake.status.succeeded": "Succeeded",
+  "fake.status.failed": "Declined",
+  "fake.status.canceled": "Canceled",
+  "fake.success": "Success",
+  "fake.fail": "Decline",
+  "fake.finished": "The result is recorded. Return to billing.",
 };

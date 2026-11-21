@@ -22,6 +22,7 @@ import {
   type PromoResult,
 } from "./apiBilling";
 import { ApiError } from "./apiCall";
+import { BillingRooms } from "./BillingRooms";
 import { formatDate } from "./format";
 import { useI18n, type TranslationKey } from "./i18n";
 
@@ -111,12 +112,15 @@ function priceAmount(
 
 export function BillingPanel({
   orgId,
+  orgSlug,
   initial,
   isOrgAdmin,
   orgKind,
   onUnavailable,
 }: {
   orgId: string;
+  /** The room directory is filtered by slug (`GET /boards?org=`). */
+  orgSlug: string | null;
   /** The dialog's availability probe; without it the panel reads the route itself. */
   initial: OrgBilling | null;
   isOrgAdmin: boolean;
@@ -455,6 +459,17 @@ export function BillingPanel({
           </span>
         </div>
       </section>
+
+      <BillingRooms
+        key={orgId}
+        orgId={orgId}
+        orgSlug={orgSlug}
+        limitsRooms={data.limits.rooms}
+        usageRooms={data.usage.rooms}
+        frozenRooms={data.frozenRooms}
+        isOrgAdmin={isOrgAdmin}
+        onSaved={read}
+      />
 
       {isOrgAdmin && data.paymentMethod !== undefined && (
         <section className="billing-usage">
