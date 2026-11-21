@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@remo/ui";
-import { billingApi, type OrgBilling } from "./apiBilling";
+import { billingApi, type OrgBilling, type OrgStorageRoom } from "./apiBilling";
 import { useI18n } from "./i18n";
 import { formatStorageBytes, storageShare, storageTone } from "./storageUsage";
 
@@ -33,6 +33,7 @@ export function StoragePanel({
   const { t, lang } = useI18n();
   const [data, setData] = useState<OrgBilling | null>(summary);
   const [error, setError] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<OrgStorageRoom[]>([]);
 
   useEffect(() => {
     setError(null);
@@ -55,6 +56,31 @@ export function StoragePanel({
       alive = false;
     };
   }, [orgId, summary, t]);
+
+  /**
+   * The room ranking is a second read on purpose: it is a list of titles, the summary is
+   * the number the plan tab already owns. Only the owner and admins may ask (§9.8), so a
+   * member simply never sees the list instead of meeting a `403` on the page.
+   */
+  useEffect(() => {
+    if (!isOrgAdmin) {
+      setRooms([]);
+      return;
+    }
+    let alive = true;
+    billingApi
+      .storage(orgId)
+      .then((next) => {
+        if (alive) setRooms(next.rooms ?? []);
+      })
+      .catch(() => {
+        // The total above is still true; a missing ranking is not worth an error banner.
+        if (alive) setRooms([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [orgId, isOrgAdmin]);
 
   if (error) return <p className="auth-error">{error}</p>;
   if (!data) return <p className="muted">{t("storage.loading")}</p>;
@@ -90,6 +116,23 @@ export function StoragePanel({
             style={{ width: `${percent}%` }}
           />
         </div>
+      )}
+
+      {rooms.length > 0 && (
+        <section className="storage-rooms">
+          <h4>{t("storage.roomsTitle")}</h4>
+          <ul>
+            {rooms.map((room) => (
+              <li key={room.boardId}>
+                {/* The title is the link: one control, one destination (§9.8). */}
+                <a href={`?room=${encodeURIComponent(room.boardId)}`}>
+                  {room.title || t("storage.untitledRoom")}
+                </a>
+                <span className="storage-room-bytes">{formatStorageBytes(room.bytes, lang)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {limit !== null &&

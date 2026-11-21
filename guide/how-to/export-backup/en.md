@@ -25,7 +25,7 @@ Result: the image contains exactly the chosen scope.
 2. Choose **Бэкап комнаты** (room backup).
 3. Save the JSON file. Cyrillic letters from the room title are preserved in the filename.
 
-Result: the file contains a manifest with a checksum, every room object, tags, presentation order and the discussion. A backup always covers the whole room, whatever is selected.
+Result: the file contains a manifest with a checksum, every room object, tags, presentation order, the discussion and the images. A backup always covers the whole room, whatever is selected. A room with pictures over 200 MiB cannot be backed up whole — choose **Back up without images**: the objects are kept, and the pictures come back as placeholders.
 
 :::danger
 Import replaces the whole room and cannot be undone. Take a backup of the current state first.

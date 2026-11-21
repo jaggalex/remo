@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Y } from "./y.mjs";
-import { buildBoardBackup } from "./backup.mjs";
+import { buildBoardBackup, checksumOf } from "./backup.mjs";
 import {
   BackupError,
   backupToBoard,
@@ -62,6 +62,64 @@ describe("board backup import (ADR-071)", () => {
     expect(restored.board.groupNames?.["grp-1"]).toBe("Cluster");
     expect(restored.tags["tag-1"]).toMatchObject({ name: "Priority", color: "blue" });
     expect(restored.presentation).toEqual(["frame-1"]);
+  });
+
+  it("accepts version 3 with embedded pictures and still reads version 2", async () => {
+    const withAsset = buildBoardBackup({
+      state: state(),
+      boardId: "board-1",
+      assets: [
+        {
+          fileId: "file-1",
+          sha256: "a".repeat(64),
+          mime: "image/png",
+          width: 1200,
+          height: 800,
+          alt: "A screenshot",
+          data: "AAAA",
+        },
+      ],
+    });
+    const bundle = await verifyBoardBackup(JSON.parse(JSON.stringify(withAsset)));
+    expect(bundle.manifest.version).toBe(3);
+    expect(bundle.assets?.[0]).toMatchObject({
+      fileId: "file-1",
+      mime: "image/png",
+      width: 1200,
+      height: 800,
+    });
+
+    // A version 2 file has no `assets` at all; the reader must not demand one.
+    const content = {
+      format: "remo.board",
+      version: 2,
+      board: { id: "board-1", title: "Older" },
+      widgets: {},
+      texts: {},
+      textDeltas: {},
+      kanbans: {},
+      meta: {},
+      groupNames: {},
+      tags: {},
+      presentation: [],
+      comments: [],
+    };
+    const old = {
+      manifest: {
+        format: "remo.board.backup",
+        version: 2,
+        boardId: "board-1",
+        title: "Older",
+        exportedAt: "2026-01-01T00:00:00.000Z",
+        checksum: checksumOf(content),
+        counts: { widgets: 0, connectors: 0, assets: 0 },
+        files: [],
+      },
+      ...content,
+    };
+    const restored = await verifyBoardBackup(JSON.parse(JSON.stringify(old)));
+    expect(restored.assets).toBeUndefined();
+    expect(backupToBoard(restored).board.title).toBe("Older");
   });
 
   it("refuses another format and a changed file", async () => {

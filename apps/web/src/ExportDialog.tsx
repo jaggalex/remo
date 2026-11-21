@@ -96,6 +96,10 @@ export function ExportDialog({
   const [importError, setImportError] = useState<string | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [includeComments, setIncludeComments] = useState(true);
+  /** The room is over the 200 MiB backup limit: the offer, not a dead end (§5.3). */
+  const [backupTooLarge, setBackupTooLarge] = useState(false);
+  /** Pictures the export could not decode: a placeholder is in the picture (§6.1). */
+  const [imageWarning, setImageWarning] = useState(0);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const importSection = useRef<HTMLElement | null>(null);
 
@@ -116,6 +120,8 @@ export function ExportDialog({
     setPendingImport(null);
     setImportError(null);
     setImportBusy(false);
+    setBackupTooLarge(false);
+    setImageWarning(0);
     // The reset is about opening, not about every change while the dialog is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -167,15 +173,19 @@ export function ExportDialog({
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const run = async () => {
+  const run = async (options: { withoutImages?: boolean } = {}) => {
     if (!canRun || !effectiveScope) return;
     setStatus("running");
     setError(null);
     setPlanLimit(null);
+    setBackupTooLarge(false);
+    setImageWarning(0);
     setProgress(0.05);
     try {
       if (format === "backup") {
-        const result = await api.downloadBackup(boardId);
+        // A room over 200 MiB is offered the same backup without pictures (§5.3): the
+        // assets keep their metadata and lose their bytes.
+        const result = await api.downloadBackup(boardId, options.withoutImages === true);
         download(result.blob, result.filename);
         setProgress(1);
         setStatus("done");
@@ -255,6 +265,9 @@ export function ExportDialog({
         await api.completeExportJob(boardId, currentJob, pdf.size);
         download(pdf, filenameFor(boardTitle, "pdf"));
       }
+      // A picture that did not arrive in 15 s is in the file as a placeholder; saying so
+      // beats letting the person discover it later (§6.1).
+      if (images.failed > 0) setImageWarning(images.failed);
       setProgress(1);
       setStatus("done");
       setJobId(null);
@@ -265,6 +278,13 @@ export function ExportDialog({
       const notice = planLimitFrom(failure);
       if (notice) {
         setPlanLimit(notice);
+        setStatus("idle");
+        return;
+      }
+      // The 200 MiB ceiling is not an error the person can fix by retrying: it is an
+      // offer of the backup without pictures (§5.3, §9.9).
+      if (failure instanceof ApiError && failure.code === "BACKUP_TOO_LARGE") {
+        setBackupTooLarge(true);
         setStatus("idle");
         return;
       }
@@ -453,6 +473,23 @@ export function ExportDialog({
         {error && (
           <p className="auth-error" role="alert">
             {error}
+          </p>
+        )}
+        {backupTooLarge && format === "backup" && (
+          <div className="export-warning" role="alert">
+            <span>{t("export.backupTooLarge")}</span>
+            <Button
+              size="compact"
+              onClick={() => void run({ withoutImages: true })}
+              disabled={status === "running"}
+            >
+              {t("export.backupWithoutImages")}
+            </Button>
+          </div>
+        )}
+        {imageWarning > 0 && (
+          <p className="export-warning" role="status">
+            {t("export.imagesFailed", { count: count("images", imageWarning) })}
           </p>
         )}
         {planLimit && (

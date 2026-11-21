@@ -81,6 +81,20 @@ export interface OrgBilling {
   credit?: number | null;
 }
 
+/** One room in the storage list of §9.8: the bytes its own uploads hold. */
+export interface OrgStorageRoom {
+  boardId: string;
+  title: string;
+  bytes: number;
+}
+
+/** `GET /orgs/:id/storage`: the total, the ceiling and the five heaviest rooms. */
+export interface OrgStorage {
+  usedBytes: number;
+  limitBytes: number | null;
+  rooms: OrgStorageRoom[];
+}
+
 export interface BillingPrice {
   /** The `prices.id` the checkout names. The public catalogue may omit it (server §6). */
   id?: string;
@@ -203,6 +217,12 @@ export const billingApi = {
     call<BillingCatalog>(
       `/billing/catalog${currency ? `?currency=${encodeURIComponent(currency)}` : ""}`,
     ),
+  /**
+   * The room ranking of §9.8. Only an owner or an organisation admin may ask; the panel
+   * calls it for exactly those people, so a refusal is not a state it renders.
+   */
+  storage: (orgId: string) =>
+    call<OrgStorage>(`/orgs/${encodeURIComponent(orgId)}/storage`),
   org: async (orgId: string): Promise<OrgBilling> => {
     const data = await call<
       Omit<OrgBilling, "paymentMethod" | "credit"> & {

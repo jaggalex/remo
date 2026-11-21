@@ -61,8 +61,7 @@ export async function applyBoardCommand({
       return { result: existing.result, version: existing.version, replayed: true };
     }
 
-    await authorizeCommand({ name: command, input, store, boardId });
-
+    const facts = await authorizeCommand({ name: command, input, store, boardId });
     const ydoc = await getDocument(boardId);
     const ran = runCommand({
       ydoc,
@@ -73,6 +72,7 @@ export async function applyBoardCommand({
       ifVersion,
       idempotencyKey,
       boardId,
+      facts,
     });
 
     // A response is a promise that the change survives a restart.

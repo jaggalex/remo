@@ -8,6 +8,8 @@ export const enStorage = {
   "storage.failed": "Could not read the storage usage. Try again.",
   "storage.used": "Used {used} of {limit}",
   "storage.usedUnlimited": "Used {used}, no limit",
+  "storage.roomsTitle": "Taking the most space",
+  "storage.untitledRoom": "Untitled room",
   "storage.gc": "Deleted images free their space after 30 days.",
 
   "storage.quota.body":

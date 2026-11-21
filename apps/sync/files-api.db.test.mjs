@@ -19,6 +19,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createFilesApi } from "./files-api.mjs";
 import { createFileStore } from "./files-store.mjs";
 import { Metrics } from "./metrics.mjs";
+import { handleBilling } from "./billing-catalog-api.mjs";
 import { handleCommands } from "./commands-api.mjs";
 import { accessForBoard, handleIam, linkUnlockToken, sessionFromRequest } from "./iam-api.mjs";
 import { testDatabaseStore } from "./test-db.mjs";
@@ -39,6 +40,13 @@ const metrics = new Metrics();
 /** A real PNG: 1200×800 is wider than `w1024`, narrower than `w2048`. */
 const PNG = await sharp({
   create: { width: 1200, height: 800, channels: 3, background: "#336699" },
+})
+  .png()
+  .toBuffer();
+
+/** A portrait picture for the replacement case: same object, a new proportion. */
+const PNG_PORTRAIT = await sharp({
+  create: { width: 600, height: 900, channels: 3, background: "#993366" },
 })
   .png()
   .toBuffer();
@@ -66,6 +74,11 @@ beforeAll(async () => {
     const url = new URL(request.url, "http://localhost");
     const handle = async () => {
       if (await filesApi.handleFilesRoutes({ request, response, url })) return;
+      // Storage lives in the billing family; the test installation turns billing on so
+      // the route is reachable, exactly as a hosted installation would.
+      if (await handleBilling({ request, response, url, store, env: { REMO_BILLING: "on" } })) {
+        return;
+      }
       if (await handleIam({ request, response, url, store })) return;
       if (
         await handleCommands({
@@ -85,7 +98,12 @@ beforeAll(async () => {
     // `server.mjs` resolves the organisation of every `/boards/...` request before the
     // route runs (ADR-178); the suite reproduces that wiring for the two write routes.
     const board = /^\/boards\/([^/]+)/.exec(url.pathname);
-    const orgId = board ? await store.boardOrg(decodeURIComponent(board[1])) : null;
+    const org = board ? null : /^\/orgs\/([^/]+)\/storage$/.exec(url.pathname);
+    const orgId = board
+      ? await store.boardOrg(decodeURIComponent(board[1]))
+      : org
+        ? decodeURIComponent(org[1])
+        : null;
     if (orgId) await store.withTenant(orgId, handle);
     else await handle();
   });
@@ -149,11 +167,21 @@ async function boardOf(api, orgId, title) {
   return created.body.board.id;
 }
 
-function upload(api, boardId, { bytes = PNG, name = "shot.png", alt = null } = {}) {
+function upload(api, boardId, { bytes = PNG, name = "shot.png", alt = null, replace = null } = {}) {
   const form = new FormData();
   if (alt !== null) form.append("alt", alt);
+  if (replace !== null) form.append("replace", replace);
   form.append("file", new Blob([bytes], { type: "image/png" }), name);
   return api("POST", `/boards/${boardId}/files`, { form });
+}
+
+/** The room's image widgets, as the projection has them after `project()`. */
+async function images(boardId) {
+  const { rows } = await store.pool.query(
+    "select id, width, height, props from widgets where board_id = $1 and type = 'image' order by id",
+    [boardId],
+  );
+  return rows;
 }
 
 async function fileRow(id) {
@@ -375,6 +403,109 @@ suite("files API (ADR-249)", () => {
     );
     expect(foreign.status).toBe(404);
     expect(foreign.body.error).toBe("FILE_NOT_FOUND");
+  });
+
+  it("replaces the file behind a picture without a second object or audit row", async () => {
+    const { api, orgId } = await account("replace");
+    const boardId = await boardOf(api, orgId, "Replace");
+    const first = await upload(api, boardId);
+    expect(first.status).toBe(201);
+    await project(boardId);
+    const [before] = await images(boardId);
+    expect(before).toBeTruthy();
+
+    // One upload that ends in `board.image.replace`: no stray object to adopt (§5.3).
+    const second = await upload(api, boardId, {
+      bytes: PNG_PORTRAIT,
+      name: "portrait.png",
+      replace: before.id,
+    });
+    expect(second.status).toBe(201);
+    expect(second.body.file.id).not.toBe(first.body.file.id);
+
+    await project(boardId);
+    const after = await images(boardId);
+    expect(after).toHaveLength(1);
+    expect(after[0].id).toBe(before.id);
+    expect(after[0].props).toMatchObject({
+      fileId: second.body.file.id,
+      naturalWidth: 600,
+      naturalHeight: 900,
+    });
+    // The width was the person's decision and stays; the height follows the new picture.
+    expect(after[0].width).toBe(480);
+    expect(after[0].height).toBe(720);
+
+    // One accepted command, one audit row: the upload does not also report a create.
+    const { rows: audit } = await store.pool.query(
+      `select action from audit_events
+        where board_id = $1 and action = 'board.command' and subject = 'board.image.replace'`,
+      [boardId],
+    );
+    expect(audit).toHaveLength(1);
+    const { rows: uploads } = await store.pool.query(
+      "select count(*)::int as count from audit_events where board_id = $1 and action = 'file.uploaded'",
+      [boardId],
+    );
+    expect(uploads[0].count).toBe(2);
+  });
+
+  it("refuses board.image.replace with a file from another room", async () => {
+    const owner = await account("replace-foreign");
+    const source = await boardOf(owner.api, owner.orgId, "File source");
+    const target = await boardOf(owner.api, owner.orgId, "File target");
+    const foreign = await upload(owner.api, source);
+    const own = await upload(owner.api, target, { bytes: PNG_PORTRAIT, name: "own.png" });
+    await project(target);
+    const [widget] = await images(target);
+
+    // The same organisation, a room the file was never uploaded to and does not use:
+    // pointing an old object at that id would legalise a guessed file (§4.3).
+    const denied = await owner.api("POST", `/boards/${target}/commands`, {
+      json: {
+        command: "board.image.replace",
+        input: { widgetId: widget.id, fileId: foreign.body.file.id },
+      },
+      headers: { "Idempotency-Key": `replace-foreign-${stamp}` },
+    });
+    expect(denied.status).toBe(404);
+    expect(denied.body.error).toBe("FILE_NOT_FOUND");
+
+    await project(target);
+    const [unchanged] = await images(target);
+    expect(unchanged.props.fileId).toBe(own.body.file.id);
+  });
+
+  it("answers the storage ranking to an admin", async () => {
+    const { api, orgId } = await account("storage");
+    const heavy = await boardOf(api, orgId, "Heavy room");
+    const light = await boardOf(api, orgId, "Light room");
+    await upload(api, heavy);
+    await upload(api, light, { bytes: PNG_PORTRAIT, name: "small.png" });
+    // The shared test database has no forced RLS (`rls.test.mjs` proves the policy on its
+    // own database), so the ranking is made unambiguous by size instead of by tenant.
+    await store.pool.query("update files set stored_bytes = 9000000 where board_id = $1", [
+      heavy,
+    ]);
+    await store.pool.query("update files set stored_bytes = 4000000 where board_id = $1", [
+      light,
+    ]);
+
+    const storage = await api("GET", `/orgs/${orgId}/storage`);
+    expect(storage.status).toBe(200);
+    expect(storage.body.usedBytes).toBeGreaterThan(0);
+    // `null` is "no limit" — the free plan has no storage ceiling until the owner sets one.
+    expect(storage.body.limitBytes === null || storage.body.limitBytes > 0).toBe(true);
+    // The five heaviest rooms, by the same `stored_bytes` the quota sums (§9.8).
+    expect(storage.body.rooms.slice(0, 2)).toEqual([
+      { boardId: heavy, title: "Heavy room", bytes: 9000000 },
+      { boardId: light, title: "Light room", bytes: 4000000 },
+    ]);
+
+    // A stranger is not a member: the answer is the missing-organisation one.
+    const stranger = await account("storage-stranger");
+    const foreign = await stranger.api("GET", `/orgs/${orgId}/storage`);
+    expect(foreign.status).toBe(404);
   });
 
   it("copies a file into another organisation under a new id", async () => {

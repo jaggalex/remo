@@ -9,11 +9,13 @@ import { randomUUID } from "node:crypto";
 import { featureLimit, planFeatureResponse } from "./billing-guard.mjs";
 import { readJsonBody } from "./http-body.mjs";
 import { buildBoardBackup } from "./backup.mjs";
+import { BackupTooLarge, collectBackupAssets } from "./backup-assets.mjs";
 import { Y } from "./y.mjs";
 
 export function createExportRoutes({
   store,
   docs,
+  files,
   sessionFromRequest,
   accessForBoard,
   linkUnlockToken,
@@ -95,7 +97,38 @@ export function createExportRoutes({
       const live = docs.get(boardId);
       const state = live ? Y.encodeStateAsUpdate(live) : await store.readBoardState?.(boardId);
       const comments = await store.commentsForBackup?.(boardId);
-      const bundle = buildBoardBackup({ state, boardId, title, comments });
+      // `?assets=none` is the explicit backup without images (§5.3, §9.9): the same
+      // bundle, the same checksum, metadata only. It is never the silent result of the
+      // 200 MiB ceiling — that one is a `413` with an offer.
+      const withImages = url.searchParams.get("assets") !== "none";
+      // Two passes over one state: the first names the files the document uses, the
+      // second carries their bytes. Reading ids from the finished bundle means the
+      // archive can never name a file the widgets do not.
+      const draft = buildBoardBackup({ state, boardId, title, comments });
+      let assets = [];
+      try {
+        assets = await collectBackupAssets({
+          store,
+          files,
+          orgId,
+          widgets: draft.widgets,
+          withData: withImages,
+        });
+      } catch (error) {
+        if (!(error instanceof BackupTooLarge)) throw error;
+        response.writeHead(413, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(
+          JSON.stringify({
+            error: error.code,
+            message: "this room is too large for a backup with images",
+            limit: error.limit,
+          }),
+        );
+        return true;
+      }
+      const bundle = assets.length
+        ? buildBoardBackup({ state, boardId, title, comments, assets })
+        : draft;
       const body = JSON.stringify(bundle);
       await store.recordAudit?.({
         actorId,

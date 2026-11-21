@@ -68,6 +68,12 @@ export interface UploadOptions {
   /** The object's centre in board units: the server creates the object there (§5.1). */
   at: { x: number; y: number };
   alt?: string;
+  /**
+   * The picture whose file this upload replaces (§5.3). The server then dispatches
+   * `board.image.replace` instead of `board.image.create`, so no object is created and
+   * there is nothing to adopt or delete afterwards.
+   */
+  replaceWidgetId?: string;
   onProgress?: (fraction: number) => void;
   /** Abort signal from the placeholder's ×; the request is cancelled, not just ignored. */
   signal?: AbortSignal;
@@ -85,6 +91,7 @@ export function uploadImage({
   file,
   at,
   alt,
+  replaceWidgetId,
   onProgress,
   signal,
 }: UploadOptions): Promise<UploadedFile> {
@@ -145,6 +152,7 @@ export function uploadImage({
     body.append("x", String(at.x));
     body.append("y", String(at.y));
     if (alt) body.append("alt", alt);
+    if (replaceWidgetId) body.append("replace", replaceWidgetId);
     request.send(body);
   });
 }

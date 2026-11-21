@@ -47,6 +47,43 @@
   gap: var(--space-2);
 }
 
+/* The five heaviest rooms (§9.8): a title, its size, and nothing else to decode. */
+.storage-rooms h4 {
+  margin: 0 0 var(--space-2);
+  font: var(--type-card-title);
+  color: var(--text-primary);
+}
+
+.storage-rooms ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.storage-rooms li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+  font: var(--type-caption);
+}
+
+.storage-rooms a {
+  overflow: hidden;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storage-room-bytes {
+  flex: none;
+  color: var(--text-secondary);
+}
+
 /* ------------------------------------------------------------ quota notice --- */
 
 /* Above the canvas, not over the picture: the author still sees what failed and can

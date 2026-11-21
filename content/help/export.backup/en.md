@@ -10,7 +10,7 @@ You get a file that can restore the room, and you can restore a room from such a
 - `kanbans` — columns, swimlanes and card placements.
 - `groupNames`, `tags`, `presentation` — group names, the tag vocabulary and presentation order.
 - `comments` — threads and messages; author names are kept, the account link is not.
-- `assets` — attachments; the list is empty in v1 because images are not stored in the document yet.
+- `assets` — the room's images: `fileId`, hash, type, size, description and the bytes themselves in base64 (format version 3). If the room is over 200 MiB, remo offers a backup without images: the same objects, but `assets` without bytes, and the pictures come back as "Image unavailable" placeholders.
 
 It is plain JSON: you can read, verify and keep it without remo.
 
@@ -43,4 +43,5 @@ Import replaces the whole room content, not adds objects, and replaces the discu
 - **"This is not a remo room backup".** The file was made by another program, or it is not JSON.
 - **"The checksum does not match".** The file is damaged or was edited; use the original backup.
 - **"Made by a newer remo version".** Update remo or use a backup in a supported version.
+- **A room over 200 MiB.** A full backup is unavailable; remo offers "Back up without images". Objects and connectors are kept, and the pictures come back as placeholders.
 - **No restore section.** You need both `board.edit` and `board.backup`.

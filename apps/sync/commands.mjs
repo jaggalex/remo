@@ -228,6 +228,50 @@ export const COMMANDS = {
     },
   },
 
+  /**
+   * Put another file behind an existing picture (ADR-249, `spec/images.md` §5.2–§5.3).
+   *
+   * It is a command rather than a document edit because the new `fileId` needs the same
+   * check as creation: pointing an old widget at a guessed id would be a way to legalise
+   * that id without creating an object. The box keeps its width and takes the new
+   * picture's height, so a replacement can never squash the object.
+   */
+  "board.image.replace": {
+    capabilities: ["board.edit"],
+    validate(input) {
+      const data = object(input, "input");
+      text(data.widgetId, "widgetId", 200);
+      text(data.fileId, "fileId", 200);
+      // A caller may name the room explicitly; `authorizeCommand` refuses a second one.
+      if (data.boardId !== undefined) text(data.boardId, "boardId", 200);
+      return data;
+    },
+    apply({ ydoc, input, facts }) {
+      const widget = existing(ydoc, input.widgetId);
+      if (widget.type !== "image") {
+        throw new CommandError("NOT_IMAGE", `${widget.type} is not a picture`);
+      }
+      if (widget.locked) {
+        throw new CommandError("OBJECT_LOCKED", "the object is locked", 409);
+      }
+      // The row was read by `authorizeCommand` under this room's tenant; without it there
+      // is nothing to copy the natural size and the colour from.
+      const file = facts?.file ?? null;
+      if (!file) throw new CommandError("FILE_NOT_FOUND", "the image file does not exist", 404);
+      const naturalWidth = Math.max(1, Number(file.width) || 1);
+      const naturalHeight = Math.max(1, Number(file.height) || 1);
+      const width = Math.max(1, Number(widget.width) || naturalWidth);
+      const height = Math.max(1, Math.round((width * naturalHeight) / naturalWidth));
+      const next = { ...widget, fileId: file.id, naturalWidth, naturalHeight, width, height };
+      if (file.dominant_color) next.dominantColor = file.dominant_color;
+      else delete next.dominantColor;
+      ydoc.transact(() => {
+        widgets(ydoc).set(widget.id, next);
+      });
+      return { id: widget.id, type: widget.type, fileId: next.fileId };
+    },
+  },
+
   "board.item.create": {
     capabilities: ["board.edit"],
     validate(input) {
@@ -562,9 +606,11 @@ export function commandNames() {
  * one command whose input points at a row outside the document, so its invariant — the
  * file belongs to this organisation and is already part of this room — lives here and is
  * called by the one shared runner (`applyBoardCommand` in `commands-api.mjs`).
+ *
+ * Returns the facts the document edit needs (the file row), never the row's bytes.
  */
 export async function authorizeCommand({ name, input, store, boardId }) {
-  if (name !== "board.image.create") return;
+  if (name !== "board.image.create" && name !== "board.image.replace") return null;
   const fileId = typeof input?.fileId === "string" ? input.fileId : "";
   // A malformed id is the same answer as an unknown one, and never reaches the database
   // as a value the uuid column would reject.
@@ -578,6 +624,16 @@ export async function authorizeCommand({ name, input, store, boardId }) {
     // the same: confirming that a guessed id exists would be the leak §4.3 avoids.
     throw new CommandError("FILE_NOT_FOUND", "the image file does not exist", 404);
   }
+  // An explicit room in the input is a statement the caller makes; it cannot disagree
+  // with the room whose document this command is about.
+  if (
+    name === "board.image.replace" &&
+    input?.boardId !== undefined &&
+    String(input.boardId) !== boardId
+  ) {
+    throw new CommandError("BAD_INPUT", "boardId must name this board");
+  }
+  return { file };
 }
 
 /**
@@ -599,6 +655,7 @@ export function runCommand({
   createdBy = null,
   agent = null,
   capabilities = [],
+  facts = null,
 }) {
   const command = COMMANDS[name];
   if (!command) throw new CommandError("UNKNOWN_COMMAND", `unknown command ${name}`, 404);
@@ -624,6 +681,7 @@ export function runCommand({
     createdBy,
     agent,
     capabilities,
+    facts,
   });
   // A command declares its domain events next to its transaction (ADR-094); `runCommand`
   // returns them so the caller can write them in the same database transaction as the

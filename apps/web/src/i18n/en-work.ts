@@ -203,6 +203,10 @@ export const enWork = {
   "export.importChecksum": "The file is damaged or was edited: its checksum does not match.",
   "export.importShape": "The backup is missing the room data it declares.",
   "export.importDone": "The room was restored from the backup.",
+  "export.backupTooLarge":
+    "The room is over 200 MiB with its pictures, so a full backup is not available. A backup without images keeps every object and restores them as placeholders.",
+  "export.backupWithoutImages": "Back up without images",
+  "export.imagesFailed": "Could not load {count}: they are drawn as placeholders in the file.",
   "dsCatalog.segmentLabel": "Duration",
   "dsCatalog.choiceTitle": "Anonymity",
   "dsCatalog.choiceAnonymous": "Anonymous votes",

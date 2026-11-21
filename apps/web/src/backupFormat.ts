@@ -13,6 +13,23 @@ export function backupFilename(disposition: string): string {
 }
 
 /**
+ * One file a backup carries (version 3, ADR-249 §5.3).
+ *
+ * `data` is the original bytes as base64. A backup without images keeps the same object
+ * without `data`, so the restored object is a picture the room knows about and cannot
+ * show — the "unavailable" placeholder, not a missing widget.
+ */
+export interface BackupAsset {
+  fileId: string;
+  sha256: string;
+  mime: string;
+  width: number;
+  height: number;
+  alt?: string;
+  data?: string;
+}
+
+/**
  * Reading a remo board backup in the browser (ADR-071).
  *
  * The format is deliberately plain JSON: `manifest` describes the file and carries a
@@ -45,7 +62,11 @@ export interface BoardBackup {
   presentation?: string[];
   /** Version 2 exports comments; import restores them in a later step. */
   comments?: unknown[];
-  assets: unknown[];
+  /**
+   * Version 3 fills this with the room's pictures; versions 1 and 2 have an empty array
+   * (or none at all). A file is restored by the server when it can re-process the bytes.
+   */
+  assets?: BackupAsset[];
 }
 
 export class BackupError extends Error {
@@ -171,7 +192,8 @@ export async function verifyBoardBackup(bundle: unknown): Promise<BoardBackup> {
     throw new BackupError("NOT_A_BACKUP");
   }
   const version = candidate.manifest.version;
-  if ((version !== 1 && version !== 2) || candidate.version !== version) {
+  // 1 and 2 still open; 3 adds the embedded pictures and nothing else (ADR-249 §5.3).
+  if ((version !== 1 && version !== 2 && version !== 3) || candidate.version !== version) {
     throw new BackupError("VERSION");
   }
   const { manifest, ...content } = candidate as BoardBackup;

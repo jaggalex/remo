@@ -4,10 +4,10 @@ import type { BoardDocument } from "./board";
 /**
  * The three things a person can change about an image object after it exists (ADR-249).
  *
- * Creating one is a server command (`board.image.create`), because the file must already
- * belong to the room. Everything after that is an ordinary document edit: a description,
- * a new file behind the same object, and the picture's own size. They live here so the
- * bar, the lightbox and any future command share one rule for each.
+ * Creating one and replacing its file are server commands (`board.image.create`,
+ * `board.image.replace`), because the file must already belong to the room. Everything
+ * after that is an ordinary document edit: a description and the picture's own size.
+ * They live here so the bar and the lightbox share one rule for each.
  */
 
 /** `files.alt` and the command validator cap the description at 500 (§3.2). */
@@ -55,58 +55,6 @@ export function setImageAlt(board: BoardDocument, id: string, alt: string): void
     else delete next.alt;
     board.widgets.set(id, next);
   });
-}
-
-export interface ReplacementFile {
-  fileId: string;
-  naturalWidth: number;
-  naturalHeight: number;
-  dominantColor?: string;
-}
-
-/**
- * Put a new file behind the same object.
- *
- * The width is the person's decision and stays; the height follows the new picture, so
- * a replacement can never squash it. The centre is kept, so the object does not jump,
- * and a lock still refuses the change — a locked object is not editable anywhere else.
- */
-export function replaceImageFile(
-  board: BoardDocument,
-  id: string,
-  file: ReplacementFile,
-  /** An object the upload created that the replacement absorbs (§4.1 has no "no object"). */
-  strayId?: string,
-): boolean {
-  const width = Math.max(1, file.naturalWidth);
-  const height = Math.max(1, file.naturalHeight);
-  if (!file.fileId) return false;
-  let applied = false;
-  board.transact(() => {
-    const current = board.readWidget(id);
-    if (!current || current.type !== "image" || current.locked) return;
-    const keptWidth = Math.max(1, current.width);
-    const nextHeight = Math.max(1, Math.round((keptWidth * height) / width));
-    const next: Widget = {
-      ...current,
-      fileId: file.fileId,
-      naturalWidth: width,
-      naturalHeight: height,
-      width: keptWidth,
-      height: nextHeight,
-    };
-    if (file.dominantColor) next.dominantColor = file.dominantColor;
-    else delete next.dominantColor;
-    board.widgets.set(id, next);
-    // The upload route always creates an object; "Replace" means it must not survive.
-    // Removing it in the same transaction keeps one undo step for one decision.
-    if (strayId && strayId !== id && board.readWidget(strayId)) {
-      board.widgets.delete(strayId);
-      board.texts.delete(strayId);
-    }
-    applied = true;
-  });
-  return applied;
 }
 
 /**

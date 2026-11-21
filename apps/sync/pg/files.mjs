@@ -120,6 +120,35 @@ export const fileMethods = {
   },
 
   /**
+   * The rooms that hold the most image bytes (`spec/images.md` §9.8).
+   *
+   * The join is `files.board_id` — the room the file was uploaded to — because that is
+   * the room the storage page can open. Files shared by a paste inside one organisation
+   * keep one id and one row (§5.2), so counting them once is also the only honest sum.
+   * Tenant rows only: the route checks the role before it asks, and the policy on both
+   * tables narrows the answer to this organisation either way.
+   */
+  async storageByRoom(limit = 5) {
+    const capped = Math.max(1, Math.min(50, Number(limit) || 5));
+    const { rows } = await this.pool.query(
+      `select f.board_id as "boardId", b.title as title,
+              coalesce(sum(f.stored_bytes), 0)::bigint as bytes
+         from files f
+         join boards b on b.id = f.board_id
+        where f.status = 'ready' and f.board_id is not null
+        group by f.board_id, b.title
+        order by coalesce(sum(f.stored_bytes), 0) desc, f.board_id
+        limit $1`,
+      [capped],
+    );
+    return rows.map((row) => ({
+      boardId: row.boardId,
+      title: row.title ?? "",
+      bytes: Number(row.bytes),
+    }));
+  },
+
+  /**
    * Every `ready` file with the one fact the collector needs: does any `image` widget
    * point at it?
    *

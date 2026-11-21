@@ -150,8 +150,11 @@ export async function handleBilling({
 }) {
   const isCatalog = url.pathname === "/billing/catalog";
   const orgMatch = /^\/orgs\/([^/]+)\/billing(?:\/(.*))?$/.exec(url.pathname);
+  // Storage is a read of the same tenant rows the billing page sums, so it lives in this
+  // family: with billing off there is no quota and no page to show it on (§9.8).
+  const storageMatch = /^\/orgs\/([^/]+)\/storage$/.exec(url.pathname);
   const isBillingPath = url.pathname === "/billing" || url.pathname.startsWith("/billing/");
-  if (!isCatalog && !orgMatch && !isBillingPath) return false;
+  if (!isCatalog && !orgMatch && !storageMatch && !isBillingPath) return false;
 
   if (!billingEnabled(env)) {
     fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
@@ -226,19 +229,20 @@ export async function handleBilling({
 
   /* -------------------------------------------------- organisation billing -- */
 
-  if (!orgMatch) {
+  const orgPath = orgMatch ?? storageMatch;
+  if (!orgPath) {
     fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
     return true;
   }
 
   let orgId;
   try {
-    orgId = decodeURIComponent(orgMatch[1]);
+    orgId = decodeURIComponent(orgPath[1]);
   } catch {
     fail(response, 400, "BAD_REQUEST", "the organisation id is not valid");
     return true;
   }
-  const rest = orgMatch[2] ?? "";
+  const rest = orgMatch?.[2] ?? "";
 
   if (typeof store.findSession !== "function" || typeof store.getOrgMembership !== "function") {
     fail(response, 501, "BILLING_UNAVAILABLE", "billing needs the postgres store");
@@ -255,6 +259,40 @@ export async function handleBilling({
   const membership = await store.getOrgMembership(orgId, session.user.id);
   if (!membership || membership.state !== "active") {
     fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
+    return true;
+  }
+
+  if (storageMatch) {
+    if (method !== "GET") {
+      fail(response, 405, "METHOD_NOT_ALLOWED", "the storage view is read-only");
+      return true;
+    }
+    // The list names rooms, so it is for the people who administer the organisation
+    // (§9.8); a member sees the total on the plan tab and asks the owner.
+    const admin = await store.hasOrgRole(orgId, session.user.id, "org_admin");
+    if (!admin) {
+      fail(response, 403, "FORBIDDEN", "only the owner or an organisation admin sees the rooms");
+      return true;
+    }
+    if (
+      typeof store.storedBytesForOrg !== "function" ||
+      typeof store.storageByRoom !== "function"
+    ) {
+      fail(response, 501, "BILLING_UNAVAILABLE", "storage needs the postgres store");
+      return true;
+    }
+    const entitlements = await entitlementsFor(store, orgId, { env });
+    // The same sum the upload's quota check reads, plus the top rooms under the same
+    // tenant. `null` is "no limit", the spelling the rest of the family uses.
+    const [usedBytes, rooms] = await Promise.all([
+      store.storedBytesForOrg(),
+      store.storageByRoom(5),
+    ]);
+    json(response, 200, {
+      usedBytes,
+      limitBytes: entitlements.limits.storageBytes ?? null,
+      rooms,
+    });
     return true;
   }
 

@@ -207,18 +207,21 @@ const saveAcks = createSaveAcks({
 });
 store.onPersisted = saveAcks.flushSaveAcks;
 
+// Uploaded images live outside the database (§2): one store for the configured driver,
+// and one route module that owns the ceiling, the quota and the access checks.
+const fileStore = await createFileStore();
+
 const exports = createExportRoutes({
   store,
   docs,
+  // A backup embeds the originals (§5.3), so the export route reads the same store.
+  files: fileStore,
   sessionFromRequest,
   accessForBoard,
   linkUnlockToken,
   emitMetric,
 });
 
-// Uploaded images live outside the database (§2): one store for the configured driver,
-// and one route module that owns the ceiling, the quota and the access checks.
-const fileStore = await createFileStore();
 const files = createFilesApi({
   store,
   files: fileStore,

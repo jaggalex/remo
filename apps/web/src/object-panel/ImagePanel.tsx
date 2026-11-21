@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { BoardDocument } from "@remo/doc";
-import { fitImageToNaturalSize, replaceImageFile, setImageAlt } from "@remo/doc";
+import { fitImageToNaturalSize, setImageAlt } from "@remo/doc";
 import { Button, IconButton, Menu } from "@remo/ui";
 import { useI18n } from "../i18n";
 import { IMAGE_ACCEPT, ImageUploadError, downloadOriginal, uploadImage } from "../apiFiles";
@@ -27,7 +27,7 @@ export interface ImageBarTarget {
   /** Screen box and placement, for the shared bar frame. */
   rect: { left: number; top: number; width: number; height: number };
   placement: { left: number; top: number };
-  /** Centre in board units: where a replacement file's object would land. */
+  /** Centre in board units: the upload keeps the object where it is. */
   x: number;
   y: number;
   width: number;
@@ -60,45 +60,19 @@ export function ImagePanel({
   if (!target) return null;
 
   /**
-   * The upload route creates an object (`spec/images.md` §4.1 has no "bytes only" call), so
-   * a replacement adopts it: the object the server just made is removed in the same
-   * transaction that puts its file behind this one. Until the document delivers it, there
-   * is nothing to remove, and the replacement still applies to this object.
+   * Replace is one upload (§5.3): the server stores the bytes and dispatches
+   * `board.image.replace` for this object, so there is no second object to adopt and
+   * nothing to delete afterwards. The document delivers the new file like any other edit.
    */
-  const waitForStray = async (fileId: string): Promise<string | null> => {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      const stray = board
-        .readWidgets()
-        .find(
-          (widget) =>
-            widget.type === "image" && widget.fileId === fileId && widget.id !== target.id,
-        );
-      if (stray) return stray.id;
-      await new Promise((resolve) => window.setTimeout(resolve, 100));
-    }
-    return null;
-  };
-
   const replace = async (file: File) => {
     setBusy(true);
     try {
-      const stored = await uploadImage({
+      await uploadImage({
         boardId: currentRoom(),
         file,
         at: { x: target.x, y: target.y },
+        replaceWidgetId: target.id,
       });
-      const stray = await waitForStray(stored.id);
-      replaceImageFile(
-        board,
-        target.id,
-        {
-          fileId: stored.id,
-          naturalWidth: stored.width,
-          naturalHeight: stored.height,
-          dominantColor: stored.dominantColor,
-        },
-        stray ?? undefined,
-      );
     } catch (failure) {
       const reason = failure instanceof ImageUploadError ? failure.reason : "unknown";
       onNotice(

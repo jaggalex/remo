@@ -203,6 +203,10 @@ export const ruWork = {
   "export.importChecksum": "Файл повреждён или изменён: контрольная сумма не совпадает.",
   "export.importShape": "В бэкапе нет данных комнаты, которые он обещает.",
   "export.importDone": "Комната восстановлена из бэкапа.",
+  "export.backupTooLarge":
+    "Комната с изображениями больше 200 МиБ, поэтому полный бэкап недоступен. Бэкап без изображений сохранит все объекты и восстановит их заглушками.",
+  "export.backupWithoutImages": "Бэкап без изображений",
+  "export.imagesFailed": "Не удалось загрузить {count}: в файле они нарисованы заглушками.",
   "dsCatalog.segmentLabel": "Длительность",
   "dsCatalog.choiceTitle": "Анонимность",
   "dsCatalog.choiceAnonymous": "Анонимные голоса",

@@ -396,8 +396,13 @@ export const api = { ...roomAgentApi,
       `/boards/${encodeURIComponent(boardId)}/export-jobs/${encodeURIComponent(jobId)}/complete`,
       { method: "POST", body: { bytes } },
     ),
-  downloadBackup: async (boardId: string): Promise<{ blob: Blob; filename: string }> => {
-    const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/backup`, {
+  downloadBackup: async (
+    boardId: string,
+    withoutImages = false,
+  ): Promise<{ blob: Blob; filename: string }> => {
+    // `assets=none` is the "backup without images" of §9.9: same bundle, metadata only.
+    const query = withoutImages ? "?assets=none" : "";
+    const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/backup${query}`, {
       credentials: "same-origin",
     });
     if (!response.ok) {

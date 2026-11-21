@@ -284,6 +284,11 @@ export function createFilesApi({
       return fail(response, 400, "MISSING_FILE", "the form has no file field");
     }
 
+    // `replace` names the object whose file is being changed (`spec/images.md` §5.3).
+    // A replacement adds no object, so it does not spend the room's image count.
+    const replaceId =
+      typeof parsed.fields.replace === "string" ? parsed.fields.replace.slice(0, 200) : "";
+
     let mime;
     try {
       // The signature, never the name or the browser's Content-Type.
@@ -296,7 +301,9 @@ export function createFilesApi({
     // The quota is asked before the decode, as the order in §4.1 says. `stored_bytes` is
     // larger than the original; the difference is bounded by the variants of the same
     // picture, so the check stays honest at the limit.
-    const problem = await quotaProblem(orgId, boardId, parsed.file.buffer.length);
+    const problem = await quotaProblem(orgId, boardId, parsed.file.buffer.length, {
+      roomImages: !replaceId,
+    });
     if (problem) {
       upload("quota");
       return planLimitResponse(response, problem);
@@ -374,6 +381,9 @@ export function createFilesApi({
 
     const size = fitImage(processed.width, processed.height);
     const actor = { type: "user", id: userId, name: access.session.user.name ?? null };
+    // A replacement ends in `board.image.replace`, not in a second object that the client
+    // would have to delete (§5.3). Everything else still creates its object here (§5.1).
+    const command = replaceId ? "board.image.replace" : "board.image.create";
     let outcome;
     try {
       // One command, after the bytes and the row exist: nobody else ever sees a
@@ -383,21 +393,23 @@ export function createFilesApi({
         boardId,
         orgId,
         actor,
-        command: "board.image.create",
-        input: {
-          fileId: row.id,
-          naturalWidth: processed.width,
-          naturalHeight: processed.height,
-          dominantColor: processed.dominantColor,
-          alt: altField(parsed.fields.alt),
-          x: numberField(parsed.fields.x),
-          y: numberField(parsed.fields.y),
-          width: size.width,
-          height: size.height,
-        },
+        command,
+        input: replaceId
+          ? { boardId, widgetId: replaceId, fileId: row.id }
+          : {
+              fileId: row.id,
+              naturalWidth: processed.width,
+              naturalHeight: processed.height,
+              dominantColor: processed.dominantColor,
+              alt: altField(parsed.fields.alt),
+              x: numberField(parsed.fields.x),
+              y: numberField(parsed.fields.y),
+              width: size.width,
+              height: size.height,
+            },
         // The upload's own id, not the deduplicated file id: two deliberate uploads of
         // one picture are two objects, while a retried request replays one.
-        idempotencyKey: `upload:${fileId}`,
+        idempotencyKey: `${replaceId ? "replace" : "upload"}:${fileId}`,
         capabilities: access.resolved.access.capabilities,
         getDocument,
       });
@@ -420,7 +432,7 @@ export function createFilesApi({
       orgId,
       boardId,
       action: "board.command",
-      subject: "board.image.create",
+      subject: command,
       after: {
         resultId: outcome.result?.id ?? null,
         version: outcome.version,

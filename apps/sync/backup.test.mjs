@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { Y } from "./y.mjs";
-import { buildBoardBackup, verifyBoardBackup } from "./backup.mjs";
+import {
+  buildBoardBackup,
+  checksumOf,
+  usedImageFiles,
+  verifyBoardBackup,
+} from "./backup.mjs";
 
 function fixture() {
   const doc = new Y.Doc();
@@ -83,8 +88,83 @@ describe("board backup (ADR-071)", () => {
     expect(backup.groupNames["grp-1"]).toBe("Cluster");
     expect(backup.tags["tag-1"]).toMatchObject({ name: "Priority", color: "blue" });
     expect(backup.presentation).toEqual(["frame-1"]);
-    expect(backup.manifest.version).toBe(2);
+    expect(backup.manifest.version).toBe(3);
+    expect(backup.assets).toEqual([]);
     expect(verifyBoardBackup(JSON.parse(JSON.stringify(backup)))).toBe(true);
+  });
+
+  it("names the files the document uses, once each and with the first description", () => {
+    const used = usedImageFiles({
+      "img-a": { type: "image", fileId: "file-1", alt: "" },
+      "img-b": { type: "image", fileId: "file-1", alt: "Sales funnel" },
+      "img-c": { type: "image", fileId: "file-2" },
+      note: { type: "sticky_note", fileId: "file-3" },
+      broken: { type: "image" },
+    });
+    expect([...used.entries()]).toEqual([
+      ["file-1", "Sales funnel"],
+      ["file-2", ""],
+    ]);
+  });
+
+  it("carries embedded assets in the checksum and the counts", () => {
+    const asset = {
+      fileId: "file-1",
+      sha256: "a".repeat(64),
+      mime: "image/png",
+      width: 100,
+      height: 50,
+      data: "AAAA",
+    };
+    const backup = buildBoardBackup({
+      state: fixture(),
+      boardId: "board-1",
+      assets: [asset],
+    });
+    expect(backup.assets).toEqual([asset]);
+    expect(backup.manifest.counts.assets).toBe(1);
+    expect(verifyBoardBackup(JSON.parse(JSON.stringify(backup)))).toBe(true);
+    const changed = structuredClone(backup);
+    changed.assets[0].data = "BBBB";
+    expect(verifyBoardBackup(changed)).toBe(false);
+  });
+
+  it("still reads version 1 and 2 bundles", () => {
+    // The older shapes are what a self-hoster's archive holds today: version 2 added
+    // `groupNames` and `tags`, version 1 had neither, and neither had `assets`.
+    const v1 = {
+      format: "remo.board",
+      version: 1,
+      board: { id: "board-1", title: "Old" },
+      widgets: {},
+      texts: {},
+      kanbans: {},
+      meta: {},
+      presentation: [],
+      comments: [],
+    };
+    const v2 = { ...v1, version: 2, groupNames: {}, tags: {} };
+    for (const content of [v1, v2]) {
+      const bundle = {
+        manifest: {
+          format: "remo.board.backup",
+          version: content.version,
+          boardId: "board-1",
+          title: "Old",
+          checksum: checksumOf(content),
+        },
+        ...content,
+      };
+      expect(verifyBoardBackup(JSON.parse(JSON.stringify(bundle)))).toBe(true);
+    }
+    // A version this reader does not know is refused, not guessed at.
+    const future = { ...v2, version: 4 };
+    expect(
+      verifyBoardBackup({
+        manifest: { format: "remo.board.backup", version: 4, checksum: checksumOf(future) },
+        ...future,
+      }),
+    ).toBe(false);
   });
 
   it("carries the table layout and cell membership", () => {

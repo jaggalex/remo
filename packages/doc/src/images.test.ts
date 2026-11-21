@@ -5,16 +5,15 @@ import {
   MAX_ALT,
   MAX_IMAGE_SIDE,
   fitImageToNaturalSize,
-  replaceImageFile,
   setImageAlt,
 } from "./images";
 
 /**
  * The image object after creation (ADR-249, §3.2, §9.5).
  *
- * Creation is a server command; everything here is a document edit, so it is tested
- * without a database: description cap, replacement keeps the width, "original size"
- * respects the 2048 ceiling.
+ * Creation and replacement are server commands; what is left as a document edit is the
+ * description and "original size", tested here without a database: the description cap
+ * and the 2048 ceiling.
  */
 
 function boardWith(widgets: Widget[]): BoardDocument {
@@ -62,36 +61,6 @@ describe("setImageAlt", () => {
     ]);
     setImageAlt(board, "note", "text");
     expect(board.readWidget("note")?.alt).toBeUndefined();
-  });
-});
-
-describe("replaceImageFile", () => {
-  it("keeps the width, follows the new proportion and keeps the centre", () => {
-    const board = boardWith([picture()]);
-    expect(
-      replaceImageFile(board, "img", {
-        fileId: "f-2",
-        naturalWidth: 1000,
-        naturalHeight: 500,
-        dominantColor: "#123456",
-      }),
-    ).toBe(true);
-    const next = board.readWidget("img")!;
-    expect(next.fileId).toBe("f-2");
-    expect(next.width).toBe(400);
-    expect(next.height).toBe(200);
-    expect(next.x).toBe(100);
-    expect(next.dominantColor).toBe("#123456");
-    // The old natural size is gone: the "original size" action reads the new file.
-    expect(next.naturalWidth).toBe(1000);
-  });
-
-  it("refuses a locked object", () => {
-    const board = boardWith([picture({ locked: true })]);
-    expect(
-      replaceImageFile(board, "img", { fileId: "f-2", naturalWidth: 10, naturalHeight: 10 }),
-    ).toBe(false);
-    expect(board.readWidget("img")?.fileId).toBe("f-1");
   });
 });
 

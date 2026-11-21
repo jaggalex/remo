@@ -49,8 +49,10 @@ The prose says “room”. Paths, commands and capabilities keep the historical 
 | `board.text.set` | `{id, text}` |
 | `board.connector.create` | `{from, to, routing?, arrow?, waypoints?, style?, id?}` |
 | `board.connector.update` | `{id, routing?, waypoints?}` |
+| `board.image.create` | `{fileId, x, y, width, height, naturalWidth, naturalHeight, dominantColor?, alt?, parentId?}` |
+| `board.image.replace` | `{widgetId, fileId}` — a new file behind the same object; the width is kept and the height follows the new proportion |
 
-`name` is an optional label of up to 120 characters; an empty string clears it and uniqueness is not checked. All six commands require the `board.edit` capability. `ifVersion` is compared with the current document
+`name` is an optional label of up to 120 characters; an empty string clears it and uniqueness is not checked. Every command above requires the `board.edit` capability. `ifVersion` is compared with the current document
 version: a mismatch gives `409 STALE`. Updating or deleting a locked object is refused with
 `OBJECT_LOCKED`; only the author or a `board.manage` holder may send `locked: false`, and a
 foreign attempt gets `LOCKED_BY_OTHER`.
@@ -61,15 +63,16 @@ foreign attempt gets `LOCKED_BY_OTHER`.
 |---|---|
 | `POST /boards/:id/export-jobs` | `{scope, format, objectCount}` → `{jobId}` |
 | `POST /boards/:id/export-jobs/:jobId/complete` | mark completion and record the size |
-| `GET /boards/:id/backup` | full JSON backup with a checksum |
+| `GET /boards/:id/backup` | full JSON backup with a checksum; `?assets=none` leaves the image bytes out |
 
-`scope` is `selection`, `frame` or `board`; the job `format` is `png` or `pdf`. A backup is a separate `GET /boards/:id/backup`, not a job format.
+`scope` is `selection`, `frame` or `board`; the job `format` is `png` or `pdf`. A backup is a separate `GET /boards/:id/backup`, not a job format. A backup with images stops at 200 MiB and answers `413 BACKUP_TOO_LARGE`; `?assets=none` is the same room without the image bytes.
 
 ## Organisation
 
 | Method and path | What it does |
 |---|---|
 | `GET /orgs/:id/apps` | installed apps with panels |
+| `GET /orgs/:id/storage` | storage usage and limit, top five rooms by `stored_bytes`; owner or admin |
 | `POST /orgs/:id/apps` | install by `{appId}` |
 | `PATCH /orgs/:id/apps/:appId` | `{enabled}` — turn off or on |
 | `DELETE /orgs/:id/apps/:appId` | remove |

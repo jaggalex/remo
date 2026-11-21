@@ -49,8 +49,10 @@
 | `board.text.set` | `{id, text}` |
 | `board.connector.create` | `{from, to, routing?, arrow?, waypoints?, style?, id?}` |
 | `board.connector.update` | `{id, routing?, waypoints?}` |
+| `board.image.create` | `{fileId, x, y, width, height, naturalWidth, naturalHeight, dominantColor?, alt?, parentId?}` |
+| `board.image.replace` | `{widgetId, fileId}` — новый файл за тем же объектом; ширина сохраняется, высота следует новым пропорциям |
 
-`name` — необязательная подпись до 120 символов; пустая строка убирает её, уникальность не проверяется. Все шесть команд требуют capability `board.edit`. `ifVersion` сверяется с текущей версией документа:
+`name` — необязательная подпись до 120 символов; пустая строка убирает её, уникальность не проверяется. Все перечисленные команды требуют capability `board.edit`. `ifVersion` сверяется с текущей версией документа:
 несовпадение — `409 STALE`. Правка или удаление заблокированного объекта отклоняется с
 `OBJECT_LOCKED`; `locked: false` принимается только от автора или носителя `board.manage`,
 иначе — `LOCKED_BY_OTHER`.
@@ -61,9 +63,9 @@
 |---|---|
 | `POST /boards/:id/export-jobs` | `{scope, format, objectCount}` → `{jobId}` |
 | `POST /boards/:id/export-jobs/:jobId/complete` | отметить завершение и записать размер |
-| `GET /boards/:id/backup` | полный JSON-бэкап с контрольной суммой |
+| `GET /boards/:id/backup` | полный JSON-бэкап с контрольной суммой; `?assets=none` — без байтов изображений |
 
-`scope` — `selection`, `frame` или `board`; `format` задания — `png` или `pdf`. Бэкап — отдельный `GET /boards/:id/backup`, не формат задания.
+`scope` — `selection`, `frame` или `board`; `format` задания — `png` или `pdf`. Бэкап — отдельный `GET /boards/:id/backup`, не формат задания. Бэкап с изображениями останавливается на 200 МиБ и отвечает `413 BACKUP_TOO_LARGE`; `?assets=none` — та же комната без байтов изображений.
 
 ## Организация
 
@@ -71,6 +73,7 @@
 |---|---|
 | `GET /orgs` | организации аккаунта: `kind`, `relation`, `state`, capabilities |
 | `GET /orgs/:id` | организация, членство и роли вызывающего |
+| `GET /orgs/:id/storage` | использование и лимит хранилища, топ-5 комнат по `stored_bytes`; владелец и администратор |
 | `PATCH /orgs/:id` | `{name}` — переименовать (администратор организации) |
 | `POST /orgs/:id/teams` | `{name}` — создать команду |
 | `PATCH/DELETE /orgs/:id/teams/:teamId` | переименовать или удалить команду |

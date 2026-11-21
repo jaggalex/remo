@@ -8,6 +8,8 @@ export const ruStorage = {
   "storage.failed": "Не удалось прочитать использование хранилища. Попробуйте ещё раз.",
   "storage.used": "Занято {used} из {limit}",
   "storage.usedUnlimited": "Занято {used}, без ограничения",
+  "storage.roomsTitle": "Больше всего места занимают",
+  "storage.untitledRoom": "Комната без названия",
   "storage.gc": "Удалённые изображения освобождают место через 30 дней.",
 
   "storage.quota.body":
