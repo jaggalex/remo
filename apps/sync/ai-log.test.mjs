@@ -48,6 +48,7 @@ function row(seq, prevHash, overrides = {}) {
     model: run.model,
     credential_id: run.credentialId,
     key_fingerprint: run.keyFingerprint,
+    gateway_provider: run.gatewayProvider,
     temperature: run.temperature,
     max_tokens: run.maxTokens,
     toolset: run.toolset,
@@ -93,6 +94,20 @@ describe("ai run chain", () => {
 
     const gap = row(3, first.hash);
     expect(verifyAiChain([first, gap])).toMatchObject({ ok: false, reason: "GAP" });
+  });
+
+  it("includes the gateway provider in the hash and keeps an older row verifiable", () => {
+    const direct = row(1, "", { gatewayProvider: "openrouter" });
+    const overridden = row(1, "", { gatewayProvider: "yandex" });
+    expect(direct.hash).not.toBe(overridden.hash);
+    expect(fromRow(direct).gatewayProvider).toBe("openrouter");
+
+    // A row written before schema 27 has no key at all; the canonical form omits it, so
+    // the chain verifies with the same hash it was written with (ADR-251).
+    const legacy = row(1, "");
+    expect(canonicalJson(normalizeRun(fromRow(legacy)))).not.toContain("gatewayProvider");
+    const second = row(2, legacy.hash, { gatewayProvider: "openrouter" });
+    expect(verifyAiChain([legacy, second])).toMatchObject({ ok: true, checked: 2 });
   });
 
   it("normalizes order-insensitive arrays", () => {

@@ -5,6 +5,7 @@ import { formatMoment } from "./format";
 import { Button, Dialog, Select, Switch, Textarea } from "@remo/ui";
 import { HelpLink } from "./help/HelpLink";
 import { useI18n, type TranslationKey } from "./i18n";
+import { agentErrorKey } from "./agentError";
 
 /**
  * The room agent panel (ADR-189).
@@ -14,6 +15,8 @@ import { useI18n, type TranslationKey } from "./i18n";
  * the place where the team edits and discusses the result.
  */
 function errorKey(code: string): TranslationKey {
+  const gateway = agentErrorKey(code);
+  if (gateway) return gateway;
   if (code === "AI_NOT_CONFIGURED") return "agents.aiNotConfigured";
   if (code.startsWith("AI_")) return "roomAgent.error.provider";
   if (code.startsWith("BUDGET_")) return "roomAgent.error.budget";

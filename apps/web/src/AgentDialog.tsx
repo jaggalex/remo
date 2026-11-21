@@ -6,7 +6,7 @@ import { cameraStore } from "./cameraStore";
 import { AgentFileField } from "./AgentFileField";
 import { AgentPlanPanel } from "./AgentPlanPanel";
 import type { TaskFile } from "./agentFile";
-import { agentFailureText } from "./agentError";
+import { agentFailureText, taskFailureText } from "./agentError";
 import { selectionPreview } from "./agentPayload";
 import { AgentSelectionSource } from "./AgentSelectionSource";
 import { AUTO_SKILL, compatibleSkills } from "./agentSkills";
@@ -630,7 +630,7 @@ export function AgentDialog({
                           </div>
                           <div className="muted">
                             {task.agent_name} · {formatMoment(task.created_at, lang)}
-                            {task.error ? ` · ${task.error}` : ""}
+                            {task.error ? ` · ${taskFailureText(task.error, t)}` : ""}
                             {task.status === "running" && task.progress?.total
                               ? ` · ${t("agents.progress", {
                                   done: task.progress.done ?? 0,

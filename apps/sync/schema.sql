@@ -602,6 +602,10 @@ create table if not exists ai_runs (
 create index if not exists ai_runs_org_idx on ai_runs (org_id, seq desc);
 create index if not exists ai_runs_task_idx on ai_runs (task_id);
 
+-- Schema 27 (ADR-251): which gateway provider answered. Null means a direct call, and a
+-- row written before the column still hashes the same because the field is omitted then.
+alter table ai_runs add column if not exists gateway_provider text;
+
 create table if not exists ai_log_anchors (
   id bigserial primary key,
   org_id uuid not null references orgs (id) on delete cascade,
@@ -1663,5 +1667,5 @@ create index if not exists boards_org_updated_idx on boards (org_id, updated_at 
 create index if not exists boards_org_created_idx on boards (org_id, created_at desc);
 create index if not exists boards_title_trgm_idx on boards using gin (title gin_trgm_ops);
 
-insert into schema_meta (id, version) values (1, 26)
+insert into schema_meta (id, version) values (1, 27)
 on conflict (id) do update set version = excluded.version, updated_at = now();

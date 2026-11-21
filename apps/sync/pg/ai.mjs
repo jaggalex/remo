@@ -203,12 +203,12 @@ async appendAiRun(input) {
       `insert into ai_runs
          (org_id, seq, prev_hash, hash, agent_id, task_id, owner_id, board_id,
           skill, skill_version, capabilities, acl_version, provider, model,
-          credential_id, key_fingerprint, temperature, max_tokens, toolset,
+          credential_id, key_fingerprint, gateway_provider, temperature, max_tokens, toolset,
           prompt_hash, input_object_ids, prompt_tokens, completion_tokens, cost_usd,
           latency_ms, status, error_code, error_message, request_id, started_at, finished_at)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
                $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
-               $30, $31)`,
+               $30, $31, $32)`,
       [
         run.orgId,
         run.seq,
@@ -226,6 +226,7 @@ async appendAiRun(input) {
         run.model,
         run.credentialId,
         run.keyFingerprint,
+        run.gatewayProvider ?? null,
         run.temperature,
         run.maxTokens,
         run.toolset,
@@ -267,7 +268,7 @@ async listAiRuns(orgId, limit = 50) {
   const { rows } = await this.pool.query(
     `select id, org_id, seq, prev_hash, hash, agent_id, task_id, owner_id, board_id,
             skill, skill_version, capabilities, acl_version, provider, model,
-            credential_id, key_fingerprint, temperature, max_tokens, toolset,
+            credential_id, key_fingerprint, gateway_provider, temperature, max_tokens, toolset,
             prompt_hash, input_object_ids, prompt_tokens, completion_tokens, cost_usd,
             latency_ms, status, error_code, error_message, request_id, started_at, finished_at
        from ai_runs where org_id = $1 order by seq desc limit $2`,
@@ -280,7 +281,7 @@ async aiRunsForVerify(orgId) {
   const { rows } = await this.pool.query(
     `select org_id, seq, prev_hash, hash, agent_id, task_id, owner_id, board_id,
             skill, skill_version, capabilities, acl_version, provider, model,
-            credential_id, key_fingerprint, temperature, max_tokens, toolset,
+            credential_id, key_fingerprint, gateway_provider, temperature, max_tokens, toolset,
             prompt_hash, input_object_ids, prompt_tokens, completion_tokens, cost_usd,
             latency_ms, status, error_code, error_message, request_id, started_at, finished_at
        from ai_runs where org_id = $1 order by seq`,

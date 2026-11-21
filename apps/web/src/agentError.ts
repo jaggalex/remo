@@ -3,6 +3,44 @@ import { taskFileErrorText } from "./agentFile";
 import type { TranslationKey } from "./i18n";
 
 /**
+ * The codes the AI gateway can put on a failed task (ADR-251 §3.2), in one place.
+ *
+ * The agent dialog and the room panel both read a code from different shapes — an HTTP
+ * error and a stored "CODE: detail" task error — so the table is shared instead of
+ * repeating the sentences.
+ */
+export const AGENT_ERROR_KEYS: Record<string, TranslationKey> = {
+  AI_GATEWAY_UNAVAILABLE: "agents.aiGatewayUnavailable",
+  GATEWAY_AUTH: "agents.aiGatewayAuth",
+  KILLED: "agents.aiKilled",
+  RATE_LIMITED: "agents.aiRateLimited",
+  PROVIDER_NOT_ALLOWED: "agents.aiProviderNotAllowed",
+  REGION_NOT_ALLOWED: "agents.aiProviderNotAllowed",
+  UPSTREAM_ERROR: "agents.aiUpstreamError",
+  UPSTREAM_TIMEOUT: "agents.aiUpstreamTimeout",
+  GATEWAY_BUSY: "agents.aiGatewayBusy",
+};
+
+export function agentErrorKey(code: string): TranslationKey | null {
+  return AGENT_ERROR_KEYS[code] ?? null;
+}
+
+/**
+ * A stored task error is "CODE: detail"; the detail is English from the service. The
+ * dialog speaks the person's language, so a known code becomes its sentence and an
+ * unknown one stays as the service sent it.
+ */
+export function taskFailureText(
+  error: string | null | undefined,
+  t: (key: TranslationKey) => string,
+): string {
+  const raw = String(error ?? "");
+  const code = raw.split(":")[0]?.trim() ?? "";
+  const key = agentErrorKey(code);
+  return key ? t(key) : raw;
+}
+
+/**
  * Turn an agent-dialog failure into a sentence a person can act on.
  *
  * "Failed to fetch" is a browser phrase, not a diagnosis: it usually means the sync
@@ -26,6 +64,8 @@ export function agentFailureText(
     }
     if (failure.code === "AI_NOT_CONFIGURED") return t("agents.aiNotConfigured");
     if (failure.code === "AI_CREDENTIALS_LOCKED") return t("agents.kekMissing");
+    const gatewayKey = agentErrorKey(failure.code);
+    if (gatewayKey) return t(gatewayKey);
     if (
       failure.code === "AI_MODEL_REQUIRED" ||
       failure.code === "AI_CREDENTIALS_LOCKED" ||

@@ -153,6 +153,16 @@ let store = diskStore;
 // Browser acceptance substitutes a deterministic provider; the guard lives in
 // `ai-fake.mjs`, so production can never take this branch.
 const ai = fakeModelEnabled() ? fakePlanClient() : new AiClient();
+// Gateway mode is fail-closed (ADR-251 §3.3): when the URL is set every model call goes
+// there or agents report AI unavailable. A missing token is a configuration error, not a
+// reason to call a provider directly, so it is loud at start-up.
+if (ai.gatewayMode) {
+  if (!ai.gatewayToken) {
+    console.warn("[sync] ai: REMO_AI_GATEWAY_URL is set without REMO_AI_GATEWAY_TOKEN");
+  } else {
+    console.log("[sync] ai: gateway");
+  }
+}
 
 if (databaseUrl) {
   // The app role is subject to RLS; migrations and the legacy repair need the owner

@@ -53,6 +53,13 @@ export function normalizeRun(input) {
     model: text(input.model),
     credentialId: text(input.credentialId),
     keyFingerprint: text(input.keyFingerprint),
+    // The gateway provider is part of the hashed record (ADR-251, schema 27). It stays
+    // `undefined` for a direct call so chains written before the column existed keep
+    // verifying: canonical JSON omits the key entirely, and their hashes do not move.
+    gatewayProvider:
+      input.gatewayProvider === null || input.gatewayProvider === undefined
+        ? undefined
+        : String(input.gatewayProvider),
     temperature: input.temperature == null ? null : number(input.temperature),
     maxTokens: input.maxTokens == null ? null : number(input.maxTokens),
     toolset: [...(input.toolset ?? [])].map(String).sort(),
@@ -92,6 +99,7 @@ export function fromRow(row) {
     model: row.model,
     credentialId: row.credential_id,
     keyFingerprint: row.key_fingerprint,
+    gatewayProvider: row.gateway_provider,
     temperature: row.temperature,
     maxTokens: row.max_tokens,
     toolset: row.toolset,

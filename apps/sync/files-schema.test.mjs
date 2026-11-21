@@ -32,8 +32,8 @@ describe("schema 25: the files table and its organisation lookup", () => {
     expect(schema).toContain(
       "create unique index if not exists files_org_sha_idx on files (org_id, sha256) where status = 'ready'",
     );
-    expect(schema).toContain("insert into schema_meta (id, version) values (1, 26)");
-    expect(SCHEMA_VERSION).toBe(26);
+    expect(schema).toContain("insert into schema_meta (id, version) values (1, 27)");
+    expect(SCHEMA_VERSION).toBe(27);
   });
 
   it("answers a file's organisation through a definer lookup after the table", () => {

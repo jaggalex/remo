@@ -1,6 +1,8 @@
 /**
  * AI credentials: where a provider key lives, who may see it and how it rotates.
  */
+
+import { gatewaySettings } from "./ai.mjs";
 import { verifyAiChain } from "./ai-log.mjs";
 import { fail, json, readBody } from "./iam-api.mjs";
 import {
@@ -17,7 +19,21 @@ import { randomUUID } from "node:crypto";
 import { safeFetch } from "@remo/outbound";
 
 export async function handleAiCredentials(ctx) {
-  const { request, response, url, parts, method, store, me, audit, isMember, isOrgAdmin } = ctx;
+  const {
+    request,
+    response,
+    url,
+    parts,
+    method,
+    store,
+    me,
+    audit,
+    isMember,
+    isOrgAdmin,
+    env = process.env,
+    fetchImpl = safeFetch,
+  } = ctx;
+  const gateway = gatewaySettings(env);
 
   const credentialView = (row) => ({
     id: row.id,
@@ -38,11 +54,68 @@ export async function handleAiCredentials(ctx) {
   const credentialScope = (row, scope, scopeId) =>
     row && row.scope === scope && row.scope_id === scopeId && row.state === "active";
 
+  /**
+   * Ask the gateway whether it knows this upstream.
+   *
+   * A direct probe would resolve and reach the provider from sync, which is exactly the
+   * isolation the gateway exists to provide (ADR-251 §3.3).
+   */
+  async function checkGatewayUpstream(baseUrl) {
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      Math.min(gateway.timeoutMs, 15_000),
+    );
+    try {
+      const check = `${gateway.url}/v1/upstreams/check?baseUrl=${encodeURIComponent(baseUrl)}`;
+      const answer = await fetchImpl(check, {
+        headers: { Authorization: `Bearer ${gateway.token}` },
+        redirect: "error",
+        signal: controller.signal,
+        // The gateway is the one private address sync may reach (ADR-251).
+        allowPrivate: true,
+      });
+      if (answer.ok) return true;
+      const body = await answer.text().catch(() => "");
+      let code = "";
+      try {
+        code = String(JSON.parse(body)?.error?.code ?? "");
+      } catch {
+        code = "";
+      }
+      const error = new Error(
+        code === "PROVIDER_NOT_ALLOWED"
+          ? "Этот провайдер не подключён на сервере"
+          : `the AI gateway refused the check (${answer.status})`,
+      );
+      error.code = code || "AI_GATEWAY_UNAVAILABLE";
+      error.status = answer.status;
+      throw error;
+    } catch (error) {
+      if (error instanceof Error && error.status) throw error;
+      const timedOut =
+        controller.signal.aborted ||
+        error?.name === "AbortError" ||
+        error?.code === "TIMEOUT" ||
+        error?.code === "ABORTED";
+      const unavailable = new Error(
+        timedOut
+          ? "the AI gateway did not answer the provider check in time"
+          : `the AI gateway is unreachable: ${error?.message ?? error}`,
+      );
+      unavailable.code = "AI_GATEWAY_UNAVAILABLE";
+      throw unavailable;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function probeProvider(baseUrl, apiKey) {
+    if (gateway.url) return checkGatewayUpstream(baseUrl);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await safeFetch(`${baseUrl}/models`, {
+      const response = await fetchImpl(`${baseUrl}/models`, {
         headers: { Authorization: `Bearer ${apiKey}` },
         redirect: "error",
         signal: controller.signal,
@@ -184,7 +257,8 @@ export async function handleAiCredentials(ctx) {
             }
             // Custom hosts are resolved once at save time for an immediate, clear
             // rejection; every request re-checks and pins the address in `safeFetch`.
-            if (provider === "custom") await assertPublicDns(baseUrl);
+            // In gateway mode the gateway owns reachability, so sync does not resolve it.
+            if (provider === "custom" && !gateway.url) await assertPublicDns(baseUrl);
           } catch (error) {
             fail(
               response,
@@ -201,7 +275,26 @@ export async function handleAiCredentials(ctx) {
               return true;
             }
           }
-          const kek = kekFromEnv();
+          // A key for an upstream the gateway does not list would be stored and then
+          // fail every call. Refuse it now, while the person is looking at the form.
+          if (gateway.url) {
+            try {
+              await checkGatewayUpstream(baseUrl);
+            } catch (error) {
+              if (error?.code === "PROVIDER_NOT_ALLOWED") {
+                fail(response, 422, "PROVIDER_NOT_ALLOWED", error.message);
+              } else {
+                fail(
+                  response,
+                  503,
+                  error?.code ?? "AI_GATEWAY_UNAVAILABLE",
+                  error?.message ?? "the AI gateway is unreachable",
+                );
+              }
+              return true;
+            }
+          }
+          const kek = kekFromEnv(env);
           if (!kek) {
             fail(response, 503, "AI_CREDENTIALS_LOCKED", "set REMO_KEK on the server");
             return true;
@@ -255,7 +348,7 @@ export async function handleAiCredentials(ctx) {
           fail(response, 422, "BAD_SECRET", "the key looks empty or too long");
           return true;
         }
-        const kek = kekFromEnv();
+        const kek = kekFromEnv(env);
         if (!kek) {
           fail(response, 503, "AI_CREDENTIALS_LOCKED", "set REMO_KEK on the server");
           return true;
@@ -316,7 +409,7 @@ export async function handleAiCredentials(ctx) {
           fail(response, 404, "RESOURCE_NOT_AVAILABLE", "not found");
           return true;
         }
-        const kek = kekFromEnv();
+        const kek = kekFromEnv(env);
         if (!kek) {
           fail(response, 503, "AI_CREDENTIALS_LOCKED", "set REMO_KEK on the server");
           return true;
@@ -326,7 +419,13 @@ export async function handleAiCredentials(ctx) {
           await probeProvider(row.base_url, secret);
           json(response, 200, { ok: true });
         } catch (error) {
-          fail(response, 422, "KEY_REJECTED", error.message);
+          if (error?.code === "PROVIDER_NOT_ALLOWED") {
+            fail(response, 422, "PROVIDER_NOT_ALLOWED", error.message);
+          } else if (error?.code === "AI_GATEWAY_UNAVAILABLE") {
+            fail(response, 503, "AI_GATEWAY_UNAVAILABLE", error.message);
+          } else {
+            fail(response, 422, "KEY_REJECTED", error.message);
+          }
         }
         return true;
       }
